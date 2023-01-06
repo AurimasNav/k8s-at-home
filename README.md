@@ -3,35 +3,106 @@
 ## Disclaimer
 
 - this is for learning first and getting something useful later
+- security and HA are not in scope for this exercise 
 
-## k3s setup
+## k3s setup on hosting machine (further referred as k3s_host)
 
 - install k3s
 
     ```sh
-    curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
+    curl -sfL https://get.k3s.io | sh -s - --disable=servicelb --write-kubeconfig-mode 644
     # Check for Ready node, takes ~30 seconds 
     k3s kubectl get node 
     ```
 
-## Install kubectx + kubens
+## setup tools on management host (ubuntu 22.04 on wsl in my case)
 
-- install kubectx
+- install powershell (familiarity convenience) | [doc](https://learn.microsoft.com/en-us/powershell/scripting/install/install-ubuntu?view=powershell-7.3#installation-via-package-repository)
 
     ```sh
-    sudo snap install kubectx --classic
+    sudo apt-get update
+    sudo apt-get install -y wget apt-transport-https software-properties-common
+    wget -q "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+    sudo dpkg -i packages-microsoft-prod.deb
+    sudo apt-get update
+    sudo apt-get install -y powershell
     ```
 
-- copy k3s configuration to your home so kubens/kubectx can read it
+    - verify
+    
+    ```sh
+    $ pwsh -version
+    PowerShell 7.3.1
+    ```
+
+- copy kubeconfig (run command from management host)
 
     ```sh
-    cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+    scp <remote_user>@<k3s_host>:/etc/rancher/k3s/k3s.yaml ~/.kube/config
     ```
 
 - modify permissions on the config file
 
     ```sh
-    chmod 600 ~/.kube/config
+    sudo chmod 600 ~/.kube/config
+    ```
+
+- replace k3s ip in `config` from 127.0.0.1 to `k3s_host` ip
+
+    ```sh
+    sed -i 's/127.0.0.1/<k3s_host_ip>/' .kube/config
+    ```
+
+- install kubectl | [doc](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+    
+    ```sh
+    sudo apt-get install -y ca-certificates curl
+    sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    sudo apt-get update
+    sudo apt-get install -y kubectl
+    ```
+    
+    - verify
+    
+    ```sh
+    $ kubectl version -o yaml
+    clientVersion:
+        buildDate: "2022-12-08T19:58:30Z"
+        compiler: gc
+        gitCommit: b46a3f887ca979b1a5d14fd39cb1af43e7e5d12d
+        gitTreeState: clean
+        gitVersion: v1.26.0
+        goVersion: go1.19.4
+        major: "1"
+        minor: "26"
+        platform: linux/amd64
+    kustomizeVersion: v4.5.7
+    serverVersion:
+        buildDate: "2022-12-21T00:06:36Z"
+        compiler: gc
+        gitCommit: 48e5d2af5bfc69db051d46b6c6b83c46d15a9da5
+        gitTreeState: clean
+        gitVersion: v1.25.5+k3s1
+        goVersion: go1.19.4
+        major: "1"
+        minor: "25"
+        platform: linux/amd64
+    ```
+
+- install kubectx
+ 
+    ```sh
+    echo "deb [trusted=yes] http://ftp.de.debian.org/debian buster main" | sudo tee -a /etc/apt/sources.list
+    sudo apt-get update
+    sudo apt install kubectx
+    ```
+
+    - verify
+
+    ```sh
+    $ kubectx
+    default
     ```
 
 - verify that `kubens` command works
@@ -50,7 +121,6 @@
 
     ```sh
     curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-    sudo apt-get install apt-transport-https --yes
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
     sudo apt-get update
     sudo apt-get install helm
@@ -72,16 +142,13 @@
       name: traefik-crd
       namespace: kube-system
       revision: "1"
-      status: deployed
-      updated: 2023-01-05 19:13:03.869148967 +0000 UTC
-    ```
+      status: deployedTH
 
-## Install kustomize
-
-- install kustomize with snap
+- install kustomize | [doc](https://kubectl.docs.kubernetes.io/installation/kustomize/binaries/)
 
     ```sh
-    sudo snap install kustomize
+    cd /usr/local/bin
+    curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
     ```
 
 - verify installation
@@ -99,18 +166,17 @@
     kubectl create namespace argocd
     ```
 
-- create kustomization file and add argo-cd's `install.yaml` to it (pwsh script)
+- create kustomization file
 
-    ```pwsh
-    $Kustomization = @"
+    ```sh
+    cat > kustomization.yaml <<EOL
     apiVersion: kustomize.config.k8s.io/v1beta1
     kind: Kustomization
 
     namespace: argocd
     resources:
     - https://raw.githubusercontent.com/argoproj/argo-cd/master/manifests/install.yaml
-    "@
-    $Kustomization | Out-File kustomization.yaml
+    EOL
     ```
 
 - deploy resources from kustomization file
