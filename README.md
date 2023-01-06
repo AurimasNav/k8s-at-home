@@ -1,8 +1,10 @@
-# Disclaimer
+# k3s setup on Ubuntu 22.04
+
+## Disclaimer
 
 - this is for learning first and getting something useful later
 
-# k3s setup on Ubuntu 22.04
+## k3s setup
 
 - install k3s
 
@@ -12,7 +14,7 @@
     k3s kubectl get node 
     ```
 
-# Install kubectx + kubens
+## Install kubectx + kubens
 
 - install kubectx
 
@@ -42,7 +44,7 @@
     kube-node-lease
     ```
 
-# Install helm
+## Install helm
 
 - add apt repository and install helm
 
@@ -74,7 +76,7 @@
       updated: 2023-01-05 19:13:03.869148967 +0000 UTC
     ```
 
-# Install kustomize
+## Install kustomize
 
 - install kustomize with snap
 
@@ -82,19 +84,43 @@
     sudo snap install kustomize
     ```
 
-- verify installation    
+- verify installation
 
     ```sh
     $ kustomize version --short
     {kustomize/v4.5.7  2022-08-02T16:35:54Z  }
     ```
 
-# Install argo-cd
+## Install argo-cd
 
-- create kustomization file and add argo-cd's `install.yaml` to it
+- create namespace for argocd
 
     ```sh
-    kustomize create
-    kustomize edit set namespace argocd
-    
+    kubectl create namespace argocd
+    ```
+
+- create kustomization file and add argo-cd's `install.yaml` to it (pwsh script)
+
+    ```pwsh
+    $Kustomization = @"
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+
+    namespace: argocd
+    resources:
+    - https://raw.githubusercontent.com/argoproj/argo-cd/master/manifests/install.yaml
+    "@
+    $Kustomization | Out-File kustomization.yaml
+    ```
+
+- deploy resources from kustomization file
+
+    ```sh
+    kustomize build | kubectl apply -f -
+    ```
+
+- verify that all pods are ready/running
+
+    ```sh
+    watch kubectl get pods -n argocd
     ```
