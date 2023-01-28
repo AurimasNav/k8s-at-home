@@ -204,7 +204,7 @@
 - create root application
 
     ```sh
-    kustomize build ~/k8s-at-home/argocd-apps/base | kubectl apply -f -
+    kubectl apply -f ~/k8s-at-home/argocd-apps/base/root-app.yaml
     ```
 
 - get inital argo-cd admin password
@@ -212,3 +212,11 @@
     ```sh
     kubectl get secret/argocd-initial-admin-secret -n argocd -ojsonpath="{.data.password}" | base64 -d
     ```
+- login to argocd and verify you can see deployments
+
+    ```sh
+    kubectl port-forward service/argocd-server -n argocd 8080:80
+    ```
+    - open browser and navigate to http://localhost:8080
+    - login with `admin` and password obtained earlier
+
