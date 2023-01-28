@@ -5,12 +5,20 @@
 - this is for learning first and getting something useful later
 - security and HA are not in scope for this exercise 
 
+## uninstall k3s
+
+- during setup one might find himself wanting to start over
+
+    ```sh
+    /usr/local/bin/k3s-uninstall.sh
+    ```
+
 ## k3s setup on hosting machine (further referred as k3s_host)
 
 - install k3s
 
     ```sh
-    curl -sfL https://get.k3s.io | sh -s - --disable=servicelb --write-kubeconfig-mode 644
+    curl -sfL https://get.k3s.io | sh -s - --disable=servicelb --disable=traefik --write-kubeconfig-mode 644
     # Check for Ready node, takes ~30 seconds 
     k3s kubectl get node 
     ```
@@ -148,7 +156,7 @@
 
     ```sh
     cd /usr/local/bin
-    curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
+    curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | sudo bash
     ```
 
 - verify installation
@@ -166,27 +174,32 @@
     kubectl create namespace argocd
     ```
 
-- create kustomization file
+- clone k8s-at-home repository
 
     ```sh
-    cat > kustomization.yaml <<EOL
-    apiVersion: kustomize.config.k8s.io/v1beta1
-    kind: Kustomization
-
-    namespace: argocd
-    resources:
-    - https://raw.githubusercontent.com/argoproj/argo-cd/master/manifests/install.yaml
-    EOL
+    git clone https://github.com/AurimasNav/k8s-at-home.git ~/k8s-at-home
     ```
 
 - deploy resources from kustomization file
 
     ```sh
-    kustomize build | kubectl apply -f -
+    kustomize build ~/k8s-at-home/src | kubectl apply -f -
     ```
 
 - verify that all pods are ready/running
 
     ```sh
     watch kubectl get pods -n argocd
+    ```
+
+- create root application
+
+    ```sh
+    kustomize build ~/k8s-at-home/argocd-apps/base | kubectl apply -f -
+    ```
+
+- get inital argo-cd admin password
+    
+    ```sh
+    kubectl get secret/argocd-initial-admin-secret -n argocd -ojsonpath="{.data.password}" | base64 -d
     ```
