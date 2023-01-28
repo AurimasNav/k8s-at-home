@@ -1,0 +1,9 @@
+- op: replace
+  path: /data/net-conf.json
+  value: |
+    {
+      "Network": "10.42.0.0/24",
+      "Backend": {
+        "Type": "vxlan"
+      }
+    }

@@ -192,6 +192,15 @@
     watch kubectl get pods -n argocd
     ```
 
+### Deploy argo-cd applications
+
+- modify flannel network to contain podcidr if not default
+
+    ```sh
+    podcidr=$(kubectl get nodes -o jsonpath='{.items[*].spec.podCIDR}')
+    sed -i "s/10.244.0.0\/16/${podcidr/\//\\/}/g" ~/k8s-at-home/gitops/flannel/patch.configmap.yaml
+    ```
+
 - create root application
 
     ```sh
