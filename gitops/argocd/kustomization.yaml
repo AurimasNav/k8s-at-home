@@ -8,5 +8,5 @@ patches:
 - path: patch.service.yaml
   target:
     version: v1
-    kind: service
+    kind: Service
     name: argocd-server
