@@ -19,3 +19,6 @@ spec:
         image: lscr.io/linuxserver/prowlarr:latest
         ports:
         - containerPort: 9696
+        envFrom:
+        - configMapRef:
+            name: prowlarr

@@ -9,7 +9,7 @@ spec:
   tls:
   - hosts:
     - prowlarr.sync.lt
-    secretName: prowlarr
+    secretName: prowlarr-letsencrypt
   rules:
   - host: prowlarr.sync.lt
     http:
