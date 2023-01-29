@@ -18,6 +18,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: kuard
+            name: prowlarr
             port:
               name: app
