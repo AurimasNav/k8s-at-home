@@ -11,8 +11,8 @@ spec:
     namespace: vault
   project: default
   source:
-    chart: vault
-    repoURL: https://helm.releases.hashicorp.com
+    path: gitops/vault
+    repoURL: https://github.com/AurimasNav/k8s-at-home.git
     targetRevision: main
   syncPolicy:
     automated:
