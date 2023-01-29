@@ -6,3 +6,4 @@ resources:
 - ./apps/metallb
 - ./apps/argocd
 - ./apps/ingress-nginx
+- ./apps/prowlarr
