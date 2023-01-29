@@ -183,7 +183,7 @@
 - deploy resources from kustomization file
 
     ```sh
-    kustomize build ~/k8s-at-home/src | kubectl apply -f -
+    kustomize build ~/k8s-at-home/gitops/argocd | kubectl apply -f -
     ```
 
 - verify that all pods are ready/running
