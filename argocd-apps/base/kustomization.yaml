@@ -10,3 +10,4 @@ resources:
 - ./apps/cert-manager
 - ./apps/local-path-provisioner
 - ./apps/vault
+- ./apps/external-secrets
