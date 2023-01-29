@@ -371,8 +371,8 @@
 
     ```sh
     $ vault write auth/kubernetes/role/read-secrets \
-    bound_service_account_names=cert-manager,prowlarr \
-    bound_service_account_namespaces=cert-manager,prowlarr \
+    bound_service_account_names=external-secrets \
+    bound_service_account_namespaces=external-secrets \
     policies=read-secrets \
     ttl=24h
 
