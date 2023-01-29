@@ -7,3 +7,4 @@ resources:
 - ./apps/argocd
 - ./apps/ingress-nginx
 - ./apps/prowlarr
+- ./apps/cert-manager
