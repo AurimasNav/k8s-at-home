@@ -9,3 +9,4 @@ resources:
 - ./apps/prowlarr
 - ./apps/cert-manager
 - ./apps/local-path-provisioner
+- ./apps/vault
