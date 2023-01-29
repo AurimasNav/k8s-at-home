@@ -8,3 +8,4 @@ resources:
 - ./apps/ingress-nginx
 - ./apps/prowlarr
 - ./apps/cert-manager
+- ./local-path-provisioner
