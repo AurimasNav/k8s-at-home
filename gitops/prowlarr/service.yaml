@@ -7,7 +7,7 @@ spec:
   - name: app
     port: 80
     targetPort: 9696
-    protocol: tcp
+    protocol: TCP
     appProtocol: http
   selector:
     app: prowlarr
