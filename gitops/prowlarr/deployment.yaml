@@ -21,4 +21,11 @@ spec:
         - containerPort: 9696
         envFrom:
         - configMapRef:
-            name: prowlarr
+            name: prowlarr-data
+        volumeMounts:
+        - name: vol
+          mountPath: /config
+      volumes:
+      - name: prowlarr-data
+        persistentVolumeClaim:
+          claimName: prowlarr-data
