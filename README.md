@@ -351,7 +351,7 @@
 
     ```sh
     $ vault write auth/kubernetes/config \
-        kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443"
+        kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:$KUBERNETES_SERVICE_PORT"
     Success! Data written to: auth/kubernetes/config
     ```
 
