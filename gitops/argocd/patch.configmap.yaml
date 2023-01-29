@@ -1,0 +1,4 @@
+- op: add
+  path: /data
+  value:
+    kustomize.buildOptions: --enable-alpha-plugins --enable-helm --load-restrictor LoadRestrictionsNone

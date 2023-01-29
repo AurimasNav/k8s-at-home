@@ -10,3 +10,8 @@ patches:
     version: v1
     kind: Service
     name: argocd-server
+- path: patch.configmap.yaml
+  target:
+    version: v1
+    kind: ConfigMap
+    name: argocd-cm
