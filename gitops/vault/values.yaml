@@ -1,5 +1,5 @@
 server:
-  dev:
+  standalone:
     enabled: true
   dataStorage:
     enabled: true
