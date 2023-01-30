@@ -1,11 +1,23 @@
-# k3s setup on Ubuntu 22.04
+- [Setup k8s-at-home on Ubuntu 22.04](#setup-k8s-at-home-on-ubuntu-2204)
+  - [Disclaimer](#disclaimer)
+  - [Uninstall k3s](#uninstall-k3s)
+  - [Setup k3s on hosting machine (further referred as k3s\_host)](#setup-k3s-on-hosting-machine-further-referred-as-k3s_host)
+  - [Setup tools on management host (tested on ubuntu 22.04 wsl)](#setup-tools-on-management-host-tested-on-ubuntu-2204-wsl)
+  - [Install helm](#install-helm)
+  - [Install argo-cd](#install-argo-cd)
+    - [Deploy argo-cd applications](#deploy-argo-cd-applications)
+  - [Akeyless setup for external-secrets - WebUI method (todo: document an api way of doing this as preferred method)](#akeyless-setup-for-external-secrets---webui-method-todo-document-an-api-way-of-doing-this-as-preferred-method)
+  - [Create secert for ClusterCredentialStore authentication to Akeyless api](#create-secert-for-clustercredentialstore-authentication-to-akeyless-api)
+
+
+# Setup k8s-at-home on Ubuntu 22.04
 
 ## Disclaimer
 
 - this is for learning first and getting something useful later
 - security and HA are not in scope for this exercise 
 
-## uninstall k3s
+## Uninstall k3s
 
 - during setup one might find himself wanting to start over
 
@@ -13,7 +25,7 @@
     /usr/local/bin/k3s-uninstall.sh
     ```
 
-## k3s setup on hosting machine (further referred as k3s_host)
+## Setup k3s on hosting machine (further referred as k3s_host)
 
 - install k3s
 
@@ -23,9 +35,9 @@
     k3s kubectl get node 
     ```
 
-## setup tools on management host (ubuntu 22.04 on wsl in my case)
+## Setup tools on management host (tested on ubuntu 22.04 wsl)
 
-- install powershell (familiarity convenience) | [doc](https://learn.microsoft.com/en-us/powershell/scripting/install/install-ubuntu?view=powershell-7.3#installation-via-package-repository)
+- install powershell | [doc](https://learn.microsoft.com/en-us/powershell/scripting/install/install-ubuntu?view=powershell-7.3#installation-via-package-repository)
 
     ```sh
     sudo apt-get update
@@ -226,155 +238,66 @@
     - open browser and navigate to http://localhost:8080
     - login with `admin` and password obtained earlier
 
-## Prepping hashicorp vault | [doc](https://developer.hashicorp.com/vault/tutorials/kubernetes/kubernetes-minikube-raft)
+## Akeyless setup for external-secrets - WebUI method (todo: document an api way of doing this as preferred method)
 
-- monitor argocd until `vault` application is deployed except for `vault-0` pod (is should be `running`, but in 0/1 ready state)
+- register account for [Akeyless account](https://console.akeyless.io/registration) (free for 5 clients and 2000 static secrets)
+
+- create Auth Method
+  - New API Key
+  - Name `external-secrets`
+  - Location `/`
+  - Allowed Client IPs `<external_ip_of_k8s>/32`
+  - <button name="Create Role">Save</button>
+  - <button name="Create Role">Save to .CSV file</button>
+  - take note where the file is saved, we will use it later `akeyless_creds.csv`
+
+- create Access Role
+  - Name `external-secrets-reader`
+  - Location `/`
+  - <button name="Create Role">Create Role</button>
+  - Method <button name="Associate">:heavy_plus_sign: Associate</button>
+    - Auth Method `/external-secrets`
+  - Access Path <button name="Add">:heavy_plus_sign: Add</button> 
+    - Allow acces to the following path `/k8s-at-home/*`
+    - [x] Apply recursively
+    - Allow the following operations:
+      - [ ] Create
+      - [x] Read
+      - [ ] Update
+      - [ ] Delete
+      - [ ] List
+      - [ ] Deny
+
+- create Secrets & Keys
+  - <button name="New">:heavy_plus_sign: New</button> Static Secret
+    - Name `letsencrypt-email`
+    - Location `/k8s-at-home`
+    - Value `<replace-with-your-actual-email@domain.com>`
+
+## Create secert for ClusterCredentialStore authentication to Akeyless api
+
+- copy saved Akeyless creds, secret template and powershell script to the same directory somewhere outside git repo
     
     ```sh
-    ~$ kubectl get pods -n vault
-    NAME                                    READY   STATUS    RESTARTS   AGE
-    vault-agent-injector-59b9c84fd8-mzzj8   1/1     Running   0          43m
-    vault-0                                 0/1     Running   0          28m
+    cp </replace-with-path-to/>akeyless_creds.csv ~
+    cp ~/k8s-at-home/src/akeyless-secret.* ~
     ```
 
-### Unsealing vault
-
-- initialize vault-0 with one key share and one key threshold (for simplity sake, not secure)
+-  run pwsh script   
 
     ```sh
-    $ kubectl exec vault-0 -- vault operator init \
-    -key-shares=1 \
-    -key-threshold=1 \
-    -format=json > cluster-keys.json
+    $ pwsh
+    PS> ./akeyless-secret.ps1
+
+    Updated 'akeyless-secret.yaml' with values from 'akeyless_creds.csv'.
+
+    PS> exit
     ```
 
-- display unseal key found in `cluster-jeys.json`
+- apply secret
 
     ```sh
-    jq -r ".unseal_keys_b64[]" cluster-keys.json
-    rrUtT32GztRy/pVWmcH0ZQLCCXon/TxCgi40FL1Zzus=
-    ```
-
-- save the key into variable so it is not in shell history
-
-    ```sh
-    VAULT_UNSEAL_KEY=$(jq -r ".unseal_keys_b64[]" cluster-keys.json)
-    ```
-
-- unseal the vault on `vault-0` pod
-
-    ```sh
-    kubectl exec vault-0 -- vault operator unseal $VAULT_UNSEAL_KEY
-    ```
-
-### Set a secret in Vault
-
-- display the root token found in `cluster-keys.json`
-
-    ```sh
-    $ jq -r ".root_token" cluster-keys.json
-    hvs.HJmsajgGlWPTx6YNHoUljuOO
-    ```
-
-- start interactive shell session on tthe `vault-0` pod
-
-    ```sh
-    $ kubectl exec --stdin=true --tty=true vault-0 -n vault -- /bin/sh
-    / $
-    ```
-
-- login with the root token
-
-    ```sh
-    $ vault login
-    Token (will be hidden):
-    Success! You are now authenticated. The token information displayed below
-    is already stored in the token helper. You do NOT need to run "vault login"
-    again. Future Vault requests will automatically use this token.
-
-    Key                  Value
-    ---                  -----
-    token                hvs.HJmsajgGlWPTx6YNHoUljuOO
-    token_accessor       JVsMJHVu6rTWbPLlYmWQTq1R
-    token_duration       ∞
-    token_renewable      false
-    token_policies       ["root"]
-    identity_policies    []
-    policies             ["root"]
-    ```
-
-- enable an instance of the kv-v2 secrets engine at the path `secret`
-
-    ```sh
-    $ vault secrets enable -path=secret kv-v2
-    Success! Enabled the kv-v2 secrets engine at: secret/
-    ```
-
-- create secrets for applications
-
-    ```sh
-    vault put secret/cert-manager/letsencrypt-issuer email=fake-email@outlook.com
-    ```
-
-- verify secret got created
-
-    ```sh
-    / $ vault kv get secret/cert-manager/letsencrypt-issuer
-    =============== Secret Path ===============
-    secret/data/cert-manager/letsencrypt-issuer
-
-    ======= Metadata =======
-    Key                Value
-    ---                -----
-    created_time       2023-01-29T19:31:27.783982045Z
-    custom_metadata    <nil>
-    deletion_time      n/a
-    destroyed          false
-    version            1
-
-    ==== Data ====
-    Key      Value
-    ---      -----
-    email    fake-email@outlook.com
-    ```
-
-### Configure Kubernetes authentication to vault
-
-- enable kubernetes authentication method
-
-    ```sh
-    $ vault auth enable kubernetes
-    Success! Enabled kubernetes auth method at: kubernetes/
-    ```
-
-- configure the Kubernetes authentication method to use the location of the Kubernetes API
-
-    ```sh
-    $ vault write auth/kubernetes/config \
-        kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:$KUBERNETES_SERVICE_PORT"
-    Success! Data written to: auth/kubernetes/config
-    ```
-
-- create read policy which will have read acces under secret/ path
-
-    ```sh
-    $ vault policy write read-secrets - <<EOF
-    path "secret/*" {
-        capabilities = ["read"]
-    }
-    EOF
-
-    Success! Uploaded policy: webapp
-    ```
-
-- create authentication role named `read-secrets` that connects the Kubernetes service accounts and `read-secrets` policy and allows listed namespaces to access this role
-
-    ```sh
-    $ vault write auth/kubernetes/role/read-secrets \
-    bound_service_account_names=external-secrets \
-    bound_service_account_namespaces=external-secrets \
-    policies=read-secrets \
-    ttl=24h
-
-    Success! Data written to: auth/kubernetes/role/read-secrets
+    $ kubectl apply -f ./akeyless-secret.yaml -n external-secrets
+    
+    secret/akeyless-creds created
     ```

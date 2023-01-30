@@ -3,5 +3,5 @@ server:
     enabled: true
   dataStorage:
     enabled: true
-    size: 10Gi
+    size: 1Gi
     mountPath: "/vault/data"
