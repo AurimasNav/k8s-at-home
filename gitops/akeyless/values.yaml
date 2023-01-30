@@ -1,3 +1,2 @@
 existingSecret:
-- admin-access-id
-- admin-access-key
+  akeyless-api-gateway-conf-secret
