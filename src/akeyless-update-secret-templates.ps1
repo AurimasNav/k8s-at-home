@@ -22,4 +22,3 @@ $UpdatedSecret = $AkeylessSecret -replace 'external-secrets-id', "$AccessIdEncod
 Set-Content -Value $UpdatedSecret -Path ./akeyless-secret.yaml -ErrorAction Stop
 
 Write-Host "Updated 'akeyless-secret.yaml' with values from 'akeyless_creds.csv'."
-

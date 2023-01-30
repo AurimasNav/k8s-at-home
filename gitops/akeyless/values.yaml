@@ -1,7 +1,3 @@
-# existingSecret:
-# - admin-access-id
-# - admin-access-key
-akeylessUserAuth:
-  # adminAccessId is required field, supported types: access_key,password or cloud identity(aws_iam/azure_ad/gcp_gce)
-  adminAccessId: asdasd
-  adminAccessKey: asdasd
+existingSecret:
+- admin-access-id
+- admin-access-key
