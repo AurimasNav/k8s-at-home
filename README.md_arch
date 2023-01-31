@@ -210,3 +210,69 @@ Initial idea was to use vault for secret management, but it was too complicated 
 
     Success! Data written to: auth/kubernetes/role/read-secrets
     ```
+
+# Vault saas alternative - akeyless, abandoned due to bugs and simpler solution with doppler
+
+## Akeyless setup for external-secrets - WebUI method (todo: document an api way of doing this as preferred method)
+
+- register account for [Akeyless account](https://console.akeyless.io/registration) (free for 5 clients and 2000 static secrets)
+
+- create Auth Method
+  - New API Key
+  - Name `external-secrets`
+  - Location `/`
+  - Allowed Client IPs `<external_ip_of_k8s>/32`
+  - <button name="Create Role">Save</button>
+  - <button name="Create Role">Save to .CSV file</button>
+  - take note where the file is saved, we will use it later `akeyless_creds.csv`
+
+- create Access Role
+  - Name `external-secrets-reader`
+  - Location `/`
+  - <button name="Create Role">Create Role</button>
+  - Method <button name="Associate">:heavy_plus_sign: Associate</button>
+    - Auth Method `/external-secrets`
+  - Access Path <button name="Add">:heavy_plus_sign: Add</button> 
+    - Allow acces to the following path `/k8s-at-home/*`
+    - [x] Apply recursively
+    - Allow the following operations:
+      - [ ] Create
+      - [x] Read
+      - [ ] Update
+      - [ ] Delete
+      - [ ] List
+      - [ ] Deny
+
+- create Secrets & Keys
+  - <button name="New">:heavy_plus_sign: New</button> Static Secret
+    - Name `letsencrypt-email`
+    - Location `/k8s-at-home`
+    - Value `<replace-with-your-actual-email@domain.com>`
+
+## Create secert for ClusterCredentialStore authentication to Akeyless api
+
+- copy saved Akeyless creds, secret template and powershell script to the same directory somewhere outside git repo
+    
+    ```sh
+    cp </replace-with-path-to/>akeyless_creds.csv ~
+    cp ~/k8s-at-home/src/akeyless-secret.* ~
+    ```
+
+-  run pwsh script   
+
+    ```sh
+    $ pwsh
+    PS> ./akeyless-secret.ps1
+
+    Updated 'akeyless-secret.yaml' with values from 'akeyless_creds.csv'.
+
+    PS> exit
+    ```
+
+- apply secret
+
+    ```sh
+    $ kubectl apply -f ./akeyless-secret.yaml -n external-secrets
+    
+    secret/akeyless-creds created
+    ```

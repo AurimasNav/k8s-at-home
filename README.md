@@ -6,8 +6,9 @@
   - [Install helm](#install-helm)
   - [Install argo-cd](#install-argo-cd)
     - [Deploy argo-cd applications](#deploy-argo-cd-applications)
-  - [Akeyless setup for external-secrets - WebUI method (todo: document an api way of doing this as preferred method)](#akeyless-setup-for-external-secrets---webui-method-todo-document-an-api-way-of-doing-this-as-preferred-method)
-  - [Create secert for ClusterCredentialStore authentication to Akeyless api](#create-secert-for-clustercredentialstore-authentication-to-akeyless-api)
+  - [Secret store setup - Doppler](#secret-store-setup---doppler)
+    - [Setup saas part](#setup-saas-part)
+    - [Setup external secrets integration](#setup-external-secrets-integration)
 
 
 # Setup k8s-at-home on Ubuntu 22.04
@@ -238,66 +239,36 @@
     - open browser and navigate to http://localhost:8080
     - login with `admin` and password obtained earlier
 
-## Akeyless setup for external-secrets - WebUI method (todo: document an api way of doing this as preferred method)
+## Secret store setup - Doppler
 
-- register account for [Akeyless account](https://console.akeyless.io/registration) (free for 5 clients and 2000 static secrets)
+### Setup saas part
 
-- create Auth Method
-  - New API Key
-  - Name `external-secrets`
-  - Location `/`
-  - Allowed Client IPs `<external_ip_of_k8s>/32`
-  - <button name="Create Role">Save</button>
-  - <button name="Create Role">Save to .CSV file</button>
-  - take note where the file is saved, we will use it later `akeyless_creds.csv`
+- create account https://www.doppler.com/
 
-- create Access Role
-  - Name `external-secrets-reader`
-  - Location `/`
-  - <button name="Create Role">Create Role</button>
-  - Method <button name="Associate">:heavy_plus_sign: Associate</button>
-    - Auth Method `/external-secrets`
-  - Access Path <button name="Add">:heavy_plus_sign: Add</button> 
-    - Allow acces to the following path `/k8s-at-home/*`
-    - [x] Apply recursively
-    - Allow the following operations:
-      - [ ] Create
-      - [x] Read
-      - [ ] Update
-      - [ ] Delete
-      - [ ] List
-      - [ ] Deny
+- create workspace - k8s-at-home
 
-- create Secrets & Keys
-  - <button name="New">:heavy_plus_sign: New</button> Static Secret
-    - Name `letsencrypt-email`
-    - Location `/k8s-at-home`
-    - Value `<replace-with-your-actual-email@domain.com>`
+- create project - k8s-at-home
 
-## Create secert for ClusterCredentialStore authentication to Akeyless api
+- add secrets to Production environment
 
-- copy saved Akeyless creds, secret template and powershell script to the same directory somewhere outside git repo
+- from Production env navigate to *ACCESS* and generate service token named `external-secrets` - save the generated token.
+  
+### Setup external secrets integration
+
+- update doppler secret template
+
+    ```sh
+    cp ~/k8s-at-home/src/doppler-secret.yaml ~
+    read -p "Enter doppler service token: " SERVICE_TOKEN
+
+    $ Enter doppler service token: <you_service_token_here>
+
+    sed -i 's/dopler-service-token/'"$(echo $SERVICE_TOKEN|base64)"/ ~/doppler-secret.yaml
+    ```
+
+- create secret
+
+    ```sh
+    kubectl apply -f ~/doppler-secret.yaml -n external-secrets
+    ```
     
-    ```sh
-    cp </replace-with-path-to/>akeyless_creds.csv ~
-    cp ~/k8s-at-home/src/akeyless-secret.* ~
-    ```
-
--  run pwsh script   
-
-    ```sh
-    $ pwsh
-    PS> ./akeyless-secret.ps1
-
-    Updated 'akeyless-secret.yaml' with values from 'akeyless_creds.csv'.
-
-    PS> exit
-    ```
-
-- apply secret
-
-    ```sh
-    $ kubectl apply -f ./akeyless-secret.yaml -n external-secrets
-    
-    secret/akeyless-creds created
-    ```
