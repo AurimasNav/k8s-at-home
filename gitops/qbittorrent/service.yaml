@@ -5,8 +5,8 @@ metadata:
 spec:
   ports:
   - name: app
-    port: 80
-    targetPort: 8080
+    port: 8443
+    targetPort: 8443
     protocol: TCP
     appProtocol: http
   - name: traffic

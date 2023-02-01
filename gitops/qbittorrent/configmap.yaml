@@ -6,4 +6,4 @@ data:
   PUID: "1000"
   PGID: "1000"
   TZ: Europe/London
-  WEBUI_PORT: "8080"
+  WEBUI_PORT: "8443"
