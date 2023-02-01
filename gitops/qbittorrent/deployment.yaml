@@ -25,7 +25,7 @@ spec:
           name: traffic
           protocol: TCP
         - containerPort: 6881
-          name: traffic
+          name: traffic-udp
           protocol: UDP
         envFrom:
         - configMapRef:

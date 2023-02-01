@@ -6,8 +6,18 @@ spec:
   ports:
   - name: app
     port: 80
-    targetPort: 9696
+    targetPort: 8080
     protocol: TCP
     appProtocol: http
+  - name: traffic
+    port: 6881
+    targetPort: 6881
+    protocol: TCP
+    appProtocol: TCP
+  - name: traffic-udp
+    port: 6881
+    targetPort: 6881
+    protocol: UDP
+    appProtocol: UDP
   selector:
     app: qbittorrent
