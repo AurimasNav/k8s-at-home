@@ -23,9 +23,9 @@ spec:
         - configMapRef:
             name: prowlarr
         volumeMounts:
-        - name: prowlarr-data
+        - name: prowlarr-config
           mountPath: /config
       volumes:
-      - name: prowlarr-data
+      - name: prowlarr-config
         persistentVolumeClaim:
-          claimName: prowlarr-data
+          claimName: prowlarr-config

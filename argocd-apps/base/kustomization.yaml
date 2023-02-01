@@ -10,3 +10,4 @@ resources:
 - ./apps/cert-manager
 - ./apps/local-path-provisioner
 - ./apps/external-secrets
+- ./apps/qbittorrent
