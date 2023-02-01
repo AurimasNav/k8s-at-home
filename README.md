@@ -9,6 +9,7 @@
   - [Secret store setup - Doppler](#secret-store-setup---doppler)
     - [Setup saas part](#setup-saas-part)
     - [Setup external secrets integration](#setup-external-secrets-integration)
+  - [Alternative UI for qBittorrent | Mobile friendly iQbit](#alternative-ui-for-qbittorrent--mobile-friendly-iqbit)
 
 
 # Setup k8s-at-home on Ubuntu 22.04
@@ -271,4 +272,20 @@
     ```sh
     kubectl apply -f ~/doppler-secret.yaml -n external-secrets
     ```
-    
+
+## Alternative UI for qBittorrent | [Mobile friendly iQbit](https://github.com/ntoporcov/iQbit)
+
+- get pvc name (ssh to k3s_host)
+
+    ```sh
+    VOL = $(kubectl get pvc qbittorrent-config -ojsonpath="{.spec.volumeName}")
+    cd /opt/local-path-provisioner/${VOL}_qbittorrent_qbittorrent-config
+    git clone https://github.com/ntoporcov/iQbit.git
+    ```
+
+- change qbittorent setttings to use alternative webUI
+  - login to qbittorent webui
+  - go to options (gear icon)
+  - navigate to Web UI tab
+  - [x] Use alternative Web UI
+  - Files location: `/config/iQbit/release`
