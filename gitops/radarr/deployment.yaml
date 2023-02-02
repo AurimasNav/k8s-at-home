@@ -32,5 +32,7 @@ spec:
         persistentVolumeClaim:
           claimName: radarr-config
       - name: data
-        hostPath: /data
-        type: DirectoryOrCreate
+        hostPath:
+          path: /data
+          type: Directory
+

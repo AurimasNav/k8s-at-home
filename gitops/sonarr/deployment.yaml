@@ -32,5 +32,6 @@ spec:
         persistentVolumeClaim:
           claimName: sonarr-config
       - name: data
-        hostPath: /data
-        type: DirectoryOrCreate
+        hostPath:
+          path: /data
+          type: Directory

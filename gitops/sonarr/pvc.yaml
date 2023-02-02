@@ -4,7 +4,7 @@ metadata:
   name: sonarr-config
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   storageClassName: local-path
   resources:
     requests:
