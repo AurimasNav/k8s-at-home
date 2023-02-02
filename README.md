@@ -4,6 +4,7 @@
   - [Setup k3s on hosting machine (further referred as k3s\_host)](#setup-k3s-on-hosting-machine-further-referred-as-k3s_host)
   - [Setup tools on management host (tested on ubuntu 22.04 wsl)](#setup-tools-on-management-host-tested-on-ubuntu-2204-wsl)
   - [Install helm](#install-helm)
+  - [Setup directory structure for media](#setup-directory-structure-for-media)
   - [Install argo-cd](#install-argo-cd)
     - [Deploy argo-cd applications](#deploy-argo-cd-applications)
   - [Secret store setup - Doppler](#secret-store-setup---doppler)
@@ -184,6 +185,15 @@
     ```sh
     $ kustomize version --short
     {kustomize/v4.5.7  2022-08-02T16:35:54Z  }
+    ```
+
+## Setup directory structure for media
+
+- create directories to map to sonarr/radarr etc.
+
+    ```sh
+    sudo mkdir -p /data/torrents/movies /data/torrents/tv \
+    /data/media/movies /data/media/tv
     ```
 
 ## Install argo-cd

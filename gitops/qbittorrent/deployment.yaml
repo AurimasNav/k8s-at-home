@@ -33,12 +33,13 @@ spec:
         volumeMounts:
         - name: qbittorrent-config
           mountPath: /config
-        - name: qbittorrent-downloads
+        - name: downloads
           mountPath: /downloads
       volumes:
       - name: qbittorrent-config
         persistentVolumeClaim:
           claimName: qbittorrent-config
-      - name: qbittorrent-downloads
-        persistentVolumeClaim:
-          claimName: qbittorrent-downloads
+      - name: downloads
+        hostPath:
+          path: /data/torrents
+          type: Directory
