@@ -5,8 +5,8 @@ metadata:
   namespace: prowlarr
   annotations:
     #cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/auth-url: "https://$host/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start?rd=$escaped_request_uri"
+    nginx.ingress.kubernetes.io/auth-url: "https://$host:8443/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://$host:8443/oauth2/start?rd=$escaped_request_uri"
 spec:
   ingressClassName: nginx
   # tls:
