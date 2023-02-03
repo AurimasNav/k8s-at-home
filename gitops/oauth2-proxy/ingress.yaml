@@ -15,7 +15,7 @@ spec:
   - host: oauth.sync.lt
     http:
       paths:
-      - path: /_oauth
+      - path: /oauth2
         pathType: Prefix
         backend:
           service:
