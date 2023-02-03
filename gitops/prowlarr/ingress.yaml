@@ -3,15 +3,15 @@ kind: Ingress
 metadata:
   name: prowlarr
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    #cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/auth-url: "https://oauth.sync.lt/oauth2"
     nginx.ingress.kubernetes.io/auth-signin: "https://oauth.sync.lt/oauth2/start?rd=$escaped_request_uri"
 spec:
   ingressClassName: nginx
-  tls:
-  - hosts:
-    - prowlarr.sync.lt
-    secretName: prowlarr-letsencrypt
+  # tls:
+  # - hosts:
+  #   - prowlarr.sync.lt
+  #   secretName: prowlarr-letsencrypt
   rules:
   - host: prowlarr.sync.lt
     http:
