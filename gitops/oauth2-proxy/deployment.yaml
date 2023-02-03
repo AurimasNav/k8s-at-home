@@ -20,7 +20,7 @@ spec:
         envFrom:
         - secretRef:
             name: oauth2-proxy
-        - configMap:
+        - configMapRef:
             name: oauth2-proxy
         image: quay.io/oauth2-proxy/oauth2-proxy:latest
         imagePullPolicy: Always
