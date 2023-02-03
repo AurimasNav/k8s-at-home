@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oauth2-proxy
+  namespace: oauth2-proxy
+data:
+  OAUTH2_PROXY_PROVIDER: google
+  OAUTH2_PROXY_EMAIL_DOMAIN: "*"
+  OAUTH2_PROXY_UPSTREAM: "file:///dev/nul"
+  OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4180"
+  OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE: /etc/oauth2-proxy/authenticated-emails

@@ -11,6 +11,7 @@
     - [Setup saas part](#setup-saas-part)
     - [Setup external secrets integration](#setup-external-secrets-integration)
   - [Alternative UI for qBittorrent | Mobile friendly iQbit](#alternative-ui-for-qbittorrent--mobile-friendly-iqbit)
+  - [OAuth with google](#oauth-with-google)
 
 
 # Setup k8s-at-home on Ubuntu 22.04
@@ -300,3 +301,18 @@
   - navigate to Web UI tab
   - [x] Use alternative Web UI
   - Files location: `/config/iQbit/release`
+
+## OAuth with google
+
+- Follow [Google Auth Provider](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#google-auth-provider) instructions (steps 1-7)
+
+- generate oauth2-proxy cookie secret
+
+    ```sh
+    dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo
+    ```
+
+- Add secrets for OAuth to Doppler secret store
+    - `GOOGLE_OAUTH_CLIENT_ID`: `<client_id_value>` (from Google Auth Provider step)
+    - `GOOGLE_OAUTH_CLIENT_SECRET`: `<client_secret_value>` (from Google Auth Provider step)
+    - `OAUTH2_PROXY_COOKIE_SECRET`: `<value_from_previous_step>`
