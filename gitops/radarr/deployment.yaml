@@ -18,7 +18,7 @@ spec:
       - name: radarr
         image: lscr.io/linuxserver/radarr:latest
         ports:
-        - containerPort: 9696
+        - containerPort: 7878
         envFrom:
         - configMapRef:
             name: radarr

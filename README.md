@@ -189,7 +189,7 @@
 
 ## Setup directory structure for media
 
-- create directories to map to sonarr/radarr etc.
+- create directories on `k3s_host` to map to sonarr/radarr etc.
 
     ```sh
     sudo mkdir -p /data/torrents/movies /data/torrents/tv \
@@ -260,10 +260,11 @@
 
 - create project - k8s-at-home
 
-- add secrets to Production environment
-
 - from Production env navigate to *ACCESS* and generate service token named `external-secrets` - save the generated token.
-  
+
+- add secrets to Production environment
+  - key: `PLEX_CLAIM` value: `<claimToken>` (can be obtained from [https://www.plex.tv/claim](https://www.plex.tv/claim))
+
 ### Setup external secrets integration
 
 - update doppler secret template

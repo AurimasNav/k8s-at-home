@@ -13,3 +13,4 @@ resources:
 - ./apps/qbittorrent
 - ./apps/sonarr
 - ./apps/radarr
+- ./apps/plex

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: plex
+spec:
+  ports:
+  - name: app
+    port: 32400
+    targetPort: 32400
+    protocol: TCP
+    appProtocol: http
+  - port: 32410
+    targetPort: 32410
+    protocol: UDP
+  - port: 32412
+    targetPort: 32412
+    protocol: UDP
+  - port: 32413
+    targetPort: 32413
+    protocol: UDP
+  - port: 32414
+    targetPort: 32414
+    protocol: UDP
+  selector:
+    app: plex
+  type: LoadBalancer
+  clusterIP: 192.168.1.129
