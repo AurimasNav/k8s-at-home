@@ -12,15 +12,19 @@ spec:
   - port: 32410
     targetPort: 32410
     protocol: UDP
+    name: GDP-1
   - port: 32412
     targetPort: 32412
     protocol: UDP
+    name: GDP-2
   - port: 32413
     targetPort: 32413
     protocol: UDP
+    name: GDP-3
   - port: 32414
     targetPort: 32414
     protocol: UDP
+    name: GDP-4
   selector:
     app: plex
   type: LoadBalancer
