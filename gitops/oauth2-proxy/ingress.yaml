@@ -9,10 +9,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - prowlarr.sync.lt
-    secretName: prowlarr-letsencrypt
+    - oauth.sync.lt
+    secretName: oauth-letsencrypt
   rules:
-  - host: prowlarr.sync.lt
+  - host: oauth.sync.lt
     http:
       paths:
       - path: /oauth2
