@@ -14,3 +14,4 @@ resources:
 - ./apps/sonarr
 - ./apps/radarr
 - ./apps/plex
+- ./apps/oauth2-proxy
