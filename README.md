@@ -316,3 +316,4 @@
     - `GOOGLE_OAUTH_CLIENT_ID`: `<client_id_value>` (from Google Auth Provider step)
     - `GOOGLE_OAUTH_CLIENT_SECRET`: `<client_secret_value>` (from Google Auth Provider step)
     - `OAUTH2_PROXY_COOKIE_SECRET`: `<value_from_previous_step>`
+    - `AUTHENTICATED_EMAILS`: `email1@gmail.com` (list of allowed emails to login - one per line)
