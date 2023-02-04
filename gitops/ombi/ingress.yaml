@@ -33,4 +33,3 @@ spec:
             name: ombi
             port:
               name: app
-              

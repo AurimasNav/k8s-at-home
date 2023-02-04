@@ -289,6 +289,15 @@
     ```sh
     watch kubectl get pods -n argocd
     ```
+- ignore the errors:
+
+    these will be taken care of automatically once argocd deploys missing dependencies
+
+    ```log
+    resource mapping not found for name: "argocd" namespace: "argocd" from "STDIN": no matches for kind "ExternalSecret" in version "external-secrets.io/v1beta1"
+    ensure CRDs are installed first
+    Error from server (BadRequest): error when creating "STDIN": Service in version "v1" cannot be handled as a Service: strict decoding error: unknown field "spec.loadBalancerIp
+    ```
 
 ### Deploy argo-cd applications
 
@@ -296,7 +305,14 @@
 
     ```sh
     podcidr=$(kubectl get nodes -o jsonpath='{.items[*].spec.podCIDR}')
-    sed -i "s/10.244.0.0\/16/${podcidr/\//\\/}/g" ~/k8s-at-home/gitops/flannel/patch.configmap.yaml
+    sed -i -r "s/\b([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]{1,2}\b/${podcidr/\//\\/}/g" ~/k8s-at-home/gitops/flannel/patch.configmap.yaml
+    ```
+- commit updated flannel network back to remote
+
+    ```sh
+    git add .
+    git commit -m "update flannel network"
+    git push
     ```
 
 - create root application
