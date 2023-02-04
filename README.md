@@ -1,6 +1,7 @@
 - [Setup k8s-at-home on Ubuntu 22.04](#setup-k8s-at-home-on-ubuntu-2204)
   - [Disclaimer](#disclaimer)
   - [DNS records used in this setup](#dns-records-used-in-this-setup)
+  - [Fork and clone](#fork-and-clone)
   - [Uninstall k3s](#uninstall-k3s)
   - [Setup k3s on hosting machine (further referred as k3s\_host)](#setup-k3s-on-hosting-machine-further-referred-as-k3s_host)
   - [Setup tools on management host (tested on ubuntu 22.04 wsl)](#setup-tools-on-management-host-tested-on-ubuntu-2204-wsl)
@@ -26,10 +27,21 @@
 ## DNS records used in this setup
 
 - sync.lt - all other entries are CNAME records pointing to this parent domain
+- login
 - prowlarr
 - sonarr
 - radarr
 - qbittorrent
+
+## Fork and clone
+
+- if you want to re-use this for you domain, fork it and replace all references to sync.lt domain to your own domain
+
+- clone k8s-at-home repository
+
+    ```sh
+    git clone https://github.com/AurimasNav/k8s-at-home.git ~/k8s-at-home
+    ```
 
 ## Uninstall k3s
 
@@ -264,12 +276,6 @@
 
     ```sh
     kubectl create namespace argocd
-    ```
-
-- clone k8s-at-home repository
-
-    ```sh
-    git clone https://github.com/AurimasNav/k8s-at-home.git ~/k8s-at-home
     ```
 
 - deploy resources from kustomization file
