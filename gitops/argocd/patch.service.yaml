@@ -3,4 +3,4 @@
   value: LoadBalancer
 - op: replace
   path: /spec/loadBalancerIp
-  value: 192.168.1.128
+  value: 192.168.1.222
