@@ -4,6 +4,8 @@ kind: Kustomization
 namespace: argocd
 resources:
 - https://raw.githubusercontent.com/argoproj/argo-cd/v2.5.9/manifests/install.yaml
+- ./externalsecret.yaml
+
 patches:
 - path: patch.service.yaml
   target:

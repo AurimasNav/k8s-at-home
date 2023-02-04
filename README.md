@@ -12,6 +12,7 @@
   - [OAuth with google](#oauth-with-google)
   - [Install argo-cd](#install-argo-cd)
     - [Deploy argo-cd applications](#deploy-argo-cd-applications)
+    - [Update argo-cd password](#update-argo-cd-password)
   - [Alternative UI for qBittorrent | Mobile friendly iQbit](#alternative-ui-for-qbittorrent--mobile-friendly-iqbit)
 
 
@@ -310,6 +311,15 @@
     ```
     - open browser and navigate to http://localhost:8080
     - login with `admin` and password obtained earlier
+
+### Update argo-cd password
+
+- verify that external-secrets is up and running
+  
+- encrypt your password with bcrypt (use sdk of your preferred language or do it [online](https://bcrypt.online/))
+
+- add generated bcrypt hash to doppler secrets
+  - `ARGOCD_ADMIN_PASSWORD`: `<your bcrypt hash>`
 
 ## Alternative UI for qBittorrent | [Mobile friendly iQbit](https://github.com/ntoporcov/iQbit)
 
