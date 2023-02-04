@@ -5,13 +5,13 @@
   - [Setup tools on management host (tested on ubuntu 22.04 wsl)](#setup-tools-on-management-host-tested-on-ubuntu-2204-wsl)
   - [Install helm](#install-helm)
   - [Setup directory structure for media](#setup-directory-structure-for-media)
-  - [Install argo-cd](#install-argo-cd)
-    - [Deploy argo-cd applications](#deploy-argo-cd-applications)
   - [Secret store setup - Doppler](#secret-store-setup---doppler)
     - [Setup saas part](#setup-saas-part)
     - [Setup external secrets integration](#setup-external-secrets-integration)
-  - [Alternative UI for qBittorrent | Mobile friendly iQbit](#alternative-ui-for-qbittorrent--mobile-friendly-iqbit)
   - [OAuth with google](#oauth-with-google)
+  - [Install argo-cd](#install-argo-cd)
+    - [Deploy argo-cd applications](#deploy-argo-cd-applications)
+  - [Alternative UI for qBittorrent | Mobile friendly iQbit](#alternative-ui-for-qbittorrent--mobile-friendly-iqbit)
 
 
 # Setup k8s-at-home on Ubuntu 22.04
@@ -197,6 +197,57 @@
     /data/media/movies /data/media/tv
     ```
 
+## Secret store setup - Doppler
+
+### Setup saas part
+
+- create account https://www.doppler.com/
+
+- create workspace - k8s-at-home
+
+- create project - k8s-at-home
+
+- from Production env navigate to *ACCESS* and generate service token named `external-secrets` - save the generated token.
+
+- add secrets to Production environment
+  - key: `PLEX_CLAIM` value: `<claimToken>` (can be obtained from [https://www.plex.tv/claim](https://www.plex.tv/claim))
+
+### Setup external secrets integration
+
+- update doppler secret template
+
+    ```sh
+    cp ~/k8s-at-home/src/doppler-secret.yaml ~
+    read -p "Enter doppler service token: " SERVICE_TOKEN
+
+    $ Enter doppler service token: <you_service_token_here>
+
+    sed -i 's/dopler-service-token/'"$(echo $SERVICE_TOKEN|base64)"/ ~/doppler-secret.yaml
+    ```
+
+- create secret
+
+    ```sh
+    kubectl create namespace external-secrets
+    kubectl apply -f ~/doppler-secret.yaml -n external-secrets
+    ```
+
+## OAuth with google
+
+- Follow [Google Auth Provider](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#google-auth-provider) instructions (steps 1-7)
+
+- generate oauth2-proxy cookie secret
+
+    ```sh
+    dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo
+    ```
+
+- Add secrets for OAuth to Doppler secret store
+    - `GOOGLE_OAUTH_CLIENT_ID`: `<client_id_value>` (from Google Auth Provider step)
+    - `GOOGLE_OAUTH_CLIENT_SECRET`: `<client_secret_value>` (from Google Auth Provider step)
+    - `OAUTH2_PROXY_COOKIE_SECRET`: `<value_from_previous_step>`
+    - `AUTHENTICATED_EMAILS`: `email1@gmail.com` (list of allowed emails to login - one per line)
+
 ## Install argo-cd
 
 - create namespace for argocd
@@ -251,40 +302,6 @@
     - open browser and navigate to http://localhost:8080
     - login with `admin` and password obtained earlier
 
-## Secret store setup - Doppler
-
-### Setup saas part
-
-- create account https://www.doppler.com/
-
-- create workspace - k8s-at-home
-
-- create project - k8s-at-home
-
-- from Production env navigate to *ACCESS* and generate service token named `external-secrets` - save the generated token.
-
-- add secrets to Production environment
-  - key: `PLEX_CLAIM` value: `<claimToken>` (can be obtained from [https://www.plex.tv/claim](https://www.plex.tv/claim))
-
-### Setup external secrets integration
-
-- update doppler secret template
-
-    ```sh
-    cp ~/k8s-at-home/src/doppler-secret.yaml ~
-    read -p "Enter doppler service token: " SERVICE_TOKEN
-
-    $ Enter doppler service token: <you_service_token_here>
-
-    sed -i 's/dopler-service-token/'"$(echo $SERVICE_TOKEN|base64)"/ ~/doppler-secret.yaml
-    ```
-
-- create secret
-
-    ```sh
-    kubectl apply -f ~/doppler-secret.yaml -n external-secrets
-    ```
-
 ## Alternative UI for qBittorrent | [Mobile friendly iQbit](https://github.com/ntoporcov/iQbit)
 
 - get pvc name (ssh to k3s_host)
@@ -301,19 +318,3 @@
   - navigate to Web UI tab
   - [x] Use alternative Web UI
   - Files location: `/config/iQbit/release`
-
-## OAuth with google
-
-- Follow [Google Auth Provider](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#google-auth-provider) instructions (steps 1-7)
-
-- generate oauth2-proxy cookie secret
-
-    ```sh
-    dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo
-    ```
-
-- Add secrets for OAuth to Doppler secret store
-    - `GOOGLE_OAUTH_CLIENT_ID`: `<client_id_value>` (from Google Auth Provider step)
-    - `GOOGLE_OAUTH_CLIENT_SECRET`: `<client_secret_value>` (from Google Auth Provider step)
-    - `OAUTH2_PROXY_COOKIE_SECRET`: `<value_from_previous_step>`
-    - `AUTHENTICATED_EMAILS`: `email1@gmail.com` (list of allowed emails to login - one per line)
