@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: oauth2-proxy
+  name: oauth2-proxy-prowlarr
   namespace: oauth2-proxy
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -26,7 +26,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: oauth2-proxy
+  name: oauth2-proxy-radarr
   namespace: oauth2-proxy
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
