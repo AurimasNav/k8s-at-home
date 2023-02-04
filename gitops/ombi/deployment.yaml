@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ombi
+  labels:
+    app: ombi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ombi
+  template:
+    metadata:
+      labels:
+        app: ombi
+    spec:
+      containers:
+      - name: ombi
+        image: lscr.io/linuxserver/ombi:latest
+        ports:
+        - containerPort: 3579
+        envFrom:
+        - configMapRef:
+            name: ombi
+        volumeMounts:
+        - name: ombi-config
+          mountPath: /config
+      volumes:
+      - name: ombi-config
+        persistentVolumeClaim:
+          claimName: ombi-config
