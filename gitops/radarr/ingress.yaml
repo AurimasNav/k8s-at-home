@@ -8,6 +8,10 @@ metadata:
     nginx.ingress.kubernetes.io/auth-url: "https://login.sync.lt/oauth2/auth"
     nginx.ingress.kubernetes.io/auth-signin: "https://login.sync.lt/oauth2/start?rd=$scheme://$best_http_host$escaped_request_uri"
 spec:
+  tls:
+  - hosts:
+    - radarr.sync.lt
+    secretName: radarr-letsencrypt
   rules:
   - host: radarr.sync.lt
     http:
