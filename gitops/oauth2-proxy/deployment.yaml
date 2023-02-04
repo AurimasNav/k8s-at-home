@@ -17,8 +17,6 @@ spec:
     spec:
       containers:
       - name: oauth2-proxy
-        args:
-        - --cookie-domain=.sync.lt
         envFrom:
         - secretRef:
             name: oauth2-proxy
