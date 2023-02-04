@@ -219,6 +219,8 @@
     /data/media/movies /data/media/tv
     ```
 
+- this assumes that your storage volume is mounted to /data
+
 ## Secret store setup - Doppler
 
 ### Setup saas part
