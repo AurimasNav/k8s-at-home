@@ -1,5 +1,6 @@
 - [Setup k8s-at-home on Ubuntu 22.04](#setup-k8s-at-home-on-ubuntu-2204)
   - [Disclaimer](#disclaimer)
+  - [DNS records used in this setup](#dns-records-used-in-this-setup)
   - [Uninstall k3s](#uninstall-k3s)
   - [Setup k3s on hosting machine (further referred as k3s\_host)](#setup-k3s-on-hosting-machine-further-referred-as-k3s_host)
   - [Setup tools on management host (tested on ubuntu 22.04 wsl)](#setup-tools-on-management-host-tested-on-ubuntu-2204-wsl)
@@ -7,7 +8,7 @@
   - [Setup directory structure for media](#setup-directory-structure-for-media)
   - [Secret store setup - Doppler](#secret-store-setup---doppler)
     - [Setup saas part](#setup-saas-part)
-    - [Setup external secrets integration](#setup-external-secrets-integration)
+    - [Prepare external-secrets for doppler secret store](#prepare-external-secrets-for-doppler-secret-store)
   - [OAuth with google](#oauth-with-google)
   - [Install argo-cd](#install-argo-cd)
     - [Deploy argo-cd applications](#deploy-argo-cd-applications)
@@ -20,6 +21,14 @@
 
 - this is for learning first and getting something useful later
 - security and HA are not in scope for this exercise 
+
+## DNS records used in this setup
+
+- sync.lt - all other entries are CNAME records pointing to this parent domain
+- prowlarr
+- sonarr
+- radarr
+- qbittorrent
 
 ## Uninstall k3s
 
@@ -212,7 +221,7 @@
 - add secrets to Production environment
   - key: `PLEX_CLAIM` value: `<claimToken>` (can be obtained from [https://www.plex.tv/claim](https://www.plex.tv/claim))
 
-### Setup external secrets integration
+### Prepare external-secrets for doppler secret store
 
 - update doppler secret template
 
