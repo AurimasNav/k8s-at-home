@@ -46,28 +46,24 @@ spec:
 #             name: oauth2-proxy
 #             port:
 #               number: 4180
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: oauth2-proxy-radarr
-  namespace: oauth2-proxy
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-spec:
-  ingressClassName: nginx
-  tls:
-  - hosts:
-    - radarr.sync.lt
-    secretName: radarr-letsencrypt
-  rules:
-  - host: radarr.sync.lt
-    http:
-      paths:
-      - path: /oauth2
-        pathType: Prefix
-        backend:
-          service:
-            name: oauth2-proxy
-            port:
-              number: 4180
+#---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: oauth2-proxy-radarr
+#   namespace: oauth2-proxy
+#   annotations:
+#     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+# spec:
+#   ingressClassName: nginx
+#   rules:
+#   - host: radarr.sync.lt
+#     http:
+#       paths:
+#       - path: /oauth2
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: oauth2-proxy
+#             port:
+#               number: 4180
