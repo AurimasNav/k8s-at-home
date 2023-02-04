@@ -9,10 +9,35 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - oauth.sync.lt
-    secretName: oauth-letsencrypt
+    - prowlarr.sync.lt
+    secretName: prowlarr-letsencrypt
   rules:
-  - host: oauth.sync.lt
+  - host: prowlarr.sync.lt
+    http:
+      paths:
+      - path: /oauth2
+        pathType: Prefix
+        backend:
+          service:
+            name: oauth2-proxy
+            port:
+              number: 4180
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-proxy
+  namespace: oauth2-proxy
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - radarr.sync.lt
+    secretName: radarr-letsencrypt
+  rules:
+  - host: radarr.sync.lt
     http:
       paths:
       - path: /oauth2
