@@ -1,9 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: qbittorrent
-  annotations:
-    metallb.universe.tf/loadBalancerIPs: 192.168.1.212
+  name: qbittorrent-webui
 spec:
   ports:
   - name: app
@@ -11,6 +9,17 @@ spec:
     targetPort: 8080
     protocol: TCP
     appProtocol: http
+  selector:
+    app: qbittorrent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent-traffic
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.212
+spec:
+  ports:
   - name: traffic
     port: 6881
     targetPort: 6881
