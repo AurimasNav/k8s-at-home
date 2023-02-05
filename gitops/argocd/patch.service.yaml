@@ -1,6 +1,6 @@
 - op: replace
   path: /spec/type
   value: LoadBalancer
-- op: replace
-  path: /spec/loadBalancerIP
+- op: add
+  path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
   value: 192.168.1.222
