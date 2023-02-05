@@ -7,4 +7,3 @@ data:
   PGID: "1000"
   UMASK: "002"
   TZ: Europe/London
-  WEBUI_PORT: "8443"
