@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: qbittorrent
-        image: lscr.io/linuxserver/qbittorrent:latest
+        image: cr.hotio.dev/hotio/qbittorrent:release
         ports:
         - containerPort: 8443
           name: webui
