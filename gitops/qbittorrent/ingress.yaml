@@ -20,6 +20,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: qbittorrent
+            name: qbittorrent-webui
             port:
               name: app
