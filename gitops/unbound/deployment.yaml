@@ -28,10 +28,10 @@ spec:
           protocol: UDP
         volumeMounts:
         - name: root-hints
-          mountPath: /opt/unbound/etc/unbound/var/
+          mountPath: /opt/unbound/etc/unbound/var/root.hints
           subPath: root.hints
         - name: pi-hole-config
-          mountPath: /opt/unbound/etc/unbound/
+          mountPath: /opt/unbound/etc/unbound/pi-hole.conf
           subPath: pi-hole.conf
       volumes:
       - name: root-hints
