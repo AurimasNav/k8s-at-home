@@ -22,7 +22,7 @@ spec:
             name: unbound
         - configMapRef:
             name: unbound
-        image: unbound/unbound:latest
+        image: mvance/unbound:latest
         imagePullPolicy: Always
         ports:
         - name: dns-tcp
