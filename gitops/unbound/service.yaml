@@ -5,6 +5,8 @@ metadata:
     app: unbound
   name: unbound
   namespace: unbound
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.154
 spec:
   ports:
   - name: dns-tcp
@@ -19,3 +21,4 @@ spec:
     appProtocol: domain
   selector:
     app: unbound
+  type: LoadBalancer
