@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: pihole
+  name: pihole
+  namespace: pihole
+spec:
+  ports:
+  - name: webgui
+    port: 80
+    protocol: TCP  
+    targetPort: 80
+    appProtocol: http
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+    targetPort: 53
+    appProtocol: domain
+  - name: dns-udp
+    port: 53
+    protocol: UDP
+    targetPort: 53
+    appProtocol: domain
+  - name: dhcp
+    port: 67
+    protocol: UDP
+    targetPort: 67
+    appProtocol: bootps
+  selector:
+    app: pihole
