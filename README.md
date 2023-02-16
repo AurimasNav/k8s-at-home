@@ -14,6 +14,7 @@
   - [Install argo-cd](#install-argo-cd)
     - [Deploy argo-cd applications](#deploy-argo-cd-applications)
     - [Update argo-cd password](#update-argo-cd-password)
+  - [Pi-Hole / Unbound config](#pi-hole--unbound-config)
   - [Alternative UI for qBittorrent | Mobile friendly iQbit](#alternative-ui-for-qbittorrent--mobile-friendly-iqbit)
 
 
@@ -344,6 +345,13 @@
 
 - add generated bcrypt hash to doppler secrets
   - `ARGOCD_ADMIN_PASSWORD`: `<your bcrypt hash>`
+
+## Pi-Hole / Unbound config
+
+- add pihole webui password to doppler secrets
+  - `PIHOLE_WEBPASSWORD`: `<your pihole admin password>`
+
+- update unbount config to allow_snoop from kubernetes interal address range
 
 ## Alternative UI for qBittorrent | [Mobile friendly iQbit](https://github.com/ntoporcov/iQbit)
 

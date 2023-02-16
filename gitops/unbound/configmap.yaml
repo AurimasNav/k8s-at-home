@@ -8,7 +8,7 @@ data:
     server:
     # If no logfile is specified, syslog is used
     logfile: "/opt/unbound/etc/unbound/unbound.log"
-    verbosity: 5
+    verbosity: 0
 
     interface: 0.0.0.0
     port: 53
