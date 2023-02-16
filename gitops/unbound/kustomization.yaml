@@ -11,3 +11,5 @@ configMapGenerator:
 - name: root-hints
   files:
   - root.hints=https://www.internic.net/domain/named.root
+  options:
+    disableNameSuffixHash: true
