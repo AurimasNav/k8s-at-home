@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: pihole
-  namespace: pihole
+  name: unbound
+  namespace: unbound
 data:
   TZ: Europe/Vilnius
