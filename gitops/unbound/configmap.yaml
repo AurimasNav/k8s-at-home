@@ -71,3 +71,6 @@ data:
     private-address: 10.0.0.0/8
     private-address: fd00::/8
     private-address: fe80::/10
+
+    # without it dns queries fail with 'refused query because of 0.0.0.0/32 refuse'
+    access-control: 10.42.0.0/24 allow_snoop
