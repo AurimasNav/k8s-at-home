@@ -29,10 +29,8 @@ spec:
         volumeMounts:
         - name: root-hints
           mountPath: /opt/unbound/etc/unbound/var/
-          readOnly: true
         - name: pi-hole-config
           mountPath: /opt/unbound/etc/unbound/
-          readOnly: true
       volumes:
       - name: root-hints
         configMap:
