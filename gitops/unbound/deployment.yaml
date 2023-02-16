@@ -28,7 +28,7 @@ spec:
           protocol: UDP
         volumeMounts:
         - name: root-hints
-          mountPath: /opt/unbound/etc/unbound/var/root.hints
+          mountPath: /opt/unbound/etc/unbound/root.hints
           subPath: root.hints
         - name: pi-hole-config
           mountPath: /opt/unbound/etc/unbound/unbound.conf

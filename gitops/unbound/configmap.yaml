@@ -7,7 +7,7 @@ data:
   unbound.conf: |
     server:
     # If no logfile is specified, syslog is used
-    # logfile: "/var/log/unbound/unbound.log"
+    logfile: "/opt/unbound/etc/unbound/var/log/unbound/unbound.log"
     verbosity: 2
 
     interface: 0.0.0.0
@@ -25,7 +25,7 @@ data:
 
     # Use this only when you downloaded the list of primary root servers!
     # If you use the default dns-root-data package, unbound will find it automatically
-    root-hints: "/opt/unbound/etc/unbound/var/root.hints"
+    root-hints: "/opt/unbound/etc/unbound/root.hints"
 
     # Trust glue only if it is within the server's authority
     harden-glue: yes
