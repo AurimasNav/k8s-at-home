@@ -33,6 +33,9 @@ spec:
         - name: pi-hole-config
           mountPath: /opt/unbound/etc/unbound/unbound.conf
           subPath: unbound.conf
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
       volumes:
       - name: root-hints
         configMap:

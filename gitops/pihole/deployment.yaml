@@ -36,7 +36,7 @@ spec:
           protocol: UDP
         - name: webgui
           containerPort: 80
-          protocol: TCP      
+          protocol: TCP
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
