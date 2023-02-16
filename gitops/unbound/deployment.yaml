@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: unbound
+  name: unbound
+  namespace: unbound
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unbound
+  template:
+    metadata:
+      labels:
+        app: unbound
+    spec:
+      containers:
+      - name: unbound
+        envFrom:
+        - secretRef:
+            name: unbound
+        - configMapRef:
+            name: unbound
+        image: unbound/unbound:latest
+        imagePullPolicy: Always
+        ports:
+        - name: dns-tcp
+          containerPort: 53
+          protocol: TCP
+        - name: dns-udp
+          containerPort: 53
+          protocol: UDP
