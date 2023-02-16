@@ -17,9 +17,6 @@ spec:
     spec:
       containers:
       - name: unbound
-        envFrom:
-        - configMapRef:
-            name: unbound
         image: mvance/unbound:latest
         imagePullPolicy: Always
         ports:
@@ -29,3 +26,24 @@ spec:
         - name: dns-udp
           containerPort: 53
           protocol: UDP
+        volumeMounts:
+        - name: root-hints
+          mountPath: /opt/unbound/etc/unbound/var/
+          readOnly: true
+        volumeMounts:
+        - name: pi-hole-config
+          mountPath: /opt/unbound/etc/unbound/
+          readOnly: true
+      volumes:
+      - name: root-hints
+        configMap:
+          name: root-hints
+          items:
+          - key: root.hints
+            path: root.hints
+      - name: pi-hole-config
+        configMap:
+          name: unbound
+          items:
+          - key: pi-hole.conf
+            path: pi-hole.conf

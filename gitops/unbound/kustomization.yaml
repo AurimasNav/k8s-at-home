@@ -6,3 +6,8 @@ resources:
 - ./service.yaml
 - ./configmap.yaml
 #- ./pvc.yaml
+
+configMapGenerator:
+- name: root-hints
+  files:
+  - root.hints=https://www.internic.net/domain/named.root
