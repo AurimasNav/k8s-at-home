@@ -29,18 +29,14 @@ spec:
         volumeMounts:
         - name: root-hints
           mountPath: /opt/unbound/etc/unbound/var/
+          subPath: root.hints
         - name: pi-hole-config
           mountPath: /opt/unbound/etc/unbound/
+          subPath: pi-hole.conf
       volumes:
       - name: root-hints
         configMap:
           name: root-hints
-          items:
-          - key: root.hints
-            path: root.hints
       - name: pi-hole-config
         configMap:
           name: unbound
-          items:
-          - key: pi-hole.conf
-            path: pi-hole.conf
