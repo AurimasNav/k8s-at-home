@@ -31,8 +31,8 @@ spec:
           mountPath: /opt/unbound/etc/unbound/var/root.hints
           subPath: root.hints
         - name: pi-hole-config
-          mountPath: /opt/unbound/etc/unbound/pi-hole.conf
-          subPath: pi-hole.conf
+          mountPath: /opt/unbound/etc/unbound/unbound.conf
+          subPath: unbound.conf
       volumes:
       - name: root-hints
         configMap:
