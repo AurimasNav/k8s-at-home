@@ -30,7 +30,6 @@ spec:
         - name: root-hints
           mountPath: /opt/unbound/etc/unbound/var/
           readOnly: true
-        volumeMounts:
         - name: pi-hole-config
           mountPath: /opt/unbound/etc/unbound/
           readOnly: true
