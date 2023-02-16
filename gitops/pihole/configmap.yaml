@@ -5,5 +5,4 @@ metadata:
   namespace: pihole
 data:
   TZ: Europe/Vilnius
-  DNS1: 192.168.1.154
-  DNS2: no
+  PIHOLE_DNS_: 192.168.1.154
