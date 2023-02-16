@@ -16,3 +16,4 @@ resources:
 - ./apps/plex
 - ./apps/oauth2-proxy
 - ./apps/ombi
+- ./apps/pihole
