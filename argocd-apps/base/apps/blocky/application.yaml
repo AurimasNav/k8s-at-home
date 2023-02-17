@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: blocky
+  name: pihole
   namespace: argocd
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
     server: https://kubernetes.default.svc
-    namespace: blocky
+    namespace: pihole
   project: default
   source:
-    path: gitops/blocky
+    path: gitops/pihole
     repoURL: https://github.com/AurimasNav/k8s-at-home.git
     targetRevision: main
   syncPolicy:

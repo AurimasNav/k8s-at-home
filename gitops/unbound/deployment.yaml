@@ -30,7 +30,7 @@ spec:
         - name: root-hints
           mountPath: /opt/unbound/etc/unbound/root.hints
           subPath: root.hints
-        - name: pi-hole-config
+        - name: unbound-config
           mountPath: /opt/unbound/etc/unbound/unbound.conf
           subPath: unbound.conf
         securityContext:
@@ -40,6 +40,6 @@ spec:
       - name: root-hints
         configMap:
           name: root-hints
-      - name: pi-hole-config
+      - name: unbound-config
         configMap:
           name: unbound

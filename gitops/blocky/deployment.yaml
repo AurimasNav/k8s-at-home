@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: blocky
+  name: blocky
+  namespace: blocky
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blocky
+  template:
+    metadata:
+      labels:
+        app: blocky
+    spec:
+      containers:
+      - name: blocky
+        envFrom:
+        - secretRef:
+            name: blocky
+        - configMapRef:
+            name: blocky
+        image: spx01/blocky
+        imagePullPolicy: Always
+        ports:
+        - name: dns-tcp
+          containerPort: 53
+          protocol: TCP
+        - name: dns-udp
+          containerPort: 53
+          protocol: UDP
+        volumeMounts:
+        - name: blocky-querylogs
+          mountPath: /logs
+        - name: blocky-config
+          mountPath: /app/config.yml
+          subPath: config.yml
+      volumes:
+      - name: blocky-querylogs
+        persistentVolumeClaim:
+          claimName: blocky-querylogs
+      - name: blocky-config
+        configMap:
+          name: blocky-config

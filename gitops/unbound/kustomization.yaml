@@ -5,7 +5,6 @@ resources:
 - ./deployment.yaml
 - ./service.yaml
 - ./configmap.yaml
-#- ./pvc.yaml
 
 configMapGenerator:
 - name: root-hints

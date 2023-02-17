@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blocky
+  namespace: blocky
+data:
+  TZ: Europe/Vilnius
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blocky-config
+  namespace: blocky
+data:
+  config.yml: |
+    # Basic configuration
+    
+    port: 53
+    # httpPort: 4000 # prometheus metrics
+    logLevel: info
+    logFormat: text
+    logTimestamp: true
+    logPrivacy: false
+    startVerifyUpstream: true
+
+    # Upstream configuration
+
+    upstream:
+      default:
+        tcp+udp:unbound.unbound:53
+    upstreamTimeout: 5s
+
+    # Custom DNS
+    customDNS:
+    mapping:
+      argocd.sync.lt: 192.168.1.222
+      gw.sync.lt: 192.168.1.1
+    
+    # Blocking and whitelisting
+    blocking:
+      blackLists:
+        ads:
+        - https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt
+        - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+        special:
+        - https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews/hosts
+      whiteLists:
+        ads: []
+      clientGroupsBlock:
+        default:
+        - ads
+        - special
+      blockType: zeroIP
+      refreshPeriod: 300m
+      startStrategy: failOnError
+    
+    # Prometheus
+    prometheus:
+      enable: false
+      path: /metrics
+
+    # Query loogging
+    queryLog:
+      type: csv
+      target: /logs
+      logRetentionDays: 7

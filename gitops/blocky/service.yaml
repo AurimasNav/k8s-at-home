@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: blocky
+  name: blocky
+  namespace: blocky
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.153
+spec:
+  ports:
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+    targetPort: 53
+    appProtocol: domain
+  - name: dns-udp
+    port: 53
+    protocol: UDP
+    targetPort: 53
+    appProtocol: domain
+  selector:
+    app: blocky
+  type: LoadBalancer
+  externalTrafficPolicy: Local
