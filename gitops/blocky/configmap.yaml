@@ -27,7 +27,7 @@ data:
 
     upstream:
       default:
-        unbound.unbound.svc.cluster.local
+        192.168.1.154
     upstreamTimeout: 5s
 
     # Custom DNS
