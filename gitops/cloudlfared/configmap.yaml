@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cloudflared
-  namespace: cloudflared
-data:
-  TZ: Europe/Vilnius
