@@ -27,14 +27,14 @@ data:
 
     upstream:
       default:
-        tcp+udp:unbound.unbound:53
+        unbound.unbound.svc.cluster.local
     upstreamTimeout: 5s
 
     # Custom DNS
     customDNS:
-    mapping:
-      argocd.sync.lt: 192.168.1.222
-      gw.sync.lt: 192.168.1.1
+      mapping:
+        argocd.sync.lt: 192.168.1.222
+        gw.sync.lt: 192.168.1.1
     
     # Blocking and whitelisting
     blocking:
