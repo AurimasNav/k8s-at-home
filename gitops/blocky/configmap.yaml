@@ -27,7 +27,7 @@ data:
 
     upstream:
       default:
-        192.168.1.154
+      - tcp+udp:unbound.unbound:53
     upstreamTimeout: 5s
 
     # Custom DNS
