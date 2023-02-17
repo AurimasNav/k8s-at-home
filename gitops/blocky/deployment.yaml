@@ -18,8 +18,6 @@ spec:
       containers:
       - name: blocky
         envFrom:
-        - secretRef:
-            name: blocky
         - configMapRef:
             name: blocky
         image: spx01/blocky
