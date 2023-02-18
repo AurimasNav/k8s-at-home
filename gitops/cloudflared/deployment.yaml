@@ -18,6 +18,6 @@ spec:
       containers:
       - name: cloudflared
         image: cloudflare/cloudflared:latest
-        command: ["run"]
+        command: ["tunnel"]
         args: ["--no-autoupdate", "--hello-world"]
         imagePullPolicy: Always
