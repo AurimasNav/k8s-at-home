@@ -11,6 +11,10 @@
     - [Setup saas part](#setup-saas-part)
     - [Prepare external-secrets for doppler secret store](#prepare-external-secrets-for-doppler-secret-store)
   - [OAuth with google](#oauth-with-google)
+  - [Cloudflare tunnel for securely exposing apps](#cloudflare-tunnel-for-securely-exposing-apps)
+    - [Progresss through DNS configuration on cloudflare](#progresss-through-dns-configuration-on-cloudflare)
+    - [Get started with Cloudflare Zero Trust](#get-started-with-cloudflare-zero-trust)
+    - [Create a tunnel](#create-a-tunnel)
   - [Install argo-cd](#install-argo-cd)
     - [Deploy argo-cd applications](#deploy-argo-cd-applications)
     - [Update argo-cd password](#update-argo-cd-password)
@@ -267,11 +271,74 @@
     dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_'; echo
     ```
 
-- Add secrets for OAuth to Doppler secret store
+- add secrets for OAuth to Doppler secret store
     - `GOOGLE_OAUTH_CLIENT_ID`: `<client_id_value>` (from Google Auth Provider step)
     - `GOOGLE_OAUTH_CLIENT_SECRET`: `<client_secret_value>` (from Google Auth Provider step)
     - `OAUTH2_PROXY_COOKIE_SECRET`: `<value_from_previous_step>`
     - `AUTHENTICATED_EMAILS`: `email1@gmail.com` (list of allowed emails to login - one per line)
+
+## Cloudflare tunnel for securely exposing apps
+
+- create [cloudflare account](https://dash.cloudflare.com/sign-up)
+
+- <button>:heavy_plus_sign: Add Site</button> (free plan)
+
+### Progresss through DNS configuration on cloudflare
+
+- "Review your DNS records" - scroll down and click  <button>Continue</button>
+
+- take note of cloudflare's name servers listed in step 4
+
+- login to your DNS provider and configure cloudflare dns servers for you domain
+
+- finish DNS config on cloudflare side - <button>Done, check nameservers</button>
+
+- at "Quick Start Guide" click `Finish later`
+
+- at "Overview" click on <button>Check nameservers</button> once more
+
+- wait until nameserver config is verified (will receive an email confirming it)
+
+### Get started with Cloudflare Zero Trust
+
+- on the side panel navigate to "Zero Trust"
+
+- in zero trust page navigate to Access->Tunnels
+
+- progress through <button>Complete setup</button> - choose free plan (will require adding payment method, but you won't be charged)
+
+- complete purchase of the free plan for 0 dollars.
+
+### Create a tunnel 
+
+- download cloudflared binary
+
+    ```sh
+    wget -O cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+    ```
+
+- make it executable and login
+
+    ```sh
+    sudo chmod +x cloudlfared
+    ./cloudflared login
+    ```
+
+- click on provided link and login, in the browser click on your cloudflare "site" and <button>Authorize</button> it
+
+- create your tunnel
+
+    ```sh
+    $ ./cloudflared tunnel create <tunnel_name>
+
+    ---
+    Tunnel credentials written to /home/<user>/.cloudflared/<guid>.json. cloudflared chose this file based on where your origin certificate was found. Keep this file secret. To revoke these credentials, delete the tunnel.
+    Created tunnel <tunnel_name> with id <guid>
+    ```
+
+- create doppler secret
+
+    `CLOUDFLARE_CREDENTIALS_JSON`: `<contents_of_guid.json_file>`
 
 ## Install argo-cd
 
@@ -310,11 +377,18 @@
     podcidr=$(kubectl get nodes -o jsonpath='{.items[*].spec.podCIDR}')
     sed -i -r "s/\b([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]{1,2}\b/${podcidr/\//\\/}/g" ~/k8s-at-home/gitops/flannel/patch.configmap.yaml
     ```
-- commit updated flannel network back to remote
+
+- update unbound config to `allow_snoop` from kubernetes interal address range (allows blocky to use unbound as upstream)
+
+    ```sh
+    sed -i -r "s/\b([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]{1,2}\b/${podcidr/\//\\/}/g" ~/k8s-at-home/gitops/unbound/configmap.yaml
+    ```
+
+- commit and push changes back to remote
 
     ```sh
     git add .
-    git commit -m "update flannel network"
+    git commit -m "update kubernetes pod cidr references"
     git push
     ```
 
@@ -351,7 +425,7 @@
 - add pihole webui password to doppler secrets
   - `PIHOLE_WEBPASSWORD`: `<your pihole admin password>`
 
-- update unbount config to allow_snoop from kubernetes interal address range
+
 
 ## Alternative UI for qBittorrent | [Mobile friendly iQbit](https://github.com/ntoporcov/iQbit)
 
