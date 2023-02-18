@@ -17,6 +17,7 @@ spec:
     spec:
       containers:
       - name: cloudflared
+        envFrom:
         - configMapRef:
             name: cloudflared
         image: cloudflare/cloudflared:latest
