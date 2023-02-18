@@ -35,9 +35,8 @@ data:
       service: http://sonarr.sonarr.svc.cluster.local:80
     - hostname: argocd.sync.lt
       service: http://argocd-server.argocd.svc.cluster.local:80
-      originRequest:
-        disableChunkedEncoding: true
-        httpHostHeader: argocd.sync.lt
+    - hostname: qbittorrent.sync.lt
+      service: http://qbittorrent.sync.lt
     # This rule matches any traffic which didn't match a previous rule, and responds with HTTP 404.
     - service: http_status:404
     

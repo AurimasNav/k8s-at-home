@@ -18,4 +18,3 @@ resources:
 - ./apps/ombi
 - ./apps/blocky
 - ./apps/unbound
-- ./apps/cloudflared
