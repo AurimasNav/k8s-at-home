@@ -33,7 +33,7 @@ data:
     # Custom DNS
     customDNS:
       mapping:
-        argocd.sync.lt: 192.168.1.222
+        #argocd.sync.lt: 192.168.1.222
         gw.sync.lt: 192.168.1.1
     
     # Blocking and whitelisting
