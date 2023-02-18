@@ -15,6 +15,7 @@
     - [Progresss through DNS configuration on cloudflare](#progresss-through-dns-configuration-on-cloudflare)
     - [Get started with Cloudflare Zero Trust](#get-started-with-cloudflare-zero-trust)
     - [Create a tunnel](#create-a-tunnel)
+    - [Route internet traffic to cloudflared | doc](#route-internet-traffic-to-cloudflared--doc)
   - [Install argo-cd](#install-argo-cd)
     - [Deploy argo-cd applications](#deploy-argo-cd-applications)
     - [Update argo-cd password](#update-argo-cd-password)
@@ -329,16 +330,24 @@
 - create your tunnel
 
     ```sh
-    $ ./cloudflared tunnel create <tunnel_name>
+    $ ./cloudflared tunnel create my_tunnel
 
     ---
-    Tunnel credentials written to /home/<user>/.cloudflared/<guid>.json. cloudflared chose this file based on where your origin certificate was found. Keep this file secret. To revoke these credentials, delete the tunnel.
-    Created tunnel <tunnel_name> with id <guid>
+    Tunnel credentials written to /home/<user>/.cloudflared/ef824aef-7557-4b41-a398-4684585177ad.json. cloudflared chose this file based on where your origin certificate was found. Keep this file secret. To revoke these credentials, delete the tunnel.
+    Created tunnel my_tunnel with id ef824aef-7557-4b41-a398-4684585177ad
     ```
 
 - create doppler secret
 
-    `CLOUDFLARE_CREDENTIALS_JSON`: `<contents_of_guid.json_file>`
+    `CLOUDFLARE_CREDENTIALS_JSON`: `<contents of ef824aef-7557-4b41-a398-4684585177ad.json>`
+
+### Route internet traffic to cloudflared | [doc](https://developers.cloudflare.com/cloudflare-one/tutorials/many-cfd-one-tunnel/#associate-your-tunnel-with-a-dns-record)
+
+- Go to the Cloudflare dashboard.
+
+- Navigate to the DNS tab.
+  
+- Now create a CNAMEs targeting .cfargotunnel.com. In this example, the tunnel ID is ef824aef-7557-4b41-a398-4684585177ad, so create a CNAME record specifically targeting ef824aef-7557-4b41-a398-4684585177ad.cfargotunnel.com.
 
 ## Install argo-cd
 
@@ -359,6 +368,7 @@
     ```sh
     watch kubectl get pods -n argocd
     ```
+
 - ignore the errors:
 
     these will be taken care of automatically once argocd deploys missing dependencies
