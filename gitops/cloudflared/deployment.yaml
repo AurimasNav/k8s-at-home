@@ -17,10 +17,7 @@ spec:
     spec:
       containers:
       - name: cloudflared
-        envFrom:
-        - configMapRef:
-            name: cloudflared
-        - secretRef:
-            name: cloudflared
         image: cloudflare/cloudflared:latest
+        command: ["run"]
+        args: ["--no-autoupdate", "--hello-world"]
         imagePullPolicy: Always
