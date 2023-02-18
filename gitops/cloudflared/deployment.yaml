@@ -20,5 +20,7 @@ spec:
         envFrom:
         - configMapRef:
             name: cloudflared
+        - secretRef:
+            name: cloudflared
         image: cloudflare/cloudflared:latest
         imagePullPolicy: Always
