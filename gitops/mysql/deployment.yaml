@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mysql
+  name: mysql
+  namespace: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        envFrom:
+        - secretRef:
+            name: mysql
+        - configMapRef:
+            name: mysql
+        image: mysql
+        imagePullPolicy: Always
+        ports:
+        - name: mysql
+          containerPort: 3306
+          protocol: TCP
+        volumeMounts:
+        - name: mysql-config
+          mountPath: /var/lib/mysql
+        resources:
+            limits:
+              cpu: 1
+              memory: 500Mi
+            requests:
+              cpu: 10m
+              memory: 100Mi
+      volumes:
+      - name: mysql-config
+        persistentVolumeClaim:
+          claimName: mysql-config
