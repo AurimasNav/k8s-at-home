@@ -19,3 +19,4 @@ resources:
 - ./apps/pihole
 - ./apps/blocky
 - ./apps/unbound
+- ./apps/mysql
