@@ -21,3 +21,4 @@ resources:
 - ./apps/unbound
 - ./apps/mysql
 - ./apps/adminer
+- ./apps/wordpress
