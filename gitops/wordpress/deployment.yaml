@@ -2,24 +2,24 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: adminer
-  name: adminer
-  namespace: adminer
+    app: wordpress
+  name: wordpress
+  namespace: wordpress
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: adminer
+      app: wordpress
   template:
     metadata:
       labels:
-        app: adminer
+        app: wordpress
     spec:
       containers:
-      - name: adminer
-        image: adminer
+      - name: wordpress
+        image: wordpress
         imagePullPolicy: Always
         ports:
-        - name: adminer
+        - name: wordpress
           containerPort: 8080
           protocol: TCP
