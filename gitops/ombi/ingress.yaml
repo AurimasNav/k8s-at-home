@@ -9,7 +9,7 @@ metadata:
 spec:
   tls:
   - hosts:
-    - sync.lt
+#    - sync.lt
     - ombi.sync.lt
     secretName: ombi-letsencrypt
   rules:
