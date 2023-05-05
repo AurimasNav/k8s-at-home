@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overseerr
+  labels:
+    app: overseerr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: overseerr
+  template:
+    metadata:
+      labels:
+        app: overseerr
+    spec:
+      containers:
+      - name: overseerr
+        image: lscr.io/linuxserver/overseerr:develop
+        ports:
+        - containerPort: 5055
+        envFrom:
+        - configMapRef:
+            name: overseerr
+        volumeMounts:
+        - name: overseerr-config
+          mountPath: /config
+      volumes:
+      - name: overseerr-config
+        persistentVolumeClaim:
+          claimName: overseerr-config
