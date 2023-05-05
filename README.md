@@ -91,6 +91,7 @@
 - copy kubeconfig (run command from management host)
 
     ```sh
+    mkdir .kube
     scp <remote_user>@<k3s_host>:/etc/rancher/k3s/k3s.yaml ~/.kube/config
     ```
 
@@ -207,7 +208,7 @@
 - verify installation
 
     ```sh
-    $ kustomize version --short
+    $ kustomize version
     {kustomize/v4.5.7  2022-08-02T16:35:54Z  }
     ```
 
