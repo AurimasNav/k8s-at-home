@@ -13,7 +13,7 @@ spec:
     - ombi.sync.lt
     secretName: ombi-letsencrypt
   rules:
-  - host: sync.lt
+  - host: ombi.sync.lt
     http:
       paths:
       - path: /
