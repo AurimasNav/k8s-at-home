@@ -91,6 +91,7 @@
 - copy kubeconfig (run command from management host)
 
     ```sh
+    mkdir .kube
     scp <remote_user>@<k3s_host>:/etc/rancher/k3s/k3s.yaml ~/.kube/config
     ```
 
