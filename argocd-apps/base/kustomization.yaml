@@ -19,6 +19,4 @@ resources:
 - ./apps/pihole
 - ./apps/blocky
 - ./apps/unbound
-- ./apps/mysql
-- ./apps/adminer
-- ./apps/wordpress
+- ./apps/overseerr
