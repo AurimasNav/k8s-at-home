@@ -208,7 +208,7 @@
 - verify installation
 
     ```sh
-    $ kustomize version --short
+    $ kustomize version
     {kustomize/v4.5.7  2022-08-02T16:35:54Z  }
     ```
 
