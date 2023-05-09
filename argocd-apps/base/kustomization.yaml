@@ -13,7 +13,7 @@ resources:
 - ./apps/qbittorrent
 - ./apps/sonarr
 - ./apps/radarr
-- ./apps/radarr-4k
+- ./apps/radarr-no4k
 - ./apps/plex
 - ./apps/oauth2-proxy
 - ./apps/ombi

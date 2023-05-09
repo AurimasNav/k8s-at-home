@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: radarr-4k
-  namespace: radarr-4k
+  name: radarr-no4k
+  namespace: radarr-no4k
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -11,16 +11,16 @@ metadata:
 spec:
   tls:
   - hosts:
-    - radarr-4k.sync.lt
-    secretName: radarr-4k-letsencrypt
+    - radarr-no4k.sync.lt
+    secretName: radarr-no4k-letsencrypt
   rules:
-  - host: radarr-4k.sync.lt
+  - host: radarr-no4k.sync.lt
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: radarr-4k
+            name: radarr-no4k
             port:
               name: app

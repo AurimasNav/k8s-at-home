@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: radarr-4k-config
+  name: radarr-no4k-config
 spec:
   accessModes:
     - ReadWriteOnce
