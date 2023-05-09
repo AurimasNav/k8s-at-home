@@ -1,36 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: radarr-hd
+  name: radarr-4k
   labels:
-    app: radarr-hd
+    app: radarr-4k
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: radarr-hd
+      app: radarr-4k
   template:
     metadata:
       labels:
-        app: radarr-hd
+        app: radarr-4k
     spec:
       containers:
-      - name: radarr-hd
+      - name: radarr-4k
         image: lscr.io/linuxserver/radarr:develop
         ports:
         - containerPort: 7878
         envFrom:
         - configMapRef:
-            name: radarr-hd
+            name: radarr-4k
         volumeMounts:
-        - name: radarr-hd-config
+        - name: radarr-4k-config
           mountPath: /config
         - name: data
           mountPath: /data
       volumes:
-      - name: radarr-hd-config
+      - name: radarr-4k-config
         persistentVolumeClaim:
-          claimName: radarr-hd-config
+          claimName: radarr-4k-config
       - name: data
         hostPath:
           path: /data
