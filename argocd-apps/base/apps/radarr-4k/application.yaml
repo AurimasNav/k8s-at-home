@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: radarr-hd
+  name: radarr-4k
   namespace: argocd
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
     server: https://kubernetes.default.svc
-    namespace: radarr-hd
+    namespace: radarr-4k
   project: default
   source:
-    path: gitops/radarr-hd
+    path: gitops/radarr-4k
     repoURL: https://github.com/AurimasNav/k8s-at-home.git
     targetRevision: main
   syncPolicy:
