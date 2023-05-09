@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr-hd
+  labels:
+    app: radarr-hd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr-hd
+  template:
+    metadata:
+      labels:
+        app: radarr-hd
+    spec:
+      containers:
+      - name: radarr-hd
+        image: lscr.io/linuxserver/radarr:develop
+        ports:
+        - containerPort: 7878
+        envFrom:
+        - configMapRef:
+            name: radarr-hd
+        volumeMounts:
+        - name: radarr-hd-config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: radarr-hd-config
+        persistentVolumeClaim:
+          claimName: radarr-hd-config
+      - name: data
+        hostPath:
+          path: /data
+          type: Directory
+
