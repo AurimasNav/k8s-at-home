@@ -5,7 +5,7 @@ helmGlobals:
   chartHome: charts
 helmCharts:
 - name: vault
-  version: 0.23.0
+  version: 0.24.1
   repo: https://helm.releases.hashicorp.com
   releaseName: vault
   namespace: vault
