@@ -22,13 +22,6 @@ metadata:
 data:
   config.js: |-
     module.exports = {
-      packageRules: [
-        {
-          "matchDatasources": ["kubernetes"],
-          "matchUpdateTypes": ["patch", "minor", "major"],
-          "groupName": "kubernetes"
-        },
-      ],
       "kubernetes": {
         "fileMatch": ["gitops(\\\\|\\/).*(\\\\|\\/).*\\.yaml$"],
       },
