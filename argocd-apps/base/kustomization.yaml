@@ -21,3 +21,4 @@ resources:
 - ./apps/blocky
 - ./apps/unbound
 - ./apps/overseerr
+- ./apps/renovate-bot

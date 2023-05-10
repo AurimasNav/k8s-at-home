@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: renovate-bot
+data:
+  RENOVATE_PLATFORM: github
+  RENOVATE_AUTODISCOVER: 'false'
+  RENOVATE_REPOSITORIES: '["AurimasNav/k8s-at-home"]'
+  RENOVATE_BASE_DIR: /tmp/renovate/
+  RENOVATE_CONFIG_FILE: /opt/renovate/config.js
+  LOG_LEVEL: debug 
+  #RENOVATE_DRY_RUN: full
+  RENOVATE_GIT_AUTHOR: "Renovate Bot <fake@mail.com>"
+  RENOVATE_PR_HOURLY_LIMIT: '20'
+  RENOVATE_SEPARATE_MAJOR_MINOR: 'false'
+  RENOVATE_EXPOSE_ALL_ENV: 'true'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: renovate-config
+data:
+  config.js: |-
+    module.exports = {
+      packageRules: [
+        {
+          "matchDatasources": ["kubernetes"],
+          "matchUpdateTypes": ["patch", "minor", "major"],
+          "groupName": "kubernetes"
+        },
+      ],
+      "kubernetes": {
+        "fileMatch": ["gitops(\\\\|\\/).*(\\\\|\\/).*\\.yaml$"],
+      },
+      "enabledManagers": [
+        "kubernetes",
+        "argocd",
+        "kustomize",
+      ]
+    }
