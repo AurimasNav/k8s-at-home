@@ -23,13 +23,11 @@ data:
   config.js: |-
     module.exports = {
       "kubernetes": {
-        "fileMatch": ["gitops(\\\\|\\/).*(\\\\|\\/).*\\.yaml$"],
+        "fileMatch": ["gitops\\/.*\\/(?!kustomization\\.yaml$).*\\.ya?ml$"],
       },
       "enabledManagers": [
         "kubernetes",
-        "argocd",
         "kustomize",
-        "git-tags",
       ],
       "regexManagers": [
         {

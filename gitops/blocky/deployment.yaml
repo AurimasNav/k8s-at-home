@@ -20,7 +20,7 @@ spec:
         envFrom:
         - configMapRef:
             name: blocky
-        image: spx01/blocky
+        image: spx01/blocky:v0.21
         imagePullPolicy: Always
         ports:
         - name: dns-tcp

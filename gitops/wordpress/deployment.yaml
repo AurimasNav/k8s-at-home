@@ -17,10 +17,10 @@ spec:
     spec:
       containers:
       - name: wordpress
-        image: wordpress
+        image: wordpress:
         imagePullPolicy: Always
         ports:
-        - name: wordpress
+        - name: wordpress:6.2.0-php8.2-apache
           containerPort: 8080
           protocol: TCP
         envFrom:
