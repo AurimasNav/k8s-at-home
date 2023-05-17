@@ -32,22 +32,22 @@ data:
       ],
       "regexManagers": [
         {
-          "fileMatch": "kustomization\\.yaml",
+          "fileMatch": ".*kustomization\\.yaml",
           "matchStrings": ["https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/", "https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"],
           "datasourceTemplate": "github-releases",
         },
         {
-          "fileMatch": "kustomization\\.yaml",
+          "fileMatch": ".*kustomization\\.yaml",
           "matchStrings": ["https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/", "https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"],
           "datasourceTemplate": "github-tags",
         },
         {
-          "fileMatch": "^gitops\\/kustomization\\.yaml$",
+          "fileMatch": ".*\\/kustomization\\.yaml",
           "matchStrings": ["https:\/\/github\\.com\/(?<depName>.*\/.*?)\/releases\/download\/(?<currentValue>.*?)\/", "https:\/\/raw\\.githubusercontent\\.com\/(?<depName>[^\/]*\/[^\/]*)\/(?<currentValue>.*?)\/"],
           "datasourceTemplate": "github-releases",
         },
         {
-          "fileMatch": "gitops\\/kustomization\\.yaml",
+          "fileMatch": ".*\\/kustomization\\.yaml",
           "matchStrings": ["https:\/\/github\\.com\/(?<depName>.*\/.*?)\/releases\/download\/(?<currentValue>.*?)\/", "https:\/\/raw\\.githubusercontent\\.com\/(?<depName>[^\/]*\/[^\/]*)\/(?<currentValue>.*?)\/"],
           "datasourceTemplate": "github-tags",
         }
