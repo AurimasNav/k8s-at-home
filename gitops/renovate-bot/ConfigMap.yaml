@@ -23,7 +23,7 @@ data:
   config.js: |-
     module.exports = {
       "kubernetes": {
-        "fileMatch": ["gitops\\/.*\\/(?!kustomization\\.yaml$).*\\.ya?ml$"],
+        "fileMatch": ["gitops\\/.*\\/.*\\.ya?ml$"],
       },
       "enabledManagers": [
         "kubernetes",
