@@ -26,25 +26,20 @@ data:
         "fileMatch": ["gitops\\/.*\\/.*\\.ya?ml$"],
         "ignorePaths": ["**/gitops/**/kustomization.yaml"]
       },
+      # "enabledManagers": [
+      #   "kubernetes",
+      #   "kustomize",
+      #   "regex"
+      # ],
       "regexManagers": [
         {
-          "fileMatch": ".*kustomization\\.yaml",
-          "matchStrings": ["https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/", "https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"],
+          "fileMatch": "kustomization\\.yaml",
+          "matchStrings": ["https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/"],
           "datasourceTemplate": "github-releases",
         },
         {
-          "fileMatch": ".*kustomization\\.yaml",
-          "matchStrings": ["https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/", "https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"],
-          "datasourceTemplate": "github-tags",
-        },
-        {
-          "fileMatch": ".*\\/kustomization\\.yaml",
-          "matchStrings": ["https:\/\/github\\.com\/(?<depName>.*\/.*?)\/releases\/download\/(?<currentValue>.*?)\/", "https:\/\/raw\\.githubusercontent\\.com\/(?<depName>[^\/]*\/[^\/]*)\/(?<currentValue>.*?)\/"],
-          "datasourceTemplate": "github-releases",
-        },
-        {
-          "fileMatch": ".*\\/kustomization\\.yaml",
-          "matchStrings": ["https:\/\/github\\.com\/(?<depName>.*\/.*?)\/releases\/download\/(?<currentValue>.*?)\/", "https:\/\/raw\\.githubusercontent\\.com\/(?<depName>[^\/]*\/[^\/]*)\/(?<currentValue>.*?)\/"],
+          "fileMatch": "kustomization\\.yaml",
+          "matchStrings": ["https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"],
           "datasourceTemplate": "github-tags",
         }
       ]
