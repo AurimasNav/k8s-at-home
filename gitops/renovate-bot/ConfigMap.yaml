@@ -29,6 +29,7 @@ data:
       "enabledManagers": [
         "kubernetes",
         "kustomize",
+        "regexManagers"
       ],
       "regexManagers": [
         {
