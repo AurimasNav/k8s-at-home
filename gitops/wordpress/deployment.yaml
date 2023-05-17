@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: wordpress
-        image: wordpress:
+        image: wordpress
         imagePullPolicy: Always
         ports:
         - name: wordpress:6.2.0-php8.2-apache
