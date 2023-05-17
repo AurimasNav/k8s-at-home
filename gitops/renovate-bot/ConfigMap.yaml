@@ -26,11 +26,6 @@ data:
         "fileMatch": ["gitops\\/.*\\/.*\\.ya?ml$"],
         "ignorePaths": ["**/gitops/**/kustomization.yaml"]
       },
-      # "enabledManagers": [
-      #   "kubernetes",
-      #   "kustomize",
-      #   "regexManagers"
-      # ],
       "regexManagers": [
         {
           "fileMatch": ".*kustomization\\.yaml",
