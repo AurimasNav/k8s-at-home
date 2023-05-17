@@ -24,6 +24,7 @@ data:
     module.exports = {
       "kubernetes": {
         "fileMatch": ["gitops\\/.*\\/.*\\.ya?ml$"],
+        "ignorePaths": ["**/gitops/**/kustomization.yaml"]
       },
       "enabledManagers": [
         "kubernetes",
