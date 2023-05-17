@@ -32,12 +32,12 @@ data:
       "regexManagers": [
         {
           "fileMatch": "kustomization\\.yaml",
-          "matchStrings": ["https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/"],
+          "matchStrings": ["https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/", "https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"],
           "datasourceTemplate": "github-releases",
         },
         {
           "fileMatch": "kustomization\\.yaml",
-          "matchStrings": ["https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"],
+          "matchStrings": ["https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/", "https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"],
           "datasourceTemplate": "github-tags",
         }
       ]
