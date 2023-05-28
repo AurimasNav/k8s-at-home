@@ -22,7 +22,7 @@ spec:
         image: jesec/flood:4.7.0
         ports:
         - containerPort: 3000
-        command: ["/bin/sh", "-c"]
+        command: ["/bin/echo"]
         args:
         - "--qburl $(qburl)"
         - "--qbuser $(qbuser)"
