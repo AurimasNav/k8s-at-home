@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: sonarr
+  name: sonarr1
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -10,16 +10,16 @@ metadata:
 spec:
   tls:
   - hosts:
-    - sonarr.sync.lt
-    secretName: sonarr-letsencrypt
+    - sonarr1.sync.lt
+    secretName: sonarr1-letsencrypt
   rules:
-  - host: sonarr.sync.lt
+  - host: sonarr1.sync.lt
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: sonarr
+            name: sonarr1
             port:
               name: app
