@@ -22,7 +22,9 @@ spec:
         image: jesec/flood:4.7.0
         ports:
         - containerPort: 3000
+        command: ["/bin/bash"]
         args:
+        - "-c"
         - "--qburl $(qburl)"
         - "--qbuser $(qbuser)"
         - "--qbpass $(qbpass)"
