@@ -6,7 +6,7 @@ data:
   TZ: Europe/London
   QBT_BitTorrent__Session__DefaultSavePath: /torrents
   QBT_BitTorrent__Session__Port: '6881'
-  QBT_BitTorrent__Session__TempPath: /downloads/incomplete
+  QBT_BitTorrent__Session__TempPath: /torrents/incomplete
   QBT_Preferences__Connection__PortRangeMin: '6881'
   QBT_Preferences__Downloads__SavePath: /torrents/
   QBT_Preferences__Downloads__TempPath: /torrents/incomplete/
