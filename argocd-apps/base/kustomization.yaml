@@ -22,4 +22,3 @@ resources:
 - ./apps/unbound
 - ./apps/overseerr
 - ./apps/renovate-bot
-- ./apps/qb
