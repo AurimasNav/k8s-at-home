@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: flood
 data:
-  FLOOD_OPTION_auth: none
+  FLOOD_OPTION_auth: default
   FLOOD_OTPION_port: "3000"
   FLOOD_OPTION_qburl: http://qbittorrent.qbittorrent:80
   FLOOD_OPTION_allowedpath: /data
