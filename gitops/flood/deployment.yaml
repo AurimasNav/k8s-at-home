@@ -40,8 +40,6 @@ spec:
       - name: flood-config
         persistentVolumeClaim:
           claimName: flood-config
-        - name: downloads
-          mountPath: /data
       - name: downloads
         hostPath:
           path: /data/torrents
