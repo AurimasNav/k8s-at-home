@@ -14,6 +14,9 @@ spec:
       labels:
         app: qbittorrent
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
       containers:
       - name: qbittorrent
         image: ghcr.io/onedr0p/qbittorrent:4.5.2
