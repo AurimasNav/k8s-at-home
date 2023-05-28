@@ -37,7 +37,7 @@ spec:
         - name: qbittorrent-config
           mountPath: /config
         - name: torrents
-          mountPath: /torrents
+          mountPath: /data/torrents
       volumes:
       - name: qbittorrent-config
         persistentVolumeClaim:
