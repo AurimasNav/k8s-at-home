@@ -3,5 +3,5 @@ kind: ConfigMap
 metadata:
   name: flood
 data:
-  qburl: qbittorrent.qbittorrent
+  qburl: http://qbittorrent.qbittorrent:80
   allowedpath: /data
