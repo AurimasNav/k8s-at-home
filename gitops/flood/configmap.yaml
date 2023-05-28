@@ -5,3 +5,4 @@ metadata:
 data:
   qburl: http://qbittorrent.qbittorrent:80
   allowedpath: /data
+  auth: none

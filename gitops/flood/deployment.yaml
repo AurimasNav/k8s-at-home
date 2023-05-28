@@ -23,10 +23,11 @@ spec:
         ports:
         - containerPort: 3000
         args:
-        - "--qburl $(qburl)"
-        - "--qbuser $(qbuser)"
-        - "--qbpass $(qbpass)"
-        - "--allowedpath $(allowedpath)"
+        - "--qburl=$(qburl)"
+        - "--qbuser=$(qbuser)"
+        - "--qbpass=$(qbpass)"
+        - "--allowedpath=$(allowedpath)"
+        - "--auth=$(none)"
         envFrom:
         - secretRef:
             name: flood
