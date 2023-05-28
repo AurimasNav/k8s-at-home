@@ -31,7 +31,7 @@ spec:
         - configMapRef:
             name: qbittorrent
         volumeMounts:
-        - name: qb-config
+        - name: qbittorrent-config
           mountPath: /config
         - name: torrents
           mountPath: /torrents
