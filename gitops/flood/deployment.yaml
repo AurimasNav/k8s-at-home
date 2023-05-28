@@ -22,14 +22,14 @@ spec:
         image: jesec/flood:4.7.0
         ports:
         - containerPort: 3000
-        # envFrom:
-        # - secretRef:
-        #     name: flood
-        # - configMapRef:
-        #     name: flood
+        envFrom:
+        - secretRef:
+            name: flood
+        - configMapRef:
+            name: flood
         volumeMounts:
-        # - name: flood-config
-        #   mountPath: /config
+        - name: flood-config
+          mountPath: /config
         - name: downloads
           mountPath: /data
       volumes:
