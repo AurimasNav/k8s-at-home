@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qb
+  labels:
+    app: qb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qb
+  template:
+    metadata:
+      labels:
+        app: qb
+    spec:
+      containers:
+      - name: qb
+        image: ghcr.io/onedr0p/qbittorrent:4.5.2
+        ports:
+        - containerPort: 8080
+          name: webui
+          protocol: TCP
+        - containerPort: 6881
+          name: traffic
+          protocol: TCP
+        - containerPort: 6881
+          name: traffic-udp
+          protocol: UDP
+        envFrom:
+        - configMapRef:
+            name: qb
+        volumeMounts:
+        - name: qb-config
+          mountPath: /config
+        - name: downloads
+          mountPath: /torrents
+      volumes:
+      - name: qb-config
+        persistentVolumeClaim:
+          claimName: qb-config
+      - name: torrents
+        hostPath:
+          path: /data/torrents
+          type: Directory
