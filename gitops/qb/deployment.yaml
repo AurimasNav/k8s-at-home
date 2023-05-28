@@ -33,7 +33,7 @@ spec:
         volumeMounts:
         - name: qb-config
           mountPath: /config
-        - name: downloads
+        - name: torrents
           mountPath: /torrents
       volumes:
       - name: qb-config
