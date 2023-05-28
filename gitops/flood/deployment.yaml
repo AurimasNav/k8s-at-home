@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flood
+  labels:
+    app: flood
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flood
+  template:
+    metadata:
+      labels:
+        app: flood
+    spec:
+      runAsUser: 1000
+      runAsGroup: 1000
+      containers:
+      - name: flood
+        image: jesec/flood:4.7.0
+        ports:
+        - containerPort: 3000
+        args:
+        - "--qburl $(qburl)"
+        - "--qbuser $(qbuser)"
+        - "--qbpass $(qbpass)"
+        - "--allowedpath $(allowedpath)"
+        envFrom:
+        - secretRef:
+            name: flood
+        - configMapRef:
+            name: flood
+        volumeMounts:
+        - name: flood-config
+          mountPath: /config
+        - name: flood-data
+          mountPath: /data
+      volumes:
+      - name: flood-config
+        persistentVolumeClaim:
+          claimName: flood-config
+        - name: downloads
+          mountPath: /data
+      - name: downloads
+        hostPath:
+          path: /data/torrents
+          type: Directory

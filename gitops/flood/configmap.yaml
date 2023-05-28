@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flood
+data:
+  qburl: qbittorrent.qbittorrent
+  allowedpath: /data
