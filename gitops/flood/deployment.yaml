@@ -27,7 +27,7 @@ spec:
         - "--qbuser=$(qbuser)"
         - "--qbpass=$(qbpass)"
         - "--allowedpath=$(allowedpath)"
-        - "--auth=$(none)"
+        - "--auth=$(auth)"
         envFrom:
         - secretRef:
             name: flood
