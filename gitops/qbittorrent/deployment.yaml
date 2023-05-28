@@ -38,7 +38,7 @@ spec:
       volumes:
       - name: qbittorrent-config
         persistentVolumeClaim:
-          claimName: qb-config
+          claimName: qbittorrent-config
       - name: torrents
         hostPath:
           path: /data/torrents
