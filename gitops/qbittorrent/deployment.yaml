@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: qbittorrent
-        image: lscr.io/linuxserver/qbittorrent:4.5.2
+        image: ghcr.io/onedr0p/qbittorrent:4.5.2
         ports:
         - containerPort: 8080
           name: webui
@@ -31,15 +31,15 @@ spec:
         - configMapRef:
             name: qbittorrent
         volumeMounts:
-        - name: qbittorrent-config
+        - name: qb-config
           mountPath: /config
-        - name: downloads
-          mountPath: /downloads
+        - name: torrents
+          mountPath: /torrents
       volumes:
-      - name: qbittorrent-config
+      - name: qb-config
         persistentVolumeClaim:
-          claimName: qbittorrent-config
-      - name: downloads
+          claimName: qb-config
+      - name: torrents
         hostPath:
           path: /data/torrents
           type: Directory
