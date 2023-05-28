@@ -4,12 +4,12 @@ metadata:
   name: qbittorrent
 data:
   TZ: Europe/London
-  QBT_BitTorrent__Session__DefaultSavePath: /torrents
+  QBT_BitTorrent__Session__DefaultSavePath: /data/torrents
   QBT_BitTorrent__Session__Port: '6881'
-  QBT_BitTorrent__Session__TempPath: /torrents/incomplete
+  QBT_BitTorrent__Session__TempPath: /data/torrents/incomplete
   QBT_Preferences__Connection__PortRangeMin: '6881'
-  QBT_Preferences__Downloads__SavePath: /torrents/
-  QBT_Preferences__Downloads__TempPath: /torrents/incomplete/
+  QBT_Preferences__Downloads__SavePath: /data/torrents/
+  QBT_Preferences__Downloads__TempPath: /data/torrents/incomplete/
   QBT_Preferences__WebUI__Address: '*'
   QBT_Preferences__WebUI__AlternativeUIEnabled: 'false'
   QBT_Preferences__WebUI__CSRFProtection: 'false'
