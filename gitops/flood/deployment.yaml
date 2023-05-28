@@ -22,12 +22,6 @@ spec:
         image: jesec/flood:4.7.0
         ports:
         - containerPort: 3000
-        args:
-        - "--qburl=$(qburl)"
-        - "--qbuser=$(qbuser)"
-        - "--qbpass=$(qbpass)"
-        - "--allowedpath=$(allowedpath)"
-        - "--auth=$(auth)"
         envFrom:
         - secretRef:
             name: flood
