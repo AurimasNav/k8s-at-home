@@ -27,7 +27,7 @@ spec:
         #     name: flood
         # - configMapRef:
         #     name: flood
-        # volumeMounts:
+        volumeMounts:
         # - name: flood-config
         #   mountPath: /config
         - name: downloads
