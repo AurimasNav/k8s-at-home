@@ -34,7 +34,7 @@ spec:
         volumeMounts:
         - name: flood-config
           mountPath: /config
-        - name: flood-data
+        - name: downloads
           mountPath: /data
       volumes:
       - name: flood-config
