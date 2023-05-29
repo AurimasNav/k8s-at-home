@@ -22,7 +22,7 @@ spec:
             name: pihole
         - configMapRef:
             name: pihole
-        image: pihole/pihole:2023.03.1
+        image: pihole/pihole:2023.05.1
         imagePullPolicy: Always
         ports:
         - name: dns-tcp
