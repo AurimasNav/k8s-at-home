@@ -23,6 +23,7 @@ spec:
         #envFrom:
         # - secretRef:
         #     name: flemmarr
+        command: ["/bin/bash", "-c", "ls --la /config"]
         volumeMounts:
         - name: config
           mountPath: /config
