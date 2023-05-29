@@ -20,11 +20,9 @@ spec:
       containers:
       - name: flemmarr
         image: pierremesure/flemmarr:latest
-        envFrom:
-        - secretRef:
-            name: flemmarr
-        - configMapRef:
-            name: flemmarr
+        #envFrom:
+        # - secretRef:
+        #     name: flemmarr
         volumeMounts:
         - name: config
           mountPath: /config
