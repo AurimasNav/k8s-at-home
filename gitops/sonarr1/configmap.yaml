@@ -3,6 +3,9 @@ kind: ConfigMap
 metadata:
   name: sonarr1
 data:
-  PUID: "1000"
-  PGID: "1000"
   TZ: Europe/Vilnius
+  SONARR__ANALYTICS_ENABLED: 'True'
+  SONARR__AUTHENTICATION_METHOD: External
+  SONARR__LOG_LEVEL: Info
+  SONARR__AUTHENTICATION_REQUIRED: DisabledForLocalAddresses
+  SONARR__PORT: '8989'

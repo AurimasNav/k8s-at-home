@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonarr
+  name: sonarr1
 spec:
   ports:
   - name: app
@@ -10,4 +10,4 @@ spec:
     protocol: TCP
     appProtocol: http
   selector:
-    app: sonarr
+    app: sonarr1
