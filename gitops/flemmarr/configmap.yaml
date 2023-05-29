@@ -8,6 +8,12 @@ data:
       server:
         address: sonarr1.sonarr1
         port: 80
+      config:
+        host:
+          analyticsEnabled: true
+        ui:
+          firstDayOfWeek: 1 # 0 = Sunday, 1 = Monday
+          timeFormat: HH:mm # HH:mm = 17:30, h(:mm)a = 5:30PM
       rootFolder:
         - path: /data/media/tv
         - path: /data/media/anime
