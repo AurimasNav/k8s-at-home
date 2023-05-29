@@ -75,38 +75,38 @@ data:
         - path: /data/media/tv
         - path: /data/media/anime
       customformat:
-        includeCustomFormatWhenRenaming: false
-        name: LT
-        specifications:
-        - id: 1
+        - includeCustomFormatWhenRenaming: false
           name: LT
-          implementation: ReleaseTitleSpecification
-          implementationName: Release Title
-          infoLink: https://wiki.servarr.com/sonarr/settings#custom-formats-2
-          negate: false
-          required: false
-          fields:
-          - order: 0
-            name: value
-            label: Regular Expression
-            helpText: Custom Format RegEx is Case Insensitive
-            value: "\\bLT\\b"
-            type: textbox
-            advanced: false
-            privacy: normal
-        - id: 2
-          name: LTU
-          implementation: ReleaseTitleSpecification
-          implementationName: Release Title
-          infoLink: https://wiki.servarr.com/sonarr/settings#custom-formats-2
-          negate: false
-          required: false
-          fields:
-          - order: 0
-            name: value
-            label: Regular Expression
-            helpText: Custom Format RegEx is Case Insensitive
-            value: "\\bLTU\\b"
-            type: textbox
-            advanced: false
-            privacy: normal
+          specifications:
+          - id: 1
+            name: LT
+            implementation: ReleaseTitleSpecification
+            implementationName: Release Title
+            infoLink: https://wiki.servarr.com/sonarr/settings#custom-formats-2
+            negate: false
+            required: false
+            fields:
+            - order: 0
+              name: value
+              label: Regular Expression
+              helpText: Custom Format RegEx is Case Insensitive
+              value: "\\bLT\\b"
+              type: textbox
+              advanced: false
+              privacy: normal
+          - id: 2
+            name: LTU
+            implementation: ReleaseTitleSpecification
+            implementationName: Release Title
+            infoLink: https://wiki.servarr.com/sonarr/settings#custom-formats-2
+            negate: false
+            required: false
+            fields:
+            - order: 0
+              name: value
+              label: Regular Expression
+              helpText: Custom Format RegEx is Case Insensitive
+              value: "\\bLTU\\b"
+              type: textbox
+              advanced: false
+              privacy: normal
