@@ -19,7 +19,7 @@ spec:
         runAsGroup: 1000
       containers:
       - name: flemmarr
-        image: pierremesure/flemmarr:latest
+        image: busybox:latest
         #envFrom:
         # - secretRef:
         #     name: flemmarr
