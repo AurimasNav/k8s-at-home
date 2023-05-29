@@ -9,6 +9,11 @@ data:
         address: sonarr1.sonarr1
         port: 80
       config:
+        downloadclient:
+          downloadClientWorkingFolders: _UNPACK_|_FAILED_
+          enableCompletedDownloadHandling: true
+          autoRedownloadFailed: true
+          id: 1
         host:
           analyticsEnabled: true
         ui:
