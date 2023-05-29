@@ -57,4 +57,4 @@ spec:
         volumeMounts:
         - name: vuetorrent
           mountPath: /vuetorrent
-        command: ['sh', '-c', "git clone --single-branch --branch latest-release https://github.com/WDaan/VueTorrent.git /vuetorrent"]
+        command: ['sh', '-c', "git clone --single-branch --branch nightly-release https://github.com/WDaan/VueTorrent.git /vuetorrent"]
