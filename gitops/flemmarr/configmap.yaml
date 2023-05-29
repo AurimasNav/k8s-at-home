@@ -60,40 +60,4 @@ data:
           extraFileExtensions: srt
           enableMediaInfo: true
       rootfolder:
-        - path: /data/media/tv
-      downloadclient:
-        enable: true
-        protocol: torrent
-        priority: 1
-        removeCompletedDownloads: false
-        removeFailedDownloads: false
-        name: qbittorrent
-        fields:
-        - name: host
-          value: qbittorrent.qbittorrent
-        - name: port
-          value: '80'
-        - name: useSsl
-          value: false
-        - name: urlBase
-        - name: username
-          value: ''
-        - name: password
-        - name: tvCategory
-          value: tv-sonarr1
-        - name: tvImportedCategory
-        - name: recentTvPriority
-          value: 0
-        - name: olderTvPriority
-          value: 0
-        - name: initialState
-          value: 0
-        - name: sequentialOrder
-          value: false
-        - name: firstAndLast
-          value: false
-        implementationName: qBittorrent
-        implementation: QBittorrent
-        configContract: QBittorrentSettings
-        infoLink: https://wiki.servarr.com/sonarr/supported#qbittorrent
-        tags: []
+        path: /data/media/tv
