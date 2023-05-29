@@ -8,5 +8,5 @@ data:
       server:
         address: sonarr1.sonarr1
         port: 80
-      rootfolder:
-        path: /data/media/tv
+      rootFolder:
+        - path: /data/media/tv
