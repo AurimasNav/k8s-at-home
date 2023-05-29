@@ -12,8 +12,16 @@ data:
         host:
           analyticsEnabled: true
         ui:
-          firstDayOfWeek: 1 # 0 = Sunday, 1 = Monday
-          timeFormat: HH:mm # HH:mm = 17:30, h(:mm)a = 5:30PM
+          firstDayOfWeek: 1
+          calendarWeekColumnHeader: ddd MM/DD
+          shortDateFormat: YYYY-MM-DD
+          longDateFormat: dddd, MMMM D YYYY
+          timeFormat: HH:mm
+          showRelativeDates: true
+          enableColorImpairedMode: true
+          theme: auto
+          uiLanguage: 1
+          id: 1
       rootFolder:
         - path: /data/media/tv
         - path: /data/media/anime
