@@ -38,8 +38,8 @@ spec:
           mountPath: /config
         - name: torrents
           mountPath: /data/torrents
-        - name: VueTorrent
-          mountPath: /VueTorrent
+        - name: vuetorrent
+          mountPath: /vuetorrent
       volumes:
       - name: qbittorrent-config
         persistentVolumeClaim:
@@ -48,6 +48,6 @@ spec:
         hostPath:
           path: /data/torrents
           type: Directory
-      - name: VueTorrent
+      - name: vuetorrent
         emptyDir:
           sizeLimit: 500Mi
