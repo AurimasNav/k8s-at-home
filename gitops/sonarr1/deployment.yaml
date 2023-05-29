@@ -25,6 +25,8 @@ spec:
         envFrom:
         - configMapRef:
             name: sonarr1
+        - secretRef:
+            name: sonarr1
         volumeMounts:
         - name: sonarr1-config
           mountPath: /config

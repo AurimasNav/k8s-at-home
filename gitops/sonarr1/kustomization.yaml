@@ -7,3 +7,4 @@ resources:
 - ./service.yaml
 - ./configmap.yaml
 - ./pvc.yaml
+- ./externalSecret.yaml
