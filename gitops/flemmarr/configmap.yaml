@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: flemmarr
 data:
-  conif.yml: |
+  config.yml: |
     lidarr:
       server:
         address: localhost

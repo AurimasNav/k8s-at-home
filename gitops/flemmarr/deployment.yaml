@@ -19,11 +19,10 @@ spec:
         runAsGroup: 1000
       containers:
       - name: flemmarr
-        image: busybox:latest
+        image: pierremesure/flemmarr:latest
         #envFrom:
         # - secretRef:
         #     name: flemmarr
-        command: ["/bin/sh", "-c", "ls -la /config"]
         volumeMounts:
         - name: config
           mountPath: /config
