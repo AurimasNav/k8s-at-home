@@ -22,6 +22,9 @@ spec:
         envFrom:
         - configMapRef:
             name: overseerr
+        env:
+        - name: main__apiKey
+          value: xxxyyy
         volumeMounts:
         - name: overseerr-config
           mountPath: /config
