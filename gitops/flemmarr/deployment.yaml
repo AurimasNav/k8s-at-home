@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flemmarr
+  labels:
+    app: flemmarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flemmarr
+  template:
+    metadata:
+      labels:
+        app: flemmarr
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+      - name: flemmarr
+        image: pierremesure/flemmarr:latest
+        envFrom:
+        - secretRef:
+            name: flemmarr
+        - configMapRef:
+            name: flemmarr
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        configMap:
+          name: flemmarr
