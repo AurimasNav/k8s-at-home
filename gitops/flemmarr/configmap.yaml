@@ -8,56 +8,5 @@ data:
       server:
         address: sonarr1.sonarr1
         port: 80
-      config:
-        host:
-          analyticsEnabled: false
-        ui:
-          firstDayOfWeek: 1 # 0 = Sunday, 1 = Monday
-          timeFormat: HH:mm # HH:mm = 17:30, h(:mm)a = 5:30PM
-        naming:
-          renameEpisodes: true
-          replaceIllegalCharacters: true
-          multiEpisodeStyle: 5
-          # https://trash-guides.info/Sonarr/Sonarr-recommended-naming-scheme/
-          standardEpisodeFormat: "{Series TitleYear} - S{season:00}E{episode:00} - {Episode
-            CleanTitle} [{Preferred Words }{Quality Full}]{[MediaInfo VideoDynamicRangeType]}{[Mediainfo
-            AudioCodec}{ Mediainfo AudioChannels]}{MediaInfo AudioLanguages}{[MediaInfo VideoCodec]}{-Release
-            Group}"
-          dailyEpisodeFormat: "{Series TitleYear} - {Air-Date} - {Episode CleanTitle} [{Preferred
-            Words }{Quality Full}]{[MediaInfo VideoDynamicRangeType]}{[Mediainfo AudioCodec}{
-            Mediainfo AudioChannels]}{MediaInfo AudioLanguages}{[MediaInfo VideoCodec]}{-Release
-            Group}"
-          animeEpisodeFormat: "{Series TitleYear} - S{season:00}E{episode:00} - {absolute:000}
-            - {Episode CleanTitle} [{Preferred Words }{Quality Full}]{[MediaInfo VideoDynamicRangeType]}[{MediaInfo
-            VideoBitDepth}bit]{[MediaInfo VideoCodec]}[{Mediainfo AudioCodec} { Mediainfo AudioChannels}]{MediaInfo
-            AudioLanguages}{-Release Group}"
-          seriesFolderFormat: "{Series TitleYear} [imdb-{ImdbId}] - 1"
-          seasonFolderFormat: Season {season:00} - 1
-          specialsFolderFormat: Specials
-          includeSeriesTitle: false
-          includeEpisodeTitle: false
-          includeQuality: false
-          replaceSpaces: true
-          separator: " - "
-          numberStyle: S{season:00}E{episode:00}
-        mediamanagement:
-          autoUnmonitorPreviouslyDownloadedEpisodes: false
-          recycleBin: ''
-          recycleBinCleanupDays: 7
-          downloadPropersAndRepacks: doNotUpgrade
-          createEmptySeriesFolders: false
-          deleteEmptyFolders: false
-          fileDate: none
-          rescanAfterRefresh: always
-          setPermissionsLinux: false
-          chmodFolder: '755'
-          chownGroup: ''
-          episodeTitleRequired: always
-          skipFreeSpaceCheckWhenImporting: true
-          minimumFreeSpaceWhenImporting: 100
-          copyUsingHardlinks: true
-          importExtraFiles: true
-          extraFileExtensions: srt
-          enableMediaInfo: true
       rootfolder:
         path: /data/media/tv
