@@ -4,16 +4,94 @@ metadata:
   name: flemmarr
 data:
   config.yml: |
-    lidarr:
+    sonarr:
       server:
-        address: localhost
-        port: 8686
+        address: sonarr1.sonarr1
+        port: 80
       config:
+        host:
+          analyticsEnabled: false
         ui:
-          uiLanguage: 2 # 1 = English, 2 = French, 3 = Spanish...
+          firstDayOfWeek: 1 # 0 = Sunday, 1 = Monday
+          timeFormat: HH:mm # HH:mm = 17:30, h(:mm)a = 5:30PM
+        naming:
+          renameEpisodes: true
+          replaceIllegalCharacters: true
+          multiEpisodeStyle: 5
+          # https://trash-guides.info/Sonarr/Sonarr-recommended-naming-scheme/
+          standardEpisodeFormat: "{Series TitleYear} - S{season:00}E{episode:00} - {Episode
+            CleanTitle} [{Preferred Words }{Quality Full}]{[MediaInfo VideoDynamicRangeType]}{[Mediainfo
+            AudioCodec}{ Mediainfo AudioChannels]}{MediaInfo AudioLanguages}{[MediaInfo VideoCodec]}{-Release
+            Group}"
+          dailyEpisodeFormat: "{Series TitleYear} - {Air-Date} - {Episode CleanTitle} [{Preferred
+            Words }{Quality Full}]{[MediaInfo VideoDynamicRangeType]}{[Mediainfo AudioCodec}{
+            Mediainfo AudioChannels]}{MediaInfo AudioLanguages}{[MediaInfo VideoCodec]}{-Release
+            Group}"
+          animeEpisodeFormat: "{Series TitleYear} - S{season:00}E{episode:00} - {absolute:000}
+            - {Episode CleanTitle} [{Preferred Words }{Quality Full}]{[MediaInfo VideoDynamicRangeType]}[{MediaInfo
+            VideoBitDepth}bit]{[MediaInfo VideoCodec]}[{Mediainfo AudioCodec} { Mediainfo AudioChannels}]{MediaInfo
+            AudioLanguages}{-Release Group}"
+          seriesFolderFormat: "{Series TitleYear} [imdb-{ImdbId}] - 1"
+          seasonFolderFormat: Season {season:00} - 1
+          specialsFolderFormat: Specials
+          includeSeriesTitle: false
+          includeEpisodeTitle: false
+          includeQuality: false
+          replaceSpaces: true
+          separator: " - "
+          numberStyle: S{season:00}E{episode:00}
+        mediamanagement:
+          autoUnmonitorPreviouslyDownloadedEpisodes: false
+          recycleBin: ''
+          recycleBinCleanupDays: 7
+          downloadPropersAndRepacks: doNotUpgrade
+          createEmptySeriesFolders: false
+          deleteEmptyFolders: false
+          fileDate: none
+          rescanAfterRefresh: always
+          setPermissionsLinux: false
+          chmodFolder: '755'
+          chownGroup: ''
+          episodeTitleRequired: always
+          skipFreeSpaceCheckWhenImporting: true
+          minimumFreeSpaceWhenImporting: 100
+          copyUsingHardlinks: true
+          importExtraFiles: true
+          extraFileExtensions: srt
+          enableMediaInfo: true
       rootfolder:
-        - name: Music
-          path: /data/music
+        - name: Series
+          path: /data/series
           defaultTags: []
           defaultQualityProfileId: 1
           defaultMetadataProfileId: 1
+      downloadclient:
+        - name: qBittorrent
+          enable: true
+          protocol: torrent
+          priority: 2
+          removeCompletedDownloads: true
+          removeFailedDownloads: true
+          fields:
+          - name: host
+            value: qbittorrent
+          - name: port
+            value: 8080
+          - name: username
+            value: username
+          - name: password
+            value: password
+          - name: tvCategory
+            value: tv
+          - name: recentTvPriority
+            value: 0
+          - name: olderTvPriority
+            value: 0
+          - name: initialState
+            value: 0
+          - name: sequentialOrder
+            value: false
+          - name: firstAndLast
+            value: false
+          implementation: QBittorrent
+          configContract: QBittorrentSettings
