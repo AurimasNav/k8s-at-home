@@ -10,3 +10,4 @@ data:
         port: 80
       rootFolder:
         - path: /data/media/tv
+        - path: /data/media/anime
