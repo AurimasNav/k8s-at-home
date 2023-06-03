@@ -53,7 +53,7 @@ spec:
           sizeLimit: 500Mi
       initContainers:
       - name: clone-vuetorrent
-        image: bitnami/git:2.40.1
+        image: bitnami/git:2.41.0
         volumeMounts:
         - name: vuetorrent
           mountPath: /vuetorrent
