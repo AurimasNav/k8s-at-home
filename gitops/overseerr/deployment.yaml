@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: overseerr
-        image: lscr.io/linuxserver/overseerr:1.33.0
+        image: lscr.io/linuxserver/overseerr:develop
         ports:
         - containerPort: 5055
         envFrom:
