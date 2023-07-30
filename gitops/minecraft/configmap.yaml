@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: minecraft
 data:
+  ENABLE_LAN_VISIBILITY: "true"
   # Find more options at https://github.com/itzg/docker-minecraft-bedrock-server#server-properties
   # Remove # from in front of line if changing from default values.
   EULA: "TRUE" # Must accept EULA to use this minecraft server
