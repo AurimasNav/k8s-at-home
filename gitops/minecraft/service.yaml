@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.223
+spec:
+  ports:
+  - name: app
+    port: 19132
+    targetPort: 19132
+    protocol: UDP
+  selector:
+    app: minecraft
+  type: LoadBalancer
