@@ -11,7 +11,7 @@ data:
   QBT_Preferences__Downloads__SavePath: /data/torrents/
   QBT_Preferences__Downloads__TempPath: /data/torrents/incomplete/
   QBT_Preferences__WebUI__Address: '*'
-  QBT_Preferences__WebUI__AlternativeUIEnabled: 'true'
+  QBT_Preferences__WebUI__AlternativeUIEnabled: 'false'
   QBT_Preferences__WebUI__RootFolder: /vuetorrent
   QBT_Preferences__WebUI__CSRFProtection: 'false'
   QBT_Preferences__WebUI__AuthSubnetWhitelist: '0.0.0.0/0'
