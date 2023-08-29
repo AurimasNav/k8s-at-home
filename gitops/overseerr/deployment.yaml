@@ -17,6 +17,7 @@ spec:
       containers:
       - name: overseerr
         image: lscr.io/linuxserver/overseerr:develop
+        imagePullPolicy: Always
         ports:
         - containerPort: 5055
         envFrom:
