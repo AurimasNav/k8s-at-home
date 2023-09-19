@@ -20,6 +20,7 @@ spec:
       containers:
       - name: sonarr1
         image: ghcr.io/onedr0p/sonarr-develop:4.0.0.676
+        imagePullPolicy: Always
         ports:
         - containerPort: 8989
         envFrom:
