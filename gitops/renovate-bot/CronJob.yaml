@@ -13,7 +13,7 @@ spec:
       template:
         spec:
           containers:
-            - image: renovate/renovate:37.0.1
+            - image: renovate/renovate:37.1.2
               name: renovate-bot
               envFrom:
               - secretRef:
