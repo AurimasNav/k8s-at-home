@@ -17,7 +17,7 @@ spec:
       containers:
       - name: minecraft
         image: itzg/minecraft-bedrock-server:latest
-        imagePullPolicy: always
+        imagePullPolicy: Always
         ports:
         - containerPort: 19132
           protocol: UDP
