@@ -31,8 +31,6 @@ spec:
         envFrom:
         - configMapRef:
             name: plex
-        - secretRef:
-            name: plex
         volumeMounts:
         - name: plex-config
           mountPath: /config
