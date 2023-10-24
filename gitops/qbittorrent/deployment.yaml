@@ -57,10 +57,10 @@ spec:
       - name: vuetorrent
         emptyDir:
           sizeLimit: 500Mi
-      initContainers:
-      - name: clone-vuetorrent
-        image: bitnami/git:2.42.0
-        volumeMounts:
-        - name: vuetorrent
-          mountPath: /vuetorrent
-        command: ['sh', '-c', "git clone --single-branch --branch nightly-release https://github.com/WDaan/VueTorrent.git /vuetorrent"]
+      # initContainers:
+      # - name: clone-vuetorrent
+      #   image: bitnami/git:2.42.0
+      #   volumeMounts:
+      #   - name: vuetorrent
+      #     mountPath: /vuetorrent
+      #   command: ['sh', '-c', "git clone --single-branch --branch nightly-release https://github.com/WDaan/VueTorrent.git /vuetorrent"]
