@@ -38,6 +38,8 @@ spec:
           mountPath: /config
         - name: torrents
           mountPath: /data/torrents
+        - name: media
+          mountPath: /data/media
         - name: vuetorrent
           mountPath: /vuetorrent
       volumes:
@@ -47,6 +49,10 @@ spec:
       - name: torrents
         hostPath:
           path: /data/torrents
+          type: Directory
+      - name: media
+        hostPath:
+          path: /data/media
           type: Directory
       - name: vuetorrent
         emptyDir:
