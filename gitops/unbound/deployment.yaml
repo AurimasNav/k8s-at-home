@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: unbound
-        image: mvance/unbound:1.18.0
+        image: mvance/unbound:1.19.0
         imagePullPolicy: Always
         ports:
         - name: dns-tcp
