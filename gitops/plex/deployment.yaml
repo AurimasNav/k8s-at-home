@@ -17,6 +17,7 @@ spec:
       containers:
       - name: plex
         image: plexinc/pms-docker:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 32400
           protocol: TCP
