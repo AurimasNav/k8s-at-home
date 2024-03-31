@@ -19,7 +19,7 @@ spec:
         runAsGroup: 1000
       containers:
       - name: sonarr1
-        image: ghcr.io/onedr0p/sonarr-develop:4.0.2.1367
+        image: ghcr.io/onedr0p/sonarr-develop:4.0.2.1408
         imagePullPolicy: Always
         ports:
         - containerPort: 8989
