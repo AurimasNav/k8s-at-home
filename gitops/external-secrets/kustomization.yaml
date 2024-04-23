@@ -8,7 +8,7 @@ helmGlobals:
   chartHome: charts
 helmCharts:
 - name: external-secrets
-  version: 0.9.14
+  version: 0.9.16
   repo: https://charts.external-secrets.io
   releaseName: external-secrets
   namespace: external-secrets
