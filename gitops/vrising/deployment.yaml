@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vrising
+  labels:
+    app: vrising
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vrising
+  template:
+    metadata:
+      labels:
+        app: vrising
+    spec:
+      containers:
+      - name: vrising
+        image: trueosiris/vrising:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9876
+          protocol: UDP
+        - containerPort: 9877
+          protocol: UDP
+        envFrom:
+        - configMapRef:
+            name: vrising
+        volumeMounts:
+        - name: vrising-world
+          mountPath: /mnt/vrising/server
+        - name: vrising-steam
+          mountPath: /mnt/vrising/persistentdata
+        resources:
+          limits:
+            cpu: 4
+            memory: 4096Mi
+          requests:
+            cpu: 1m
+            memory: 64Mi
+      volumes:
+      - name: vrising-world
+        persistentVolumeClaim:
+          claimName: vrising-world
+      - name: vrising-steam
+        persistentVolumeClaim:
+          claimName: vrising-steam
