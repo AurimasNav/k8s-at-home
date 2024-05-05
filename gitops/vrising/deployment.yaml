@@ -28,9 +28,9 @@ spec:
             name: vrising
         volumeMounts:
         - name: vrising-world
-          mountPath: /mnt/vrising/server
-        - name: vrising-steam
           mountPath: /mnt/vrising/persistentdata
+        - name: vrising-steam
+          mountPath: /mnt/vrising/server
         resources:
           limits:
             cpu: 4
