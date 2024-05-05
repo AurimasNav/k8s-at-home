@@ -25,3 +25,4 @@ resources:
 - ./apps/sonarr1
 - ./apps/flemmarr
 - ./apps/minecraft
+- ./apps/vrising

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vrising
+data:
+  TZ: Europe/Vilnius
+  SERVERNAME: origin.lt
