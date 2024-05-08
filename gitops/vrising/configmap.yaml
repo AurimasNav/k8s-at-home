@@ -6,8 +6,8 @@ data:
   TZ: Europe/Vilnius
   SERVERNAME: origin
   #VR_NAME: origin
-#  VR_PASSWORD: originlt
-  VR_DESCRIPTION: "Serverio discord invite linkas www.origin.lt"
+  VR_PASSWORD: originlt
+#  VR_DESCRIPTION: "Serverio discord invite linkas www.origin.lt"
 #  VR_MAX_USERS: "8"
 #  VR_MAX_ADMINS: "2"
 #  VR_FPS: "120"
