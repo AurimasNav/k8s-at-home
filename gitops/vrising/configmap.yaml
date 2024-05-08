@@ -7,10 +7,10 @@ data:
   SERVERNAME: origin
   #VR_NAME: origin
 #  VR_PASSWORD: originlt
-  VR_DESCRIPTION: "Serverio discord invite linkas www.origin.lt"
-  VR_MAX_USERS: "8"
-  VR_MAX_ADMINS: "2"
-  VR_FPS: "120"
-  VR_SECURE: "true"
+#  VR_DESCRIPTION: "Serverio discord invite linkas www.origin.lt"
+#  VR_MAX_USERS: "8"
+#  VR_MAX_ADMINS: "2"
+#  VR_FPS: "120"
+#  VR_SECURE: "true"
   VR_LIST_ON_STEAM: "true"
   VR_LIST_ON_EOS: "true"
