@@ -13,3 +13,4 @@ data:
   VR_FPS: "120"
   VR_SECURE: "true"
   VR_LIST_ON_STEAM: "true"
+  VR_LIST_ON_EOS: "true"
