@@ -1,0 +1,52 @@
+#actual config patched from secret
+config:
+  bookmarks:
+    - Developer:
+        - Github:
+            - abbr: GH
+              href: https://github.com/
+  services:
+    - Media:
+        - Radarr:
+            href: https://radarr.sync.lt/
+            description: Homepage is awesome
+            widget:
+              type: radarr
+              url: http://radarr.radarr/
+              key: key
+              enableQueue: true # optional, defaults to false
+    - My Second Group:
+        - My Second Service:
+            href: http://localhost/
+            description: Homepage is the best
+
+    - My Third Group:
+        - My Third Service:
+            href: http://localhost/
+            description: Homepage is ≡ƒÿÄ
+  widgets:
+    - resources:
+        # change backend to 'kubernetes' to use Kubernetes integration. Requires RBAC.
+        backend: resources
+        expanded: true
+        cpu: true
+        memory: true
+    - search:
+        provider: duckduckgo
+        target: _blank
+    - kubernetes:
+        cluster:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+          label: "cluster"
+        nodes:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+  kubernetes:
+    mode: cluster
+  docker:
+  settings:

@@ -1,0 +1,6 @@
+- op: replace
+  path: /spec/template/spec/volumes[0]
+  value:
+  - secret:
+      secretName: homepage
+    name: homepage-config

@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources: []
+namespace: homepage
+
+patches:
+- path: ./patches/volumes.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: homepage
+
+helmGlobals:
+  chartHome: charts
+helmCharts:
+- name: homepage
+  version: 2.0.1
+  repo: https://jameswynn.github.io/helm-charts
+  releaseName: homepage
+  includeCRDs: true
+  namespace: homepage
+  valuesFile: values.yaml
