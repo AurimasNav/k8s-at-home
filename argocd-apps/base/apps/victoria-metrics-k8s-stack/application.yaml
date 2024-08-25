@@ -33,3 +33,6 @@ spec:
       name: victoria-metrics-k8s-stack-victoria-metrics-operator-admission
       jqPathExpressions:
       - '.webhooks[]?.clientConfig.caBundle'
+    - group: ""
+      kind: PersistentVolumeClaim
+      name: vmsingle-victoria-metrics-k8s-stack
