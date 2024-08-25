@@ -7,7 +7,7 @@ helmGlobals:
   chartHome: charts
 helmCharts:
 - name: victoria-metrics-k8s-stack
-  version: latest
+  version: 0.25.3
   repo: https://victoriametrics.github.io/helm-charts
   releaseName: victoria-metrics-k8s-stack
   namespace: victoriametrics
