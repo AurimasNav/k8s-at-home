@@ -38,3 +38,5 @@ spec:
       name: vmsingle-victoria-metrics-k8s-stack
     - group: ""
       kind: Pod
+    - group: apps
+      kind: ControllerRevision
