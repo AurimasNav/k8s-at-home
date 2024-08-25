@@ -36,3 +36,5 @@ spec:
     - group: ""
       kind: PersistentVolumeClaim
       name: vmsingle-victoria-metrics-k8s-stack
+    - group: ""
+      kind: Pod
