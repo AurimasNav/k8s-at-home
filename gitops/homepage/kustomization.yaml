@@ -5,12 +5,12 @@ resources:
 - ./externalSecret.yaml
 namespace: homepage
 
-# patches:
-# - path: ./patches/volumes.yaml
-#   target:
-#     version: v1
-#     kind: Deployment
-#     name: homepage
+patches:
+- path: ./patches/volumes.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: homepage
 
 helmGlobals:
   chartHome: charts
