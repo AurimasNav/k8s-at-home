@@ -40,3 +40,6 @@ spec:
       kind: Pod
     - group: apps
       kind: ControllerRevision
+    - group: apps
+      kind: StatefulSet
+      name: vmalertmanager-victoria-metrics-k8s-stack
