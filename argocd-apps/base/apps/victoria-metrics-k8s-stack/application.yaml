@@ -8,6 +8,7 @@ metadata:
 spec:
   destination:
     server: https://kubernetes.default.svc
+    namespace: victoriametrics
   project: default
   source:
     path: gitops/victoria-metrics-k8s-stack
