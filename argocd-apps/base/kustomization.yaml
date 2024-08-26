@@ -26,5 +26,5 @@ resources:
 - ./apps/flemmarr
 - ./apps/minecraft
 - ./apps/vrising
-#- ./apps/victoria-metrics-k8s-stack
+- ./apps/victoria-metrics-k8s-stack
 - ./apps/homepage
