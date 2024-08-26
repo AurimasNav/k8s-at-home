@@ -12,14 +12,23 @@ config:
             description: Homepage is awesome
             widget:
               type: radarr
-              url: http://radarr.radarr/
+              url: http://radarr.radarr
               key: key
               enableQueue: true # optional, defaults to false
-    - My Second Group:
-        - My Second Service:
-            href: http://localhost/
-            description: Homepage is the best
-
+    - Performance:
+        - Glances:
+            href: http://192.168.1.21:8080
+            widget:
+              url: http://192.168.1.21:8080
+              version: 4 # required only if running glances v4 or higher, defaults to 3
+              cpu: true # optional, enabled by default, disable by setting to false
+              mem: true # optional, enabled by default, disable by setting to false
+              cputemp: true # disabled by default
+              uptime: true # disabled by default
+              disk: /data # disabled by default, use mount point of disk(s) in glances. Can also be a list (see below)
+              diskUnits: bytes # optional, bytes (default) or bbytes. Only applies to disk
+              expanded: true # show the expanded view
+              label: comPlex # optional
     - My Third Group:
         - My Third Service:
             href: http://localhost/
