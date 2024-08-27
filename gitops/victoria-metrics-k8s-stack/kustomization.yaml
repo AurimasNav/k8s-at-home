@@ -4,12 +4,12 @@ kind: Kustomization
 resources: []
 namespace: victoriametrics
 
-patches:
-- path: ./patches/deployment-operator.yaml
-  target:
-    version: v1
-    kind: Deployment
-    name: victoria-metrics-k8s-stack-victoria-metrics-operator
+#patches:
+#- path: ./patches/deployment-operator.yaml
+#  target:
+#    version: v1
+#    kind: Deployment
+#    name: victoria-metrics-k8s-stack-victoria-metrics-operator
 
 helmGlobals:
   chartHome: charts
