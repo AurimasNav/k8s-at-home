@@ -8,7 +8,7 @@ helmGlobals:
   chartHome: charts
 helmCharts:
 - name: jenkins
-  version: 0.25.5
+  version: 5.5.15
   repo: https://charts.jenkins.io
   releaseName: jenkins
   includeCRDs: true
