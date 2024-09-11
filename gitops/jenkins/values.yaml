@@ -1,0 +1,3 @@
+agent:
+  # -- Enable Kubernetes plugin jnlp-agent podTemplate
+  enabled: false
