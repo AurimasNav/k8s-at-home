@@ -28,3 +28,4 @@ resources:
 - ./apps/vrising
 - ./apps/victoria-metrics-k8s-stack
 - ./apps/homepage
+- ./apps/jenkins
