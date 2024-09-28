@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: satisfactory
+  labels:
+    app: satisfactory
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: satisfactory
+  template:
+    metadata:
+      labels:
+        app: satisfactory
+    spec:
+      containers:
+      - name: satisfactory
+        image: wolveix/satisfactory-server:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7777
+          protocol: TCP
+        - containerPort: 7777
+          protocol: UDP
+        envFrom:
+        - configMapRef:
+            name: satisfactory
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        resources:
+          limits:
+            cpu: 4
+            memory: 16Gi
+          requests:
+            cpu: 1m
+            memory: 64Mi
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: config

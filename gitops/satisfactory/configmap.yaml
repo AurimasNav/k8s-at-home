@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: satisfactory
+data:
+  AUTOSAVENUM: "5"
+  DEBUG: "false"
+  MAXOBJECTS: "2162688"
+  MAXPLAYERS: "4"
+  MAXTICKRATE: "30"

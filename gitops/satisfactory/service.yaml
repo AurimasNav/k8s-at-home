@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: satisfactory
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.225
+spec:
+  ports:
+  - name: app
+    port: 7777
+    targetPort: 7777
+    protocol: TCP
+  - name: comm
+    port: 7777
+    targetPort: 7777
+    protocol: UDP
+  selector:
+    app: satisfactory
+  type: LoadBalancer
