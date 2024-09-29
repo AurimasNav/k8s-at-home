@@ -5,6 +5,6 @@ metadata:
 data:
   AUTOSAVENUM: "5"
   DEBUG: "false"
-  MAXOBJECTS: "1162688"
+  MAXOBJECTS: "162688"
   MAXPLAYERS: "4"
   MAXTICKRATE: "5"
