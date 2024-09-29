@@ -7,4 +7,4 @@ data:
   DEBUG: "false"
   MAXOBJECTS: "2162688"
   MAXPLAYERS: "4"
-  MAXTICKRATE: "30"
+  MAXTICKRATE: "5"
