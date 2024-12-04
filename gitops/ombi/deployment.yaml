@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: ombi
-        image: lscr.io/linuxserver/ombi:4.46.4-development
+        image: lscr.io/linuxserver/ombi:4.46.7-development
         ports:
         - containerPort: 3579
         envFrom:
