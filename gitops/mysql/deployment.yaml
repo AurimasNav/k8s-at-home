@@ -22,7 +22,7 @@ spec:
             name: mysql
         - configMapRef:
             name: mysql
-        image: mysql:8.0.40-debian
+        image: mysql:8.0.41-debian
         imagePullPolicy: Always
         ports:
         - name: mysql
