@@ -22,7 +22,7 @@ spec:
             name: oauth2-proxy
         - configMapRef:
             name: oauth2-proxy
-        image: quay.io/oauth2-proxy/oauth2-proxy:v7.8.1
+        image: quay.io/oauth2-proxy/oauth2-proxy:v7.9.0
         imagePullPolicy: Always
         ports:
         - containerPort: 4180
