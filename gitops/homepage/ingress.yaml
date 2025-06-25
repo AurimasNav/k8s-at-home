@@ -10,10 +10,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - assistant.sync.lt
+    - home.sync.lt
     secretName: assistant-letsencrypt
   rules:
-  - host: assistant.sync.lt
+  - host: home.sync.lt
     http:
       paths:
       - path: /
