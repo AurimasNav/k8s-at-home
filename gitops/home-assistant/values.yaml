@@ -1,0 +1,20 @@
+ingress:
+  # Enable ingress for home assistant
+  enabled: true
+  # Enable external ingress (cannot be true when ingress.enabled is true)
+  external: false
+  className: nginx
+  labels: {}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/auth-url: "https://login.sync.lt/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://login.sync.lt/oauth2/start?rd=$scheme://$best_http_host$escaped_request_uri"
+  hosts:
+    - host: assistant.sync.lt
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - assistant.sync.lt
+    secretName: assistant-letsencrypt
