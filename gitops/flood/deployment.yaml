@@ -19,7 +19,7 @@ spec:
         runAsGroup: 1000
       containers:
       - name: flood
-        image: jesec/flood:4.8.2
+        image: jesec/flood:4.9.3
         ports:
         - containerPort: 3000
         envFrom:

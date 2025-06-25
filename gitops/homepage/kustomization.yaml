@@ -16,7 +16,7 @@ helmGlobals:
   chartHome: charts
 helmCharts:
 - name: homepage
-  version: 2.0.1
+  version: 2.1.0
   repo: https://jameswynn.github.io/helm-charts
   releaseName: homepage
   includeCRDs: true
