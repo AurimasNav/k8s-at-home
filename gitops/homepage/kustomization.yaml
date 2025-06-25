@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
 - ./externalSecret.yaml
+- ./ingress.yaml
 namespace: homepage
 
 patches:
