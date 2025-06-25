@@ -1,3 +1,9 @@
+configuration:
+  # Enable or disable the configuration setup for Home Assistant
+  enabled: true
+  # Force init will merge the current configuration file with the default configuration on every start
+  # This is useful when you want to ensure that the configuration file is always up to date
+  forceInit: true
 ingress:
   # Enable ingress for home assistant
   enabled: true
