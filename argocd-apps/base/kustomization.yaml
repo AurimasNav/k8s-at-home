@@ -24,9 +24,10 @@ resources:
 - ./apps/renovate-bot
 #- ./apps/sonarr1
 - ./apps/flemmarr
-- ./apps/minecraft
-- ./apps/vrising
+#- ./apps/minecraft
+#- ./apps/vrising
 - ./apps/victoria-metrics-k8s-stack
 - ./apps/homepage
 #- ./apps/jenkins
-- ./apps/satisfactory
+#- ./apps/satisfactory
+- ./apps/home-assistant

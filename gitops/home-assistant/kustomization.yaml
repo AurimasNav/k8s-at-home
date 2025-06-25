@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources: []
+namespace: home-assistant
+
+
+helmCharts:
+- name: home-assistant
+  version: 0.3.8
+  repo: http://pajikos.github.io/home-assistant-helm-chart/
+  releaseName: home-assistant
+  includeCRDs: true
+  namespace: home-assistant
+  valuesFile: values.yaml
