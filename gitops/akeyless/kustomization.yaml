@@ -12,3 +12,4 @@ helmCharts:
   releaseName: akeyless-api-gateway
   namespace: akeyless
   valuesFile: values.yaml
+  includeCRDs: true
