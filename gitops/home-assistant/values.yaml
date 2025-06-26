@@ -13,6 +13,8 @@ ingress:
   labels: {}
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.org/proxy-read-timeout: "7200s"
+    nginx.org/proxy-connect-timeout: "7200s"
   hosts:
     - host: assistant.sync.lt
       paths:
