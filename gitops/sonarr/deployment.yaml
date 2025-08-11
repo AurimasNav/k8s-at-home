@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: sonarr
-        image: lscr.io/linuxserver/sonarr:4.0.15-develop
+        image: lscr.io/linuxserver/sonarr:4.0.14
         imagePullPolicy: Always
         ports:
         - containerPort: 8989
@@ -36,3 +36,4 @@ spec:
         hostPath:
           path: /data
           type: Directory
+
