@@ -28,7 +28,7 @@ spec:
           value: xxxyyy
         volumeMounts:
         - name: overseerr-config
-          mountPath: /config
+          mountPath: /app/config
       volumes:
       - name: overseerr-config
         persistentVolumeClaim:
