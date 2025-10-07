@@ -4,3 +4,4 @@ metadata:
   name: huntarr
 data:
   TZ: Europe/Vilnius
+  HUNTARR_PORT: "9705"
