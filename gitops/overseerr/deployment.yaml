@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: overseerr
-        image: lscr.io/linuxserver/overseerr:1.34.0
+        image: fallenbagel/jellyseerr:preview-seerr
         imagePullPolicy: Always
         ports:
         - containerPort: 5055
