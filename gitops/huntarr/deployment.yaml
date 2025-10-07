@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: huntarr
+  labels:
+    app: huntarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: huntarr
+  template:
+    metadata:
+      labels:
+        app: huntarr
+    spec:
+      containers:
+      - name: huntarr
+        image: ghcr.io/plexguide/huntarr:8.2.10
+        imagePullPolicy: Always
+        ports: 
+        - containerPort: 9705
+        envFrom:
+        - configMapRef:
+            name: huntarr
+        env:
+        - name: main__apiKey
+          value: xxxyyy
+        volumeMounts:
+        - name: huntarr-config
+          mountPath: /config
+      volumes:
+      - name: huntarr-config
+        persistentVolumeClaim:
+          claimName: huntarr-config
