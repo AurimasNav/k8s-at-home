@@ -9,20 +9,9 @@ metadata:
 spec:
   tls:
   - hosts:
-    - sync.lt
     - huntarr.sync.lt
     secretName: huntarr-letsencrypt
   rules:
-  - host: sync.lt
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: huntarr
-            port:
-              name: app
   - host: huntarr.sync.lt
     http:
       paths:
