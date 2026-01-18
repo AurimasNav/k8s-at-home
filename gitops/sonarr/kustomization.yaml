@@ -7,3 +7,7 @@ resources:
 - ./service.yaml
 - ./configmap.yaml
 - ./pvc.yaml
+
+images:
+  name: lscr.io/linuxserver/sonarr
+  newTag: 4.0.16
