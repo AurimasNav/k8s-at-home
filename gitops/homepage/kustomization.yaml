@@ -7,11 +7,14 @@ resources:
 namespace: homepage
 
 patches:
-- path: ./patches/volumes.yaml
-  target:
-    version: v1
-    kind: Deployment
-    name: homepage
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: homepage
+      namespace: homepage
+    path: ./patches/volumes.yaml
+
 
 helmGlobals:
   chartHome: charts

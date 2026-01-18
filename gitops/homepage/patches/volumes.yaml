@@ -1,6 +1,13 @@
-- op: replace
-  path: /spec/template/spec/volumes/0
-  value:
-    secret:
-      secretName: homepage
-    name: homepage-config
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+  namespace: homepage
+spec:
+  template:
+    spec:
+      volumes:
+        - name: homepage-config
+          $patch: replace
+          secret:
+            secretName: homepage
