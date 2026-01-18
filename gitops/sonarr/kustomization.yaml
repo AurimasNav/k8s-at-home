@@ -9,5 +9,5 @@ resources:
 - ./pvc.yaml
 
 images:
-  - name: lscr.io/linuxserver/sonarr
-    newTag: 4.0.16
+- name: lscr.io/linuxserver/sonarr
+  newTag: 4.0.16

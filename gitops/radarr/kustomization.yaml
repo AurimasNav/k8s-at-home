@@ -9,5 +9,5 @@ resources:
 - ./pvc.yaml
 
 images:
-  name: lscr.io/linuxserver/radarr:
+- name: lscr.io/linuxserver/radarr
   newTag: 5.27.0-develop
