@@ -14,8 +14,6 @@ spec:
     path: gitops/sonarr
     repoURL: https://github.com/AurimasNav/k8s-at-home.git
     targetRevision: main
-    kustomize:
-      enableHelm: false
   syncPolicy:
     automated:
       prune: true
