@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: overseerr
-        image: fallenbagel/jellyseerr:preview-seerr
+        image: seerr/seerr:develop
         imagePullPolicy: Always
         ports: 
         - containerPort: 5055
