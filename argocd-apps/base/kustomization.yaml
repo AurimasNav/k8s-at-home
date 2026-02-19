@@ -31,4 +31,5 @@ resources:
 #- ./apps/jenkins
 #- ./apps/satisfactory
 - ./apps/home-assistant
+- ./apps/otbr
 - ./apps/huntarr

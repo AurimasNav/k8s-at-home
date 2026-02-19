@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otbr
+  namespace: otbr
+  labels:
+    app: otbr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otbr
+  template:
+    metadata:
+      labels:
+        app: otbr
+    spec:
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/hostname: ubuntu-k8s
+      containers:
+      - name: otbr
+        image: ghcr.io/ownbee/hass-otbr-docker:latest
+        securityContext:
+          privileged: true
+        env:
+        - name: DEVICE
+          value: /dev/ttyACM0
+        - name: BAUDRATE
+          value: "1000000"
+        - name: FLOW_CONTROL
+          value: "true"
+        - name: BACKBONE_IF
+          value: eth0
+        - name: FIREWALL
+          value: "0"
+        - name: NAT64
+          value: "0"
+        - name: OTBR_REST_PORT
+          value: "8081"
+        - name: OTBR_WEB_PORT
+          value: "8086"
+        - name: AUTOFLASH_FIRMWARE
+          value: "0"
+        volumeMounts:
+        - name: usb
+          mountPath: /dev/ttyACM0
+        - name: tun
+          mountPath: /dev/net/tun
+      volumes:
+      - name: usb
+        hostPath:
+          path: /dev/serial/by-id/usb-Nabu_Casa_ZBT-2_DCB4D9124108-if00
+          type: CharDevice
+      - name: tun
+        hostPath:
+          path: /dev/net/tun
+          type: CharDevice
