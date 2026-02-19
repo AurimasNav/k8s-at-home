@@ -17,6 +17,10 @@ additionalMounts:
   - mountPath: /dev/ttyACM0
     name: usb
 
+persistence:
+  enabled: true
+  size: 5Gi
+
 ingress:
   # Enable ingress for home assistant
   enabled: true
