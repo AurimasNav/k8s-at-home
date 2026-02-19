@@ -31,7 +31,7 @@ spec:
         - name: FLOW_CONTROL
           value: "true"
         - name: BACKBONE_IF
-          value: eth0
+          value: eno1
         - name: FIREWALL
           value: "0"
         - name: NAT64
