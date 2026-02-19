@@ -4,6 +4,19 @@ configuration:
   # Force init will merge the current configuration file with the default configuration on every start
   # This is useful when you want to ensure that the configuration file is always up to date
   forceInit: true
+securityContext:
+  privileged: true
+
+additionalVolumes:
+  - hostPath:
+      path: /dev/serial/by-id/usb-Nabu_Casa_ZBT-2_DCB4D9124108-if00
+      type: CharDevice
+    name: usb
+
+additionalMounts:
+  - mountPath: /dev/ttyACM0
+    name: usb
+
 persistence:
   enabled: true
   size: 5Gi
