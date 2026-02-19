@@ -27,7 +27,7 @@ spec:
         - name: DEVICE
           value: /dev/ttyACM0
         - name: BAUDRATE
-          value: "1000000"
+          value: "460800"
         - name: FLOW_CONTROL
           value: "true"
         - name: BACKBONE_IF
@@ -41,7 +41,7 @@ spec:
         - name: OTBR_WEB_PORT
           value: "8086"
         - name: AUTOFLASH_FIRMWARE
-          value: "0"
+          value: "1"
         volumeMounts:
         - name: usb
           mountPath: /dev/ttyACM0
