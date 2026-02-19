@@ -41,7 +41,7 @@ spec:
         - name: OTBR_WEB_PORT
           value: "8086"
         - name: AUTOFLASH_FIRMWARE
-          value: "1"
+          value: "0"
         volumeMounts:
         - name: usb
           mountPath: /dev/ttyACM0
