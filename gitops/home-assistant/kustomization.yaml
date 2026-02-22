@@ -7,7 +7,7 @@ namespace: home-assistant
 
 helmCharts:
 - name: home-assistant
-  version: 0.3.37
+  version: 0.3.45
   repo: http://pajikos.github.io/home-assistant-helm-chart/
   releaseName: home-assistant
   includeCRDs: true
