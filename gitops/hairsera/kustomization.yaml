@@ -11,3 +11,8 @@ resources:
 - ./deployment.yaml
 - ./service.yaml
 - ./ingress.yaml
+images:
+- name: ghcr.io/aurimasnav/hairsera
+  newTag: 0.1.0-7
+- name: ghcr.io/aurimasnav/hairsera-migrate
+  newTag: 0.1.0-7
