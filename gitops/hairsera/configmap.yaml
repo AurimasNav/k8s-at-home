@@ -4,4 +4,5 @@ metadata:
   name: hairsera
   namespace: hairsera
 data:
+  AUTH_URL: https://hair.sync.lt
   MICROSOFT_TENANT_ID: common
