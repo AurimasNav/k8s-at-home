@@ -9,6 +9,6 @@ data:
   MICROSOFT_TENANT_ID: common
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.otel-collector:4317
   OTEL_SERVICE_NAME: hairsera
-  OTEL_SERVICE_VERSION: 0.1.0-develop.37
+  OTEL_SERVICE_VERSION: 0.1.0-develop.38
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=production
   LOGO_URL: https://hairsera.lt/wp-content/uploads/2023/08/Hairsera-logo.png
