@@ -11,3 +11,4 @@ data:
   OTEL_SERVICE_NAME: hairsera
   OTEL_SERVICE_VERSION: 0.1.0-develop.31
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=production
+  LOGO_URL: https://hairsera.lt/wp-content/uploads/2023/08/Hairsera-logo.png
