@@ -9,10 +9,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - hairsera.sync.lt
+    - hair.sync.lt
     secretName: hairsera-letsencrypt
   rules:
-  - host: hairsera.sync.lt
+  - host: hair.sync.lt
     http:
       paths:
       - path: /
