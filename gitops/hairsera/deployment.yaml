@@ -15,6 +15,8 @@ spec:
       labels:
         app: hairsera
     spec:
+      imagePullSecrets:
+      - name: ghcr-pull-secret
       containers:
       - name: hairsera
         image: ghcr.io/aurimasnav/hairsera:latest

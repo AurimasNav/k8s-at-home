@@ -12,6 +12,8 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      imagePullSecrets:
+      - name: ghcr-pull-secret
       containers:
       - name: migrate
         image: ghcr.io/aurimasnav/hairsera-migrate:latest

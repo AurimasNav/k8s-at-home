@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
 - ./configmap.yaml
 - ./externalsecret.yaml
+- ./ghcr-pull.externalsecret.yaml
 - ./google-oauth.externalsecret.yaml
 - ./microsoft-oauth.externalsecret.yaml
 - ./migrate.job.yaml
