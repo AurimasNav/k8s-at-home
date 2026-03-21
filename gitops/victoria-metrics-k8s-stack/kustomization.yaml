@@ -5,6 +5,7 @@ resources:
 - ./datasources.yaml
 - ./dashboard-tempo.yaml
 - ./dashboard-loki.yaml
+- ./ingress.yaml
 namespace: victoriametrics
 
 patches:

@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: victoriametrics
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/auth-url: "https://login.sync.lt/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://login.sync.lt/oauth2/start?rd=$scheme://$best_http_host$escaped_request_uri"
+spec:
+  tls:
+  - hosts:
+    - grafana.sync.lt
+    secretName: grafana-letsencrypt
+  rules:
+  - host: grafana.sync.lt
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: victoria-metrics-k8s-stack-grafana
+            port:
+              number: 80

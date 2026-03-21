@@ -42,8 +42,8 @@ config:
   exporters:
     otlphttp/tempo:
       endpoint: http://tempo.tempo.svc:4318
-    loki:
-      endpoint: http://loki.loki.svc:3100/loki/api/v1/push
+    otlphttp/loki:
+      endpoint: http://loki.loki.svc:3100/otlp
     prometheusremotewrite/victoriametrics:
       endpoint: http://vmsingle-victoria-metrics-k8s-stack.victoriametrics.svc:8429/api/v1/write
 
@@ -60,4 +60,4 @@ config:
       logs:
         receivers: [otlp]
         processors: [memory_limiter, filter/drop_probes, batch]
-        exporters: [loki]
+        exporters: [otlphttp/loki]
