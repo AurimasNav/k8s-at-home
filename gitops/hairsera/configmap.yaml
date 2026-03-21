@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hairsera
+  namespace: hairsera
+data:
+  MICROSOFT_TENANT_ID: common

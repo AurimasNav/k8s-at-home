@@ -34,3 +34,5 @@ resources:
 - ./apps/otbr
 - ./apps/matter-server
 - ./apps/huntarr
+- ./apps/postgresql
+- ./apps/hairsera
