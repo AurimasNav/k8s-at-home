@@ -8,67 +8,6 @@ metadata:
 data:
   tempo-otel.json: |
     {
-      "__inputs": [
-        {
-          "name": "DS_PROMETHEUS",
-          "label": "Prometheus",
-          "description": "",
-          "type": "datasource",
-          "pluginId": "prometheus",
-          "pluginName": "Prometheus"
-        }
-      ],
-      "__elements": {},
-      "__requires": [
-        {
-          "type": "panel",
-          "id": "barchart",
-          "name": "Bar chart",
-          "version": ""
-        },
-        {
-          "type": "panel",
-          "id": "bargauge",
-          "name": "Bar gauge",
-          "version": ""
-        },
-        {
-          "type": "panel",
-          "id": "gauge",
-          "name": "Gauge",
-          "version": ""
-        },
-        {
-          "type": "grafana",
-          "id": "grafana",
-          "name": "Grafana",
-          "version": "11.3.2"
-        },
-        {
-          "type": "panel",
-          "id": "heatmap",
-          "name": "Heatmap",
-          "version": ""
-        },
-        {
-          "type": "datasource",
-          "id": "prometheus",
-          "name": "Prometheus",
-          "version": "1.0.0"
-        },
-        {
-          "type": "panel",
-          "id": "stat",
-          "name": "Stat",
-          "version": ""
-        },
-        {
-          "type": "panel",
-          "id": "timeseries",
-          "name": "Time series",
-          "version": ""
-        }
-      ],
       "annotations": {
         "list": [
           {
@@ -106,7 +45,7 @@ data:
         },
         {
           "datasource": {
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -175,7 +114,7 @@ data:
               "range": true,
               "refId": "A",
               "datasource": {
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               }
             }
           ],
@@ -184,8 +123,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -283,8 +221,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_distributor_queue_pushes_total{service=\"$tempo_distributor_service\"}[$__rate_interval])) by (tenant)",
@@ -294,8 +231,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_distributor_queue_pushes_failures_total{service=\"$tempo_distributor_service\"}[$__rate_interval])) by (tenant)",
@@ -310,8 +246,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -409,8 +344,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_distributor_metrics_generator_pushes_total{service=\"$tempo_distributor_service\"}[$__rate_interval])) by (metrics_generator)",
@@ -420,8 +354,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_distributor_metrics_generator_pushes_failures_total{service=\"$tempo_distributor_service\"}[$__rate_interval])) by (metrics_generator)",
@@ -436,8 +369,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -519,8 +451,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(increase(tempo_metrics_generator_spans_discarded_total{}[$__interval])) by (reason, tenant)",
@@ -534,8 +465,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -617,8 +547,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(prometheus_remote_storage_samples_failed_total{service=\"$tempo_metrics_generator\"}[$__rate_interval])) by (remote_name, tenant)",
@@ -629,8 +558,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(prometheus_remote_storage_samples_dropped_total{service=\"$tempo_metrics_generator\"}[$__rate_interval])) by (remote_name, tenant, reason)",
@@ -641,8 +569,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(prometheus_remote_storage_exemplars_failed_total{service=\"$tempo_metrics_generator\"}[$__rate_interval])) by (remote_name, tenant)",
@@ -653,8 +580,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(prometheus_remote_storage_exemplars_dropped_total{service=\"$tempo_metrics_generator\"}[$__rate_interval])) by (remote_name, tenant, reason)",
@@ -669,8 +595,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -752,8 +677,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_metrics_generator_registry_series_limited_total{service=\"$tempo_metrics_generator\"}[$__rate_interval])) by (tenant)",
@@ -768,8 +692,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -851,8 +774,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "traces_service_graph_request_failed_total",
@@ -867,8 +789,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -950,8 +871,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(traces_spanmetrics_calls_total[$__rate_interval])) by(service,tenant)",
@@ -965,8 +885,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1050,8 +969,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(traces_service_graph_request_total[$__rate_interval])) by (tenant, client)",
@@ -1078,8 +996,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1160,8 +1077,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_ingester_blocks_cleared_total{service=\"$tempo_ingester_service\"}[$__rate_interval])) by (pod)",
@@ -1175,8 +1091,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1255,8 +1170,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_ingester_blocks_flushed_total{service=\"$tempo_ingester_service\"}[$__rate_interval])) by (pod)",
@@ -1266,8 +1180,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_ingester_failed_flushes_total{service=\"$tempo_ingester_service\"}[$__rate_interval])) by (pod)",
@@ -1282,8 +1195,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1403,8 +1315,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempodb_compaction_blocks_total{service=\"$tempo_compactor_service\"}[$__rate_interval])) by (level)",
@@ -1414,8 +1325,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempodb_compaction_bytes_written_total{service=\"$tempo_compactor_service\"}[$__rate_interval])) by (level)",
@@ -1430,8 +1340,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1537,8 +1446,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempodb_compaction_objects_combined_total{service=\"$tempo_compactor_service\"}[$__rate_interval])) by (level)",
@@ -1549,8 +1457,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempodb_compaction_objects_written_total{service=\"$tempo_compactor_service\"}[$__rate_interval])) by (level)",
@@ -1565,8 +1472,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1655,8 +1561,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(tempodb_blocklist_length) by (service)",
@@ -1670,8 +1575,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1756,8 +1660,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(tempo_ring_members) by (service, state)",
@@ -1784,8 +1687,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1843,8 +1745,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -1861,8 +1762,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1920,8 +1820,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -1938,8 +1837,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -1993,8 +1891,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -2011,8 +1908,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -2076,8 +1972,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -2095,8 +1990,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -2179,8 +2073,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -2193,8 +2086,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -2211,8 +2103,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -2294,8 +2185,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.99, sum(rate(tempo_memcache_request_duration_seconds_bucket{method=\"Memcache.Put\"}[$__rate_interval])) by (status_code, service, le))",
@@ -2307,8 +2197,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.90, sum(rate(tempo_memcache_request_duration_seconds_bucket{method=\"Memcache.Put\"}[$__rate_interval])) by (status_code, service, le))",
@@ -2320,8 +2209,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.99, sum(rate(tempo_memcache_request_duration_seconds_bucket{method=\"Memcache.GetMulti\"}[$__rate_interval])) by (status_code, service, le))",
@@ -2333,8 +2221,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.90, sum(rate(tempo_memcache_request_duration_seconds_bucket{method=\"Memcache.GetMulti\"}[$__rate_interval])) by (status_code, service, le))",
@@ -2350,8 +2237,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -2433,8 +2319,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.99, sum(rate(tempo_memcache_request_duration_seconds_bucket{method=\"Memcache.Put\"}[$__rate_interval])) by (status_code, service, le))",
@@ -2446,8 +2331,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.90, sum(rate(tempo_memcache_request_duration_seconds_bucket{method=\"Memcache.Put\"}[$__rate_interval])) by (status_code, service, le))",
@@ -2459,8 +2343,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.99, sum(rate(tempo_memcache_request_duration_seconds_bucket{method=\"Memcache.GetMulti\"}[$__rate_interval])) by (status_code, service, le))",
@@ -2472,8 +2355,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.90, sum(rate(tempo_memcache_request_duration_seconds_bucket{method=\"Memcache.GetMulti\"}[$__rate_interval])) by (status_code, service, le))",
@@ -2489,8 +2371,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -2572,8 +2453,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(increase(tempo_memcache_request_duration_seconds_sum[$__range])) by (method, service) / sum(increase(tempo_memcache_request_duration_seconds_count[$__range])) by (method, service)",
@@ -2590,8 +2470,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -2674,8 +2553,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(tempo_memcache_request_duration_seconds_sum{method=\"Memcache.GetMulti\"}) by (status_code, service) / sum(tempo_memcache_request_duration_seconds_count{method=\"Memcache.GetMulti\"}) by (status_code, service)",
@@ -2686,8 +2564,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(tempo_memcache_request_duration_seconds_sum{method=\"Memcache.Put\"}) by (status_code, service) / sum(tempo_memcache_request_duration_seconds_count{method=\"Memcache.Put\"}) by (status_code, service)",
@@ -2715,8 +2592,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "Near by 0 is better.",
           "fieldConfig": {
@@ -2798,8 +2674,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_discarded_spans_total{service=\"$tempo_distributor_service\"}[$__rate_interval])) by (reason, tenant)",
@@ -2814,8 +2689,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "",
           "fieldConfig": {
@@ -2895,8 +2769,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_distributor_spans_received_total{service=\"$tempo_distributor_service\"}[$__rate_interval])) by (tenant, service)",
@@ -2911,8 +2784,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "Tempo Ingester trace created rate.",
           "fieldConfig": {
@@ -2995,8 +2867,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_ingester_traces_created_total{service=\"$tempo_ingester_service\"}[$__rate_interval])) by (pod, tenant)",
@@ -3011,8 +2882,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -3092,8 +2962,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_distributor_bytes_received_total{service=\"$tempo_distributor_service\"}[$__rate_interval])) by (tenant, service)",
@@ -3108,8 +2977,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -3191,8 +3059,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(increase(tempo_warnings_total{}[$__interval])) by (tenant, reason, service)",
@@ -3221,8 +3088,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -3301,8 +3167,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(tempo_querier_worker_request_executed_total{service=\"$tempo_querier_service\"}[$__rate_interval])) by (pod)",
@@ -3316,8 +3181,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -3396,8 +3260,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(tempo_ingester_live_traces{service=\"$tempo_ingester_service\"}) by (pod)",
@@ -3424,8 +3287,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -3504,8 +3366,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_receiver_accepted_spans{service=\"$otel_service\"}[$__rate_interval])) by (receiver,transport)",
@@ -3520,8 +3381,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -3601,8 +3461,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_receiver_refused_spans{service=\"$otel_service\"}[$__rate_interval])) by (receiver,transport)",
@@ -3617,8 +3476,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "",
           "fieldConfig": {
@@ -3701,8 +3559,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(otelcol_process_runtime_total_sys_memory_bytes{service=\"$otel_service\"}) by (pod)",
@@ -3714,8 +3571,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(otelcol_process_memory_rss{service=\"$otel_service\"}) by (pod)",
@@ -3731,8 +3587,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -3813,8 +3668,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_processor_refused_spans{service=\"$otel_service\"}[$__rate_interval])) by (processor)",
@@ -3828,8 +3682,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -3895,8 +3748,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_processor_batch_batch_send_size_bucket{service=\"$otel_service\"}[$__rate_interval])) by (le)",
@@ -3911,8 +3763,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "Check the backend service, <br>e.g: <br>    max_recv_msg_size_mib: 10943040<br>    read_buffer_size: 10943040 ...",
           "fieldConfig": {
@@ -3998,8 +3849,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_exporter_send_failed_spans{service=\"$otel_service\"}[$__rate_interval])) by (service)",
@@ -4014,8 +3864,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -4094,8 +3943,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_exporter_sent_spans{service=\"$otel_service\"}[$__rate_interval])) by (service)",
@@ -4110,8 +3958,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -4212,8 +4059,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(otelcol_exporter_queue_size{service=\"$otel_service\"}) by (service)",
@@ -4223,8 +4069,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(otelcol_exporter_queue_capacity{service=\"$otel_service\"}) by (service)",
@@ -4252,8 +4097,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -4363,8 +4207,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_processor_tail_sampling_new_trace_id_received{service=\"$otel_service\"}[$__rate_interval])) by (service_name)",
@@ -4376,8 +4219,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_processor_tail_sampling_count_traces_sampled{service=\"$otel_service\"}[$__rate_interval])) by (service_name)",
@@ -4389,8 +4231,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_processor_tail_sampling_sampling_trace_removal_age_sum{service=\"$otel_service\"}[$__rate_interval])) by (service_name) / sum(rate(otelcol_processor_tail_sampling_sampling_trace_removal_age_count{service=\"$otel_service\"}[$__rate_interval])) by (service_name)",
@@ -4406,8 +4247,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "Near by 0 is better.<br>\nshould more num_traces or decision_wait time.",
           "fieldConfig": {
@@ -4491,8 +4331,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_processor_tail_sampling_sampling_trace_dropped_too_early{service=\"$otel_service\"}[$__rate_interval])) by (service_name)",
@@ -4507,8 +4346,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "Time (in seconds) from arrival of a new trace until its removal from memory",
           "fieldConfig": {
@@ -4589,8 +4427,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -4604,8 +4441,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -4624,8 +4460,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -4706,8 +4541,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(otelcol_processor_tail_sampling_sampling_traces_on_memory{service=\"$otel_service\"}) by (service)",
@@ -4722,8 +4556,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "Dicision Latency Time percentage.",
           "fieldConfig": {
@@ -4806,8 +4639,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.99, sum(rate(otelcol_processor_tail_sampling_sampling_decision_latency_bucket{service=\"$otel_service\"}[$__rate_interval])) by (le))",
@@ -4818,8 +4650,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.95, sum(rate(otelcol_processor_tail_sampling_sampling_decision_latency_bucket{service=\"$otel_service\"}[$__rate_interval])) by (le))",
@@ -4831,8 +4662,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.50, sum(rate(otelcol_processor_tail_sampling_sampling_decision_latency_bucket{service=\"$otel_service\"}[$__rate_interval])) by (le))",
@@ -4848,8 +4678,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -4951,8 +4780,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_processor_tail_sampling_count_traces_sampled{service=\"$otel_service\", sampled=\"true\"}[$__rate_interval])) by (policy, sampled)",
@@ -4963,8 +4791,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_processor_tail_sampling_count_traces_sampled{service=\"$otel_service\", sampled=\"false\"}[$__rate_interval])) by (policy, sampled)",
@@ -4994,8 +4821,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "",
           "fieldConfig": {
@@ -5047,8 +4873,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -5064,8 +4889,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "description": "",
           "fieldConfig": {
@@ -5117,8 +4941,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "exemplar": false,
@@ -5134,8 +4957,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -5217,8 +5039,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "sum(rate(otelcol_loadbalancer_backend_outcome{service=\"$otel_service\"}[$__rate_interval])) by (exported_endpoint, success)",
@@ -5232,8 +5053,7 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "type": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -5314,8 +5134,7 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.95, sum(rate(otelcol_loadbalancer_backend_latency_bucket{service=\"$otel_service\"}[$__rate_interval])) by (le))",
@@ -5325,8 +5144,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.90, sum(rate(otelcol_loadbalancer_backend_latency_bucket{service=\"$otel_service\"}[$__rate_interval])) by (le))",
@@ -5337,8 +5155,7 @@ data:
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "type": "prometheus"
               },
               "editorMode": "code",
               "expr": "histogram_quantile(0.50, sum(rate(otelcol_loadbalancer_backend_latency_bucket{service=\"$otel_service\"}[$__rate_interval])) by (le))",
@@ -5375,8 +5192,7 @@ data:
           {
             "current": {},
             "datasource": {
-              "type": "prometheus",
-              "uid": "${DS_PROMETHEUS}"
+              "type": "prometheus"
             },
             "definition": "label_values(tempo_ingester_bytes_received_total,namespace)",
             "description": "",
@@ -5395,8 +5211,7 @@ data:
           {
             "current": {},
             "datasource": {
-              "type": "prometheus",
-              "uid": "${DS_PROMETHEUS}"
+              "type": "prometheus"
             },
             "definition": "label_values(otelcol_receiver_accepted_spans,service)",
             "includeAll": false,
@@ -5415,8 +5230,7 @@ data:
           {
             "current": {},
             "datasource": {
-              "type": "prometheus",
-              "uid": "${DS_PROMETHEUS}"
+              "type": "prometheus"
             },
             "definition": "label_values(tempo_discarded_spans_total{namespace=\"$tempo_namespace\"},service)",
             "includeAll": false,
@@ -5435,8 +5249,7 @@ data:
           {
             "current": {},
             "datasource": {
-              "type": "prometheus",
-              "uid": "${DS_PROMETHEUS}"
+              "type": "prometheus"
             },
             "definition": "label_values(tempo_ingester_traces_created_total{namespace=\"$tempo_namespace\"},service)",
             "includeAll": false,
@@ -5455,8 +5268,7 @@ data:
           {
             "current": {},
             "datasource": {
-              "type": "prometheus",
-              "uid": "${DS_PROMETHEUS}"
+              "type": "prometheus"
             },
             "definition": "label_values(tempo_querier_worker_request_executed_total{namespace=\"$tempo_namespace\"},service)",
             "includeAll": false,
@@ -5475,8 +5287,7 @@ data:
           {
             "current": {},
             "datasource": {
-              "type": "prometheus",
-              "uid": "${DS_PROMETHEUS}"
+              "type": "prometheus"
             },
             "definition": "label_values(tempodb_compaction_blocks_total{namespace=\"$tempo_namespace\"},service)",
             "includeAll": false,
@@ -5495,8 +5306,7 @@ data:
           {
             "current": {},
             "datasource": {
-              "type": "prometheus",
-              "uid": "${DS_PROMETHEUS}"
+              "type": "prometheus"
             },
             "definition": "label_values(tempo_metrics_generator_active_processors{namespace=\"$tempo_namespace\"},service)",
             "includeAll": false,
@@ -5516,8 +5326,7 @@ data:
             "allValue": ".*",
             "current": {},
             "datasource": {
-              "type": "prometheus",
-              "uid": "${DS_PROMETHEUS}"
+              "type": "prometheus"
             },
             "definition": "label_values(memcached_current_connections{namespace=\"$tempo_namespace\"},service)",
             "includeAll": false,
