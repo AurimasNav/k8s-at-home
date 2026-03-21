@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources-tempo-loki
+  namespace: victoriametrics
+  labels:
+    grafana_datasource: "1"
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Tempo
+      type: tempo
+      url: http://tempo.tempo.svc:3200
+      access: proxy
+      isDefault: false
+    - name: Loki
+      type: loki
+      url: http://loki.loki.svc:3100
+      access: proxy
+      isDefault: false

@@ -21,11 +21,12 @@ spec:
     syncOptions:
     - CreateNamespace=true
     - RespectIgnoreDifferences=true
+    - ServerSideApply=true
   ignoreDifferences:
     - group: ""
       kind: Secret
       name: victoria-metrics-k8s-stack-victoria-metrics-operator-validation
-      namespace: kube-system
+      namespace: victoriametrics
       jsonPointers:
         - /data
     - group: admissionregistration.k8s.io
