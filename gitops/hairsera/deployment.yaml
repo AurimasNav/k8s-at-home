@@ -33,13 +33,15 @@ spec:
             name: hairsera
         readinessProbe:
           httpGet:
-            path: /
+            path: /api/readyz
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 10
+          failureThreshold: 3
         livenessProbe:
           httpGet:
-            path: /
+            path: /api/livez
             port: 3000
           initialDelaySeconds: 15
           periodSeconds: 30
+          failureThreshold: 3
