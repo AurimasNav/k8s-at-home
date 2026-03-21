@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hairsera
+  namespace: hairsera
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hairsera
+  template:
+    metadata:
+      labels:
+        app: hairsera
+    spec:
+      containers:
+      - name: hairsera
+        image: ghcr.io/aurimasnav/hairsera:latest
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - secretRef:
+            name: hairsera
+        - configMapRef:
+            name: hairsera
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 30

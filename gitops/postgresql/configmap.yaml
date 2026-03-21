@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql
+  namespace: postgresql
+data:
+  POSTGRES_DB: hairsera
+  POSTGRES_USER: hairsera
