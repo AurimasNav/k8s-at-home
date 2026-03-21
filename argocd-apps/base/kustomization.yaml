@@ -23,7 +23,6 @@ resources:
 - ./apps/overseerr
 - ./apps/renovate-bot
 #- ./apps/sonarr1
-- ./apps/flemmarr
 #- ./apps/minecraft
 #- ./apps/vrising
 - ./apps/victoria-metrics-k8s-stack
