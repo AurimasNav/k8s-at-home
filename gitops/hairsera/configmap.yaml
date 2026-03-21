@@ -7,3 +7,5 @@ data:
   AUTH_URL: https://hair.sync.lt
   AUTH_TRUST_HOST: "true"
   MICROSOFT_TENANT_ID: common
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.otel-collector:4317
+  OTEL_SERVICE_NAME: hairsera

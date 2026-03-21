@@ -37,3 +37,6 @@ resources:
 - ./apps/reloader
 - ./apps/postgresql
 - ./apps/hairsera
+- ./apps/otel-collector
+- ./apps/tempo
+- ./apps/loki
