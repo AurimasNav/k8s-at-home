@@ -16,6 +16,6 @@ resources:
 - ./ingress.yaml
 images:
 - name: ghcr.io/aurimasnav/hairsera
-  newTag: 0.1.0-develop.61
+  newTag: 0.1.0-develop.62
 - name: ghcr.io/aurimasnav/hairsera-migrate
-  newTag: 0.1.0-develop.61
+  newTag: 0.1.0-develop.62
