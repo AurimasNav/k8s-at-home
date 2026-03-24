@@ -20,3 +20,5 @@ helmCharts:
         enabled: true
       ui:
         enabled: true
+    gatewayAPI:
+      enabled: true

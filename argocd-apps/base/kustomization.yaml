@@ -3,6 +3,8 @@ kind: Kustomization
 
 resources:
 - ./apps/cilium
+- ./apps/gateway-api-crds
+- ./apps/cilium-gateway
 - ./apps/metallb
 - ./apps/argocd
 - ./apps/ingress-nginx
