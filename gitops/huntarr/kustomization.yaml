@@ -3,7 +3,10 @@ kind: Kustomization
 
 resources:
 - ./deployment.yaml
-- ./ingress.yaml
 - ./service.yaml
 - ./configmap.yaml
 - ./pvc.yaml
+
+images:
+- name: ghcr.io/plexguide/huntarr
+  newTag: "9.4.3"
