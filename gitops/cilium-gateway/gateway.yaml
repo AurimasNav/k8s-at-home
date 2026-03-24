@@ -3,6 +3,8 @@ kind: Gateway
 metadata:
   name: main
   namespace: cilium-gateway
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   gatewayClassName: cilium
   listeners:
@@ -12,7 +14,8 @@ spec:
     allowedRoutes:
       namespaces:
         from: All
-  - name: https
+  - name: https-radarr
+    hostname: radarr.sync.lt
     port: 443
     protocol: HTTPS
     allowedRoutes:
@@ -22,5 +25,5 @@ spec:
       mode: Terminate
       certificateRefs:
       - kind: Secret
-        name: radarr-letsencrypt
-        namespace: radarr
+        name: radarr-tls
+        namespace: cilium-gateway
