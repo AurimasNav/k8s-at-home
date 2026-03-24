@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: huntarr
-data:
-  TZ: Europe/Vilnius
-  HUNTARR_PORT: "9705"

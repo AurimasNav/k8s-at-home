@@ -34,7 +34,6 @@ resources:
 - ./apps/home-assistant
 - ./apps/otbr
 - ./apps/matter-server
-- ./apps/huntarr
 - ./apps/reloader
 - ./apps/postgresql
 - ./apps/hairsera
