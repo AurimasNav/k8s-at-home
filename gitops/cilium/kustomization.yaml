@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+helmCharts:
+- name: cilium
+  repo: https://helm.cilium.io/
+  version: 1.19.2
+  releaseName: cilium
+  namespace: kube-system
+  valuesInline:
+    k8sServiceHost: 192.168.1.21
+    k8sServicePort: 6443
+    kubeProxyReplacement: true
+    ipam:
+      mode: kubernetes
+    operator:
+      replicas: 1
+    hubble:
+      enabled: true
+      relay:
+        enabled: true
+      ui:
+        enabled: true
