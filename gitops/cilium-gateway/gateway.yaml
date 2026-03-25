@@ -27,3 +27,172 @@ spec:
       - kind: Secret
         name: radarr-tls
         namespace: cilium-gateway
+  - name: https-grafana
+    hostname: grafana.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: grafana-tls
+        namespace: cilium-gateway
+  - name: https-hairsera
+    hostname: hair.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: hairsera-tls
+        namespace: cilium-gateway
+  - name: https-homepage
+    hostname: home.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: homepage-tls
+        namespace: cilium-gateway
+  - name: https-sonarr
+    hostname: sonarr.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: sonarr-tls
+        namespace: cilium-gateway
+  - name: https-sonarr1
+    hostname: sonarr1.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: sonarr1-tls
+        namespace: cilium-gateway
+  - name: https-radarr-no4k
+    hostname: radarr-no4k.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: radarr-no4k-tls
+        namespace: cilium-gateway
+  - name: https-qbittorrent
+    hostname: qbittorrent.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: qbittorrent-tls
+        namespace: cilium-gateway
+  - name: https-prowlarr
+    hostname: prowlarr.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: prowlarr-tls
+        namespace: cilium-gateway
+  - name: https-overseerr
+    hostname: overseerr.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: overseerr-tls
+        namespace: cilium-gateway
+  - name: https-sync-lt
+    hostname: sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: sync-lt-tls
+        namespace: cilium-gateway
+  - name: https-ombi
+    hostname: ombi.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: ombi-tls
+        namespace: cilium-gateway
+  - name: https-oauth2-proxy
+    hostname: login.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: oauth2-proxy-tls
+        namespace: cilium-gateway
+  - name: https-flood
+    hostname: flood.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: flood-tls
+        namespace: cilium-gateway

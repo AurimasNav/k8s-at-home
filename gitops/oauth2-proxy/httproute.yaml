@@ -1,0 +1,20 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: oauth2-proxy
+  namespace: oauth2-proxy
+spec:
+  parentRefs:
+  - name: main
+    namespace: cilium-gateway
+    sectionName: https-oauth2-proxy
+  hostnames:
+  - login.sync.lt
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /oauth2
+    backendRefs:
+    - name: oauth2-proxy
+      port: 4180
