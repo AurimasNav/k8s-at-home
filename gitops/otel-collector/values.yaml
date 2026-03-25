@@ -45,7 +45,7 @@ config:
     otlphttp/loki:
       endpoint: http://loki.loki.svc:3100/otlp
     prometheusremotewrite/victoriametrics:
-      endpoint: http://vmsingle-victoria-metrics-k8s-stack.victoriametrics.svc:8429/api/v1/write
+      endpoint: http://vmsingle-victoria-metrics-k8s-stack.victoriametrics.svc:8428/api/v1/write
     debug:
       verbosity: detailed
 
