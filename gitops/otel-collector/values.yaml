@@ -40,9 +40,9 @@ config:
         - 'IsMatch(attributes["url.path"], ".*/healthz$")'
 
   exporters:
-    otlphttp/tempo:
+    otlp_http/tempo:
       endpoint: http://tempo.tempo.svc:4318
-    otlphttp/loki:
+    otlp_http/loki:
       endpoint: http://loki.loki.svc:3100/otlp
     prometheusremotewrite/victoriametrics:
       endpoint: http://vmsingle-victoria-metrics-k8s-stack.victoriametrics.svc:8428/api/v1/write
@@ -54,7 +54,7 @@ config:
       traces:
         receivers: [otlp]
         processors: [memory_limiter, filter/drop_probes, batch]
-        exporters: [otlphttp/tempo, debug]
+        exporters: [otlp_http/tempo, debug]
       metrics:
         receivers: [otlp]
         processors: [memory_limiter, filter/drop_probes, batch]
@@ -62,4 +62,4 @@ config:
       logs:
         receivers: [otlp]
         processors: [memory_limiter, filter/drop_probes, batch]
-        exporters: [otlphttp/loki, debug]
+        exporters: [otlp_http/loki, debug]
