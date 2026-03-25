@@ -23,17 +23,28 @@ data:
         },
         {
           "datasource": {"type": "tempo", "uid": "P214B5B846CF3925F"},
-          "fieldConfig": {"defaults": {}, "overrides": []},
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "traceID"},
+                "properties": [
+                  {"id": "links", "value": [{"title": "Open trace", "url": "/explore?left={\"datasource\":\"P214B5B846CF3925F\",\"queries\":[{\"query\":\"${__value.raw}\",\"queryType\":\"traceql\",\"datasource\":{\"uid\":\"P214B5B846CF3925F\"}}],\"range\":{\"from\":\"now-1h\",\"to\":\"now\"}}"}]}
+                ]
+              }
+            ]
+          },
           "gridPos": {"h": 24, "w": 24, "x": 0, "y": 1},
           "id": 1,
-          "options": {},
+          "options": {"sortBy": [{"desc": true, "displayName": "Start time"}]},
           "title": "Hairsera Traces",
-          "type": "traces",
+          "type": "table",
           "targets": [
             {
               "datasource": {"type": "tempo", "uid": "P214B5B846CF3925F"},
               "queryType": "traceql",
               "query": "{resource.service.name=\"hairsera\"}",
+              "tableType": "traces",
               "refId": "A",
               "limit": 100
             }

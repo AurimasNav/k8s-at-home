@@ -37,7 +37,7 @@ data:
           "targets": [
             {
               "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-              "expr": "sum by (level) (count_over_time({namespace=\"hairsera\"} [$__auto]))",
+              "expr": "sum by (level) (count_over_time({service_name=\"hairsera\"} [$__auto]))",
               "legendFormat": "{{level}}",
               "queryType": "range",
               "refId": "A"
@@ -71,7 +71,7 @@ data:
           "targets": [
             {
               "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-              "expr": "{namespace=\"hairsera\"}",
+              "expr": "{service_name=\"hairsera\"}",
               "queryType": "range",
               "refId": "A"
             }
@@ -104,7 +104,7 @@ data:
           "targets": [
             {
               "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
-              "expr": "{namespace=\"hairsera\"} |= \"error\" | logfmt",
+              "expr": "{service_name=\"hairsera\"} | json",
               "queryType": "range",
               "refId": "A"
             }
