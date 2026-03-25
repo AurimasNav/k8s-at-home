@@ -3,8 +3,9 @@ kind: Kustomization
 
 resources:
 - ./datasources.yaml
-- ./dashboard-tempo.yaml
-- ./dashboard-loki.yaml
+- ./dashboard-hairsera-metrics.yaml
+- ./dashboard-hairsera-traces.yaml
+- ./dashboard-hairsera-logs.yaml
 - ./ingress.yaml
 namespace: victoriametrics
 

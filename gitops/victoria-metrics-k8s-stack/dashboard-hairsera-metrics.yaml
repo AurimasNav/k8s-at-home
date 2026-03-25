@@ -1,0 +1,235 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-hairsera-metrics
+  namespace: victoriametrics
+  labels:
+    grafana_dashboard: "1"
+data:
+  hairsera-metrics.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "id": 100,
+          "title": "Bookings",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
+          "id": 1,
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Confirmed",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_booking_confirmed_total", "instant": true, "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
+          "id": 2,
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Created",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_booking_created_total", "instant": true, "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "purple", "value": null}]},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
+          "id": 3,
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Completed",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_booking_completed_total", "instant": true, "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "orange", "value": null}]},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+          "id": 4,
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Cancelled",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_booking_cancelled_total", "instant": true, "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {
+            "defaults": {"unit": "short"},
+            "overrides": [
+              {"matcher": {"id": "byName", "options": "Created"}, "properties": [{"id": "color", "value": {"fixedColor": "blue", "mode": "fixed"}}]},
+              {"matcher": {"id": "byName", "options": "Confirmed"}, "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]},
+              {"matcher": {"id": "byName", "options": "Completed"}, "properties": [{"id": "color", "value": {"fixedColor": "purple", "mode": "fixed"}}]},
+              {"matcher": {"id": "byName", "options": "Cancelled"}, "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]}
+            ]
+          },
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 5},
+          "id": 5,
+          "options": {"legend": {"calcs": ["sum"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+          "title": "Booking Events",
+          "type": "timeseries",
+          "targets": [
+            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_booking_created_total[$__rate_interval])", "legendFormat": "Created", "refId": "A"},
+            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_booking_confirmed_total[$__rate_interval])", "legendFormat": "Confirmed", "refId": "B"},
+            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_booking_completed_total[$__rate_interval])", "legendFormat": "Completed", "refId": "C"},
+            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_booking_cancelled_total[$__rate_interval])", "legendFormat": "Cancelled", "refId": "D"}
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 13},
+          "id": 101,
+          "title": "Vouchers & Ratings",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 14},
+          "id": 6,
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Vouchers Redeemed",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_voucher_redeemed_total", "instant": true, "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}]},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 14},
+          "id": 9,
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "title": "Waitlist Notified",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_waitlist_notified_total", "instant": true, "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+          "id": 7,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+          "title": "Voucher Validation Failures (by reason)",
+          "type": "timeseries",
+          "targets": [
+            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_voucher_validation_failed_total[$__rate_interval])", "legendFormat": "{{voucher.failure_reason}}", "refId": "A"}
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
+          "id": 102,
+          "title": "Ratings",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {
+            "defaults": {"unit": "short"},
+            "overrides": [
+              {"matcher": {"id": "byName", "options": "1"}, "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]},
+              {"matcher": {"id": "byName", "options": "2"}, "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]},
+              {"matcher": {"id": "byName", "options": "3"}, "properties": [{"id": "color", "value": {"fixedColor": "yellow", "mode": "fixed"}}]},
+              {"matcher": {"id": "byName", "options": "4"}, "properties": [{"id": "color", "value": {"fixedColor": "light-blue", "mode": "fixed"}}]},
+              {"matcher": {"id": "byName", "options": "5"}, "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]}
+            ]
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 23},
+          "id": 8,
+          "options": {
+            "barRadius": 0.05,
+            "barWidth": 0.7,
+            "groupWidth": 0.7,
+            "legend": {"calcs": [], "displayMode": "list", "placement": "bottom"},
+            "orientation": "auto",
+            "stacking": "none",
+            "tooltip": {"mode": "single"},
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 200
+          },
+          "title": "Rating Distribution (stars 1–5)",
+          "type": "barchart",
+          "targets": [
+            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "sum by (le) (hairsera_rating_stars_bucket) - sum by (le) (hairsera_rating_stars_bucket offset 1m)", "legendFormat": "{{le}}", "instant": true, "refId": "A", "format": "table"}
+          ],
+          "transformations": [
+            {"id": "organize", "options": {}}
+          ]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "fieldConfig": {
+            "defaults": {"unit": "none"},
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 23},
+          "id": 10,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+          "title": "Average Rating Over Time",
+          "type": "timeseries",
+          "targets": [
+            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "histogram_quantile(0.5, sum by (le) (rate(hairsera_rating_stars_bucket[$__rate_interval])))", "legendFormat": "P50 (median)", "refId": "A"},
+            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "sum(rate(hairsera_rating_stars_sum[$__rate_interval])) / sum(rate(hairsera_rating_stars_count[$__rate_interval]))", "legendFormat": "Average", "refId": "B"}
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["hairsera"],
+      "time": {"from": "now-6h", "to": "now"},
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Hairsera / Metrics",
+      "uid": "hairsera-metrics",
+      "version": 1
+    }

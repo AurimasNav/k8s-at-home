@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-hairsera-logs
+  namespace: victoriametrics
+  labels:
+    grafana_dashboard: "1"
+data:
+  hairsera-logs.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "id": 100,
+          "title": "Log Volume",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 6, "w": 24, "x": 0, "y": 1},
+          "id": 1,
+          "options": {
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "legend": {"calcs": [], "displayMode": "list", "placement": "bottom"},
+            "tooltip": {"mode": "multi"}
+          },
+          "title": "Log Volume",
+          "type": "barchart",
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
+              "expr": "sum by (level) (count_over_time({namespace=\"hairsera\"} [$__auto]))",
+              "legendFormat": "{{level}}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 7},
+          "id": 101,
+          "title": "Logs",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 20, "w": 24, "x": 0, "y": 8},
+          "id": 2,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "title": "Hairsera Application Logs",
+          "type": "logs",
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
+              "expr": "{namespace=\"hairsera\"}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 28},
+          "id": 102,
+          "title": "Error Logs",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 12, "w": 24, "x": 0, "y": 29},
+          "id": 3,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "title": "Errors Only",
+          "type": "logs",
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "P8E80F9AEF21F6940"},
+              "expr": "{namespace=\"hairsera\"} |= \"error\" | logfmt",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["hairsera"],
+      "time": {"from": "now-1h", "to": "now"},
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Hairsera / Logs",
+      "uid": "hairsera-logs",
+      "version": 1
+    }

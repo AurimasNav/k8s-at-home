@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-hairsera-traces
+  namespace: victoriametrics
+  labels:
+    grafana_dashboard: "1"
+data:
+  hairsera-traces.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "id": 100,
+          "title": "Traces",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "tempo", "uid": "P214B5B846CF3925F"},
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 24, "w": 24, "x": 0, "y": 1},
+          "id": 1,
+          "options": {},
+          "title": "Hairsera Traces",
+          "type": "traces",
+          "targets": [
+            {
+              "datasource": {"type": "tempo", "uid": "P214B5B846CF3925F"},
+              "queryType": "traceql",
+              "query": "{resource.service.name=\"hairsera\"}",
+              "refId": "A",
+              "limit": 100
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["hairsera"],
+      "time": {"from": "now-3h", "to": "now"},
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Hairsera / Traces",
+      "uid": "hairsera-traces",
+      "version": 1
+    }
