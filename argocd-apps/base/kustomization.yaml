@@ -22,14 +22,13 @@ resources:
 - ./apps/pihole
 #- ./apps/blocky
 - ./apps/unbound
-- ./apps/overseerr
+- ./apps/seerr
 - ./apps/renovate-bot
 #- ./apps/sonarr1
 #- ./apps/minecraft
 #- ./apps/vrising
 - ./apps/victoria-metrics-k8s-stack
 - ./apps/homepage
-#- ./apps/jenkins
 #- ./apps/satisfactory
 - ./apps/home-assistant
 - ./apps/otbr

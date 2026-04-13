@@ -1,18 +1,18 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: overseerr
-  namespace: overseerr
+  name: seerr
+  namespace: seerr
 spec:
   parentRefs:
   - name: main
     namespace: cilium-gateway
-    sectionName: https-overseerr
+    sectionName: https-seerr
   - name: main
     namespace: cilium-gateway
     sectionName: https-sync-lt
   hostnames:
-  - overseerr.sync.lt
+  - seerr.sync.lt
   - sync.lt
   rules:
   - matches:
@@ -20,5 +20,5 @@ spec:
         type: PathPrefix
         value: /
     backendRefs:
-    - name: overseerr
+    - name: seerr
       port: 80

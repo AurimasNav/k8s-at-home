@@ -8,3 +8,7 @@ resources:
 - ./service.yaml
 - ./configmap.yaml
 - ./pvc.yaml
+
+images:
+- name: seerr/seerr
+  newTag: v3.3.1

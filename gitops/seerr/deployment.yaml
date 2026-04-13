@@ -1,35 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: overseerr
+  name: seerr
   labels:
-    app: overseerr
+    app: seerr
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: overseerr
+      app: seerr
   template:
     metadata:
       labels:
-        app: overseerr
+        app: seerr
     spec:
       containers:
-      - name: overseerr
+      - name: seerr
         image: seerr/seerr:develop
         imagePullPolicy: Always
         ports: 
         - containerPort: 5055
         envFrom:
         - configMapRef:
-            name: overseerr
+            name: seerr
         env:
         - name: main__apiKey
           value: xxxyyy
         volumeMounts:
-        - name: overseerr-config
+        - name: seerr-config
           mountPath: /app/config
       volumes:
-      - name: overseerr-config
+      - name: seerr-config
         persistentVolumeClaim:
-          claimName: overseerr-config
+          claimName: seerr-config

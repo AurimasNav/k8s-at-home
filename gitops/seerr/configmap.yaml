@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: overseerr
+  name: seerr
 data:
   PUID: "1000"
   PGID: "1000"

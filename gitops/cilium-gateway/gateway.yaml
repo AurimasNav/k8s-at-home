@@ -131,8 +131,8 @@ spec:
       - kind: Secret
         name: prowlarr-tls
         namespace: cilium-gateway
-  - name: https-overseerr
-    hostname: overseerr.sync.lt
+  - name: https-seerr
+    hostname: seerr.sync.lt
     port: 443
     protocol: HTTPS
     allowedRoutes:
@@ -142,7 +142,7 @@ spec:
       mode: Terminate
       certificateRefs:
       - kind: Secret
-        name: overseerr-tls
+        name: seerr-tls
         namespace: cilium-gateway
   - name: https-sync-lt
     hostname: sync.lt

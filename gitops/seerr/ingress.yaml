@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: overseerr
-  namespace: overseerr
+  name: seerr
+  namespace: seerr
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -10,8 +10,8 @@ spec:
   tls:
   - hosts:
     - sync.lt
-    - overseerr.sync.lt
-    secretName: overseerr-letsencrypt
+    - seerr.sync.lt
+    secretName: seerr-letsencrypt
   rules:
   - host: sync.lt
     http:
@@ -20,16 +20,16 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: overseerr
+            name: seerr
             port:
               name: app
-  - host: overseerr.sync.lt
+  - host: seerr.sync.lt
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: overseerr
+            name: seerr
             port:
               name: app
