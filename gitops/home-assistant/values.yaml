@@ -6,6 +6,11 @@ configuration:
   forceInit: true
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
+securityContext:
+  capabilities:
+    add:
+      - NET_ADMIN
+      - NET_RAW
 persistence:
   enabled: true
   size: 5Gi
