@@ -17,6 +17,8 @@ spec:
       labels:
         app: matter-server
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       nodeSelector:
         kubernetes.io/hostname: ubuntu-k8s
       containers:
@@ -27,12 +29,19 @@ spec:
         args:
         - --storage-path=/data
         - --paa-root-cert-dir=/data/credentials
+        - --primary-interface=eno1
         ports:
         - containerPort: 5580
         volumeMounts:
         - name: data
           mountPath: /data
+        - name: dbus
+          mountPath: /run/dbus
+          readOnly: true
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: matter-server-data
+      - name: dbus
+        hostPath:
+          path: /run/dbus
