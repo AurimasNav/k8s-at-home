@@ -17,6 +17,8 @@ spec:
       labels:
         app: matter-server
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       nodeSelector:
         kubernetes.io/hostname: ubuntu-k8s
       containers:
