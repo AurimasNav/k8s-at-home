@@ -26,7 +26,7 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: ["/bin/sh", "-c", "sleep 3 && killall mdnsd 2>/dev/null || true"]
+              command: ["/bin/sh", "-c", "sleep 3 && touch /run/service/mdns/down && s6-svc -d /run/service/mdns 2>/dev/null || true"]
         env:
         - name: DEVICE
           value: /dev/ttyACM0
