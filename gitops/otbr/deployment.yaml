@@ -23,6 +23,10 @@ spec:
         image: ghcr.io/ownbee/hass-otbr-docker:latest
         securityContext:
           privileged: true
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 3 && killall mdnsd 2>/dev/null || true"]
         env:
         - name: DEVICE
           value: /dev/ttyACM0
@@ -47,9 +51,6 @@ spec:
           mountPath: /dev/ttyACM0
         - name: tun
           mountPath: /dev/net/tun
-        - name: disable-mdns
-          mountPath: /run/service/mdns/run
-          subPath: disable-mdns.sh
       volumes:
       - name: usb
         hostPath:
@@ -59,7 +60,3 @@ spec:
         hostPath:
           path: /dev/net/tun
           type: CharDevice
-      - name: disable-mdns
-        configMap:
-          name: otbr-disable-mdns
-          defaultMode: 0755
