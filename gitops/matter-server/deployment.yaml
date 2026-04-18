@@ -49,4 +49,5 @@ spec:
         persistentVolumeClaim:
           claimName: matter-server-data
       - name: dbus
-        emptyDir: {}
+        hostPath:
+          path: /run/dbus
