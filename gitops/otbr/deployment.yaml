@@ -47,6 +47,9 @@ spec:
           mountPath: /dev/ttyACM0
         - name: tun
           mountPath: /dev/net/tun
+        - name: disable-mdns
+          mountPath: /run/service/mdns/run
+          subPath: disable-mdns.sh
       volumes:
       - name: usb
         hostPath:
@@ -56,3 +59,7 @@ spec:
         hostPath:
           path: /dev/net/tun
           type: CharDevice
+      - name: disable-mdns
+        configMap:
+          name: otbr-disable-mdns
+          defaultMode: 0755

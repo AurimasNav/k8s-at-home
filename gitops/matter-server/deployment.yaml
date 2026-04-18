@@ -22,13 +22,6 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: ubuntu-k8s
       containers:
-      - name: avahi
-        image: flungo/avahi:latest
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - name: dbus
-          mountPath: /var/run/dbus
       - name: matter-server
         image: ghcr.io/home-assistant-libs/python-matter-server:stable
         securityContext:
@@ -42,12 +35,7 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
-        - name: dbus
-          mountPath: /var/run/dbus
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: matter-server-data
-      - name: dbus
-        hostPath:
-          path: /run/dbus
