@@ -22,7 +22,7 @@ helmGlobals:
   chartHome: charts
 helmCharts:
 - name: victoria-metrics-k8s-stack
-  version: 0.72.5
+  version: 0.86.0
   repo: https://victoriametrics.github.io/helm-charts
   releaseName: victoria-metrics-k8s-stack
   includeCRDs: true
