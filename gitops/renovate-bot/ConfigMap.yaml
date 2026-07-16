@@ -25,6 +25,9 @@ data:
       dependencyDashboard: true,
       dependencyDashboardAutoclose: false,
 
+      branchConcurrentLimit: 100,
+      pruneStaleBranches: true,
+
       enabledManagers: [
         "kubernetes",
         "kustomize",
