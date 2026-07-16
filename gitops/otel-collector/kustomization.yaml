@@ -3,7 +3,7 @@ kind: Kustomization
 
 helmCharts:
 - name: opentelemetry-collector
-  version: 0.147.1
+  version: 0.165.0
   repo: https://open-telemetry.github.io/opentelemetry-helm-charts
   releaseName: otel-collector
   namespace: otel-collector
