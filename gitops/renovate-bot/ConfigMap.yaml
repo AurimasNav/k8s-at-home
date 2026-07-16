@@ -22,25 +22,39 @@ metadata:
 data:
   config.js: |-
     module.exports = {
-      "kubernetes": {
-        "fileMatch": ["gitops\\/.*\\/.*\\.ya?ml$"],
-        "ignorePaths": ["**/gitops/**/kustomization.yaml"]
-      },
-      "enabledManagers": [
+      dependencyDashboard: true,
+      dependencyDashboardAutoclose: false,
+
+      enabledManagers: [
         "kubernetes",
         "kustomize",
         "regex"
       ],
-      "regexManagers": [
+
+      kubernetes: {
+        fileMatch: [
+          "gitops\\/.*\\/.*\\.ya?ml$"
+        ]
+      },
+
+      regexManagers: [
         {
-          "fileMatch": "kustomization\\.yaml",
-          "matchStrings": ["https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/"],
-          "datasourceTemplate": "github-releases",
+          fileMatch: [
+            "kustomization\\.yaml"
+          ],
+          matchStrings: [
+            "https:\\/\\/github\\.com\\/(?<depName>.*\\/.*?)\\/releases\\/download\\/(?<currentValue>.*?)\\/"
+          ],
+          datasourceTemplate: "github-releases"
         },
         {
-          "fileMatch": "kustomization\\.yaml",
-          "matchStrings": ["https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"],
-          "datasourceTemplate": "github-tags",
+          fileMatch: [
+            "kustomization\\.yaml"
+          ],
+          matchStrings: [
+            "https:\\/\\/raw\\.githubusercontent\\.com\\/(?<depName>[^\\/]*\\/[^\\/]*)\\/(?<currentValue>.*?)\\/"
+          ],
+          datasourceTemplate: "github-tags"
         }
       ]
     }
