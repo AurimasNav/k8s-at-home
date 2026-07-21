@@ -1,15 +1,13 @@
 service:
   type: LoadBalancer
+  port: 8123
   annotations:
     metallb.universe.tf/loadBalancerIPs: 192.168.1.129
-  ports:
-      http:
-        port: 8123
-        protocol: TCP
-      udp-9999:
-        port: 9999
-        targetPort: 9999
-        protocol: UDP
+  extraPorts:
+    - name: udp-9999
+      port: 9999
+      targetPort: 9999
+      protocol: UDP
 configuration:
   # Enable or disable the configuration setup for Home Assistant
   enabled: true
