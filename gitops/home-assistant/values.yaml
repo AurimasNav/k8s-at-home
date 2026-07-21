@@ -1,3 +1,10 @@
+service:
+  type: LoadBalancer
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.129
+  ports:
+    http:
+      port: 8123
 configuration:
   # Enable or disable the configuration setup for Home Assistant
   enabled: true
