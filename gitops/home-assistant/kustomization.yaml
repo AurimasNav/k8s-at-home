@@ -13,3 +13,16 @@ helmCharts:
   includeCRDs: true
   namespace: home-assistant
   valuesFile: values.yaml
+
+patches:
+  - target:
+      kind: Service
+      name: home-assistant
+    patch: |-
+      - op: add
+        path: /spec/ports/-
+        value:
+          name: udp-9999
+          port: 9999
+          targetPort: 9999
+          protocol: UDP
