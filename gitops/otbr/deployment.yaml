@@ -26,8 +26,9 @@ spec:
         securityContext:
           privileged: true
         env:
+        # Point DEVICE to the persistent path mounted inside the container
         - name: DEVICE
-          value: /dev/ttyACM0
+          value: /dev/serial/by-id/usb-Nabu_Casa_ZBT-2_DCB4D9124108-if00
         - name: BAUDRATE
           value: "460800"
         - name: FLOW_CONTROL
@@ -62,18 +63,20 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
-        - name: usb
-          mountPath: /dev/ttyACM0
+        # Mount the host /dev directory so container can resolve symlinks to /dev/ttyACM*
+        - name: dev
+          mountPath: /dev
         - name: tun
           mountPath: /dev/net/tun
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: otbr-data
-      - name: usb
+      # Mount /dev from host as Directory
+      - name: dev
         hostPath:
-          path: /dev/serial/by-id/usb-Nabu_Casa_ZBT-2_DCB4D9124108-if00
-          type: CharDevice
+          path: /dev
+          type: Directory
       - name: tun
         hostPath:
           path: /dev/net/tun
