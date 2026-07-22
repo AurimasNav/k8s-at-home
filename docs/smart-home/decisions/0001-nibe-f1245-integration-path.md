@@ -37,12 +37,27 @@ F1245 RS485 bus.**
 - **Firmware:** [`elupus/esphome-nibe`](https://github.com/elupus/esphome-nibe) —
   an ESPHome component wrapping NibeGW. Emulates MODBUS 40 (plus a dummy RMU40 for
   faster register updates) and forwards telegrams to Home Assistant over UDP.
+- **Uplink to Home Assistant:** the board's built-in **WiFi** (via ESPHome).
 - **Home Assistant:** the built-in
   [`nibe_heatpump`](https://www.home-assistant.io/integrations/nibe_heatpump/)
   integration in **nibegw** mode.
 
-The Waveshare is **retired from the NIBE role** and reserved for real Modbus RTU
-devices (see index README for candidate uses).
+**Why WiFi is fine here (and why the Waveshare wasn't):** the timing-critical part
+of the NIBE protocol is the per-telegram ACK. On the T-CAN485 that ACK is produced
+**on the microcontroller itself**, directly wired to the RS485 bus (microseconds).
+Only *already-acknowledged* telemetry then travels over WiFi to Home Assistant,
+where latency or brief drops are harmless (ESPHome reconnects). The Waveshare failed
+precisely because it put the **ACK** on the network path. So the uplink transport
+(WiFi vs Ethernet) is **not** timing-critical for this gateway.
+
+**Network topology:** the NIBE and the Sungrow inverter are in close proximity and
+share a single UTP drop. That drop is assigned to the Sungrow Waveshare (see
+[0002](0002-sungrow-inverter-modbus-path.md)); the NIBE gateway therefore uses WiFi
+by design. A ~€15 unmanaged switch off that drop could make both wired, but WiFi is
+adequate at that location, so we kept it simple.
+
+The Waveshare is **retired from the NIBE role** and reused for the Sungrow inverter
+(see [0002](0002-sungrow-inverter-modbus-path.md)).
 
 ## Why not the alternatives
 
@@ -61,7 +76,7 @@ network**, which is precisely why it is the community-standard, reliable path.
 - ~€25 of new hardware (T-CAN485) instead of reusing the Waveshare for this.
 - The gateway runs on ESPHome, so it is managed/updated like our other ESPHome
   nodes, and appears to HA via the official integration (no custom container).
-- The Waveshare is freed for a genuine Modbus RTU device.
+- The Waveshare is freed for a genuine Modbus RTU device — now the Sungrow inverter (see [0002](0002-sungrow-inverter-modbus-path.md)).
 - The heat pump stays fully local — no cloud, no MODBUS 40 purchase.
 
 ## Implementation notes
