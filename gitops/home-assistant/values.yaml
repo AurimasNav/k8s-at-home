@@ -20,6 +20,19 @@ persistence:
   enabled: true
   size: 5Gi
 
+# Long startup grace: a slow integration setup (e.g. modbus/Sungrow polling the
+# RS485->ETH bridge on boot) must not be killed by the liveness probe, which would
+# cause a crash loop. Once HA finishes starting, the liveness probe takes over.
+startupProbe:
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 60
+
 ingress:
   # Enable ingress for home assistant
   enabled: true
