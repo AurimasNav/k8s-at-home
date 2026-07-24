@@ -23,4 +23,4 @@ Keep them short and self-contained. Supersede rather than rewrite: mark the old 
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-nibe-f1245-integration-path.md) | NIBE F1245 integration path (ESP32 NibeGW over WiFi, retire Waveshare) | Accepted 2026-07-22 |
-| [0002](0002-sungrow-inverter-modbus-path.md) | Sungrow inverter integration path (Waveshare RS485→Modbus over the UTP drop) | Paused 2026-07-24 — full poll unstable; see doc |
+| [0002](0002-sungrow-inverter-modbus-path.md) | Sungrow inverter integration path (WiNet-S native Modbus TCP, lean set) | Deployed 2026-07-24 |
