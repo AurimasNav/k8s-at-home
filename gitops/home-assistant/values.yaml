@@ -9,10 +9,11 @@ configuration:
   # Force init will merge the current configuration file with the default configuration on every start
   # This is useful when you want to ensure that the configuration file is always up to date
   forceInit: true
-  # Lean Sungrow (SH15T + SBR160) telemetry, read from the WiNet-S dongle over NATIVE
-  # Modbus TCP (192.168.1.119:502, unit 1, SSL off). Kept in git — no manual PVC drift.
-  # Register addresses / types / scaling taken from mkaiser/Sungrow-SHx and validated
-  # live against the inverter. See docs/smart-home/decisions/0002.
+  # Full Sungrow (SH15T + SBR160) sensor set from mkaiser/Sungrow-SHx, read over the
+  # WiNet-S dongle (native Modbus TCP, 192.168.1.119:502, unit 1). The package file is
+  # vendored in git (packages/modbus_sungrow.yaml), shipped as a ConfigMap and mounted
+  # at /config/packages (see additionalVolumes / additionalMounts below). Secrets are
+  # hardcoded in that file; automation/scene sections were dropped (read-only telemetry).
   templateConfig: |-
     # Loads default set of integrations. Do not remove.
     default_config:
@@ -29,202 +30,9 @@ configuration:
     script: !include scripts.yaml
     scene: !include scenes.yaml
 
-    modbus:
-      - name: sungrow
-        type: tcp
-        host: 192.168.1.119
-        port: 502
-        delay: 3
-        timeout: 10
-        message_wait_milliseconds: 30
-        sensors:
-          - name: Battery level
-            unique_id: sg_battery_level
-            device_address: 1
-            address: 13022
-            input_type: input
-            data_type: uint16
-            scale: 0.1
-            precision: 1
-            unit_of_measurement: "%"
-            device_class: battery
-            state_class: measurement
-            scan_interval: 30
-          - name: Battery power
-            unique_id: sg_battery_power
-            device_address: 1
-            address: 5213
-            input_type: input
-            data_type: int32
-            swap: word
-            scale: 1
-            precision: 0
-            unit_of_measurement: W
-            device_class: power
-            state_class: measurement
-            scan_interval: 15
-          - name: Battery state of health
-            unique_id: sg_battery_state_of_health
-            device_address: 1
-            address: 13023
-            input_type: input
-            data_type: uint16
-            scale: 0.1
-            precision: 0
-            unit_of_measurement: "%"
-            state_class: measurement
-            scan_interval: 300
-          - name: Total DC power
-            unique_id: sg_total_dc_power
-            device_address: 1
-            address: 5016
-            input_type: input
-            data_type: uint32
-            swap: word
-            scale: 1
-            precision: 0
-            unit_of_measurement: W
-            device_class: power
-            state_class: measurement
-            scan_interval: 15
-          - name: Daily PV generation
-            unique_id: sg_daily_pv_generation
-            device_address: 1
-            address: 13001
-            input_type: input
-            data_type: uint16
-            scale: 0.1
-            precision: 1
-            unit_of_measurement: kWh
-            device_class: energy
-            state_class: total_increasing
-            scan_interval: 300
-          - name: Total PV generation
-            unique_id: sg_total_pv_generation
-            device_address: 1
-            address: 13002
-            input_type: input
-            data_type: uint32
-            swap: word
-            scale: 0.1
-            precision: 1
-            unit_of_measurement: kWh
-            device_class: energy
-            state_class: total
-            scan_interval: 300
-          - name: Total active power
-            unique_id: sg_total_active_power
-            device_address: 1
-            address: 13033
-            input_type: input
-            data_type: int32
-            swap: word
-            scale: 1
-            precision: 0
-            unit_of_measurement: W
-            device_class: power
-            state_class: measurement
-            scan_interval: 15
-          - name: Export power
-            unique_id: sg_export_power
-            device_address: 1
-            address: 13009
-            input_type: input
-            data_type: int32
-            swap: word
-            nan_value: 0x7FFFFFFF
-            scale: 1
-            precision: 0
-            unit_of_measurement: W
-            device_class: power
-            state_class: measurement
-            scan_interval: 15
-          - name: Load power
-            unique_id: sg_load_power
-            device_address: 1
-            address: 13007
-            input_type: input
-            data_type: int32
-            swap: word
-            nan_value: 0x7FFFFFFF
-            scale: 1
-            precision: 0
-            unit_of_measurement: W
-            device_class: power
-            state_class: measurement
-            scan_interval: 15
-          - name: Running state
-            unique_id: sg_running_state
-            device_address: 1
-            address: 12999
-            input_type: input
-            data_type: uint16
-            scale: 1
-            precision: 0
-            state_class: measurement
-            scan_interval: 15
-          - name: Inverter temperature
-            unique_id: sg_inverter_temperature
-            device_address: 1
-            address: 5007
-            input_type: input
-            data_type: int16
-            scale: 0.1
-            precision: 1
-            unit_of_measurement: °C
-            device_class: temperature
-            state_class: measurement
-            scan_interval: 60
-          - name: Daily imported energy
-            unique_id: sg_daily_imported_energy
-            device_address: 1
-            address: 13035
-            input_type: input
-            data_type: uint16
-            scale: 0.1
-            precision: 1
-            unit_of_measurement: kWh
-            device_class: energy
-            state_class: total_increasing
-            scan_interval: 300
-          - name: Total imported energy
-            unique_id: sg_total_imported_energy
-            device_address: 1
-            address: 13036
-            input_type: input
-            data_type: uint32
-            swap: word
-            scale: 0.1
-            precision: 1
-            unit_of_measurement: kWh
-            device_class: energy
-            state_class: total
-            scan_interval: 300
-          - name: Daily exported energy
-            unique_id: sg_daily_exported_energy
-            device_address: 1
-            address: 13044
-            input_type: input
-            data_type: uint16
-            scale: 0.1
-            precision: 1
-            unit_of_measurement: kWh
-            device_class: energy
-            state_class: total_increasing
-            scan_interval: 300
-          - name: Total exported energy
-            unique_id: sg_total_exported_energy
-            device_address: 1
-            address: 13045
-            input_type: input
-            data_type: uint32
-            swap: word
-            scale: 0.1
-            precision: 1
-            unit_of_measurement: kWh
-            device_class: energy
-            state_class: total
-            scan_interval: 300
+    homeassistant:
+      packages:
+        sungrow: !include packages/modbus_sungrow.yaml
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
 securityContext:
@@ -236,9 +44,9 @@ persistence:
   enabled: true
   size: 5Gi
 
-# Long startup grace: a slow integration setup (e.g. modbus/Sungrow polling the
-# RS485->ETH bridge on boot) must not be killed by the liveness probe, which would
-# cause a crash loop. Once HA finishes starting, the liveness probe takes over.
+# Long startup grace: a slow integration setup (modbus/Sungrow polling on boot) must
+# not be killed by the liveness probe, which would cause a crash loop. Once HA finishes
+# starting, the liveness probe takes over.
 startupProbe:
   httpGet:
     path: /
@@ -248,6 +56,16 @@ startupProbe:
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 60
+
+# Mount the vendored mkaiser Sungrow package (ConfigMap) at /config/packages so the
+# templateConfig include (packages/modbus_sungrow.yaml) can resolve it.
+additionalVolumes:
+  - name: sungrow-package
+    configMap:
+      name: ha-sungrow-package
+additionalMounts:
+  - name: sungrow-package
+    mountPath: /config/packages
 
 ingress:
   # Enable ingress for home assistant

@@ -4,6 +4,14 @@ kind: Kustomization
 resources: []
 namespace: home-assistant
 
+# Vendored mkaiser Sungrow package (full sensor set) shipped as a ConfigMap and
+# mounted at /config/packages (see values.yaml additionalVolumes / additionalMounts).
+configMapGenerator:
+- name: ha-sungrow-package
+  files:
+  - packages/modbus_sungrow.yaml
+generatorOptions:
+  disableNameSuffixHash: true
 
 helmCharts:
 - name: home-assistant
