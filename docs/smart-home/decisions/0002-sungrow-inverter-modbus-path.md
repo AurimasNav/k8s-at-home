@@ -1,94 +1,64 @@
 # 0002 — Sungrow inverter integration path
 
-- **Status:** **Deployed 2026-07-24** — WiNet-S dongle, native Modbus TCP, lean sensor set, via GitOps
-- **Scope:** Smart-home / IoT — solar / battery telemetry into Home Assistant
+- **Status:** **Deployed** 2026-07-24 — read over the WiNet-S dongle via native Modbus TCP
+- **Scope:** *How* the Sungrow system is physically/logically connected to Home Assistant
+  (devices, modules, transport). The actual sensor/register definitions live in code
+  (`gitops/home-assistant/packages/modbus_sungrow.yaml`) and are not duplicated here.
 - **Related:** [0001 — NIBE F1245 integration path](0001-nibe-f1245-integration-path.md)
 
-> **TL;DR:** Reading the SH15T over the **WiNet-S dongle (native Modbus TCP, `192.168.1.119:502`,
-> unit 1, SSL off)** with a **lean ~15-sensor set** defined in git (`values.yaml` →
-> `templateConfig`). Clean and stable — **zero framing errors**, sensors refresh every
-> 15–60 s. The earlier **Waveshare RS485→ETH on COM2** attempt was abandoned: the data path
-> worked but sustained polling destabilised the cheap gateway on pymodbus 3.13. The Waveshare
-> is now free for another Modbus device.
+## Hardware in play
 
-## Context
+| Device / module | Role |
+|---|---|
+| **Sungrow SH15T** (three-phase hybrid inverter) | the Modbus slave we read |
+| **Sungrow SBR160** (16 kWh HV battery) | battery data, via the inverter's map |
+| **Sungrow WiNet-S dongle** (on the inverter) | **the connection module we use** — native Modbus TCP + iSolarCloud uplink |
+| **Waveshare RS485-to-ETH (B)** (`192.168.1.99`, on inverter COM2) | evaluated then **abandoned** — now free for another Modbus RTU device |
+| **k3s node `ubuntu-k8s`** | runs Home Assistant (container) |
 
-Energy stack is all Sungrow: **SH15T** three-phase hybrid inverter, **SBR160** 16 kWh
-battery, Sungrow EV charger. Goal: local telemetry in Home Assistant (k3s container),
-no iSolarCloud dependency. Register map / definitions from
-[`mkaiser/Sungrow-SHx`](https://github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant)
-(built-in HA `modbus`, no add-on/HACS). Transports considered: **WiNet-S dongle** (native
-Modbus TCP), **internal LAN port** (not exposed on all models), **RS485→COM2** via a bridge.
+## The connection (the decision)
 
-## What we tried
+HA reads the inverter through the **WiNet-S dongle over native Modbus TCP**:
 
-### ❌ Waveshare RS485-to-ETH (B) on COM2 — abandoned
-Data path proven (pulled firmware `PEARL-H_01011.01.31` + live values), but the sustained
-poll destabilised the gateway on HA 2026.7 / pymodbus 3.13:
+- **host `192.168.1.119`, port `502`, unit id `1`, `type: tcp`**
+- **SSL/encryption OFF** on the WiNet-S — HA/pymodbus speaks *plain* Modbus TCP; Modbus-over-TLS is unsupported.
+- Use the WiNet-S **wired Ethernet** uplink (more stable than WiFi); that same link carries the iSolarCloud connection.
 
-| Waveshare mode | HA `type` | Result |
-|---|---|---|
-| Transparent (`None`) | `rtuovertcp` | RTU framing desyncs → pymodbus `Repeating…` loop → **hangs HA startup** |
-| Gateway (`Modbus TCP to RTU`) | `tcp` | Transaction-ID drift fixed via gateway serialization, but then a flood of `ModbusIOException: Unable to decode request` (malformed MBAP) → sensors freeze (~64/120 stale) |
+Where the config lives (GitOps, no manual PVC drift): the mkaiser register package is vendored
+at `gitops/home-assistant/packages/modbus_sungrow.yaml`, shipped as a **ConfigMap** and mounted
+at `/config/packages` (chart `additionalVolumes` / `additionalMounts`), and included from
+`configuration.templateConfig` in `values.yaml`.
 
-`Unable to decode request` is the exact symptom in mkaiser's connection FAQ — a known
-cheap-gateway + strict-pymodbus-3.13 issue. `message_wait` tuning (5→50→100 ms) and the
-RS485 Conflict Time Gap did not resolve it.
+## Why the WiNet-S and not the Waveshare (RS485 → COM2)
 
-### ✅ WiNet-S dongle — deployed
-Native Modbus TCP → HA connects with plain `type: tcp`, **no gateway translation**, so none
-of the framing flakiness. **14/15 sensors live, 0 decode errors, 0 drift.**
+The Waveshare bridges the inverter's **COM2 RS485** to the network. The data path works (we
+pulled live values through it), but under sustained polling it is **unstable on HA 2026.7 /
+pymodbus 3.13**:
 
-## Decision (deployed)
+- transparent mode + `rtuovertcp` → RTU frame desync → pymodbus hangs HA startup;
+- gateway mode (`Modbus TCP to RTU`) + `tcp` → flood of `ModbusIOException: Unable to decode request`.
 
-- **Transport:** WiNet-S at **`192.168.1.119:502`**, native Modbus TCP (`type: tcp`), unit **1**,
-  **SSL/encryption OFF** (HA/pymodbus speaks plain Modbus TCP; Modbus-over-TLS is unsupported).
-- **Scope:** **lean ~15-sensor set** (battery SoC/power/health, total DC power, daily+total PV,
-  total active power, export power, load power, running state, inverter temp, daily+total
-  import/export energy). Registers/types/scaling copied from mkaiser and validated live.
-- **Location:** in git at `gitops/home-assistant/values.yaml` under
-  `configuration.templateConfig` (a `modbus:` block). ArgoCD renders it into the
-  `hass-configuration` configmap; the chart's init container merges it into the PVC
-  `configuration.yaml`. **No manual PVC drift.**
-- **Tuning:** `message_wait_milliseconds: 30` (WiNet is slower), `delay: 3`, `timeout: 10`.
+That's the known cheap-serial-gateway framing problem. The **WiNet-S is a native Modbus TCP
+device** — no RTU↔MBAP translation — so it's clean and stable. Chosen; the Waveshare is freed.
 
-### Why not the full ~120-sensor mkaiser set
-Would need the big file vendored + a configmap volume mount, WiNet exposes a subset and is
-slower, and heavier polling is riskier. Lean covers what we care about and is sturdy. Can
-expand later if wanted.
+**Waveshare config learnings (if ever reused):** Work Mode must be **TCP Server**; gateway mode's
+Instruction Timeout only persists with **Multi-host = Yes** and must be a **multiple of 32**
+(e.g. 1024); transparent + `rtuovertcp` hung under load.
 
-## HA hardening (in git)
+## Hardware gotchas
 
-The pajikos chart had **no `startupProbe`** (liveness gives only ~60 s), so any slow/stalled
-integration boot crash-looped the pod. Added a `startupProbe` (10-min boot grace) in
-`values.yaml` (commit `13429ef`). Kept — general hardening.
+- **WiNet-S SSL must be off** for plain Modbus TCP.
+- **Single Modbus client** on the WiNet-S — the iSolarCloud app can contend for it.
+- The WiNet-S serves **a subset** of the inverter's registers (the internal LAN port / COM2 expose
+  more). Registers it doesn't serve were trimmed from the package to stop error spam.
+- The **EV charger (AC011E)** is **not** on this Modbus map — it reports RS485 → inverter →
+  iSolarCloud. For local EV-charger / heat-pump data the path is the **Sungrow iHomeManager**
+  (Modbus TCP `:516`, SSL) or **evcc** — see follow-ups.
 
-## Notes / gotchas
+## HA reliability
 
-- **`sensor.export_power`** uses `nan_value: 0x7FFFFFFF`, so it reads `unavailable` when
-  **not exporting** (register returns "no value"). For an always-on signed grid figure, use
-  **Meter active power** (reg 5600) instead.
-- **`running_state`** is exposed raw (a status bitfield, e.g. `16384`); mkaiser decodes it to
-  text via template sensors — add later if the friendly state is wanted.
-- **Entity-registry orphans:** the earlier full-mkaiser attempt left ~105 `restored`/
-  `unavailable` entities in the registry — harmless; bulk-delete under Settings → Entities.
-- **WiNet-S single Modbus client** — if the iSolarCloud app polls at the same time, HA can
-  get bumped. Prefer the dongle's **wired Ethernet**, not WiFi, for stability.
-
-## Waveshare config learnings (kept for reference; device now free)
-
-- Work Mode must be **TCP Server** (it shipped as TCP Client dialing `192.168.1.129:9999`,
-  the NIBE nibegw port).
-- Gateway mode: Protocol `Modbus TCP to RTU`; **Instruction Timeout** only persists with
-  `Enable Multi-host = Yes` and must be a **multiple of 32** (`1024`, not `1000`).
-- Transparent mode: Protocol `None` + HA `rtuovertcp` (hung under load).
-
-## Future options
-
-1. **Full mkaiser set** — vendor the file + configmap mount if you want all registers.
-2. **Meter active power (5600)** for reliable signed grid flow; decode `running_state`.
-3. **Battery charge/discharge energy** registers for the HA Energy dashboard battery lane.
-4. **EV charger** likely on a separate Modbus map — not covered by the inverter link.
+A `startupProbe` was added to the HA chart (`values.yaml`) so a slow modbus setup on boot can't
+trip the liveness probe and crash-loop HA.
 
 ## Sources
 
