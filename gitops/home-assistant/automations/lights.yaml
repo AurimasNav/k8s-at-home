@@ -1,0 +1,47 @@
+- id: '1785649890735'
+  alias: Entrance hall - light on presence when dark
+  triggers:
+  - entity_id: binary_sensor.entrance_hall_presence_still_target
+    to: 'on'
+    trigger: state
+  conditions:
+  - condition: numeric_state
+    entity_id: sensor.entrance_hall_presence_ambient_light
+    below: 50
+  actions:
+  - target:
+      area_id:
+      - entrance_hall
+    action: light.turn_on
+    data:
+      color_temp_kelvin: 6500
+      brightness_pct: 100
+  mode: single
+- id: '1785649924624'
+  alias: Entrance hall - lights off when clear
+  triggers:
+  - entity_id: binary_sensor.entrance_hall_presence_still_target
+    to: 'off'
+    for:
+      seconds: 2
+    trigger: state
+  actions:
+  - target:
+      area_id:
+      - entrance_hall
+    action: light.turn_off
+  mode: single
+
+- id: entrance_hall_presence_engineering_mode_on
+  alias: Entrance hall - re-enable presence radar engineering mode
+  triggers:
+  - trigger: state
+    entity_id: switch.entrance_hall_entrance_hall_presence_engineering_mode
+    to: 'off'
+    for:
+      seconds: 10
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.entrance_hall_entrance_hall_presence_engineering_mode
+  mode: single

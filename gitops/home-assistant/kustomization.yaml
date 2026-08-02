@@ -7,10 +7,11 @@ namespace: home-assistant
 # Vendored mkaiser Sungrow package (full sensor set) shipped as a ConfigMap and
 # mounted at /config/packages (see values.yaml additionalVolumes / additionalMounts).
 #
-# Flexit automations are vendored the same way, but kept in their own included
-# file (automations_flexit.yaml, merged in via the "automation flexit:" key)
-# rather than folded into automations.yaml, so the UI-managed automations.yaml
-# stays writable and untouched (see values.yaml comment).
+# Flexit and lighting automations are vendored the same way, but each kept in
+# its own included file (automations_flexit.yaml / automations_lights.yaml,
+# merged in via the "automation flexit:" / "automation lights:" keys) rather
+# than folded into automations.yaml, so the UI-managed automations.yaml stays
+# writable and untouched (see values.yaml comment).
 configMapGenerator:
 - name: ha-sungrow-package
   files:
@@ -18,6 +19,9 @@ configMapGenerator:
 - name: ha-flexit-automations
   files:
   - automations/flexit.yaml
+- name: ha-light-automations
+  files:
+  - automations/lights.yaml
 generatorOptions:
   disableNameSuffixHash: true
 
