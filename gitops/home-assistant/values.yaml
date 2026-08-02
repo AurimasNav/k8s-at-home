@@ -14,6 +14,11 @@ configuration:
   # vendored in git (packages/modbus_sungrow.yaml), shipped as a ConfigMap and mounted
   # at /config/packages (see additionalVolumes / additionalMounts below). Secrets are
   # hardcoded in that file; automation/scene sections were dropped (read-only telemetry).
+  #
+  # Flexit Nordic automations (automations/flexit.yaml) are vendored in git the same
+  # way, mounted read-only at /config/automations_flexit.yaml and merged in under its
+  # own "automation flexit:" key. automations.yaml itself (key renamed to
+  # "automation ui:") is left untouched and stays writable by the HA automation editor.
   templateConfig: |-
     # Loads default set of integrations. Do not remove.
     default_config:
@@ -26,7 +31,8 @@ configuration:
         - 127.0.0.0/8
     frontend:
       themes: !include_dir_merge_named themes
-    automation: !include automations.yaml
+    automation ui: !include automations.yaml
+    automation flexit: !include automations_flexit.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
 
@@ -58,14 +64,23 @@ startupProbe:
   failureThreshold: 60
 
 # Mount the vendored mkaiser Sungrow package (ConfigMap) at /config/packages so the
-# templateConfig include (packages/modbus_sungrow.yaml) can resolve it.
+# templateConfig include (packages/modbus_sungrow.yaml) can resolve it. The Flexit
+# automations ConfigMap is mounted as a single file (via subPath) at
+# /config/automations_flexit.yaml so it doesn't collide with the UI-managed
+# automations.yaml living on the persistent volume.
 additionalVolumes:
   - name: sungrow-package
     configMap:
       name: ha-sungrow-package
+  - name: flexit-automations
+    configMap:
+      name: ha-flexit-automations
 additionalMounts:
   - name: sungrow-package
     mountPath: /config/packages
+  - name: flexit-automations
+    mountPath: /config/automations_flexit.yaml
+    subPath: flexit.yaml
 
 ingress:
   # Enable ingress for home assistant

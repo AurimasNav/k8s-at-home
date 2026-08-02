@@ -1,0 +1,110 @@
+- id: flexit_filter_polluted_alert
+  alias: Flexit - filter polluted alert
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.flexit_nordic_air_filter_polluted
+    to: 'on'
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Flexit ventilation
+      message: >-
+        Air filter is polluted and needs cleaning/replacement. Operating
+        time so far: {{ states('sensor.flexit_nordic_air_filter_operating_time') }}h.
+  mode: single
+
+- id: flexit_preset_away_when_empty
+  alias: Flexit - away preset when house is empty
+  triggers:
+  - trigger: state
+    entity_id:
+    - person.aurimas
+    - person.aleksandra
+    to: not_home
+    for:
+      minutes: 15
+  conditions:
+  - condition: state
+    entity_id: person.aurimas
+    state: not_home
+  - condition: state
+    entity_id: person.aleksandra
+    state: not_home
+  actions:
+  - action: climate.set_preset_mode
+    target:
+      entity_id: climate.flexit_nordic
+    data:
+      preset_mode: away
+  mode: single
+
+- id: flexit_preset_home_when_someone_returns
+  alias: Flexit - home preset when someone returns
+  triggers:
+  - trigger: state
+    entity_id:
+    - person.aurimas
+    - person.aleksandra
+    to: home
+  conditions:
+  - condition: state
+    entity_id: climate.flexit_nordic
+    attribute: preset_mode
+    state: away
+  actions:
+  - action: climate.set_preset_mode
+    target:
+      entity_id: climate.flexit_nordic
+    data:
+      preset_mode: home
+  mode: single
+
+- id: flexit_boost_mode_ended
+  alias: Flexit - notify when fireplace/high boost ends
+  triggers:
+  - trigger: state
+    entity_id: climate.flexit_nordic
+    attribute: preset_mode
+    from:
+    - fireplace
+    - high
+    to: home
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Flexit ventilation
+      message: Boost ventilation ended, back to normal (Home) mode.
+  mode: single
+
+- id: flexit_heater_running_when_warm
+  alias: Flexit - electric heater running despite warm outside temp
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.flexit_nordic_electric_heater_power
+    above: 0
+    for:
+      minutes: 10
+  conditions:
+  - condition: numeric_state
+    entity_id: sensor.flexit_nordic_outside_air_temperature
+    above: 18
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Flexit ventilation
+      message: >-
+        Electric heater has been running for 10+ min while outside air is
+        {{ states('sensor.flexit_nordic_outside_air_temperature') }}°C. Worth checking the unit.
+  mode: single
