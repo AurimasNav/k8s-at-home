@@ -24,3 +24,4 @@ Keep them short and self-contained. Supersede rather than rewrite: mark the old 
 |---|---|---|
 | [0001](0001-nibe-f1245-integration-path.md) | NIBE F1245 integration path (ESP32 NibeGW over WiFi, retire Waveshare) | Accepted 2026-07-22 |
 | [0002](0002-sungrow-inverter-modbus-path.md) | Sungrow inverter integration path (WiNet-S dongle, native Modbus TCP) | Deployed 2026-07-24 |
+| [0003](0003-bathroom-presence-radar-retrofit.md) | Bathroom presence + ambient-light retrofit (ESP32-C6 SuperMini + mmWave, mains-fed) | Proposed 2026-08-02 |
