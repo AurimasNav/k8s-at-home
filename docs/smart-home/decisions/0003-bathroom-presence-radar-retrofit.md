@@ -91,12 +91,16 @@ build pattern.
   allowed there — but this is mains work, so get a qualified electrician to sign off the bridge +
   new enclosure rather than treat it as pure DIY.
 
-## Future options — pet-immune gate tuning
+## Future options — pet-immune gate tuning (entrance hall / open spaces, not this node)
 
-The entrance hall's mmWave module (ZY-M100-style) has no per-gate sensitivity/energy config, so a
-cat lounging nearby is indistinguishable from a person standing there — confirmed from its
-presence history, no duration/distance signal separates the two. If the bathroom node hits the
-same problem, don't replicate that module — swap the radar choice at build time instead:
+**Not needed for the bathroom** — pets don't access it, so the existing ZY-M100-style module
+(same as the entrance hall's) is fine here; the hardware table above is unchanged.
+
+This is a note for the *entrance hall and other open-plan spaces* the pets do roam: that module
+has no per-gate sensitivity/energy config, so a cat lounging nearby is indistinguishable from a
+person standing there — confirmed from its presence history, no duration/distance signal
+separates the two. If/when that gets tackled, don't replicate the current module there — swap the
+radar choice at build time instead:
 
 - **Hi-Link LD2410C** (or plain LD2410/2410B) — ESPHome's official `ld2410` component exposes 9
   distance gates (0–8), each with independent **move/still energy** (0–100) visible live once
@@ -109,8 +113,8 @@ same problem, don't replicate that module — swap the radar choice at build tim
   surgical than gate-energy tuning if the lounging spot is consistent; a different config paradigm
   (spatial, not energy-based).
 
-Either is a straight swap for "mmWave presence + ambient-light radar module" in the hardware table
-above — no change to the mains/enclosure decisions.
+Either is a straight radar-module swap wherever it's eventually applied — no change to mains,
+enclosure, or the blind-filler/light-pipe approach documented above.
 
 ## Sources
 
