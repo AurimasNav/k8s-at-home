@@ -1,0 +1,27 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Appareil déja configuré"
+    },
+    "step": {
+      "user": {
+        "description": "Veuillez entrer les informations d'authentification du NVR ou de la caméra IP",
+        "data": {
+          "host": "URL",
+          "password": "Mot de passe",
+          "username": "Nom d'utilisateur",
+          "verify_ssl": "Vérifiez le certificat SSL (décochez la case pour un certificat self-signed)",
+          "rtsp_port_forced": "Forcer le port RTSP (facultatif)",
+          "set_alarm_server": "Définir le serveur d'alarme à l'aide l'adresse suivante :",
+          "alarm_server": "Adresse d'Home Assistant accessible par l'appareil Hikvision"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de se connecter",
+      "invalid_auth": "Authentification invalide",
+      "insufficient_permission": "Accès refusé, veuillez vérifier les permissions de l'utilisateur",
+      "unknown": "Erreur innatendue"
+    }
+  }
+}

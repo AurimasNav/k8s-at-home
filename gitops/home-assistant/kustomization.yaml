@@ -22,6 +22,44 @@ configMapGenerator:
 - name: ha-light-automations
   files:
   - automations/lights.yaml
+# Vendored maciej-or/hikvision_next v1.1.1 (HACS "Hikvision NVR / IP Camera"), split
+# into 3 ConfigMaps matching its directory layout — mounted at
+# /config/custom_components/hikvision_next (see values.yaml) so it's installed
+# without needing HACS itself.
+- name: ha-hikvision-next
+  files:
+  - custom_components/hikvision_next/__init__.py
+  - custom_components/hikvision_next/binary_sensor.py
+  - custom_components/hikvision_next/camera.py
+  - custom_components/hikvision_next/config_flow.py
+  - custom_components/hikvision_next/const.py
+  - custom_components/hikvision_next/coordinator.py
+  - custom_components/hikvision_next/diagnostics.py
+  - custom_components/hikvision_next/hikvision_device.py
+  - custom_components/hikvision_next/image.py
+  - custom_components/hikvision_next/manifest.json
+  - custom_components/hikvision_next/notifications.py
+  - custom_components/hikvision_next/sensor.py
+  - custom_components/hikvision_next/services.py
+  - custom_components/hikvision_next/services.yaml
+  - custom_components/hikvision_next/strings.json
+  - custom_components/hikvision_next/switch.py
+- name: ha-hikvision-next-isapi
+  files:
+  - custom_components/hikvision_next/isapi/__init__.py
+  - custom_components/hikvision_next/isapi/const.py
+  - custom_components/hikvision_next/isapi/isapi.py
+  - custom_components/hikvision_next/isapi/models.py
+  - custom_components/hikvision_next/isapi/utils.py
+- name: ha-hikvision-next-translations
+  files:
+  - custom_components/hikvision_next/translations/en.json
+  - custom_components/hikvision_next/translations/fr.json
+  - custom_components/hikvision_next/translations/it.json
+  - custom_components/hikvision_next/translations/pl.json
+  - custom_components/hikvision_next/translations/pt-BR.json
+  - custom_components/hikvision_next/translations/pt.json
+  - custom_components/hikvision_next/translations/ru.json
 generatorOptions:
   disableNameSuffixHash: true
 

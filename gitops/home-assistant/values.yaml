@@ -71,6 +71,9 @@ startupProbe:
 # templateConfig include (packages/modbus_sungrow.yaml) can resolve it. The Flexit
 # and lights automations ConfigMaps are each mounted as a single file (via subPath)
 # so they don't collide with the UI-managed automations.yaml on the persistent volume.
+# The hikvision_next custom component (3 ConfigMaps, matching its own directory
+# layout) is mounted straight into custom_components/ so HA picks it up as an
+# installed integration without needing HACS itself.
 additionalVolumes:
   - name: sungrow-package
     configMap:
@@ -81,6 +84,15 @@ additionalVolumes:
   - name: light-automations
     configMap:
       name: ha-light-automations
+  - name: hikvision-next
+    configMap:
+      name: ha-hikvision-next
+  - name: hikvision-next-isapi
+    configMap:
+      name: ha-hikvision-next-isapi
+  - name: hikvision-next-translations
+    configMap:
+      name: ha-hikvision-next-translations
 additionalMounts:
   - name: sungrow-package
     mountPath: /config/packages
@@ -90,6 +102,12 @@ additionalMounts:
   - name: light-automations
     mountPath: /config/automations_lights.yaml
     subPath: lights.yaml
+  - name: hikvision-next
+    mountPath: /config/custom_components/hikvision_next
+  - name: hikvision-next-isapi
+    mountPath: /config/custom_components/hikvision_next/isapi
+  - name: hikvision-next-translations
+    mountPath: /config/custom_components/hikvision_next/translations
 
 ingress:
   # Enable ingress for home assistant
