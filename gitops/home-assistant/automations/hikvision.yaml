@@ -1,0 +1,67 @@
+- id: hikvision_kiemas_motion_snapshot
+  alias: Hikvision - Kiemas motion snapshot notification
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_1_motiondetection
+    to: 'on'
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Motion - Kiemas
+      message: Motion detected in the yard.
+      data:
+        image: /api/image_proxy/image.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_101_snapshot
+  mode: single
+
+- id: hikvision_kiemas_tamper_or_videoloss_alert
+  alias: Hikvision - Kiemas tamper/video loss alert
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_1_tamperdetection
+    to: 'on'
+  - trigger: state
+    entity_id: binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_1_videoloss
+    to: 'on'
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Camera alert - Kiemas
+      message: >-
+        {{ trigger.to_state.attributes.friendly_name }} triggered on the
+        Kiemas camera.
+  mode: single
+
+- id: hikvision_nvr_reboot_on_sustained_videoloss
+  alias: Hikvision - reboot NVR on sustained video loss
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_1_videoloss
+    - binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_2_videoloss
+    - binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_3_videoloss
+    to: 'on'
+    for:
+      minutes: 15
+  actions:
+  - action: hikvision_next.reboot
+    data:
+      config_entry_id: 01KZ9FA0AJ1B6BX7W5S0PXFX71
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: NVR rebooted
+      message: >-
+        {{ trigger.to_state.attributes.friendly_name }} has been lost for
+        15+ minutes - rebooted the NVR to try to recover it.
+  mode: single

@@ -15,12 +15,12 @@ configuration:
   # at /config/packages (see additionalVolumes / additionalMounts below). Secrets are
   # hardcoded in that file; automation/scene sections were dropped (read-only telemetry).
   #
-  # Flexit Nordic automations (automations/flexit.yaml) and the entrance-hall
+  # Flexit Nordic automations (automations/flexit.yaml), the entrance-hall
   # lighting automations (automations/lights.yaml, moved out of the UI-managed
-  # file) are vendored in git the same way, mounted read-only at
-  # /config/automations_flexit.yaml and /config/automations_lights.yaml and
-  # merged in under their own "automation flexit:" / "automation lights:" keys.
-  # automations.yaml itself (key renamed to "automation ui:") is left for
+  # file), and the Hikvision NVR automations (automations/hikvision.yaml) are
+  # vendored in git the same way, mounted read-only and merged in under their
+  # own "automation flexit:" / "automation lights:" / "automation hikvision:"
+  # keys. automations.yaml itself (key renamed to "automation ui:") is left for
   # anything still authored/edited from the HA UI.
   templateConfig: |-
     # Loads default set of integrations. Do not remove.
@@ -37,6 +37,7 @@ configuration:
     automation ui: !include automations.yaml
     automation flexit: !include automations_flexit.yaml
     automation lights: !include automations_lights.yaml
+    automation hikvision: !include automations_hikvision.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
 
@@ -84,6 +85,9 @@ additionalVolumes:
   - name: light-automations
     configMap:
       name: ha-light-automations
+  - name: hikvision-automations
+    configMap:
+      name: ha-hikvision-automations
   - name: hikvision-next
     configMap:
       name: ha-hikvision-next
@@ -102,6 +106,9 @@ additionalMounts:
   - name: light-automations
     mountPath: /config/automations_lights.yaml
     subPath: lights.yaml
+  - name: hikvision-automations
+    mountPath: /config/automations_hikvision.yaml
+    subPath: hikvision.yaml
   - name: hikvision-next
     mountPath: /config/custom_components/hikvision_next
   - name: hikvision-next-isapi
