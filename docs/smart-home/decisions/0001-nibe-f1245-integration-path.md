@@ -86,13 +86,31 @@ network**, which is precisely why it is the community-standard, reliable path.
 - Enable the **MODBUS 40** accessory in service menu **5.2** (NibeGW impersonates
   it — this is required even though we do not own the physical unit; it is what
   makes the pump broadcast telegrams and expect ACKs).
-- RS485 wiring per the MODBUS 40 installation manual: **A→A, B→B, GND→GND**.
+- RS485 + power wiring, from the input board's **AA3-X4** terminal block
+  (accessory type **AA9**, per the official F1245 Installer Manual, p.31 —
+  same connector RMU40/MODBUS 40 use):
+
+  | AA3-X4 terminal | Signal |
+  |---|---|
+  | 9 | 12V |
+  | 10 | A |
+  | 11 | B |
+  | 12 | GND |
+
+  Terminals 7-8 on that block are unused for AA9-type accessories.
 - Serial parameters: **9600 baud, 8N1**.
 
 **Gateway (T-CAN485 + `elupus/esphome-nibe`):**
 
 - Flash ESPHome with the `nibe` external component.
 - Point the UDP target at the Home Assistant host.
+- **Power the board from the same AA3-X4 block — no USB adapter needed.** The
+  T-CAN485 has a dedicated 2-pin DC power terminal rated 5-12V (separate from
+  its RS485 screw terminals, stepped down on-board via an ME2107 converter).
+  Wire NIBE's terminal 9 (12V) into that power terminal's V+, and share
+  terminal 12 (GND) between power return and the RS485 GND — the same way
+  NIBE's own RMU40 is powered off this connector. Don't feed 12V into the
+  USB-C port or any data pin.
 
 **Home Assistant (`nibe_heatpump`, nibegw mode):**
 
@@ -114,3 +132,5 @@ network**, which is precisely why it is the community-standard, reliable path.
 - [elupus/esphome-nibe](https://github.com/elupus/esphome-nibe)
 - [openHAB — Nibe Heatpump binding (NibeGW protocol, ACK, ports)](https://www.openhab.org/addons/bindings/nibeheatpump/)
 - [HA Community — "Connect to Nibe without the cloud"](https://community.home-assistant.io/t/how-to-connect-to-nibe-heat-pump-without-the-cloud/381099)
+- [NIBE F1245 Installer Manual (IHB EN 2004-1, 531675), p.31 — AA3-X4 / AA9 accessory pinout](https://installer.nibe.eu/download/18.7a0d4d117d0b32b7fde05/1637152117111/F1245%20Installer%20Manual.pdf)
+- [LILYGO T-CAN485 — 5-12V DC power input spec](https://openelab.io/blogs/lilygo/lilygo-t-can485-development-guide-complete-esp32-can-rs485-programming-tutorial)
