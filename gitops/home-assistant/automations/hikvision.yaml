@@ -5,14 +5,13 @@
     entity_id: binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_1_motiondetection
     to: 'on'
   actions:
-  - action: notify.send_message
-    target:
-      entity_id:
-      - notify.iphone
-      - notify.xiaomi
+  - action: notify.mobile_app
     data:
       title: Motion - Kiemas
       message: Motion detected in the yard.
+      target:
+      - iPhone
+      - xiaomi
       data:
         image: /api/image_proxy/image.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_101_snapshot
   mode: single
