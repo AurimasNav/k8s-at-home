@@ -1,2 +1,3 @@
 reloader:
-  watchGlobally: false
+  # false only creates a Role in the reloader namespace, so every other namespace is ignored
+  watchGlobally: true
