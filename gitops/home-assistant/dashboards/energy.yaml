@@ -206,6 +206,46 @@ views:
     - entity: sensor.tot_op_time_add_43081
       name: Immersion heater hours
 
+  - type: statistics-graph
+    title: Electricity used per day (estimated)
+    entities:
+    - sensor.heat_pump_energy_estimate
+    stat_types:
+    - change
+    period: day
+    days_to_show: 30
+    chart_type: bar
+
+  - type: history-graph
+    title: Power draw (estimated)
+    hours_to_show: 24
+    entities:
+    - sensor.heat_pump_power_estimate
+    - sensor.int_el_add_power_43084
+
+  - type: markdown
+    title: About the electricity figures
+    content: |
+      The F1245 does not meter itself — nothing in its protocol reports what the
+      compressor draws — so these two are **modelled, not measured**: a flat
+      1600 W whenever the compressor is running, plus the immersion heater's own
+      reported kW, plus a little for the circulation pumps.
+
+      That is a reasonable shape because the compressor runs at one fixed speed,
+      but the constant is a guess. **To calibrate it:** watch *House load* on the
+      Energy view and note how much it jumps the moment the compressor starts, at
+      night when little else is on. Tell me the number and I will set it.
+
+      Real measurement, if you want it: a clamp meter on the pump's circuit (a
+      Shelly EM on its breaker is the least invasive) reports true watts and
+      kWh. NIBE's own route is a pulse energy meter wired to the input board's
+      X22/X23, which the pump then exposes as an accumulated-kWh coil, but that
+      needs input board version 35 or later.
+
+      Once the daily figures look right you can add *Heat pump energy estimate*
+      to the built-in Energy dashboard under **Settings → Energy → Add device**,
+      and it will appear in the device-consumption breakdown.
+
   - type: history-graph
     title: Is it keeping up? (supply vs target)
     hours_to_show: 24

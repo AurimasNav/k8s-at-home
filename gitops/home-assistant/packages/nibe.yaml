@@ -1,4 +1,35 @@
 # NIBE F1245 monitoring. Requires the coils listed in docs/smart-home/nibe-enabled-entities.md.
+
+# F1245 reports no power of its own, so this is modelled: fixed-speed compressor
+# (calibrate compressor_w against the load-power step when it starts) + measured
+# immersion heater + circulation pumps.
+template:
+- sensor:
+  - name: Heat pump power estimate
+    unique_id: nibe_heat_pump_power_estimate
+    unit_of_measurement: W
+    device_class: power
+    state_class: measurement
+    availability: >-
+      {{ states('sensor.compressor_state_ep14_43427') not in ['unknown', 'unavailable']
+         and states('sensor.int_el_add_power_43084') not in ['unknown', 'unavailable'] }}
+    state: >-
+      {% set compressor_w = 1600 %}
+      {% set running = states('sensor.compressor_state_ep14_43427') == 'RUNNING' %}
+      {% set add_w = states('sensor.int_el_add_power_43084') | float(0) * 1000 %}
+      {{ ((compressor_w if running else 0) + add_w + (60 if running else 15)) | round(0) }}
+
+sensor:
+- platform: integration
+  source: sensor.heat_pump_power_estimate
+  name: Heat pump energy estimate
+  unique_id: nibe_heat_pump_energy_estimate
+  unit_prefix: k
+  unit_time: h
+  method: left
+  max_sub_interval:
+    minutes: 5
+
 utility_meter:
   nibe_compressor_starts_daily:
     source: sensor.compressor_starts_eb100_ep14_43416
