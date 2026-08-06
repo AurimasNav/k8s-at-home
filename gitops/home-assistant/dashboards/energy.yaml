@@ -4,6 +4,10 @@
 # accepts cumulative kWh flows (stat_energy_from / stat_energy_to). This view
 # reproduces those flow cards and adds the live battery state next to them.
 #
+# Lovelace has no hover-tooltip facility on entity rows, so the explanations are
+# markdown cards instead: a templated "right now" card that reads the values back
+# in plain language, and a static glossary per view.
+#
 # Sign conventions come from the Sungrow package definitions:
 #   sensor.battery_power     negative = charging, positive = discharging
 #   sensor.export_power_raw  positive = exporting, negative = importing
@@ -68,12 +72,96 @@ views:
   - type: energy-solar-graph
   - type: energy-sources-table
 
+  - type: markdown
+    title: What these mean
+    content: |
+      **PV production** — what the panels are making right now, in watts. **House
+      load** is what the house is drawing. The difference goes to the battery or
+      the grid.
+
+      **Grid** — positive means you are exporting (selling), negative means
+      importing (buying).
+
+      **Battery flow** — positive means the battery is discharging into the
+      house, negative means it is charging. So negative is "storing", which reads
+      backwards until you get used to it.
+
+      **Battery charge** is percent full. **Stored energy** is the same thing in
+      kWh, which is more useful: compare it against your house load to see how
+      many hours you are holding. **Stored energy (usable)** is smaller because
+      the inverter reserves headroom below the minimum and above the maximum SOC.
+
+      **Self-sufficiency** — the share of what the house used that came from your
+      own panels and battery rather than the grid. **Grid neutrality** — whether
+      you exported more than you imported over the period.
+
+      The graphs and table are period totals in kWh, controlled by the date
+      picker at the top. The live power rows above are instantaneous watts, so
+      they will not add up to the graphs.
+
 - title: Heat pump
   path: heatpump
   icon: mdi:heat-pump
   cards:
+  - type: markdown
+    title: What the heat pump is doing right now
+    content: |
+      {% set prio = states('sensor.prio_43086') %}
+      {% set dm = states('number.degree_minutes_16_bit_43005') | float(0) %}
+      {% set supply = states('sensor.bt2_supply_temp_s1_40008') | float(0) %}
+      {% set target = states('sensor.calc_supply_s1_43009') | float(0) %}
+      {% set bin = states('sensor.eb100_ep14_bt10_brine_in_temp_40015') | float(0) %}
+      {% set bout = states('sensor.eb100_ep14_bt11_brine_out_temp_40016') | float(0) %}
+      {% set add = states('sensor.int_el_add_power_43084') | float(0) %}
+      {% set alarm = states('sensor.alarm_45001') | float(0) %}
+
+      **Job right now: {{ prio }}** —
+      {%- if prio == 'HOT WATER' %} heating the hot water tank. House heating
+      waits its turn: there is one compressor, and hot water takes priority.
+      {%- elif prio == 'HEAT' %} heating the house.
+      {%- elif prio == 'OFF' %} idle. Neither the house nor the tank is asking
+      for heat.
+      {%- else %} {{ prio }}.
+      {%- endif %}
+
+      **Compressor: {{ states('sensor.compressor_state_ep14_43427') }}.**
+      It runs at one fixed speed, so it works by switching on and off rather than
+      throttling.
+
+      **Heat deficit: {{ dm }} degree-minutes.**
+      Zero means the house is exactly as warm as the pump intends. It drifts
+      negative as rooms fall behind, and the further negative, the harder the
+      pump tries: the compressor starts around -60, and the immersion heater only
+      joins in several hundred further down.
+
+      **Water to the radiators: {{ supply }} °C, aiming for {{ target }} °C**
+      {%- if supply < target - 3 %} — {{ (target - supply) | round(1) }} °C
+      short, so it is still catching up. Normal after a start or a hot water
+      cycle; a persistent gap in cold weather means it cannot keep up.
+      {%- else %} — on target.
+      {%- endif %}
+      The target is not a setting you pick; the pump computes it from the outdoor
+      temperature and the heat curve, which is why it moves on its own.
+
+      **Immersion heater:**
+      {%- if add > 0 %} ⚠️ drawing {{ add }} kW. This is a plain electric element:
+      1 kWh of electricity buys 1 kWh of heat, where the compressor buys three to
+      five. Fine for a cold snap, expensive as a habit.
+      {%- else %} off — where you want it.
+      {%- endif %}
+
+      **Ground loop: {{ bin }} °C coming in from the ground, {{ bout }} °C going
+      back out.**
+      The pump harvests the {{ (bin - bout) | round(1) }} °C difference; 2-5 °C
+      while running is healthy. Both numbers sink over a winter and recover in
+      summer. If brine out keeps reaching -8 °C or below, the ground around the
+      collector is being drained faster than it recovers.
+
+      {% if alarm > 0 %}⚠️ **Alarm {{ alarm | int }} is active** — check the
+      pump's own display for the description.{% else %}**No alarm.**{% endif %}
+
   - type: entities
-    title: NIBE F1245
+    title: Operation
     entities:
     - entity: sensor.prio_43086
       name: Priority
@@ -85,6 +173,7 @@ views:
       name: Degree minutes
     - entity: sensor.alarm_45001
       name: Alarm code
+
   - type: entities
     title: Temperatures
     entities:
@@ -102,6 +191,7 @@ views:
       name: Hot water top
     - entity: sensor.bt6_hw_load_40014
       name: Hot water load
+
   - type: entities
     title: Ground loop
     entities:
@@ -113,16 +203,72 @@ views:
       name: Brine pump
     - entity: sensor.supply_pump_speed_ep14_43437
       name: Supply pump
+
+  - type: entities
+    title: Wear and running hours
+    entities:
+    - entity: sensor.compressor_starts_eb100_ep14_43416
+      name: Compressor starts (lifetime)
+    - entity: sensor.nibe_compressor_starts_daily
+      name: Compressor starts (today)
+    - entity: sensor.tot_op_time_compr_eb100_ep14_43420
+      name: Compressor hours (total)
+    - entity: sensor.tot_hw_op_time_compr_eb100_ep14_43424
+      name: Compressor hours (hot water)
+    - entity: sensor.tot_op_time_add_43081
+      name: Immersion heater hours
+
   - type: history-graph
-    title: Supply vs target
+    title: Is it keeping up? (supply vs target)
     hours_to_show: 24
     entities:
     - sensor.bt2_supply_temp_s1_40008
     - sensor.calc_supply_s1_43009
     - sensor.bt1_outdoor_temperature_40004
+
   - type: history-graph
-    title: Ground loop
+    title: Ground loop over 48h
     hours_to_show: 48
     entities:
     - sensor.eb100_ep14_bt10_brine_in_temp_40015
     - sensor.eb100_ep14_bt11_brine_out_temp_40016
+
+  - type: markdown
+    title: Glossary
+    content: |
+      **Priority** — a single-compressor pump does one job at a time: `HEAT`,
+      `HOT WATER`, or `OFF`. Hot water interrupts heating, not the other way
+      round.
+
+      **Degree minutes** — the pump's running tally of how far the house has
+      fallen behind, in °C multiplied by minutes. 0 is satisfied, negative is
+      behind. It is the trigger for everything: compressor on near -60,
+      immersion heater several hundred lower, both set in the pump's menu 4.9.3.
+
+      **Supply / Return** — water leaving to the radiators and coming back. The
+      gap between them (5-10 °C while running) shows how much heat the house is
+      actually absorbing.
+
+      **Supply (target)** — computed from outdoor temperature and the heat curve.
+      Nudge it with *Heat Offset S1* if rooms run cold or warm; do not chase it
+      with the thermostat.
+
+      **Outdoor (average)** — a smoothed outdoor reading. The curve follows this
+      rather than the raw value, so the pump ignores brief cold gusts.
+
+      **Hot water top / load** — top of the tank is what reaches the tap first;
+      the load sensor lower down decides when charging starts. That is why the
+      tap can run hot while the pump still says the tank needs charging.
+
+      **Brine in / out** — fluid arriving from the ground (warmer) and returning
+      to it (colder). The difference is harvested heat; the absolute values show
+      how much the ground has left. NIBE's own low-brine alarm sits near -12 °C.
+
+      **Immersion heater** — the electric backup element, in kW. Cheap to build,
+      expensive to run: no heat pump multiplier, just resistance heating.
+
+      **Compressor starts** — wear. Many short cycles are harder on it than
+      fewer long runs; the automations flag more than 30 starts in a day.
+
+      **Alarm code** — 0 is healthy. Anything else is a fault code to look up on
+      the pump's display; you get a phone notification either way.
