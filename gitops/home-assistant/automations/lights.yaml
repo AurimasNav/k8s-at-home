@@ -20,7 +20,7 @@
           - entrance_hall
         action: light.turn_on
         data:
-          color_temp_kelvin: 2700
+          rgb_color: [255, 0, 0]
           brightness_pct: 10
     default:
     - target:
