@@ -135,6 +135,12 @@ network**, which is precisely why it is the community-standard, reliable path.
 
 **Home Assistant (`nibe_heatpump`, nibegw mode):**
 
+- The integration is **not** auto-discovered — add it manually (model F1245,
+  connection type nibegw). The ESPHome integration discovering `nibegw` is a
+  separate thing: that adopts the gateway board itself (uptime, WiFi, restart
+  buttons), not the pump.
+- It creates ~1535 entities, nearly all disabled; see
+  [which ones to enable](../nibe-enabled-entities.md).
 - Listening port (telegrams from gateway): **UDP 9999**
 - Remote read port: **UDP 9999**
 - Remote write port: **UDP 10000**
