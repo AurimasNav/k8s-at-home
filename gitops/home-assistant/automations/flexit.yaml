@@ -108,3 +108,74 @@
         Electric heater has been running for 10+ min while outside air is
         {{ states('sensor.flexit_nordic_outside_air_temperature') }}°C. Worth checking the unit.
   mode: single
+
+- id: flexit_recover_after_outage
+  alias: Flexit - recover connection after outage
+  description: >-
+    The unit drops off the network after a power cut and needs its config entry
+    reloaded, or in the worst case a cable replug. Retries the reload before
+    asking for hands.
+  triggers:
+  - trigger: state
+    entity_id: climate.flexit_nordic
+    to: unavailable
+    for:
+      minutes: 5
+  actions:
+  - repeat:
+      sequence:
+      - action: homeassistant.reload_config_entry
+        target:
+          entity_id: climate.flexit_nordic
+      - delay:
+          minutes: 5
+      until:
+      - condition: template
+        value_template: >-
+          {{ not is_state('climate.flexit_nordic', 'unavailable')
+             or repeat.index >= 6 }}
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: climate.flexit_nordic
+        state: unavailable
+      sequence:
+      - action: notify.send_message
+        target:
+          entity_id:
+          - notify.iphone
+          - notify.xiaomi
+        data:
+          title: Flexit offline
+          message: >-
+            Flexit has been unreachable for 30+ minutes and six reload attempts
+            did not recover it (192.168.1.134, BACnet id 2). It is most likely off
+            the network after a power cut - replug its UTP cable or power-cycle
+            the unit. Ventilation itself keeps running on its own controller;
+            only monitoring and automations are affected.
+  mode: single
+
+- id: flexit_back_online
+  alias: Flexit - back online
+  triggers:
+  - trigger: state
+    entity_id: climate.flexit_nordic
+    from: unavailable
+    for:
+      minutes: 1
+  conditions:
+  - condition: template
+    value_template: "{{ trigger.to_state.state not in ['unavailable', 'unknown'] }}"
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Flexit back online
+      message: >-
+        Flexit is reachable again - extract air
+        {{ states('sensor.flexit_nordic_extract_air_temperature') }} C, filter
+        time {{ states('sensor.flexit_nordic_air_filter_operating_time') }}h.
+  mode: single
