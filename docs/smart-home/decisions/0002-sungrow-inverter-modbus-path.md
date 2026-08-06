@@ -14,7 +14,15 @@
 | **Sungrow SBR160** (16 kWh HV battery) | battery data, via the inverter's map |
 | **Sungrow WiNet-S dongle** (on the inverter) | **the connection module we use** — native Modbus TCP + iSolarCloud uplink |
 | **Waveshare RS485-to-ETH (B)** (`192.168.1.99`, on inverter COM2) | evaluated then **abandoned** — now free for another Modbus RTU device |
+| **Sungrow iHomeManager** (`192.168.1.168`, WiFi) | energy manager / smart meter. Serves **plain Modbus TCP `:502`** with a *partial* map — not yet read by HA |
+| **Sungrow EV charger AC011E** (`192.168.1.191`, wired) | serves **`:516` only** (SSL, reserved for the iHomeManager) — no plain-Modbus port to read locally |
 | **k3s node `ubuntu-k8s`** | runs Home Assistant (container) |
+
+Identified by scanning for who listens on 502 vs 516 and comparing register reads
+(2026-08-07): `.116` and `.119` return the same inverter serial and are the *same*
+WiNet-S on WiFi and Ethernet; `.168` mirrors a subset of the inverter map with
+live values tracking `.119`, which is an energy manager re-serving what it
+collects.
 
 ## The connection (the decision)
 
@@ -51,9 +59,16 @@ Instruction Timeout only persists with **Multi-host = Yes** and must be a **mult
 - **Single Modbus client** on the WiNet-S — the iSolarCloud app can contend for it.
 - The WiNet-S serves **a subset** of the inverter's registers (the internal LAN port / COM2 expose
   more). Registers it doesn't serve were trimmed from the package to stop error spam.
-- The **EV charger (AC011E)** is **not** on this Modbus map — it reports RS485 → inverter →
-  iSolarCloud. For local EV-charger / heat-pump data the path is the **Sungrow iHomeManager**
-  (Modbus TCP `:516`, SSL) or **evcc** — see follow-ups.
+- The **EV charger (AC011E)** is **not** on this Modbus map. Port `516` on it is the channel the
+  *iHomeManager dials into*, SSL-encrypted — not a port HA can usefully poll. For local charger
+  data the realistic paths are the iHomeManager's own `:502` map or **evcc** — see
+  [todo](../todo.md).
+- The **WiNet-S is reachable twice** (wired `.119`, WiFi `.116`, same serial). Given it tolerates
+  only one Modbus client, the WiFi interface is worth disabling.
+- **iHomeManager settings to leave alone:** RS485 mode stays **collection** (the manager polling
+  its own bus) and **O&M off** (Sungrow/installer remote access). Its manual is explicit that
+  RS485 *and* WiNet must not both be used for the network connection (p.17), and that RS485 to the
+  inverter is only required when feed-in power limitation is (p.18) — we are on the WiNet path.
 
 ## HA reliability
 
