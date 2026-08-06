@@ -1,0 +1,56 @@
+uart:
+  id: mmwave_uart
+  tx_pin: ${tx_pin}
+  rx_pin: ${rx_pin}
+  baud_rate: 256000
+  parity: NONE
+  stop_bits: 1
+
+ld2410:
+  id: mmwave_radar
+  uart_id: mmwave_uart
+
+binary_sensor:
+  - platform: ld2410
+    has_target:
+      name: "Presence"
+    has_moving_target:
+      name: "Moving Target"
+    has_still_target:
+      name: "Still Target"
+
+sensor:
+  - platform: ld2410
+    detection_distance:
+      name: "Detection Distance"
+    light:
+      name: "Ambient Light"
+
+# Exposed so engineering mode can be toggled manually if ever needed. Its
+# restore_mode has no effect (this component's EngineeringModeSwitch doesn't
+# implement the setup() hook that honors it) -- see the on_boot lambda below,
+# which is what actually forces the mode on at every boot.
+switch:
+  - platform: ld2410
+    engineering_mode:
+      name: "Engineering Mode"
+
+# The light reading only exists in the chip's report frame when engineering
+# mode is on, and the chip doesn't remember that setting across power cycles.
+esphome:
+  on_boot:
+    then:
+      - lambda: id(mmwave_radar).set_engineering_mode(true);
+
+# timeout/max_move_distance_gate/max_still_distance_gate must be set together
+# (LD2410 firmware treats them as one calibration command)
+number:
+  - platform: ld2410
+    timeout:
+      name: "Presence Timeout"
+    max_move_distance_gate:
+      name: "Max Move Distance"
+    max_still_distance_gate:
+      name: "Max Still Distance"
+    light_threshold:
+      name: "Light Threshold"

@@ -1,0 +1,24 @@
+substitutions:
+  name: "nibegw"
+  friendly_name: "Nibe Heat Pump Gateway"
+  tx_pin: "GPIO22"
+  rx_pin: "GPIO21"
+  udp_target_ip: !secret ha_node_ip
+
+packages:
+  board: !include ../boards/lilygo-tcan485.yaml
+  core: !include ../packages/core.yaml
+  wifi: !include ../packages/wifi.yaml
+  nibegw: !include ../features/nibegw.yaml
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+# Never reboot on a lost API/WiFi connection — a reboot stops the ACKs the pump
+# requires and trips its alarm, while losing telemetry for a while is harmless.
+api:
+  reboot_timeout: 0s
+
+wifi:
+  reboot_timeout: 0s

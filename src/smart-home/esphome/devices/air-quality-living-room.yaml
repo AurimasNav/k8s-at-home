@@ -1,0 +1,15 @@
+substitutions:
+  name: "air-quality-living-room"
+  friendly_name: "Living Room Air Quality"
+  sda_pin: "GPIO8"
+  scl_pin: "GPIO9"
+
+packages:
+  board: !include ../boards/esp32s3-devkit.yaml
+  core: !include ../packages/core.yaml
+  wifi: !include ../packages/wifi.yaml
+  air_quality: !include ../features/air-quality-sen55.yaml
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}

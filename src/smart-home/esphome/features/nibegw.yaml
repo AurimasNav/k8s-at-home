@@ -1,0 +1,37 @@
+external_components:
+  - source: github://elupus/esphome-nibe
+
+uart:
+  id: nibe_uart
+  tx_pin: ${tx_pin}
+  rx_pin: ${rx_pin}
+  baud_rate: 9600
+
+nibegw:
+  uart_id: nibe_uart
+  udp:
+    target:
+      - ip: ${udp_target_ip}
+        port: 9999
+    # Only accept requests from HA — UDP 9999 also sees unrelated broadcast
+    # traffic on this LAN.
+    source:
+      - ${udp_target_ip}
+    # Must match HA's remote read/write ports — the arrival port is what decides
+    # whether a request is a read or a write.
+    read_port: 9999
+    write_port: 10000
+  # Impersonate MODBUS 40 and ACK every telegram, or the pump alarms.
+  acknowledge:
+    - MODBUS40
+  # Answer the pump's accessory-version query.
+  constants:
+    - address: MODBUS40
+      token: ACCESSORY
+      data: [0x0A, 0x00, 0x01]
+
+button:
+  - platform: restart
+    name: "Restart"
+  - platform: safe_mode
+    name: "Safe Mode Boot"

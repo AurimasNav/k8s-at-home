@@ -1,0 +1,25 @@
+i2c:
+  id: sen55_i2c
+  sda: ${sda_pin}
+  scl: ${scl_pin}
+
+sensor:
+  - platform: sen5x
+    i2c_id: sen55_i2c
+    pm_1_0:
+      name: "PM 1.0"
+    pm_2_5:
+      name: "PM 2.5"
+    pm_4_0:
+      name: "PM 4.0"
+    pm_10_0:
+      name: "PM 10.0"
+    temperature:
+      name: "Temperature"
+    humidity:
+      name: "Humidity"
+    voc:
+      name: "VOC Index"
+    nox:
+      name: "NOx Index"
+    update_interval: 60s

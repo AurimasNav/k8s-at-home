@@ -1,3 +1,5 @@
 **/charts/
 show.values.yaml
 .claude/
+secrets.yaml
+**/.esphome/
