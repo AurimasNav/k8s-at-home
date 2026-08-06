@@ -76,6 +76,20 @@ helmCharts:
   valuesFile: values.yaml
 
 patches:
+  # Let Reloader restart HA when any of the vendored ConfigMaps above change.
+  # Necessary rather than nice-to-have: those files are mounted with subPath, and
+  # Kubernetes never propagates ConfigMap updates into a subPath mount, so
+  # without a restart an Argo sync silently leaves HA on the old file.
+  - target:
+      kind: StatefulSet
+      name: home-assistant
+    patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: home-assistant
+        annotations:
+          reloader.stakater.com/auto: "true"
   - target:
       kind: Service
       name: home-assistant
