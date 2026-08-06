@@ -31,6 +31,13 @@ configMapGenerator:
 - name: ha-nibe-package
   files:
   - packages/nibe.yaml
+# Energy + heat pump dashboard, served as a YAML-mode Lovelace dashboard. HA's
+# built-in Energy dashboard can't be edited and has no state-of-charge field, so
+# this one reproduces its flow cards and adds live battery state beside them.
+# UI-authored dashboards keep working (lovelace stays in storage mode).
+- name: ha-energy-dashboard
+  files:
+  - dashboards/energy.yaml
 # Vendored maciej-or/hikvision_next v1.1.1 (HACS "Hikvision NVR / IP Camera"), split
 # into 3 ConfigMaps matching its directory layout — mounted at
 # /config/custom_components/hikvision_next (see values.yaml) so it's installed

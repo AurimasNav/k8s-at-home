@@ -1,0 +1,128 @@
+# Energy dashboard, vendored in git and served as a YAML-mode Lovelace dashboard
+# (see values.yaml -> lovelace.dashboards). It exists because HA's built-in Energy
+# dashboard is not editable and has no place for state of charge: its config only
+# accepts cumulative kWh flows (stat_energy_from / stat_energy_to). This view
+# reproduces those flow cards and adds the live battery state next to them.
+#
+# Sign conventions come from the Sungrow package definitions:
+#   sensor.battery_power     negative = charging, positive = discharging
+#   sensor.export_power_raw  positive = exporting, negative = importing
+title: Energy+
+views:
+- title: Energy
+  path: energy
+  icon: mdi:transmission-tower
+  cards:
+  # Energy cards read the period from this card; without it they have nothing to
+  # scope their queries to.
+  - type: energy-date-selection
+
+  - type: horizontal-stack
+    cards:
+    - type: gauge
+      entity: sensor.battery_level
+      name: Battery charge
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        red: 0
+        yellow: 20
+        green: 50
+    - type: entity
+      entity: sensor.battery_charge
+      name: Stored energy
+    - type: entity
+      entity: sensor.battery_power
+      name: Battery flow
+
+  - type: energy-distribution
+    link_dashboard: true
+
+  - type: entities
+    title: Live power
+    entities:
+    - entity: sensor.total_dc_power
+      name: PV production
+    - entity: sensor.load_power
+      name: House load
+    - entity: sensor.export_power_raw
+      name: "Grid (+ export / - import)"
+    - entity: sensor.battery_power
+      name: "Battery (+ discharge / - charge)"
+    - entity: sensor.battery_level
+      name: Battery charge
+    - entity: sensor.battery_charge
+      name: Stored energy
+    - entity: sensor.battery_charge_nominal
+      name: Stored energy (usable, min/max SOC)
+    - entity: sensor.running_state
+      name: Inverter state
+
+  - type: horizontal-stack
+    cards:
+    - type: energy-self-sufficiency-gauge
+    - type: energy-grid-neutrality-gauge
+
+  - type: energy-usage-graph
+  - type: energy-solar-graph
+  - type: energy-sources-table
+
+- title: Heat pump
+  path: heatpump
+  icon: mdi:heat-pump
+  cards:
+  - type: entities
+    title: NIBE F1245
+    entities:
+    - entity: sensor.prio_43086
+      name: Priority
+    - entity: sensor.compressor_state_ep14_43427
+      name: Compressor
+    - entity: sensor.int_el_add_power_43084
+      name: Immersion heater
+    - entity: number.degree_minutes_16_bit_43005
+      name: Degree minutes
+    - entity: sensor.alarm_45001
+      name: Alarm code
+  - type: entities
+    title: Temperatures
+    entities:
+    - entity: sensor.bt1_outdoor_temperature_40004
+      name: Outdoor
+    - entity: sensor.bt1_average_40067
+      name: Outdoor (average)
+    - entity: sensor.bt2_supply_temp_s1_40008
+      name: Supply
+    - entity: sensor.calc_supply_s1_43009
+      name: Supply (target)
+    - entity: sensor.eb100_ep14_bt3_return_temp_40012
+      name: Return
+    - entity: sensor.bt7_hw_top_40013
+      name: Hot water top
+    - entity: sensor.bt6_hw_load_40014
+      name: Hot water load
+  - type: entities
+    title: Ground loop
+    entities:
+    - entity: sensor.eb100_ep14_bt10_brine_in_temp_40015
+      name: Brine in
+    - entity: sensor.eb100_ep14_bt11_brine_out_temp_40016
+      name: Brine out
+    - entity: sensor.ep14_gp2_brine_pump_status_ep14_43439
+      name: Brine pump
+    - entity: sensor.supply_pump_speed_ep14_43437
+      name: Supply pump
+  - type: history-graph
+    title: Supply vs target
+    hours_to_show: 24
+    entities:
+    - sensor.bt2_supply_temp_s1_40008
+    - sensor.calc_supply_s1_43009
+    - sensor.bt1_outdoor_temperature_40004
+  - type: history-graph
+    title: Ground loop
+    hours_to_show: 48
+    entities:
+    - sensor.eb100_ep14_bt10_brine_in_temp_40015
+    - sensor.eb100_ep14_bt11_brine_out_temp_40016

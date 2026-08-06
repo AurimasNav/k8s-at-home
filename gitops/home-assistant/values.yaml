@@ -38,6 +38,17 @@ configuration:
         - 127.0.0.0/8
     frontend:
       themes: !include_dir_merge_named themes
+    lovelace:
+      # storage mode keeps every UI-authored dashboard editable as before; the
+      # entry below adds one extra, YAML-defined dashboard alongside them.
+      mode: storage
+      dashboards:
+        energy-plus:
+          mode: yaml
+          title: Energy+
+          icon: mdi:home-battery
+          show_in_sidebar: true
+          filename: dashboard_energy.yaml
     automation ui: !include automations.yaml
     automation flexit: !include automations_flexit.yaml
     automation lights: !include automations_lights.yaml
@@ -96,6 +107,9 @@ additionalVolumes:
   - name: nibe-package
     configMap:
       name: ha-nibe-package
+  - name: energy-dashboard
+    configMap:
+      name: ha-energy-dashboard
   - name: hikvision-next
     configMap:
       name: ha-hikvision-next
@@ -120,6 +134,9 @@ additionalMounts:
   - name: nibe-package
     mountPath: /config/package_nibe.yaml
     subPath: nibe.yaml
+  - name: energy-dashboard
+    mountPath: /config/dashboard_energy.yaml
+    subPath: energy.yaml
   - name: hikvision-next
     mountPath: /config/custom_components/hikvision_next
   - name: hikvision-next-isapi
