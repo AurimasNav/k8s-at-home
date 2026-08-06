@@ -92,35 +92,67 @@ network**, which is precisely why it is the community-standard, reliable path.
 
   | AA3-X4 terminal | Signal |
   |---|---|
-  | 9 | 12V |
-  | 10 | A |
-  | 11 | B |
-  | 12 | GND |
+  | 12 | 12V |
+  | 11 | A |
+  | 10 | B |
+  | 9 | GND |
 
   Terminals 7-8 on that block are unused for AA9-type accessories.
+  **Read that figure carefully:** it prints the terminal numbers descending
+  (`12 11 10 9`) above the labels `12V A B GND`, which is easy to misread as
+  9=12V. Getting it backwards means feeding the gateway reverse polarity — it
+  simply won't power up.
 - Serial parameters: **9600 baud, 8N1**.
 
 **Gateway (T-CAN485 + `elupus/esphome-nibe`):**
 
-- Flash ESPHome with the `nibe` external component.
-- Point the UDP target at the Home Assistant host.
+- Flash ESPHome with the `nibe` external component. Config lives in
+  [`src/smart-home/esphome/devices/nibegw.yaml`](../../../src/smart-home/esphome/devices/nibegw.yaml).
+- Point the UDP target at the **k8s node IP** HA runs on (`ha_node_ip` in the
+  ESPHome secrets), not at its MetalLB LoadBalancer IP. HA runs with
+  `hostNetwork: true`, so it listens on the node directly and this is the short
+  path — verified receiving telegrams. Routing via the LoadBalancer IP can also
+  be made to work (`kustomization.yaml` patches UDP 9999 onto the Service), but
+  it adds MetalLB/Cilium UDP forwarding as a dependency for no benefit; that
+  patch is redundant while we target the node IP.
+- Disable ESPHome's API and WiFi `reboot_timeout`: a reboot stops the ACKs and
+  trips the pump's alarm, whereas a spell of lost telemetry is harmless.
 - **Power the board from the same AA3-X4 block — no USB adapter needed.** The
-  T-CAN485 has a dedicated 2-pin DC power terminal rated 5-12V (separate from
-  its RS485 screw terminals, stepped down on-board via an ME2107 converter).
-  Wire NIBE's terminal 9 (12V) into that power terminal's V+, and share
-  terminal 12 (GND) between power return and the RS485 GND — the same way
-  NIBE's own RMU40 is powered off this connector. Don't feed 12V into the
-  USB-C port or any data pin.
+  T-CAN485 has a dedicated **2-pin DC power terminal** rated 5-12V, separate
+  from its RS485 screw terminals. Wire NIBE **12 (12V) → that block's `+`** and
+  NIBE **9 (GND) → that same block's `-`**.
+- **The power return must land on the DC block's `-`, not on the GND pad of the
+  RS485 block.** They are not the same node. Putting the return on the RS485
+  GND leaves the board unpowered and *floating*, which measures very
+  confusingly: the DC input reads a few volts instead of 13V, unconnected pins
+  read arbitrary values (9-10V), and nothing boots — looking exactly like a
+  dead board. This cost hours on first install.
+- To identify the `+` pad with certainty, power the board over USB-C and probe
+  the screw terminals against GND: **`+` reads ~4.4V** (USB 5V less a diode
+  drop). Its neighbour is `-`.
+- Don't feed 12V into the USB-C port or any data pin, and don't power from USB
+  and the pump simultaneously.
 
 **Home Assistant (`nibe_heatpump`, nibegw mode):**
 
 - Listening port (telegrams from gateway): **UDP 9999**
-- Remote read port: **UDP 10000**
+- Remote read port: **UDP 9999**
 - Remote write port: **UDP 10000**
+- The read/write ports are the ports on the *gateway*, and the gateway decides
+  read-vs-write by which port a request arrives on — so these must match
+  `read_port`/`write_port` in its config, not be swapped.
 - Ensure the HA host firewall allows inbound UDP 9999/10000.
 
 **Verification / troubleshooting:**
 
+- Gateway dead off AA3-X4 → **polarity reversed** (measure red on 12, black on 9,
+  expect ~12-13V), or the **power return is on the RS485 GND pad instead of the
+  DC block's `-`**. Both look identical from outside. The board has no power LED
+  of its own, so our firmware drives the onboard WS2812 as a status indicator:
+  dark = no power, blue = booting, red = no WiFi, yellow = no HA API, green = up.
+- To prove telegrams reach HA without configuring the integration first, capture
+  on the HA node: `tcpdump -n -X 'udp and src host <gateway-ip>'`. A packet
+  containing ASCII `F1245-6` is the pump identifying itself.
 - Pump shows red/alarm → MODBUS 40 not enabled, or gateway not ACKing.
 - Gateway RS485 activity LED solid on → A/B lines swapped (must be A→A, B→B).
 - Garbage / no telegrams → serial not set to 9600 8N1.
