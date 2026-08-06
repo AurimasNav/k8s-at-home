@@ -9,13 +9,27 @@
     entity_id: sensor.entrance_hall_presence_ambient_light
     below: 50
   actions:
-  - target:
-      area_id:
-      - entrance_hall
-    action: light.turn_on
-    data:
-      color_temp_kelvin: 6500
-      brightness_pct: 100
+  - choose:
+    - conditions:
+      - condition: time
+        after: '22:00:00'
+        before: '06:00:00'
+      sequence:
+      - target:
+          area_id:
+          - entrance_hall
+        action: light.turn_on
+        data:
+          color_temp_kelvin: 2700
+          brightness_pct: 10
+    default:
+    - target:
+        area_id:
+        - entrance_hall
+      action: light.turn_on
+      data:
+        color_temp_kelvin: 6500
+        brightness_pct: 100
   mode: single
 - id: '1785649924624'
   alias: Entrance hall - lights off when clear
