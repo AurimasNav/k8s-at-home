@@ -5,13 +5,20 @@
     entity_id: binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_1_motiondetection
     to: 'on'
   actions:
-  - action: notify.mobile_app
+  # The notify.iphone / notify.xiaomi entities used elsewhere in this file go
+  # through notify.send_message, which can only carry title + message. An image
+  # attachment needs the per-device mobile_app service instead, so this is one
+  # call per phone (those services take no target list).
+  - action: notify.mobile_app_iphone
     data:
       title: Motion - Kiemas
       message: Motion detected in the yard.
-      target:
-      - iPhone
-      - xiaomi
+      data:
+        image: /api/image_proxy/image.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_101_snapshot
+  - action: notify.mobile_app_xiaomi
+    data:
+      title: Motion - Kiemas
+      message: Motion detected in the yard.
       data:
         image: /api/image_proxy/image.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_101_snapshot
   mode: single
