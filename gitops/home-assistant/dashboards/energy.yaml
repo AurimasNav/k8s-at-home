@@ -1,16 +1,4 @@
-# Energy dashboard, vendored in git and served as a YAML-mode Lovelace dashboard
-# (see values.yaml -> lovelace.dashboards). It exists because HA's built-in Energy
-# dashboard is not editable and has no place for state of charge: its config only
-# accepts cumulative kWh flows (stat_energy_from / stat_energy_to). This view
-# reproduces those flow cards and adds the live battery state next to them.
-#
-# Lovelace has no hover-tooltip facility on entity rows, so the explanations are
-# markdown cards instead: a templated "right now" card that reads the values back
-# in plain language, and a static glossary per view.
-#
-# Sign conventions come from the Sungrow package definitions:
-#   sensor.battery_power     negative = charging, positive = discharging
-#   sensor.export_power_raw  positive = exporting, negative = importing
+# YAML dashboard (values.yaml -> lovelace.dashboards); the built-in Energy one can't show SOC.
 title: Energy+
 views:
 - title: Energy

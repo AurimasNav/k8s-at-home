@@ -1,14 +1,4 @@
-# NIBE F1245 monitoring automations.
-#
-# A package rather than an automations/*.yaml file because the short-cycling
-# detector needs a utility_meter helper, which an automation file can't carry.
-#
-# All of these depend on coils that nibe_heatpump creates *disabled* -- see
-# docs/smart-home/nibe-enabled-entities.md. They stay dormant until those
-# entities are enabled.
-
-# Lifetime compressor-start counter -> starts per day. No name: set, so the
-# entity id comes from the key (sensor.nibe_compressor_starts_daily).
+# NIBE F1245 monitoring. Requires the coils listed in docs/smart-home/nibe-enabled-entities.md.
 utility_meter:
   nibe_compressor_starts_daily:
     source: sensor.compressor_starts_eb100_ep14_43416

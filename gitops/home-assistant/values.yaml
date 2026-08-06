@@ -23,9 +23,8 @@ configuration:
   # keys. automations.yaml itself (key renamed to "automation ui:") is left for
   # anything still authored/edited from the HA UI.
   #
-  # NIBE monitoring (packages/nibe.yaml -> /config/package_nibe.yaml) is a
-  # package rather than an automations file, because it ships a utility_meter
-  # helper alongside its automations; merged in under homeassistant.packages.nibe.
+  # NIBE monitoring is a package (packages/nibe.yaml -> /config/package_nibe.yaml),
+  # since it ships a utility_meter helper alongside its automations.
   templateConfig: |-
     # Loads default set of integrations. Do not remove.
     default_config:
@@ -39,8 +38,7 @@ configuration:
     frontend:
       themes: !include_dir_merge_named themes
     lovelace:
-      # storage mode keeps every UI-authored dashboard editable as before; the
-      # entry below adds one extra, YAML-defined dashboard alongside them.
+      # storage mode keeps UI-authored dashboards editable alongside the YAML one
       mode: storage
       dashboards:
         energy-plus:
