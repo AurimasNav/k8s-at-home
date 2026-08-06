@@ -22,6 +22,10 @@ configuration:
   # own "automation flexit:" / "automation lights:" / "automation hikvision:"
   # keys. automations.yaml itself (key renamed to "automation ui:") is left for
   # anything still authored/edited from the HA UI.
+  #
+  # NIBE monitoring (packages/nibe.yaml -> /config/package_nibe.yaml) is a
+  # package rather than an automations file, because it ships a utility_meter
+  # helper alongside its automations; merged in under homeassistant.packages.nibe.
   templateConfig: |-
     # Loads default set of integrations. Do not remove.
     default_config:
@@ -44,6 +48,7 @@ configuration:
     homeassistant:
       packages:
         sungrow: !include packages/modbus_sungrow.yaml
+        nibe: !include package_nibe.yaml
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
 securityContext:
@@ -88,6 +93,9 @@ additionalVolumes:
   - name: hikvision-automations
     configMap:
       name: ha-hikvision-automations
+  - name: nibe-package
+    configMap:
+      name: ha-nibe-package
   - name: hikvision-next
     configMap:
       name: ha-hikvision-next
@@ -109,6 +117,9 @@ additionalMounts:
   - name: hikvision-automations
     mountPath: /config/automations_hikvision.yaml
     subPath: hikvision.yaml
+  - name: nibe-package
+    mountPath: /config/package_nibe.yaml
+    subPath: nibe.yaml
   - name: hikvision-next
     mountPath: /config/custom_components/hikvision_next
   - name: hikvision-next-isapi

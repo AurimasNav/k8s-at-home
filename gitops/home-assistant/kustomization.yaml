@@ -25,6 +25,12 @@ configMapGenerator:
 - name: ha-hikvision-automations
   files:
   - automations/hikvision.yaml
+# NIBE monitoring is a package, not an automations/*.yaml file: it needs a
+# utility_meter helper (daily compressor starts) next to its automations, which
+# an automation-only include can't carry. Mounted as /config/package_nibe.yaml.
+- name: ha-nibe-package
+  files:
+  - packages/nibe.yaml
 # Vendored maciej-or/hikvision_next v1.1.1 (HACS "Hikvision NVR / IP Camera"), split
 # into 3 ConfigMaps matching its directory layout — mounted at
 # /config/custom_components/hikvision_next (see values.yaml) so it's installed

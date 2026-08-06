@@ -1,0 +1,181 @@
+# NIBE F1245 monitoring automations.
+#
+# A package rather than an automations/*.yaml file because the short-cycling
+# detector needs a utility_meter helper, which an automation file can't carry.
+#
+# All of these depend on coils that nibe_heatpump creates *disabled* -- see
+# docs/smart-home/nibe-enabled-entities.md. They stay dormant until those
+# entities are enabled.
+
+# Lifetime compressor-start counter -> starts per day. No name: set, so the
+# entity id comes from the key (sensor.nibe_compressor_starts_daily).
+utility_meter:
+  nibe_compressor_starts_daily:
+    source: sensor.compressor_starts_eb100_ep14_43416
+    cycle: daily
+
+automation:
+- id: nibe_alarm_raised
+  alias: NIBE - alarm raised
+  description: >-
+    Alarm coil 45001 is 0 when healthy and an alarm code otherwise. Without this
+    a fault sits unnoticed until the house goes cold.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.alarm_45001
+    above: 0
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: NIBE alarm
+      message: >-
+        Heat pump raised alarm code {{ states('sensor.alarm_45001') }}. Check the
+        pump's alarm log; hot water and heating may be running on the immersion
+        heater until it is cleared.
+  mode: single
+
+- id: nibe_alarm_cleared
+  alias: NIBE - alarm cleared
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.alarm_45001
+    below: 1
+  conditions:
+  - condition: template
+    value_template: "{{ trigger.from_state.state not in ['unknown', 'unavailable'] }}"
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: NIBE alarm cleared
+      message: Heat pump alarm is cleared, back to normal operation.
+  mode: single
+
+- id: nibe_immersion_heater_running
+  alias: NIBE - immersion heater running
+  description: >-
+    Internal electrical addition (43084, kW) should be idle most of the year on a
+    ground-source pump. Sustained use is the first place a fault shows up as
+    cost, well before anyone notices the house is uncomfortable.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.int_el_add_power_43084
+    above: 0.5
+    for:
+      minutes: 30
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: NIBE immersion heater
+      message: >-
+        Immersion heater has been drawing
+        {{ states('sensor.int_el_add_power_43084') }} kW for 30+ minutes
+        (priority: {{ states('sensor.prio_43086') }}). Expect a higher bill; if
+        this wasn't a cold snap or a big hot water draw, something is wrong.
+  mode: single
+
+- id: nibe_brine_out_low
+  alias: NIBE - brine out temperature low
+  description: >-
+    Sustained low brine-out means the ground collector isn't recovering. NIBE's
+    own alarm limit sits near -12 C, so -8 C for an hour is an early warning,
+    not a fault. Tune the threshold once a winter of data exists.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.eb100_ep14_bt11_brine_out_temp_40016
+    below: -8
+    for:
+      minutes: 60
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: NIBE brine loop
+      message: >-
+        Brine out has been below -8 C for an hour (now
+        {{ states('sensor.eb100_ep14_bt11_brine_out_temp_40016') }} C, in
+        {{ states('sensor.eb100_ep14_bt10_brine_in_temp_40015') }} C). Repeated
+        occurrences suggest the ground loop needs longer recovery.
+  mode: single
+
+- id: nibe_pv_surplus_hot_water
+  alias: NIBE - hot water boost on PV surplus
+  description: >-
+    Turn exported solar into stored heat. Uses "ONE TIME INCREASE" rather than a
+    timed 3H/6H/12H boost because it is self-limiting: a single extra charge that
+    can't keep running after the sun goes.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.export_power_raw
+    above: 1500
+    for:
+      minutes: 10
+  conditions:
+  # Battery first -- only treat it as surplus once the battery is essentially full.
+  - condition: numeric_state
+    entity_id: sensor.battery_level
+    above: 95
+  # Don't boost what's already hot, and don't fight the pump if it's mid-charge.
+  - condition: numeric_state
+    entity_id: sensor.bt7_hw_top_40013
+    below: 50
+  - condition: template
+    value_template: "{{ states('sensor.prio_43086') != 'HOT WATER' }}"
+  actions:
+  - action: select.select_option
+    target:
+      entity_id: select.temporary_lux_48132
+    data:
+      option: ONE TIME INCREASE
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: NIBE hot water boost
+      message: >-
+        Exporting {{ states('sensor.export_power_raw') }} W with the battery at
+        {{ states('sensor.battery_level') }}% - boosting hot water (was
+        {{ states('sensor.bt7_hw_top_40013') }} C).
+  # Trailing delay + mode: single throttles this to one boost per 3 hours.
+  - delay:
+      hours: 3
+  mode: single
+
+- id: nibe_compressor_short_cycling
+  alias: NIBE - compressor short cycling
+  description: >-
+    Excessive daily starts wear the compressor. Threshold is a starting guess for
+    a fixed-speed F1245; adjust once normal daily counts are known.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.nibe_compressor_starts_daily
+    above: 30
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: NIBE compressor cycling
+      message: >-
+        {{ states('sensor.nibe_compressor_starts_daily') }} compressor starts
+        today. Frequent cycling usually means the heat curve or degree-minute
+        settings need attention.
+  mode: single

@@ -24,9 +24,15 @@ the display name is what you click, the entity ID is what automations reference.
 
 Easier than scrolling: go to *Settings → Devices & Services → **Entities***,
 filter to the Nibe Heat Pump integration, enable "show disabled entities", and
-**search the coil number** (e.g. `45001`). Every entity ID ends in its coil
-address, so the number is unique and unambiguous — which the display names are
-not. Select the matches and use *Enable selected*.
+**search the coil number** (e.g. `45001`). The search matches entity IDs, and
+every entity ID ends in its coil address, so the number is unique and
+unambiguous — which the display names are not. Select the matches and use
+*Enable selected*.
+
+The Entity ID column itself is hidden by default (it is still searchable);
+unhide it from the table's column-settings menu to see and sort by it. Note that
+*Developer Tools → States* is no help for this — disabled entities have no state
+and never appear there.
 
 This only needs redoing if the HA config volume is rebuilt from scratch.
 
