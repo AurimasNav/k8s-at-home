@@ -47,11 +47,10 @@ Sanity check after wiring changes: `kustomize build --enable-helm .` from
 
 No local patches are carried — everything here is stock upstream.
 
-- **Mammotion camera** (Luba mini AWD 800, fw 1.30.29.8): live view initially
-  produced no video and looping noise audio. Sending
-  `device_agora_join_channel_with_position` with `enter_state=1` once on stream
-  open (commit c424b15, since reverted) fixed it *permanently* — the mower keeps
-  the video encoder armed, and stock upstream has worked since. If the camera
-  regresses (device reset / firmware update), re-apply that commit once, then
-  revert it again. Video is H.265: renders in Chrome (hw decode) and iOS/WebKit,
-  never in Firefox.
+- **Mammotion camera** (Luba mini AWD 800, fw 1.30.29.8): the live view is
+  browser-dependent. Works in Chrome (hardware H.265 decode) and the iOS/Android
+  companion app; in Firefox there is no video and the audio track intermittently
+  decodes as looping noise — Firefox has no H.265 support in WebRTC. Use Chrome
+  or the app. A local patch arming the encoder on stream open (commit c424b15)
+  was tried and reverted: it made no measurable difference once the browser
+  variable was accounted for.
