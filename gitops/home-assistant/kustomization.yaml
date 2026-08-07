@@ -70,6 +70,35 @@ configMapGenerator:
   - custom_components/hikvision_next/translations/pt-BR.json
   - custom_components/hikvision_next/translations/pt.json
   - custom_components/hikvision_next/translations/ru.json
+# Vendored sebr/bhyve-home-assistant v4.1.2 (Orbit B-hyve), same 3-ConfigMap pattern
+- name: ha-bhyve
+  files:
+  - custom_components/bhyve/__init__.py
+  - custom_components/bhyve/binary_sensor.py
+  - custom_components/bhyve/config_flow.py
+  - custom_components/bhyve/const.py
+  - custom_components/bhyve/coordinator.py
+  - custom_components/bhyve/diagnostics.py
+  - custom_components/bhyve/manifest.json
+  - custom_components/bhyve/select.py
+  - custom_components/bhyve/sensor.py
+  - custom_components/bhyve/services.yaml
+  - custom_components/bhyve/strings.json
+  - custom_components/bhyve/switch.py
+  - custom_components/bhyve/util.py
+  - custom_components/bhyve/valve.py
+- name: ha-bhyve-pybhyve
+  files:
+  - custom_components/bhyve/pybhyve/__init__.py
+  - custom_components/bhyve/pybhyve/client.py
+  - custom_components/bhyve/pybhyve/const.py
+  - custom_components/bhyve/pybhyve/devices.json
+  - custom_components/bhyve/pybhyve/errors.py
+  - custom_components/bhyve/pybhyve/typings.py
+  - custom_components/bhyve/pybhyve/websocket.py
+- name: ha-bhyve-translations
+  files:
+  - custom_components/bhyve/translations/en.json
 generatorOptions:
   disableNameSuffixHash: true
 

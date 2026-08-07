@@ -117,6 +117,15 @@ additionalVolumes:
   - name: hikvision-next-translations
     configMap:
       name: ha-hikvision-next-translations
+  - name: bhyve
+    configMap:
+      name: ha-bhyve
+  - name: bhyve-pybhyve
+    configMap:
+      name: ha-bhyve-pybhyve
+  - name: bhyve-translations
+    configMap:
+      name: ha-bhyve-translations
 additionalMounts:
   - name: sungrow-package
     mountPath: /config/packages
@@ -141,6 +150,12 @@ additionalMounts:
     mountPath: /config/custom_components/hikvision_next/isapi
   - name: hikvision-next-translations
     mountPath: /config/custom_components/hikvision_next/translations
+  - name: bhyve
+    mountPath: /config/custom_components/bhyve
+  - name: bhyve-pybhyve
+    mountPath: /config/custom_components/bhyve/pybhyve
+  - name: bhyve-translations
+    mountPath: /config/custom_components/bhyve/translations
 
 ingress:
   # Enable ingress for home assistant
