@@ -49,8 +49,8 @@ No local patches are carried — everything here is stock upstream.
 
 - **Mammotion camera** (Luba mini AWD 800, fw 1.30.29.8): the live view is
   browser-dependent. Works in Chrome (hardware H.265 decode) and the iOS/Android
-  companion app; in Firefox there is no video and the audio track intermittently
-  decodes as looping noise — Firefox has no H.265 support in WebRTC. Use Chrome
-  or the app. A local patch arming the encoder on stream open (commit c424b15)
-  was tried and reverted: it made no measurable difference once the browser
-  variable was accounted for.
+  companion app; in Firefox there is no video (Firefox has no H.265 support in
+  WebRTC) and occasionally a short burst of noise on the audio track at stream
+  start — rare and hard to reproduce. Use Chrome or the app. A local patch
+  arming the encoder on stream open (commit c424b15) was tried and reverted: it
+  made no measurable difference once the browser variable was accounted for.
