@@ -24,7 +24,7 @@
           brightness_pct: 10
     - conditions:
       - condition: time
-        after: '19:00:00'
+        after: '21:00:00'
         before: '22:00:00'
       sequence:
       - target:
@@ -32,7 +32,7 @@
           - entrance_hall
         action: light.turn_on
         data:
-          rgb_color: [255, 0, 0]
+          rgb_color: [255, 255, 0]
           brightness_pct: 100
     default:
     - target:
