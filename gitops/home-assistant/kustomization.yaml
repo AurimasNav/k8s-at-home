@@ -103,7 +103,11 @@ configMapGenerator:
   - custom_components/bhyve/translations/en.json
 # Vendored Mammotion (Luba/Yuka mowers), needs pymammotion pip-installed by HA on boot.
 # https://github.com/mikey0000/Mammotion-HA/archive/refs/tags/v0.6.3.tar.gz
+# ServerSideApply: these ConfigMaps are too big for the client-side apply annotation
 - name: ha-mammotion
+  options:
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
   files:
   - custom_components/mammotion/__init__.py
   - custom_components/mammotion/agora_api.py
@@ -135,6 +139,9 @@ configMapGenerator:
   - custom_components/mammotion/update.py
   - custom_components/mammotion/vacuum.py
 - name: ha-mammotion-translations
+  options:
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
   files:
   - custom_components/mammotion/translations/cs.json
   - custom_components/mammotion/translations/da.json
