@@ -1,0 +1,157 @@
+# YAML dashboard (values.yaml -> lovelace.dashboards): irrigation timeline + mower status.
+title: Garden
+views:
+- title: Irrigation
+  path: irrigation
+  icon: mdi:sprinkler-variant
+  cards:
+  - type: history-graph
+    title: Watering timeline (7 days)
+    hours_to_show: 168
+    entities:
+    - entity: valve.laistymas_lysves_zone
+      name: Lysvės
+    - entity: valve.laistymas_unnamed_zone_zone
+      name: Zone 1
+    - entity: valve.laistymas_unnamed_zone_zone_2
+      name: Zone 2
+    - entity: valve.laistymas_unnamed_zone_zone_3
+      name: Zone 3
+    - entity: valve.laistymas_unnamed_zone_zone_4
+      name: Zone 4
+
+  - type: horizontal-stack
+    cards:
+    - type: tile
+      entity: sensor.laistymas_next_watering
+      name: Next watering
+    - type: tile
+      entity: select.laistymas_device_mode
+      name: Mode
+    - type: tile
+      entity: switch.laistymas_rain_delay
+      name: Rain delay
+
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+    - type: tile
+      entity: valve.laistymas_lysves_zone
+      name: Lysvės
+      features:
+      - type: valve-open-close
+    - type: tile
+      entity: valve.laistymas_unnamed_zone_zone
+      name: Zone 1
+      features:
+      - type: valve-open-close
+    - type: tile
+      entity: valve.laistymas_unnamed_zone_zone_2
+      name: Zone 2
+      features:
+      - type: valve-open-close
+    - type: tile
+      entity: valve.laistymas_unnamed_zone_zone_3
+      name: Zone 3
+      features:
+      - type: valve-open-close
+    - type: tile
+      entity: valve.laistymas_unnamed_zone_zone_4
+      name: Zone 4
+      features:
+      - type: valve-open-close
+
+  - type: entities
+    title: Last watered
+    entities:
+    - entity: sensor.laistymas_lysves_zone_history
+      name: Lysvės
+    - entity: sensor.laistymas_unnamed_zone_zone_history
+      name: Zone 1
+    - entity: sensor.laistymas_unnamed_zone_zone_history_2
+      name: Zone 2
+    - entity: sensor.laistymas_unnamed_zone_zone_history_3
+      name: Zone 3
+    - entity: sensor.laistymas_unnamed_zone_zone_history_4
+      name: Zone 4
+    - entity: switch.laistymas_rytine_visko_program
+      name: Rytinė visko programa
+    - entity: binary_sensor.laistymas_fault
+      name: Fault
+
+- title: Mower
+  path: mower
+  icon: mdi:robot-mower
+  cards:
+  - type: tile
+    entity: lawn_mower.garden_luba_mnwybj2y
+    name: Luba
+    features:
+    - type: lawn-mower-commands
+      commands:
+      - start_pause
+      - dock
+
+  - type: history-graph
+    title: Mowing timeline (7 days)
+    hours_to_show: 168
+    entities:
+    - entity: lawn_mower.garden_luba_mnwybj2y
+      name: Mower
+    - entity: sensor.garden_luba_mnwybj2y_activity_mode
+      name: Activity
+
+  - type: horizontal-stack
+    cards:
+    - type: gauge
+      entity: sensor.garden_luba_mnwybj2y_battery
+      name: Battery
+      min: 0
+      max: 100
+      severity:
+        red: 0
+        yellow: 25
+        green: 50
+    - type: gauge
+      entity: sensor.garden_luba_mnwybj2y_progress
+      name: Task progress
+      min: 0
+      max: 100
+
+  - type: map
+    entities:
+    - entity: device_tracker.garden_luba_mnwybj2y_luba_mnwybj2y
+    hours_to_show: 24
+
+  - type: entities
+    title: Session
+    entities:
+    - entity: sensor.garden_luba_mnwybj2y_elapsed_time
+      name: Elapsed
+    - entity: sensor.garden_luba_mnwybj2y_time_left
+      name: Time left
+    - entity: sensor.garden_luba_mnwybj2y_area
+      name: Area
+    - entity: sensor.garden_luba_mnwybj2y_blade_height
+      name: Blade height
+    - entity: sensor.garden_luba_mnwybj2y_mowing_speed
+      name: Speed
+
+  - type: entities
+    title: Health
+    entities:
+    - entity: sensor.garden_luba_mnwybj2y_rtk_signal_quality
+      name: RTK signal
+    - entity: sensor.garden_luba_mnwybj2y_satellites_robot
+      name: Satellites
+    - entity: sensor.garden_luba_mnwybj2y_connection
+      name: Connection
+    - entity: sensor.garden_luba_mnwybj2y_wi_fi_rssi
+      name: Wi-Fi RSSI
+    - entity: binary_sensor.garden_luba_mnwybj2y_charging
+      name: Charging
+    - entity: sensor.garden_luba_mnwybj2y_last_error
+      name: Last error
+    - entity: update.garden_luba_mnwybj2y_firmware
+      name: Firmware

@@ -47,6 +47,12 @@ configuration:
           icon: mdi:home-battery
           show_in_sidebar: true
           filename: dashboard_energy.yaml
+        garden-plus:
+          mode: yaml
+          title: Garden
+          icon: mdi:watering-can
+          show_in_sidebar: true
+          filename: dashboard_garden.yaml
     automation ui: !include automations.yaml
     automation flexit: !include automations_flexit.yaml
     automation lights: !include automations_lights.yaml
@@ -108,6 +114,9 @@ additionalVolumes:
   - name: energy-dashboard
     configMap:
       name: ha-energy-dashboard
+  - name: garden-dashboard
+    configMap:
+      name: ha-garden-dashboard
   - name: hikvision-next
     configMap:
       name: ha-hikvision-next
@@ -150,6 +159,9 @@ additionalMounts:
   - name: energy-dashboard
     mountPath: /config/dashboard_energy.yaml
     subPath: energy.yaml
+  - name: garden-dashboard
+    mountPath: /config/dashboard_garden.yaml
+    subPath: garden.yaml
   - name: hikvision-next
     mountPath: /config/custom_components/hikvision_next
   - name: hikvision-next-isapi

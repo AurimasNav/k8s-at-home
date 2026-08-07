@@ -32,6 +32,9 @@ configMapGenerator:
 - name: ha-energy-dashboard
   files:
   - dashboards/energy.yaml
+- name: ha-garden-dashboard
+  files:
+  - dashboards/garden.yaml
 # Vendored maciej-or/hikvision_next (HACS "Hikvision NVR / IP Camera"), split
 # into 3 ConfigMaps matching its directory layout — mounted at
 # /config/custom_components/hikvision_next (see values.yaml) so it's installed
