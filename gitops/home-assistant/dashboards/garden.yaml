@@ -12,13 +12,13 @@ views:
     - entity: valve.laistymas_lysves_zone
       name: Lysvės
     - entity: valve.laistymas_unnamed_zone_zone
-      name: Zone 1
+      name: Terrace
     - entity: valve.laistymas_unnamed_zone_zone_2
-      name: Zone 2
+      name: Walkway
     - entity: valve.laistymas_unnamed_zone_zone_3
-      name: Zone 3
+      name: Fruit Trees
     - entity: valve.laistymas_unnamed_zone_zone_4
-      name: Zone 4
+      name: Drip Irrigation
 
   - type: horizontal-stack
     cards:
@@ -43,22 +43,22 @@ views:
       - type: valve-open-close
     - type: tile
       entity: valve.laistymas_unnamed_zone_zone
-      name: Zone 1
+      name: Terrace
       features:
       - type: valve-open-close
     - type: tile
       entity: valve.laistymas_unnamed_zone_zone_2
-      name: Zone 2
+      name: Walkway
       features:
       - type: valve-open-close
     - type: tile
       entity: valve.laistymas_unnamed_zone_zone_3
-      name: Zone 3
+      name: Fruit Trees
       features:
       - type: valve-open-close
     - type: tile
       entity: valve.laistymas_unnamed_zone_zone_4
-      name: Zone 4
+      name: Drip Irrigation
       features:
       - type: valve-open-close
 
@@ -68,13 +68,13 @@ views:
     - entity: sensor.laistymas_lysves_zone_history
       name: Lysvės
     - entity: sensor.laistymas_unnamed_zone_zone_history
-      name: Zone 1
+      name: Terrace
     - entity: sensor.laistymas_unnamed_zone_zone_history_2
-      name: Zone 2
+      name: Walkway
     - entity: sensor.laistymas_unnamed_zone_zone_history_3
-      name: Zone 3
+      name: Fruit Trees
     - entity: sensor.laistymas_unnamed_zone_zone_history_4
-      name: Zone 4
+      name: Drip Irrigation
     - entity: switch.laistymas_rytine_visko_program
       name: Rytinė visko programa
     - entity: binary_sensor.laistymas_fault
