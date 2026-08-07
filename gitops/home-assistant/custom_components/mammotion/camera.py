@@ -189,13 +189,6 @@ class MammotionWebRTCCamera(MammotionCameraBaseEntity):
             await self.coordinator.async_send_command(
                 "send_todev_ble_sync", sync_type=3
             )
-            # TEMP local patch (not upstream): arm the video encoder on open, mirroring the close-path vi_switch=0
-            try:
-                await self.coordinator.async_send_command(
-                    "device_agora_join_channel_with_position", enter_state=1
-                )
-            except Exception as ex:  # noqa: BLE001
-                _LOGGER.warning("Join-channel command failed on open: %s", ex)
             self._agora_handler.candidates = []
             _LOGGER.info("Handling WebRTC offer for session %s", session_id)
             # _LOGGER.info("Raw OFFER SDP %s", offer_sdp)
