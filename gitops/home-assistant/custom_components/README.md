@@ -43,14 +43,15 @@ by re-vendoring the files (below) on the same branch before merging.
 Sanity check after wiring changes: `kustomize build --enable-helm .` from
 `gitops/home-assistant/`.
 
-## Local patches
+## Known quirks
 
-Exception to "never edit vendored files" — patches we carry until upstream fixes
-land. **Re-apply (or drop, if fixed upstream) when re-vendoring:**
+No local patches are carried — everything here is stock upstream.
 
-- `mammotion/camera.py` (since v0.6.4-beta11): the stream-open path sends
-  `device_agora_join_channel_with_position` with `enter_state=1` before WebRTC
-  negotiation (upstream only sends `enter_state=0` on close, so the mower's
-  video encoder never starts). Marked with a `TEMP local patch` comment.
-  Without it the live view is garbage audio and no video. Note: video is H.265 —
-  renders in Chrome (hw decode) and iOS/WebKit, never in Firefox.
+- **Mammotion camera** (Luba mini AWD 800, fw 1.30.29.8): live view initially
+  produced no video and looping noise audio. Sending
+  `device_agora_join_channel_with_position` with `enter_state=1` once on stream
+  open (commit c424b15, since reverted) fixed it *permanently* — the mower keeps
+  the video encoder armed, and stock upstream has worked since. If the camera
+  regresses (device reset / firmware update), re-apply that commit once, then
+  revert it again. Video is H.265: renders in Chrome (hw decode) and iOS/WebKit,
+  never in Firefox.

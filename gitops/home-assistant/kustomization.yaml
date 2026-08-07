@@ -105,7 +105,6 @@ configMapGenerator:
   files:
   - custom_components/bhyve/translations/en.json
 # Vendored Mammotion (Luba/Yuka mowers), needs pymammotion pip-installed by HA on boot.
-# Carries a local patch in camera.py (arms video encoder on stream open) — see README.
 # https://github.com/mikey0000/Mammotion-HA/archive/refs/tags/v0.6.4-beta11.tar.gz
 # ServerSideApply: these ConfigMaps are too big for the client-side apply annotation
 - name: ha-mammotion
