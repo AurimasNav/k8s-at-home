@@ -118,10 +118,10 @@
         "name": "Tid tilbage"
       },
       "l1_satellites": {
-        "name": "L1-satellitter (Samtidig visning)"
+        "name": "L1 signal quality"
       },
       "l2_satellites": {
-        "name": "L2-satellitter (Samtidig visning)"
+        "name": "L2 signal quality"
       },
       "positioning_mode": {
         "name": "RTK position"
@@ -186,6 +186,31 @@
       "work_area": {
         "name": "Nuværende placering"
       },
+      "map_sync_status": {
+        "name": "Kortsynkroniseringsstatus",
+        "state": {
+          "synced": "Synkroniseret",
+          "syncing": "Synkroniserer",
+          "out_of_sync": "Ikke synkroniseret"
+        }
+      },
+      "mqtt_status": {
+        "name": "MQTT-status",
+        "state": {
+          "reported_online": "Rapporteret online",
+          "reported_offline": "Rapporteret offline"
+        }
+      },
+      "task_area_status": {
+        "name": "Opgaveområde {name}",
+        "state": {
+          "NOT_STARTED": "Ikke startet",
+          "WAITING": "Venter",
+          "MOWING": "Klipper",
+          "COMPLETE": "Fuldført",
+          "ABORTED": "Afbrudt"
+        }
+      },
       "maintenance_distance": {
         "name": "Samlet kilometertal"
       },
@@ -238,22 +263,15 @@
           "CON_WIFI": "Wi-Fi"
         }
       },
-      "task_area_status": {
-        "name": "Opgaveområde {name}",
-        "state": {
-          "NOT_STARTED": "Ikke startet",
-          "WAITING": "Venter",
-          "MOWING": "Klipper",
-          "COMPLETE": "Fuldført",
-          "ABORTED": "Afbrudt"
-        }
+      "spino_battery": {
+        "name": "Batteri"
       },
       "spino_status": {
         "name": "Status",
         "state": {
           "UNKNOWN": "Ukendt",
           "IDLE": "Standby",
-          "PREPARE": "Forbereder",
+          "PREPARE": "Standby",
           "WAIT_WATER": "Fylder med vand",
           "WORKING": "Arbejder",
           "PAUSE_GO_CHARGE": "Vender tilbage til opladning (pause)",
@@ -274,6 +292,61 @@
           "ECO": "Eco",
           "LINE": "Vandlinje",
           "CUSTOM": "Brugerdefineret"
+        }
+      },
+      "spino_ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "spino_wifi_rssi": {
+        "name": "WiFi RSSI"
+      },
+      "spino_error_time": {
+        "name": "Tidspunkt for seneste fejl"
+      },
+      "spino_error_message": {
+        "name": "Seneste fejl"
+      },
+      "spino_error_code": {
+        "name": "Seneste fejlkode"
+      },
+      "spino_mqtt_status": {
+        "name": "MQTT-status",
+        "state": {
+          "online": "Online",
+          "offline": "Offline"
+        }
+      },
+      "co_view_l1": {
+        "name": "L1 satellites (co-viewing)"
+      },
+      "co_view_l2": {
+        "name": "L2 satellites (co-viewing)"
+      },
+      "pos_level": {
+        "name": "Position level"
+      },
+      "rtk_signal": {
+        "name": "RTK signal quality"
+      },
+      "device_signal": {
+        "name": "Device signal quality",
+        "state": {
+          "0": "God",
+          "1": "God",
+          "2": "Svag",
+          "3": "Ingen"
+        }
+      },
+      "age": {
+        "name": "RTK correction age"
+      },
+      "base_link_status": {
+        "name": "Base link status",
+        "state": {
+          "0": "God",
+          "1": "Svag",
+          "2": "Svag",
+          "3": "Ingen"
         }
       }
     },
@@ -313,6 +386,12 @@
       },
       "restart_mower": {
         "name": "Genstart plæneklipperen"
+      },
+      "spino_fetch_map": {
+        "name": "Hent poolkort"
+      },
+      "spino_fetch_line": {
+        "name": "Hent rengøringsrute"
       },
       "spino_refresh_status": {
         "name": "Opdater status"
@@ -446,6 +525,14 @@
           "zero_turn": "Nul vending"
         }
       },
+      "wildlife_safety": {
+        "name": "Dyresikkerhed",
+        "state": {
+          "off": "Slukket",
+          "stop_mowing": "Stop klipning",
+          "low_speed_mowing": "Klipning med lav hastighed"
+        }
+      },
       "cutter_mode": {
         "name": "Klippe hastighed",
         "state": {
@@ -461,14 +548,6 @@
           "WOMAN": "Kvinde"
         }
       },
-      "wildlife_safety": {
-        "name": "Dyresikkerhed",
-        "state": {
-          "off": "Slukket",
-          "stop_mowing": "Stop klipning",
-          "low_speed_mowing": "Klipning med lav hastighed"
-        }
-      },
       "spino_work_mode": {
         "name": "Rengøringstilstand",
         "state": {
@@ -480,6 +559,24 @@
           "ECO": "Eco",
           "LINE": "Vandlinje",
           "CUSTOM": "Brugerdefineret"
+        }
+      },
+      "spino_wall_material": {
+        "name": "Vægmateriale",
+        "state": {
+          "GLASS": "Glas",
+          "CERAMICS": "Fliser",
+          "SAND_STONE": "Stenbelægning",
+          "VINYL": "Vinyl"
+        }
+      },
+      "spino_bottom_type": {
+        "name": "Poolbundens form",
+        "state": {
+          "RIGHT_ANGLE_SIMPLE": "Retvinklet (enkel)",
+          "RIGHT_ANGLE_COMPLEX": "Retvinklet (kompleks)",
+          "CURVE_SIMPLE": "Buet (enkel)",
+          "CURVE_COMPLEX": "Buet (kompleks)"
         }
       }
     },
@@ -513,6 +610,9 @@
       },
       "map_offset_lon": {
         "name": "Kortforskydning længdegrad"
+      },
+      "spino_floor_speed": {
+        "name": "Hastighed på poolbunden"
       }
     },
     "device_tracker": {

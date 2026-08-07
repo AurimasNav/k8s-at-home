@@ -118,10 +118,10 @@
         "name": "Timpul rămas"
       },
       "l1_satellites": {
-        "name": "Sateliți L1 (vedere în comun)"
+        "name": "L1 signal quality"
       },
       "l2_satellites": {
-        "name": "Sateliți L2 (vedere în comun)"
+        "name": "L2 signal quality"
       },
       "positioning_mode": {
         "name": "Poziția RTK"
@@ -186,6 +186,31 @@
       "work_area": {
         "name": "Locație curentă"
       },
+      "map_sync_status": {
+        "name": "Stare sincronizare hartă",
+        "state": {
+          "synced": "Sincronizat",
+          "syncing": "Se sincronizează",
+          "out_of_sync": "Nesincronizat"
+        }
+      },
+      "mqtt_status": {
+        "name": "Stare MQTT",
+        "state": {
+          "reported_online": "Raportat online",
+          "reported_offline": "Raportat offline"
+        }
+      },
+      "task_area_status": {
+        "name": "Zona de sarcină {name}",
+        "state": {
+          "NOT_STARTED": "Neînceput",
+          "WAITING": "În așteptare",
+          "MOWING": "Cosire",
+          "COMPLETE": "Finalizat",
+          "ABORTED": "Abandonat"
+        }
+      },
       "maintenance_distance": {
         "name": "Kilometraj total"
       },
@@ -238,22 +263,15 @@
           "CON_WIFI": "Wi-Fi"
         }
       },
-      "task_area_status": {
-        "name": "Zona de sarcină {name}",
-        "state": {
-          "NOT_STARTED": "Neînceput",
-          "WAITING": "În așteptare",
-          "MOWING": "Cosire",
-          "COMPLETE": "Finalizat",
-          "ABORTED": "Abandonat"
-        }
+      "spino_battery": {
+        "name": "Acumulator"
       },
       "spino_status": {
         "name": "Stare",
         "state": {
           "UNKNOWN": "Necunoscut",
           "IDLE": "Așteptare",
-          "PREPARE": "Pregătire",
+          "PREPARE": "Așteptare",
           "WAIT_WATER": "Umplere cu apă",
           "WORKING": "Lucrează",
           "PAUSE_GO_CHARGE": "Revine la încărcare (în pauză)",
@@ -274,6 +292,61 @@
           "ECO": "Eco",
           "LINE": "Linia apei",
           "CUSTOM": "Personalizat"
+        }
+      },
+      "spino_ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "spino_wifi_rssi": {
+        "name": "Wi-Fi RSSI"
+      },
+      "spino_error_time": {
+        "name": "Ora ultimei erori"
+      },
+      "spino_error_message": {
+        "name": "Ultima eroare"
+      },
+      "spino_error_code": {
+        "name": "Ultimul cod de eroare"
+      },
+      "spino_mqtt_status": {
+        "name": "Stare MQTT",
+        "state": {
+          "online": "Online",
+          "offline": "Offline"
+        }
+      },
+      "co_view_l1": {
+        "name": "L1 satellites (co-viewing)"
+      },
+      "co_view_l2": {
+        "name": "L2 satellites (co-viewing)"
+      },
+      "pos_level": {
+        "name": "Position level"
+      },
+      "rtk_signal": {
+        "name": "RTK signal quality"
+      },
+      "device_signal": {
+        "name": "Device signal quality",
+        "state": {
+          "0": "Bun",
+          "1": "Bun",
+          "2": "Slab",
+          "3": "Niciunul"
+        }
+      },
+      "age": {
+        "name": "RTK correction age"
+      },
+      "base_link_status": {
+        "name": "Base link status",
+        "state": {
+          "0": "Bun",
+          "1": "Slab",
+          "2": "Slab",
+          "3": "Niciunul"
         }
       }
     },
@@ -313,6 +386,12 @@
       },
       "restart_mower": {
         "name": "Repornire mașina de tuns"
+      },
+      "spino_fetch_map": {
+        "name": "Preia harta piscinei"
+      },
+      "spino_fetch_line": {
+        "name": "Preia traseul de curățare"
       },
       "spino_refresh_status": {
         "name": "Reîmprospătează starea"
@@ -446,6 +525,14 @@
           "zero_turn": "Întoarcere pe loc"
         }
       },
+      "wildlife_safety": {
+        "name": "Siguranța faunei",
+        "state": {
+          "off": "Oprit",
+          "stop_mowing": "Oprire cosire",
+          "low_speed_mowing": "Cosire cu viteză redusă"
+        }
+      },
       "cutter_mode": {
         "name": "Viteza de tăiere",
         "state": {
@@ -461,14 +548,6 @@
           "WOMAN": "Feminin"
         }
       },
-      "wildlife_safety": {
-        "name": "Siguranța faunei",
-        "state": {
-          "off": "Oprit",
-          "stop_mowing": "Oprire cosire",
-          "low_speed_mowing": "Cosire cu viteză redusă"
-        }
-      },
       "spino_work_mode": {
         "name": "Mod de curățare",
         "state": {
@@ -480,6 +559,24 @@
           "ECO": "Eco",
           "LINE": "Linia apei",
           "CUSTOM": "Personalizat"
+        }
+      },
+      "spino_wall_material": {
+        "name": "Materialul pereților",
+        "state": {
+          "GLASS": "Sticlă",
+          "CERAMICS": "Faianță",
+          "SAND_STONE": "Agregat",
+          "VINYL": "Vinil"
+        }
+      },
+      "spino_bottom_type": {
+        "name": "Forma fundului piscinei",
+        "state": {
+          "RIGHT_ANGLE_SIMPLE": "Unghi drept (simplu)",
+          "RIGHT_ANGLE_COMPLEX": "Unghi drept (complex)",
+          "CURVE_SIMPLE": "Curbat (simplu)",
+          "CURVE_COMPLEX": "Curbat (complex)"
         }
       }
     },
@@ -513,6 +610,9 @@
       },
       "map_offset_lon": {
         "name": "Decalaj hartă longitudine"
+      },
+      "spino_floor_speed": {
+        "name": "Viteza pe fundul piscinei"
       }
     },
     "device_tracker": {

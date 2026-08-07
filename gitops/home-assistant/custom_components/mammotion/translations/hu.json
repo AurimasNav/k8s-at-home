@@ -118,10 +118,10 @@
         "name": "Hátralévő idő"
       },
       "l1_satellites": {
-        "name": "L1 műholdak (együtt látott)"
+        "name": "L1 signal quality"
       },
       "l2_satellites": {
-        "name": "L2 műholdak (együtt látott)"
+        "name": "L2 signal quality"
       },
       "positioning_mode": {
         "name": "RTK pozíció"
@@ -186,6 +186,21 @@
       "work_area": {
         "name": "Jelenlegi hely"
       },
+      "map_sync_status": {
+        "name": "Térkép szinkronizálási állapota",
+        "state": {
+          "synced": "Szinkronizálva",
+          "syncing": "Szinkronizálás folyamatban",
+          "out_of_sync": "Nincs szinkronizálva"
+        }
+      },
+      "mqtt_status": {
+        "name": "MQTT állapot",
+        "state": {
+          "reported_online": "Online jelentve",
+          "reported_offline": "Offline jelentve"
+        }
+      },
       "task_area_status": {
         "name": "Feladatterület {name}",
         "state": {
@@ -248,12 +263,15 @@
           "CON_WIFI": "Wi-Fi"
         }
       },
+      "spino_battery": {
+        "name": "Akkumulátor"
+      },
       "spino_status": {
         "name": "Állapot",
         "state": {
           "UNKNOWN": "Ismeretlen",
           "IDLE": "Készenlét",
-          "PREPARE": "Előkészítés",
+          "PREPARE": "Készenlét",
           "WAIT_WATER": "Vízzel töltés",
           "WORKING": "Dolgozik",
           "PAUSE_GO_CHARGE": "Visszatérés töltésre (szüneteltetve)",
@@ -274,6 +292,61 @@
           "ECO": "Eco",
           "LINE": "Vízvonal",
           "CUSTOM": "Egyéni"
+        }
+      },
+      "spino_ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "spino_wifi_rssi": {
+        "name": "Wi-Fi RSSI"
+      },
+      "spino_error_time": {
+        "name": "Utolsó hiba időpontja"
+      },
+      "spino_error_message": {
+        "name": "Utolsó hiba"
+      },
+      "spino_error_code": {
+        "name": "Utolsó hibakód"
+      },
+      "spino_mqtt_status": {
+        "name": "MQTT állapot",
+        "state": {
+          "online": "Online",
+          "offline": "Offline"
+        }
+      },
+      "co_view_l1": {
+        "name": "L1 satellites (co-viewing)"
+      },
+      "co_view_l2": {
+        "name": "L2 satellites (co-viewing)"
+      },
+      "pos_level": {
+        "name": "Position level"
+      },
+      "rtk_signal": {
+        "name": "RTK signal quality"
+      },
+      "device_signal": {
+        "name": "Device signal quality",
+        "state": {
+          "0": "Jó",
+          "1": "Jó",
+          "2": "Gyenge",
+          "3": "Nincs"
+        }
+      },
+      "age": {
+        "name": "RTK correction age"
+      },
+      "base_link_status": {
+        "name": "Base link status",
+        "state": {
+          "0": "Jó",
+          "1": "Gyenge",
+          "2": "Gyenge",
+          "3": "Nincs"
         }
       }
     },
@@ -313,6 +386,12 @@
       },
       "restart_mower": {
         "name": "Fűnyíró újraindítása"
+      },
+      "spino_fetch_map": {
+        "name": "Medencetérkép lekérése"
+      },
+      "spino_fetch_line": {
+        "name": "Tisztítási útvonal lekérése"
       },
       "spino_refresh_status": {
         "name": "Állapot frissítése"
@@ -481,6 +560,24 @@
           "LINE": "Vízvonal",
           "CUSTOM": "Egyéni"
         }
+      },
+      "spino_wall_material": {
+        "name": "Falburkolat anyaga",
+        "state": {
+          "GLASS": "Üveg",
+          "CERAMICS": "Csempe",
+          "SAND_STONE": "Kőburkolat",
+          "VINYL": "Vinil"
+        }
+      },
+      "spino_bottom_type": {
+        "name": "Medencefenék alakja",
+        "state": {
+          "RIGHT_ANGLE_SIMPLE": "Derékszögű (egyszerű)",
+          "RIGHT_ANGLE_COMPLEX": "Derékszögű (összetett)",
+          "CURVE_SIMPLE": "Íves (egyszerű)",
+          "CURVE_COMPLEX": "Íves (összetett)"
+        }
       }
     },
     "number": {
@@ -513,6 +610,9 @@
       },
       "map_offset_lon": {
         "name": "Térkép hosszúsági eltolás"
+      },
+      "spino_floor_speed": {
+        "name": "Sebesség a medence alján"
       }
     },
     "device_tracker": {

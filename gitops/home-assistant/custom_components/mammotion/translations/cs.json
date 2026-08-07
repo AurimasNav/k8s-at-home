@@ -118,10 +118,10 @@
         "name": "Zbývající čas"
       },
       "l1_satellites": {
-        "name": "Satelity L1 (společný výhled)"
+        "name": "L1 signal quality"
       },
       "l2_satellites": {
-        "name": "Satelity L2 (společný výhled)"
+        "name": "L2 signal quality"
       },
       "positioning_mode": {
         "name": "Poloha RTK"
@@ -186,6 +186,31 @@
       "work_area": {
         "name": "Aktuální poloha"
       },
+      "map_sync_status": {
+        "name": "Stav synchronizace mapy",
+        "state": {
+          "synced": "Synchronizováno",
+          "syncing": "Probíhá synchronizace",
+          "out_of_sync": "Nesynchronizováno"
+        }
+      },
+      "mqtt_status": {
+        "name": "Stav MQTT",
+        "state": {
+          "reported_online": "Hlášeno online",
+          "reported_offline": "Hlášeno offline"
+        }
+      },
+      "task_area_status": {
+        "name": "Stav oblasti úkolu {name}",
+        "state": {
+          "NOT_STARTED": "Nezahájeno",
+          "WAITING": "Čeká se",
+          "MOWING": "Sečení",
+          "COMPLETE": "Dokončeno",
+          "ABORTED": "Přerušeno"
+        }
+      },
       "maintenance_distance": {
         "name": "Celková vzdálenost"
       },
@@ -238,22 +263,15 @@
           "CON_WIFI": "Wi-Fi"
         }
       },
-      "task_area_status": {
-        "name": "Stav oblasti úkolu {name}",
-        "state": {
-          "NOT_STARTED": "Nezahájeno",
-          "WAITING": "Čeká se",
-          "MOWING": "Sečení",
-          "COMPLETE": "Dokončeno",
-          "ABORTED": "Přerušeno"
-        }
+      "spino_battery": {
+        "name": "Baterie"
       },
       "spino_status": {
         "name": "Stav",
         "state": {
           "UNKNOWN": "Neznámý",
           "IDLE": "Pohotovostní režim",
-          "PREPARE": "Příprava",
+          "PREPARE": "Pohotovostní režim",
           "WAIT_WATER": "Napouštění vody",
           "WORKING": "Pracuje",
           "PAUSE_GO_CHARGE": "Návrat k nabíjení (pozastaveno)",
@@ -274,6 +292,61 @@
           "ECO": "Eko",
           "LINE": "Vodní hladina",
           "CUSTOM": "Vlastní"
+        }
+      },
+      "spino_ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "spino_wifi_rssi": {
+        "name": "WiFi RSSI"
+      },
+      "spino_error_time": {
+        "name": "Čas poslední chyby"
+      },
+      "spino_error_message": {
+        "name": "Poslední chyba"
+      },
+      "spino_error_code": {
+        "name": "Kód poslední chyby"
+      },
+      "spino_mqtt_status": {
+        "name": "Stav MQTT",
+        "state": {
+          "online": "Online",
+          "offline": "Offline"
+        }
+      },
+      "co_view_l1": {
+        "name": "L1 satellites (co-viewing)"
+      },
+      "co_view_l2": {
+        "name": "L2 satellites (co-viewing)"
+      },
+      "pos_level": {
+        "name": "Position level"
+      },
+      "rtk_signal": {
+        "name": "RTK signal quality"
+      },
+      "device_signal": {
+        "name": "Device signal quality",
+        "state": {
+          "0": "Dobrý",
+          "1": "Dobrý",
+          "2": "Slabý",
+          "3": "Žádný"
+        }
+      },
+      "age": {
+        "name": "RTK correction age"
+      },
+      "base_link_status": {
+        "name": "Base link status",
+        "state": {
+          "0": "Dobrý",
+          "1": "Slabý",
+          "2": "Slabý",
+          "3": "Žádný"
         }
       }
     },
@@ -313,6 +386,12 @@
       },
       "restart_mower": {
         "name": "Restartovat sekačku"
+      },
+      "spino_fetch_map": {
+        "name": "Načíst mapu bazénu"
+      },
+      "spino_fetch_line": {
+        "name": "Načíst trasu čištění"
       },
       "spino_refresh_status": {
         "name": "Obnovit stav"
@@ -446,6 +525,14 @@
           "zero_turn": "Otáčení na místě"
         }
       },
+      "wildlife_safety": {
+        "name": "Ochrana volně žijících živočichů",
+        "state": {
+          "off": "Vypnuto",
+          "stop_mowing": "Zastavit sekání",
+          "low_speed_mowing": "Sekání nízkou rychlostí"
+        }
+      },
       "cutter_mode": {
         "name": "Rychlost nožů",
         "state": {
@@ -461,14 +548,6 @@
           "WOMAN": "Ženský"
         }
       },
-      "wildlife_safety": {
-        "name": "Ochrana volně žijících živočichů",
-        "state": {
-          "off": "Vypnuto",
-          "stop_mowing": "Zastavit sekání",
-          "low_speed_mowing": "Sekání nízkou rychlostí"
-        }
-      },
       "spino_work_mode": {
         "name": "Režim čištění",
         "state": {
@@ -480,6 +559,24 @@
           "ECO": "Eko",
           "LINE": "Vodní hladina",
           "CUSTOM": "Vlastní"
+        }
+      },
+      "spino_wall_material": {
+        "name": "Materiál stěn",
+        "state": {
+          "GLASS": "Sklo",
+          "CERAMICS": "Dlaždice",
+          "SAND_STONE": "Kamenivo",
+          "VINYL": "Vinyl"
+        }
+      },
+      "spino_bottom_type": {
+        "name": "Tvar dna bazénu",
+        "state": {
+          "RIGHT_ANGLE_SIMPLE": "Pravoúhlé (jednoduché)",
+          "RIGHT_ANGLE_COMPLEX": "Pravoúhlé (složité)",
+          "CURVE_SIMPLE": "Zaoblené (jednoduché)",
+          "CURVE_COMPLEX": "Zaoblené (složité)"
         }
       }
     },
@@ -513,6 +610,9 @@
       },
       "map_offset_lon": {
         "name": "Posun mapy – zeměpisná délka"
+      },
+      "spino_floor_speed": {
+        "name": "Rychlost na dně bazénu"
       }
     },
     "device_tracker": {

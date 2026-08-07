@@ -28,7 +28,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.debounce import Debouncer
-from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from mashumaro.exceptions import InvalidFieldValue
@@ -50,7 +50,7 @@ from pymammotion.data.model.device import (
     RTKBaseStationDevice,
 )
 from pymammotion.data.model.device_config import OperationSettings, create_path_order
-from pymammotion.data.model.hash_list import AreaHashNameList, Plan, SvgMessage
+from pymammotion.data.model.hash_list import Plan, SvgMessage
 from pymammotion.data.model.pool_state import PoolPlan, SpinoToggle
 from pymammotion.data.model.report_info import Maintain, NetUsedType
 from pymammotion.data.mqtt.event import DeviceNotificationEventParams, ThingEventMessage
@@ -101,10 +101,20 @@ if TYPE_CHECKING:
 MAINTENANCE_INTERVAL = timedelta(minutes=60)
 DEFAULT_INTERVAL = timedelta(minutes=30)
 REPORT_INTERVAL = timedelta(minutes=5)
+DYNAMICS_LINE_INTERVAL = timedelta(seconds=10)
 DEVICE_VERSION_INTERVAL = timedelta(weeks=1)
 MAP_INTERVAL = timedelta(minutes=60)
 RTK_INTERVAL = timedelta(hours=5)
 SPINO_INTERVAL = timedelta(weeks=1)
+
+# Possible states for ``MammotionReportUpdateCoordinator.map_sync_status`` and
+# the ``map_sync_status`` diagnostic ENUM sensor that surfaces it.
+MAP_SYNC_STATUSES = ("synced", "syncing", "out_of_sync")
+
+# Cloud response code returned by the stream-subscription endpoint when the
+# device is unreachable ("Device not responding. Please check the network
+# connection").  Treated as a device-offline signal.
+DEVICE_NOT_RESPONDING_CODE = 50504
 
 
 class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # type: ignore[misc]
@@ -201,6 +211,21 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             )
             self.set_stream_data(stream_data)
             self._stream_data_fetched_at = time.monotonic()
+
+            # A 50504 means the cloud couldn't reach the device — bail out
+            # cleanly rather than continuing on to the Agora setup with no data.
+            if (
+                stream_data is not None
+                and stream_data.code == DEVICE_NOT_RESPONDING_CODE
+            ):
+                LOGGER.warning(
+                    "Stream subscription for %s reports device not responding "
+                    "(code %s: %s)",
+                    self.device_name,
+                    stream_data.code,
+                    stream_data.msg,
+                )
+                return None, self._agora_response
 
             if stream_data is not None and stream_data.data is not None:
                 LOGGER.debug("Received stream data: %s", stream_data)
@@ -310,6 +335,23 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             if ble.is_usable:
                 return True
         return bool(not handle.availability.mqtt_reported_offline)
+
+    @property
+    def mqtt_transport_connected(self) -> bool:
+        if handle := self.manager.mower(self.device_name):
+            for t_type in (TransportType.CLOUD_ALIYUN, TransportType.CLOUD_MAMMOTION):
+                if handle.is_transport_connected(t_type):
+                    return True
+        return False
+
+    @property
+    def mqtt_device_online(self) -> bool:
+        device = self.manager.get_device_by_name(self.device_name)
+        if device is None:
+            return False
+        if handle := self.manager.mower(self.device_name):
+            return bool(not handle.availability.mqtt_reported_offline)
+        return False
 
     @property
     def bluetooth_enabled(self) -> bool:
@@ -605,9 +647,9 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
                 await self.async_sync_maps()
 
     async def async_sync_schedule(self) -> None:
-        """Sync scheduled mowing plans from the device."""
+        """Sync all scheduled mowing plans from the device via PlanFetchSaga."""
         try:
-            await self.async_send_command("read_plan", sub_cmd=2, plan_index=0)
+            await self.manager.start_plan_sync(self.device_name)
         except EXPIRED_CREDENTIAL_EXCEPTIONS as exc:
             self.update_failures += 1
             await self.async_refresh_login(exc)
@@ -1416,24 +1458,49 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         if area_hash == 0:
             return None
 
-        name = None
         _mower_data = cast(MowingDevice, self.data)
-        if area_data := _mower_data.map.area.get(area_hash):
-            area_frame = area_data.data[0] if len(area_data.data) > 0 else None
-            if area_frame is not None:
-                area_name: AreaHashNameList | None = next(
-                    (
-                        area
-                        for area in _mower_data.map.area_name
-                        if area.hash == area_frame.hash
-                    ),
-                    None,
-                )
-                name = area_name.name if area_name is not None else None
-        else:
+        if area_hash not in _mower_data.map.area:
             return "path"
 
-        return name if name else f"area {area_hash}"
+        # Prefer the user's HA-level entity name over the device-assigned name.
+        entity_reg = er.async_get(self.hass)
+        unique_id = f"{self.unique_name}_{area_hash}"
+        entity_id = entity_reg.async_get_entity_id("switch", DOMAIN, unique_id)
+        if entity_id and (entry := entity_reg.async_get(entity_id)) and entry.name:
+            return entry.name
+
+        for area in _mower_data.map.computed_areas:
+            if area.hash == area_hash:
+                return area.name
+
+        return f"area {area_hash}"
+
+    @property
+    def map_sync_status(self) -> str:
+        """Return the current map-sync status for diagnostics.
+
+        One of :data:`MAP_SYNC_STATUSES`:
+
+        * ``syncing`` — an exclusive sync saga (the map fetch) is running on
+          the device command queue, so the cached map is mid-refresh.
+        * ``synced`` — our local map fully matches the device's current area
+          set (``map.is_map_synced`` against the latest reported ``bol_hash``).
+        * ``out_of_sync`` — neither of the above: the cached map is stale or
+          incomplete and a fresh ``async_sync_maps()`` is needed.
+        """
+        handle = self.manager.mower(self.device_name)
+        if handle is not None and handle.queue.is_saga_active:
+            return "syncing"
+
+        if self.data is None:
+            return "out_of_sync"
+
+        mower_data = self.data
+        locations = mower_data.report_data.locations
+        bol_hash = locations[0].bol_hash if locations else 0
+        if mower_data.map.is_map_synced(bol_hash):
+            return "synced"
+        return "out_of_sync"
 
 
 class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevice]):
@@ -1910,6 +1977,8 @@ class MammotionDeviceVersionUpdateCoordinator(
 class MammotionMapUpdateCoordinator(MammotionBaseUpdateCoordinator[MowerInfo]):
     """Class to manage fetching mammotion data."""
 
+    _dynamics_line_cancel: CALLBACK_TYPE | None = None
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -1978,12 +2047,71 @@ class MammotionMapUpdateCoordinator(MammotionBaseUpdateCoordinator[MowerInfo]):
         assert _d is not None
         return _d.mower_state
 
+    def _device_supports_dynamics_line(self) -> bool:
+        """Return True if this device supports the dynamics-line mow-progress stream."""
+        device = self.manager.get_device_by_name(self.device_name)
+        firmware = device.device_firmwares.main_controller if device else None
+        return DeviceType.value_of_str(self.device_name).is_support_dynamics_line(
+            firmware
+        )
+
+    def _ble_is_connected(self) -> bool:
+        """Return True if BLE transport exists and is currently connected."""
+        if handle := self.manager.mower(self.device_name):
+            if ble := handle.get_transport(TransportType.BLE):
+                return ble.is_connected
+        return False
+
+    def _stop_dynamics_line_poll(self) -> None:
+        if self._dynamics_line_cancel is not None:
+            self._dynamics_line_cancel()
+            self._dynamics_line_cancel = None
+
+    async def _on_sys_status_changed_dynamics(self, sys_status: int) -> None:
+        """Start the dynamics-line poll when mowing over BLE; stop it otherwise."""
+        if (
+            sys_status in MOWING_ACTIVE_MODES
+            and self._device_supports_dynamics_line()
+            and self._ble_is_connected()
+        ):
+            if self._dynamics_line_cancel is None:
+                self._dynamics_line_cancel = async_track_time_interval(
+                    self.hass,
+                    self._fetch_dynamics_line,
+                    DYNAMICS_LINE_INTERVAL,
+                )
+        else:
+            self._stop_dynamics_line_poll()
+
+    async def _fetch_dynamics_line(self, _now: datetime.datetime) -> None:
+        """Fetch the dynamics line; self-cancels if BLE has disconnected."""
+        if not self._ble_is_connected():
+            self._stop_dynamics_line_poll()
+            return
+        try:
+            await self.manager.get_dynamics_line(self.device_name)
+            device = self.manager.get_device_by_name(self.device_name)
+            if device is not None:
+                self.async_set_updated_data(device.mower_state)
+        except (
+            DeviceOfflineException,
+            NoTransportAvailableError,
+            GatewayTimeoutException,
+        ):
+            pass
+
     async def _async_setup(self) -> None:
         """Set up coordinator with initial call to get map data."""
         await super()._async_setup()
         device = self.manager.get_device_by_name(self.device_name)
         if device is None:
             return
+
+        if handle := self.manager.mower(self.device_name):
+            handle.watch_field(
+                lambda s: s.raw.report_data.dev.sys_status,
+                self._on_sys_status_changed_dynamics,
+            )
 
         if not device.enabled or not device.online:
             return
@@ -2349,6 +2477,14 @@ class MammotionSpinoCoordinator(MammotionBaseUpdateCoordinator[PoolCleanerDevice
                         context=0,
                         rw=0,
                     )
+            # Fetch pool geometry once at startup.  Responses arrive as unsolicited
+            # APP_DOWNLINK_CMD frames and are reassembled by PoolStateReducer.
+            for fetch in (self.async_fetch_pool_map, self.async_fetch_pool_line):
+                with contextlib.suppress(
+                    GatewayTimeoutException,
+                    NoTransportAvailableError,
+                ):
+                    await fetch()
         except DeviceOfflineException:
             self.device.online = False
 
@@ -2385,6 +2521,47 @@ class MammotionSpinoCoordinator(MammotionBaseUpdateCoordinator[PoolCleanerDevice
             if handle is not None:
                 handle.restore_device(empty)
 
+    def get_error_code(self) -> int:
+        """Return the absolute error code of the most recent fault, or 0."""
+        try:
+            return int(abs(self.data.pool_state.error_log[0].code))
+        except IndexError:
+            return 0
+
+    def get_error_time(self) -> datetime.datetime | None:
+        """Return the timestamp of the most recent fault as a UTC datetime, or None."""
+        try:
+            return datetime.datetime.fromtimestamp(
+                self.data.pool_state.error_log[0].timestamp, datetime.UTC
+            )
+        except IndexError:
+            return None
+
+    def get_error_message(self) -> str:
+        """Return a human-readable description of the most recent fault."""
+        try:
+            error_code = abs(self.data.pool_state.error_log[0].code)
+            error_info: ErrorInfo = self.data.errors.error_codes[f"{error_code}"]
+            implication = (
+                getattr(error_info, f"{self.hass.config.language}_implication")
+                if hasattr(error_info, f"{self.hass.config.language}_implication")
+                else error_info.en_implication
+            )
+            solution = (
+                getattr(error_info, f"{self.hass.config.language}_solution")
+                if hasattr(error_info, f"{self.hass.config.language}_solution")
+                else error_info.en_solution
+            )
+            if implication == "":
+                implication = error_info.en_implication
+            if solution == "":
+                solution = error_info.en_solution
+            return f"{error_info.module}: {implication}, {solution}"
+        except IndexError:
+            return "No Error"
+        except KeyError:
+            return "Error message not found"
+
     async def _async_update_data(self) -> PoolCleanerDevice:
         """Return current pool cleaner state from the device handle.
 
@@ -2406,6 +2583,8 @@ class MammotionSpinoCoordinator(MammotionBaseUpdateCoordinator[PoolCleanerDevice
                         for check_version in check_versions:
                             if check_version.device_id == self.device.iot_id:
                                 self.data.apply_version_check(check_version)
+                    if not self.data.errors.error_codes:
+                        self.data.errors.error_codes = await http.get_all_error_codes()
                 except ReLoginRequiredError as err:
                     raise ConfigEntryAuthFailed(
                         f"Re-authentication required for Mammotion account: {err}"

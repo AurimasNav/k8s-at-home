@@ -118,10 +118,10 @@
         "name": "Tijd nog te gaan"
       },
       "l1_satellites": {
-        "name": "L1 Satellieten (Samen kijkend)"
+        "name": "L1 signal quality"
       },
       "l2_satellites": {
-        "name": "L2 Satellieten (Samen kijkend)"
+        "name": "L2 signal quality"
       },
       "positioning_mode": {
         "name": "RTK-positie"
@@ -186,6 +186,31 @@
       "work_area": {
         "name": "Huidige locatie"
       },
+      "map_sync_status": {
+        "name": "Kaartsynchronisatiestatus",
+        "state": {
+          "synced": "Gesynchroniseerd",
+          "syncing": "Bezig met synchroniseren",
+          "out_of_sync": "Niet gesynchroniseerd"
+        }
+      },
+      "mqtt_status": {
+        "name": "MQTT-status",
+        "state": {
+          "reported_online": "Online gemeld",
+          "reported_offline": "Offline gemeld"
+        }
+      },
+      "task_area_status": {
+        "name": "Taakgebied {name}",
+        "state": {
+          "NOT_STARTED": "Niet gestart",
+          "WAITING": "Wachtend",
+          "MOWING": "Aan het maaien",
+          "COMPLETE": "Voltooid",
+          "ABORTED": "Afgebroken"
+        }
+      },
       "maintenance_distance": {
         "name": "Totale kilometerstand"
       },
@@ -238,22 +263,15 @@
           "CON_WIFI": "Wi-Fi"
         }
       },
-      "task_area_status": {
-        "name": "Taakgebied {name}",
-        "state": {
-          "NOT_STARTED": "Niet gestart",
-          "WAITING": "Wachtend",
-          "MOWING": "Aan het maaien",
-          "COMPLETE": "Voltooid",
-          "ABORTED": "Afgebroken"
-        }
+      "spino_battery": {
+        "name": "Batterij"
       },
       "spino_status": {
         "name": "Status",
         "state": {
           "UNKNOWN": "Onbekend",
           "IDLE": "Stand-by",
-          "PREPARE": "Voorbereiden",
+          "PREPARE": "Stand-by",
           "WAIT_WATER": "Vullen met water",
           "WORKING": "Bezig",
           "PAUSE_GO_CHARGE": "Terug naar laden (gepauzeerd)",
@@ -274,6 +292,61 @@
           "ECO": "Eco",
           "LINE": "Waterlijn",
           "CUSTOM": "Aangepast"
+        }
+      },
+      "spino_ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "spino_wifi_rssi": {
+        "name": "WiFi RSSI"
+      },
+      "spino_error_time": {
+        "name": "Tijd van laatste fout"
+      },
+      "spino_error_message": {
+        "name": "Laatste fout"
+      },
+      "spino_error_code": {
+        "name": "Laatste foutcode"
+      },
+      "spino_mqtt_status": {
+        "name": "MQTT-status",
+        "state": {
+          "online": "Online",
+          "offline": "Offline"
+        }
+      },
+      "co_view_l1": {
+        "name": "L1 satellites (co-viewing)"
+      },
+      "co_view_l2": {
+        "name": "L2 satellites (co-viewing)"
+      },
+      "pos_level": {
+        "name": "Position level"
+      },
+      "rtk_signal": {
+        "name": "RTK signal quality"
+      },
+      "device_signal": {
+        "name": "Device signal quality",
+        "state": {
+          "0": "Goed",
+          "1": "Goed",
+          "2": "Zwak",
+          "3": "Geen"
+        }
+      },
+      "age": {
+        "name": "RTK correction age"
+      },
+      "base_link_status": {
+        "name": "Base link status",
+        "state": {
+          "0": "Goed",
+          "1": "Zwak",
+          "2": "Zwak",
+          "3": "Geen"
         }
       }
     },
@@ -313,6 +386,12 @@
       },
       "restart_mower": {
         "name": "Maaier herstarten"
+      },
+      "spino_fetch_map": {
+        "name": "Zwembadkaart ophalen"
+      },
+      "spino_fetch_line": {
+        "name": "Schoonmaakroute ophalen"
       },
       "spino_refresh_status": {
         "name": "Status vernieuwen"
@@ -446,6 +525,14 @@
           "zero_turn": "Nulpunts draai"
         }
       },
+      "wildlife_safety": {
+        "name": "Wildveiligheid",
+        "state": {
+          "off": "Uit",
+          "stop_mowing": "Maaien stoppen",
+          "low_speed_mowing": "Maaien op lage snelheid"
+        }
+      },
       "cutter_mode": {
         "name": "Maaisnelheid",
         "state": {
@@ -461,14 +548,6 @@
           "WOMAN": "Vrouw"
         }
       },
-      "wildlife_safety": {
-        "name": "Wildveiligheid",
-        "state": {
-          "off": "Uit",
-          "stop_mowing": "Maaien stoppen",
-          "low_speed_mowing": "Maaien op lage snelheid"
-        }
-      },
       "spino_work_mode": {
         "name": "Reinigingsmodus",
         "state": {
@@ -480,6 +559,24 @@
           "ECO": "Eco",
           "LINE": "Waterlijn",
           "CUSTOM": "Aangepast"
+        }
+      },
+      "spino_wall_material": {
+        "name": "Wandmateriaal",
+        "state": {
+          "GLASS": "Glas",
+          "CERAMICS": "Tegels",
+          "SAND_STONE": "Aggregaat",
+          "VINYL": "Vinyl"
+        }
+      },
+      "spino_bottom_type": {
+        "name": "Vorm van de zwembadbodem",
+        "state": {
+          "RIGHT_ANGLE_SIMPLE": "Rechte hoek (eenvoudig)",
+          "RIGHT_ANGLE_COMPLEX": "Rechte hoek (complex)",
+          "CURVE_SIMPLE": "Gebogen (eenvoudig)",
+          "CURVE_COMPLEX": "Gebogen (complex)"
         }
       }
     },
@@ -513,6 +610,9 @@
       },
       "map_offset_lon": {
         "name": "Kaartoffset lengtegraad"
+      },
+      "spino_floor_speed": {
+        "name": "Snelheid op de zwembadbodem"
       }
     },
     "device_tracker": {

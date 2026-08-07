@@ -118,10 +118,10 @@
         "name": "Preostali čas"
       },
       "l1_satellites": {
-        "name": "L1 sateliti (skupaj)"
+        "name": "L1 signal quality"
       },
       "l2_satellites": {
-        "name": "L2 sateliti (skupaj)"
+        "name": "L2 signal quality"
       },
       "positioning_mode": {
         "name": "Položaj RTK postaje"
@@ -186,6 +186,31 @@
       "work_area": {
         "name": "Trenutna lokacija"
       },
+      "map_sync_status": {
+        "name": "Stanje sinhronizacije zemljevida",
+        "state": {
+          "synced": "Sinhronizirano",
+          "syncing": "Poteka sinhronizacija",
+          "out_of_sync": "Ni sinhronizirano"
+        }
+      },
+      "mqtt_status": {
+        "name": "Stanje MQTT",
+        "state": {
+          "reported_online": "Sporočeno na spletu",
+          "reported_offline": "Sporočeno brez povezave"
+        }
+      },
+      "task_area_status": {
+        "name": "Področje naloge {name}",
+        "state": {
+          "NOT_STARTED": "Ni začeto",
+          "WAITING": "Čaka",
+          "MOWING": "Košnja",
+          "COMPLETE": "Dokončano",
+          "ABORTED": "Prekinjeno"
+        }
+      },
       "maintenance_distance": {
         "name": "Skupno opravljena pot"
       },
@@ -238,22 +263,15 @@
           "CON_WIFI": "Wi-Fi"
         }
       },
-      "task_area_status": {
-        "name": "Področje naloge {name}",
-        "state": {
-          "NOT_STARTED": "Ni začeto",
-          "WAITING": "Čaka",
-          "MOWING": "Košnja",
-          "COMPLETE": "Dokončano",
-          "ABORTED": "Prekinjeno"
-        }
+      "spino_battery": {
+        "name": "Baterija"
       },
       "spino_status": {
         "name": "Stanje",
         "state": {
           "UNKNOWN": "Neznano",
           "IDLE": "Pripravljenost",
-          "PREPARE": "Priprava",
+          "PREPARE": "Pripravljenost",
           "WAIT_WATER": "Polnjenje z vodo",
           "WORKING": "Deluje",
           "PAUSE_GO_CHARGE": "Vračanje na polnjenje (zaustavljeno)",
@@ -274,6 +292,61 @@
           "ECO": "Eko",
           "LINE": "Vodna gladina",
           "CUSTOM": "Po meri"
+        }
+      },
+      "spino_ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "spino_wifi_rssi": {
+        "name": "Wifi RSSI"
+      },
+      "spino_error_time": {
+        "name": "Čas zadnje napake"
+      },
+      "spino_error_message": {
+        "name": "Zadnja napaka"
+      },
+      "spino_error_code": {
+        "name": "Zadnja koda napake"
+      },
+      "spino_mqtt_status": {
+        "name": "Stanje MQTT",
+        "state": {
+          "online": "Online",
+          "offline": "Offline"
+        }
+      },
+      "co_view_l1": {
+        "name": "L1 satellites (co-viewing)"
+      },
+      "co_view_l2": {
+        "name": "L2 satellites (co-viewing)"
+      },
+      "pos_level": {
+        "name": "Position level"
+      },
+      "rtk_signal": {
+        "name": "RTK signal quality"
+      },
+      "device_signal": {
+        "name": "Device signal quality",
+        "state": {
+          "0": "Dobro",
+          "1": "Dobro",
+          "2": "Šibko",
+          "3": "Brez"
+        }
+      },
+      "age": {
+        "name": "RTK correction age"
+      },
+      "base_link_status": {
+        "name": "Base link status",
+        "state": {
+          "0": "Dobro",
+          "1": "Šibko",
+          "2": "Šibko",
+          "3": "Brez"
         }
       }
     },
@@ -313,6 +386,12 @@
       },
       "restart_mower": {
         "name": "Ponovni zagon kosilnice"
+      },
+      "spino_fetch_map": {
+        "name": "Pridobi zemljevid bazena"
+      },
+      "spino_fetch_line": {
+        "name": "Pridobi pot čiščenja"
       },
       "spino_refresh_status": {
         "name": "Osveži stanje"
@@ -446,6 +525,14 @@
           "zero_turn": "Obrat na mestu"
         }
       },
+      "wildlife_safety": {
+        "name": "Varnost divjih živali",
+        "state": {
+          "off": "Izklopljeno",
+          "stop_mowing": "Ustavi košnjo",
+          "low_speed_mowing": "Košnja z nizko hitrostjo"
+        }
+      },
       "cutter_mode": {
         "name": "Hitrost rezanja",
         "state": {
@@ -461,14 +548,6 @@
           "WOMAN": "Ženski"
         }
       },
-      "wildlife_safety": {
-        "name": "Varnost divjih živali",
-        "state": {
-          "off": "Izklopljeno",
-          "stop_mowing": "Ustavi košnjo",
-          "low_speed_mowing": "Košnja z nizko hitrostjo"
-        }
-      },
       "spino_work_mode": {
         "name": "Način čiščenja",
         "state": {
@@ -480,6 +559,24 @@
           "ECO": "Eko",
           "LINE": "Vodna gladina",
           "CUSTOM": "Po meri"
+        }
+      },
+      "spino_wall_material": {
+        "name": "Material sten",
+        "state": {
+          "GLASS": "Steklo",
+          "CERAMICS": "Ploščice",
+          "SAND_STONE": "Agregat",
+          "VINYL": "Vinil"
+        }
+      },
+      "spino_bottom_type": {
+        "name": "Oblika dna bazena",
+        "state": {
+          "RIGHT_ANGLE_SIMPLE": "Pravokotno (enostavno)",
+          "RIGHT_ANGLE_COMPLEX": "Pravokotno (zapleteno)",
+          "CURVE_SIMPLE": "Zaobljeno (enostavno)",
+          "CURVE_COMPLEX": "Zaobljeno (zapleteno)"
         }
       }
     },
@@ -513,6 +610,9 @@
       },
       "map_offset_lon": {
         "name": "Zamik zemljevida dolžina"
+      },
+      "spino_floor_speed": {
+        "name": "Hitrost na dnu bazena"
       }
     },
     "device_tracker": {

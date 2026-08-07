@@ -118,10 +118,10 @@
         "name": "Aufgabenzeit verbleibend"
       },
       "l1_satellites": {
-        "name": "L1 Satelliten (Co-Viewing)"
+        "name": "L1 signal quality"
       },
       "l2_satellites": {
-        "name": "L2 Satelliten (Co-Viewing)"
+        "name": "L2 signal quality"
       },
       "positioning_mode": {
         "name": "RTK-Position"
@@ -186,6 +186,31 @@
       "work_area": {
         "name": "Aktuelle Position"
       },
+      "map_sync_status": {
+        "name": "Kartensynchronisierungsstatus",
+        "state": {
+          "synced": "Synchronisiert",
+          "syncing": "Wird synchronisiert",
+          "out_of_sync": "Nicht synchronisiert"
+        }
+      },
+      "mqtt_status": {
+        "name": "MQTT-Status",
+        "state": {
+          "reported_online": "Online gemeldet",
+          "reported_offline": "Offline gemeldet"
+        }
+      },
+      "task_area_status": {
+        "name": "Bereichsstatus {name}",
+        "state": {
+          "NOT_STARTED": "Nicht gestartet",
+          "WAITING": "Warten",
+          "MOWING": "Mähen",
+          "COMPLETE": "Abgeschlossen",
+          "ABORTED": "Abgebrochen"
+        }
+      },
       "maintenance_distance": {
         "name": "Gesamtfahrleistung"
       },
@@ -238,22 +263,15 @@
           "CON_WIFI": "WLAN"
         }
       },
-      "task_area_status": {
-        "name": "Bereichsstatus {name}",
-        "state": {
-          "NOT_STARTED": "Nicht gestartet",
-          "WAITING": "Warten",
-          "MOWING": "Mähen",
-          "COMPLETE": "Abgeschlossen",
-          "ABORTED": "Abgebrochen"
-        }
+      "spino_battery": {
+        "name": "Akku"
       },
       "spino_status": {
         "name": "Status",
         "state": {
           "UNKNOWN": "Unbekannt",
           "IDLE": "Bereitschaft",
-          "PREPARE": "Vorbereitung",
+          "PREPARE": "Bereitschaft",
           "WAIT_WATER": "Füllt mit Wasser",
           "WORKING": "Arbeitet",
           "PAUSE_GO_CHARGE": "Rückkehr zum Laden (pausiert)",
@@ -274,6 +292,61 @@
           "ECO": "Eco",
           "LINE": "Wasserlinie",
           "CUSTOM": "Benutzerdefiniert"
+        }
+      },
+      "spino_ble_rssi": {
+        "name": "Bluetooth Signalqualität (RSSI)"
+      },
+      "spino_wifi_rssi": {
+        "name": "WLAN Signalqualität (RSSI)"
+      },
+      "spino_error_time": {
+        "name": "Letzter Fehlerzeitpunkt"
+      },
+      "spino_error_message": {
+        "name": "Letzter Fehler"
+      },
+      "spino_error_code": {
+        "name": "Letzter Fehlercode"
+      },
+      "spino_mqtt_status": {
+        "name": "MQTT-Status",
+        "state": {
+          "online": "Online",
+          "offline": "Offline"
+        }
+      },
+      "co_view_l1": {
+        "name": "L1 satellites (co-viewing)"
+      },
+      "co_view_l2": {
+        "name": "L2 satellites (co-viewing)"
+      },
+      "pos_level": {
+        "name": "Position level"
+      },
+      "rtk_signal": {
+        "name": "RTK signal quality"
+      },
+      "device_signal": {
+        "name": "Device signal quality",
+        "state": {
+          "0": "Gut",
+          "1": "Gut",
+          "2": "Schwach",
+          "3": "Keine"
+        }
+      },
+      "age": {
+        "name": "RTK correction age"
+      },
+      "base_link_status": {
+        "name": "Base link status",
+        "state": {
+          "0": "Gut",
+          "1": "Schwach",
+          "2": "Schwach",
+          "3": "Keine"
         }
       }
     },
@@ -313,6 +386,12 @@
       },
       "restart_mower": {
         "name": "Mähroboter neustarten"
+      },
+      "spino_fetch_map": {
+        "name": "Poolkarte abrufen"
+      },
+      "spino_fetch_line": {
+        "name": "Reinigungsroute abrufen"
       },
       "spino_refresh_status": {
         "name": "Status aktualisieren"
@@ -446,11 +525,19 @@
           "zero_turn": "Null-Punkt-Drehung"
         }
       },
+      "wildlife_safety": {
+        "name": "Wildtierschutz",
+        "state": {
+          "off": "Aus",
+          "stop_mowing": "Mähen stoppen",
+          "low_speed_mowing": "Langsamfahrt"
+        }
+      },
       "cutter_mode": {
         "name": "Mähwerksdrehzahl",
         "state": {
-          "slow": "Niedrig",
           "normal": "Mittel",
+          "slow": "Niedrig",
           "fast": "Hoch"
         }
       },
@@ -459,14 +546,6 @@
         "state": {
           "MAN": "Männlich",
           "WOMAN": "Weiblich"
-        }
-      },
-      "wildlife_safety": {
-        "name": "Wildtierschutz",
-        "state": {
-          "off": "Aus",
-          "stop_mowing": "Mähen stoppen",
-          "low_speed_mowing": "Langsamfahrt"
         }
       },
       "spino_work_mode": {
@@ -480,6 +559,24 @@
           "ECO": "Eco",
           "LINE": "Wasserlinie",
           "CUSTOM": "Benutzerdefiniert"
+        }
+      },
+      "spino_wall_material": {
+        "name": "Wandmaterial",
+        "state": {
+          "GLASS": "Glas",
+          "CERAMICS": "Fliesen",
+          "SAND_STONE": "Steinbeschichtung",
+          "VINYL": "Vinyl"
+        }
+      },
+      "spino_bottom_type": {
+        "name": "Form des Poolbodens",
+        "state": {
+          "RIGHT_ANGLE_SIMPLE": "Rechtwinklig (einfach)",
+          "RIGHT_ANGLE_COMPLEX": "Rechtwinklig (komplex)",
+          "CURVE_SIMPLE": "Gewölbt (einfach)",
+          "CURVE_COMPLEX": "Gewölbt (komplex)"
         }
       }
     },
@@ -513,6 +610,9 @@
       },
       "map_offset_lon": {
         "name": "Kartenversatz Längengrad"
+      },
+      "spino_floor_speed": {
+        "name": "Geschwindigkeit am Poolboden"
       }
     },
     "device_tracker": {

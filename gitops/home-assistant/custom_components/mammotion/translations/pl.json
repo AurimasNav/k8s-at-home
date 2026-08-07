@@ -118,10 +118,10 @@
         "name": "Pozostały czas"
       },
       "l1_satellites": {
-        "name": "Satelity L1 (wspólne oglądanie)"
+        "name": "L1 signal quality"
       },
       "l2_satellites": {
-        "name": "Satelity L2 (wspólne oglądanie)"
+        "name": "L2 signal quality"
       },
       "positioning_mode": {
         "name": "Pozycjonowanie RTK"
@@ -186,6 +186,31 @@
       "work_area": {
         "name": "Aktualna lokalizacja"
       },
+      "map_sync_status": {
+        "name": "Stan synchronizacji mapy",
+        "state": {
+          "synced": "Zsynchronizowano",
+          "syncing": "Synchronizowanie",
+          "out_of_sync": "Niezsynchronizowano"
+        }
+      },
+      "mqtt_status": {
+        "name": "Stan MQTT",
+        "state": {
+          "reported_online": "Zgłoszono online",
+          "reported_offline": "Zgłoszono offline"
+        }
+      },
+      "task_area_status": {
+        "name": "Obszar zadania {name}",
+        "state": {
+          "NOT_STARTED": "Nie rozpoczęto",
+          "WAITING": "Oczekiwanie",
+          "MOWING": "Koszenie",
+          "COMPLETE": "Ukończono",
+          "ABORTED": "Przerwano"
+        }
+      },
       "maintenance_distance": {
         "name": "Całkowity przebieg"
       },
@@ -238,22 +263,15 @@
           "CON_WIFI": "Wi-Fi"
         }
       },
-      "task_area_status": {
-        "name": "Obszar zadania {name}",
-        "state": {
-          "NOT_STARTED": "Nie rozpoczęto",
-          "WAITING": "Oczekiwanie",
-          "MOWING": "Koszenie",
-          "COMPLETE": "Ukończono",
-          "ABORTED": "Przerwano"
-        }
+      "spino_battery": {
+        "name": "Bateria"
       },
       "spino_status": {
         "name": "Stan",
         "state": {
           "UNKNOWN": "Nieznany",
           "IDLE": "Czuwanie",
-          "PREPARE": "Przygotowanie",
+          "PREPARE": "Czuwanie",
           "WAIT_WATER": "Napełnianie wodą",
           "WORKING": "Pracuje",
           "PAUSE_GO_CHARGE": "Powrót do ładowania (wstrzymano)",
@@ -274,6 +292,61 @@
           "ECO": "Eco",
           "LINE": "Linia wody",
           "CUSTOM": "Niestandardowy"
+        }
+      },
+      "spino_ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "spino_wifi_rssi": {
+        "name": "Wi-Fi RSSI"
+      },
+      "spino_error_time": {
+        "name": "Czas ostatniego błędu"
+      },
+      "spino_error_message": {
+        "name": "Ostatni błąd"
+      },
+      "spino_error_code": {
+        "name": "Ostatni kod błędu"
+      },
+      "spino_mqtt_status": {
+        "name": "Status MQTT",
+        "state": {
+          "online": "Online",
+          "offline": "Offline"
+        }
+      },
+      "co_view_l1": {
+        "name": "L1 satellites (co-viewing)"
+      },
+      "co_view_l2": {
+        "name": "L2 satellites (co-viewing)"
+      },
+      "pos_level": {
+        "name": "Position level"
+      },
+      "rtk_signal": {
+        "name": "RTK signal quality"
+      },
+      "device_signal": {
+        "name": "Device signal quality",
+        "state": {
+          "0": "Dobry",
+          "1": "Dobry",
+          "2": "Słaby",
+          "3": "Brak"
+        }
+      },
+      "age": {
+        "name": "RTK correction age"
+      },
+      "base_link_status": {
+        "name": "Base link status",
+        "state": {
+          "0": "Dobry",
+          "1": "Słaby",
+          "2": "Słaby",
+          "3": "Brak"
         }
       }
     },
@@ -313,6 +386,12 @@
       },
       "restart_mower": {
         "name": "Uruchom ponownie kosiarkę"
+      },
+      "spino_fetch_map": {
+        "name": "Pobierz mapę basenu"
+      },
+      "spino_fetch_line": {
+        "name": "Pobierz trasę czyszczenia"
       },
       "spino_refresh_status": {
         "name": "Odśwież stan"
@@ -446,6 +525,14 @@
           "zero_turn": "Zawracanie w miejscu"
         }
       },
+      "wildlife_safety": {
+        "name": "Ochrona dzikich zwierząt",
+        "state": {
+          "off": "Wył.",
+          "stop_mowing": "Zatrzymaj koszenie",
+          "low_speed_mowing": "Koszenie z małą prędkością"
+        }
+      },
       "cutter_mode": {
         "name": "Prędkość cięcia",
         "state": {
@@ -461,14 +548,6 @@
           "WOMAN": "Żeński"
         }
       },
-      "wildlife_safety": {
-        "name": "Ochrona dzikich zwierząt",
-        "state": {
-          "off": "Wył.",
-          "stop_mowing": "Zatrzymaj koszenie",
-          "low_speed_mowing": "Koszenie z małą prędkością"
-        }
-      },
       "spino_work_mode": {
         "name": "Tryb czyszczenia",
         "state": {
@@ -480,6 +559,24 @@
           "ECO": "Eco",
           "LINE": "Linia wody",
           "CUSTOM": "Niestandardowy"
+        }
+      },
+      "spino_wall_material": {
+        "name": "Materiał ścian",
+        "state": {
+          "GLASS": "Szkło",
+          "CERAMICS": "Płytki",
+          "SAND_STONE": "Kruszywo",
+          "VINYL": "Winyl"
+        }
+      },
+      "spino_bottom_type": {
+        "name": "Kształt dna basenu",
+        "state": {
+          "RIGHT_ANGLE_SIMPLE": "Prostokątne (proste)",
+          "RIGHT_ANGLE_COMPLEX": "Prostokątne (złożone)",
+          "CURVE_SIMPLE": "Zaokrąglone (proste)",
+          "CURVE_COMPLEX": "Zaokrąglone (złożone)"
         }
       }
     },
@@ -513,6 +610,9 @@
       },
       "map_offset_lon": {
         "name": "Przesunięcie mapy długość"
+      },
+      "spino_floor_speed": {
+        "name": "Prędkość na dnie basenu"
       }
     },
     "device_tracker": {
