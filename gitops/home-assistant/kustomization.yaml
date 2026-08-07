@@ -32,10 +32,11 @@ configMapGenerator:
 - name: ha-energy-dashboard
   files:
   - dashboards/energy.yaml
-# Vendored maciej-or/hikvision_next v1.1.1 (HACS "Hikvision NVR / IP Camera"), split
+# Vendored maciej-or/hikvision_next (HACS "Hikvision NVR / IP Camera"), split
 # into 3 ConfigMaps matching its directory layout — mounted at
 # /config/custom_components/hikvision_next (see values.yaml) so it's installed
-# without needing HACS itself.
+# without needing HACS itself. Renovate tracks the source tag:
+# https://github.com/maciej-or/hikvision_next/archive/refs/tags/v1.1.1.tar.gz
 - name: ha-hikvision-next
   files:
   - custom_components/hikvision_next/__init__.py
@@ -70,7 +71,8 @@ configMapGenerator:
   - custom_components/hikvision_next/translations/pt-BR.json
   - custom_components/hikvision_next/translations/pt.json
   - custom_components/hikvision_next/translations/ru.json
-# Vendored sebr/bhyve-home-assistant v4.1.2 (Orbit B-hyve), same 3-ConfigMap pattern
+# Vendored Orbit B-hyve, same 3-ConfigMap pattern. Renovate tracks the source tag:
+# https://github.com/sebr/bhyve-home-assistant/archive/refs/tags/4.1.2.tar.gz
 - name: ha-bhyve
   files:
   - custom_components/bhyve/__init__.py
