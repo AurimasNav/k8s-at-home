@@ -101,6 +101,53 @@ configMapGenerator:
 - name: ha-bhyve-translations
   files:
   - custom_components/bhyve/translations/en.json
+# Vendored Mammotion (Luba/Yuka mowers), needs pymammotion pip-installed by HA on boot.
+# https://github.com/mikey0000/Mammotion-HA/archive/refs/tags/v0.6.3.tar.gz
+- name: ha-mammotion
+  files:
+  - custom_components/mammotion/__init__.py
+  - custom_components/mammotion/agora_api.py
+  - custom_components/mammotion/agora_sdp.py
+  - custom_components/mammotion/agora_websocket.py
+  - custom_components/mammotion/binary_sensor.py
+  - custom_components/mammotion/button.py
+  - custom_components/mammotion/camera.py
+  - custom_components/mammotion/config.py
+  - custom_components/mammotion/config_flow.py
+  - custom_components/mammotion/const.py
+  - custom_components/mammotion/coordinator.py
+  - custom_components/mammotion/device_tracker.py
+  - custom_components/mammotion/diagnostics.py
+  - custom_components/mammotion/entity.py
+  - custom_components/mammotion/geojson_utils.py
+  - custom_components/mammotion/icons.json
+  - custom_components/mammotion/lawn_mower.py
+  - custom_components/mammotion/manifest.json
+  - custom_components/mammotion/models.py
+  - custom_components/mammotion/number.py
+  - custom_components/mammotion/placeholder.png
+  - custom_components/mammotion/select.py
+  - custom_components/mammotion/sensor.py
+  - custom_components/mammotion/services.py
+  - custom_components/mammotion/services.yaml
+  - custom_components/mammotion/strings.json
+  - custom_components/mammotion/switch.py
+  - custom_components/mammotion/update.py
+  - custom_components/mammotion/vacuum.py
+- name: ha-mammotion-translations
+  files:
+  - custom_components/mammotion/translations/cs.json
+  - custom_components/mammotion/translations/da.json
+  - custom_components/mammotion/translations/de.json
+  - custom_components/mammotion/translations/en.json
+  - custom_components/mammotion/translations/fr.json
+  - custom_components/mammotion/translations/hu.json
+  - custom_components/mammotion/translations/it.json
+  - custom_components/mammotion/translations/nl.json
+  - custom_components/mammotion/translations/pl.json
+  - custom_components/mammotion/translations/ro.json
+  - custom_components/mammotion/translations/sl.json
+  - custom_components/mammotion/translations/sv.json
 generatorOptions:
   disableNameSuffixHash: true
 

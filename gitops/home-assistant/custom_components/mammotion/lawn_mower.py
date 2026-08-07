@@ -1,0 +1,472 @@
+"""Mammotion Lawn Mower."""
+
+from __future__ import annotations
+
+from copy import copy
+from datetime import time
+from typing import Any, cast
+
+import voluptuous as vol
+from homeassistant.components.lawn_mower import DOMAIN as LAWN_MOWER_DOMAIN
+from homeassistant.components.lawn_mower import (
+    LawnMowerActivity,
+    LawnMowerEntity,
+    LawnMowerEntityFeature,
+)
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import service
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from pymammotion.data.model.report_info import DeviceData, ReportData
+from pymammotion.utility.constant.device_constant import WorkMode
+from pymammotion.utility.device_type import DeviceType
+
+from . import MammotionConfigEntry
+from .const import COMMAND_EXCEPTIONS, DOMAIN, LOGGER
+from .coordinator import MammotionReportUpdateCoordinator
+from .entity import MammotionBaseEntity
+
+SERVICE_START_MOWING = "start_mow"
+SERVICE_CANCEL_JOB = "cancel_job"
+SERVICE_START_STOP_BLADES = "start_stop_blades"
+SERVICE_SET_NON_WORK_HOURS = "set_non_work_hours"
+SERVICE_RESET_BLADE_TIME = "reset_blade_time"
+SERVICE_SET_BLADE_WARNING_TIME = "set_blade_warning_time"
+
+START_MOW_SCHEMA = {
+    vol.Optional("modify", default=False): cv.boolean,
+    vol.Optional("plan_only", default=False): cv.boolean,
+    vol.Optional("is_mow", default=True): cv.boolean,
+    vol.Optional("is_dump", default=True): cv.boolean,
+    vol.Optional("is_edge", default=False): cv.boolean,
+    vol.Optional("collect_grass_frequency", default=10): vol.All(
+        vol.Coerce(int), vol.Range(min=5, max=100)
+    ),
+    vol.Optional("border_mode", default=1): vol.All(vol.Coerce(int), vol.In([0, 1])),
+    vol.Optional("job_version", default=0): vol.Coerce(int),
+    vol.Optional("job_id", default=0): vol.Coerce(int),
+    vol.Optional("speed", default=0.3): vol.All(
+        vol.Coerce(float), vol.Range(min=0.2, max=1.2)
+    ),
+    vol.Optional("ultra_wave", default=2): vol.All(
+        vol.Coerce(int), vol.In([0, 1, 2, 10, 11])
+    ),
+    vol.Optional("channel_mode", default=0): vol.All(
+        vol.Coerce(int), vol.In([0, 1, 2, 3])
+    ),
+    vol.Optional("channel_width", default=25): vol.All(
+        vol.Coerce(int), vol.Range(min=5, max=35)
+    ),
+    vol.Optional("rain_tactics", default=1): vol.All(vol.Coerce(int), vol.In([0, 1])),
+    vol.Optional("blade_height", default=25): vol.All(
+        vol.Coerce(int), vol.Range(min=15, max=100)
+    ),
+    vol.Optional("toward", default=0): vol.All(
+        vol.Coerce(int), vol.Range(min=-180, max=180)
+    ),
+    vol.Optional("toward_included_angle", default=0): vol.All(
+        vol.Coerce(int), vol.Range(min=-180, max=180)
+    ),
+    vol.Optional("toward_mode", default=0): vol.All(vol.Coerce(int), vol.In([0, 1, 2])),
+    vol.Optional("mowing_laps", default=1): vol.All(
+        vol.Coerce(int), vol.In([0, 1, 2, 3, 4])
+    ),
+    vol.Optional("obstacle_laps", default=1): vol.All(
+        vol.Coerce(int), vol.In([0, 1, 2, 3, 4])
+    ),
+    vol.Optional("start_progress", default=0): vol.All(
+        vol.Coerce(int), vol.Range(min=0, max=100)
+    ),
+    vol.Optional("areas", default=[]): vol.All(cv.ensure_list, [cv.entity_id]),
+}
+
+START_STOP_BLADES_SCHEMA = {
+    vol.Required("start_stop", default=True): cv.boolean,
+    vol.Optional("blade_height", default=30): vol.All(
+        vol.Coerce(int), vol.Range(min=15, max=100)
+    ),
+}
+
+SET_NON_WORK_HOURS_SCHEMA = {
+    vol.Required("start_time"): cv.time,
+    vol.Required("end_time"): cv.time,
+}
+
+SET_BLADE_WARNING_TIME_SCHEMA = {
+    vol.Required("hours"): vol.All(vol.Coerce(int), vol.Range(min=1, max=9999)),
+}
+
+
+def get_entity_attribute(
+    hass: HomeAssistant, entity_id: str, attribute_name: str
+) -> str | None:
+    """Return a named attribute from a HA entity state, or None if unavailable."""
+    # Get the state object of the entity
+    entity = hass.states.get(entity_id)
+
+    # Check if the entity exists and has attributes
+    if entity and attribute_name in entity.attributes:
+        # Return the specific attribute
+        return cast(str | None, entity.attributes.get(attribute_name))
+    # Return None if the entity or attribute does not exist
+    return None
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: MammotionConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the Mammotion Lawn Mower config entry."""
+    mammotion_devices = entry.runtime_data.mowers
+
+    entities = [
+        MammotionLawnMowerEntity(mower.reporting_coordinator)
+        for mower in mammotion_devices
+    ]
+
+    async_add_entities(entities)
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_START_MOWING,
+        entity_domain=LAWN_MOWER_DOMAIN,
+        schema=START_MOW_SCHEMA,
+        func="async_start_mowing",
+    )
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_CANCEL_JOB,
+        entity_domain=LAWN_MOWER_DOMAIN,
+        schema=None,
+        func="async_cancel",
+    )
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_START_STOP_BLADES,
+        entity_domain=LAWN_MOWER_DOMAIN,
+        schema=START_STOP_BLADES_SCHEMA,
+        func="async_start_stop_blades",
+    )
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_SET_NON_WORK_HOURS,
+        entity_domain=LAWN_MOWER_DOMAIN,
+        schema=SET_NON_WORK_HOURS_SCHEMA,
+        func="async_set_non_work_hours",
+    )
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_RESET_BLADE_TIME,
+        entity_domain=LAWN_MOWER_DOMAIN,
+        schema=None,
+        func="async_reset_blade_time",
+    )
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_SET_BLADE_WARNING_TIME,
+        entity_domain=LAWN_MOWER_DOMAIN,
+        schema=SET_BLADE_WARNING_TIME_SCHEMA,
+        func="async_set_blade_warning_time",
+    )
+
+
+class MammotionLawnMowerEntity(MammotionBaseEntity, LawnMowerEntity):  # type: ignore[misc]
+    """Representation of a Mammotion Lawn Mower."""
+
+    _attr_supported_features = (
+        LawnMowerEntityFeature.DOCK
+        | LawnMowerEntityFeature.PAUSE
+        | LawnMowerEntityFeature.START_MOWING
+    )
+
+    def __init__(self, coordinator: MammotionReportUpdateCoordinator) -> None:
+        """Initialize the Lawn Mower."""
+        super().__init__(coordinator, "mower")
+        self._attr_name = None  # main feature of device
+
+    @property
+    def rpt_dev_status(self) -> DeviceData:
+        """Return the device status."""
+        return self.coordinator.data.report_data.dev
+
+    @property
+    def report_data(self) -> ReportData:
+        """Return the report data."""
+        return self.coordinator.data.report_data
+
+    @property
+    def activity(self) -> LawnMowerActivity | None:
+        """Return the state of the mower."""
+
+        charge_state = self.rpt_dev_status.charge_state
+        mode = self.rpt_dev_status.sys_status
+        if mode is None:
+            return None
+
+        LOGGER.debug("activity mode %s", mode)
+        if mode == WorkMode.MODE_PAUSE or (
+            mode == WorkMode.MODE_READY and charge_state == 0
+        ):
+            return LawnMowerActivity.PAUSED
+        if mode == WorkMode.MODE_WORKING:
+            return LawnMowerActivity.MOWING
+        if mode == WorkMode.MODE_RETURNING:
+            return LawnMowerActivity.RETURNING
+        if mode == WorkMode.MODE_LOCK:
+            return LawnMowerActivity.ERROR
+        if mode == WorkMode.MODE_READY and charge_state != 0:
+            return LawnMowerActivity.DOCKED
+        return None
+
+    async def async_start_mowing(self, **kwargs: Any) -> None:
+        """Start mowing."""
+        trans_key = "pause_failed"
+
+        await self.coordinator.async_ensure_fresh_state()
+
+        if kwargs:
+            entity_ids = kwargs.pop("areas", [])
+            attributes = [
+                # TODO this should not need to be cast.
+                int(entity_hash)
+                for entity_id in entity_ids
+                if (entity_hash := get_entity_attribute(self.hass, entity_id, "hash"))
+                is not None
+            ]
+            modify_plan = kwargs.pop("modify", False)
+            plan_only = kwargs.pop("plan_only", False)
+
+            # Merge onto coordinator's restored settings so UI-configured values
+            # (speed, blade_height, etc.) are preserved when not explicitly provided.
+            operational_settings = copy(self.coordinator.operation_settings)
+            operational_settings.areas = list(dict.fromkeys(attributes))
+            for key, value in kwargs.items():
+                setattr(operational_settings, key, value)
+            if DeviceType.is_yuka(self.coordinator.device_name):
+                operational_settings.blade_height = -10
+            LOGGER.debug(kwargs)
+            LOGGER.debug(operational_settings)
+        else:
+            operational_settings = self.coordinator.operation_settings
+            modify_plan = False
+            plan_only = False
+
+        # check if job in progress
+        #
+        mode = self.rpt_dev_status.sys_status
+        breakpoint_info = self.report_data.work.bp_info
+        if mode is None:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="device_not_ready"
+            )
+
+        if mode in (
+            WorkMode.MODE_PAUSE,
+            WorkMode.MODE_READY,
+            WorkMode.MODE_RETURNING,
+            WorkMode.MODE_WORKING,
+            WorkMode.MODE_INITIALIZATION,
+        ):
+            try:
+                if modify_plan:
+                    await self.coordinator.async_modify_plan_route(operational_settings)
+                    return
+
+                if kwargs:
+                    await self.async_cancel()
+
+                if mode == WorkMode.MODE_RETURNING:
+                    trans_key = "dock_cancel_failed"
+                    await self.coordinator.async_send_and_wait(
+                        "cancel_return_to_dock", "todev_taskctrl_ack"
+                    )
+                    await self.coordinator.async_request_report_snapshot()
+                    mode = self.rpt_dev_status.sys_status
+                if mode == WorkMode.MODE_PAUSE:
+                    trans_key = "resume_failed"
+                    if breakpoint_info != 0:
+                        await self.coordinator.async_send_command("resume_execute_task")
+                        await self.coordinator.async_send_and_wait(
+                            "query_generate_route_information", "bidire_reqconver_path"
+                        )
+                if mode in (WorkMode.MODE_READY, WorkMode.MODE_INITIALIZATION):
+                    trans_key = "start_failed"
+                    if breakpoint_info != 0:
+                        await self.coordinator.async_send_and_wait(
+                            "query_generate_route_information", "bidire_reqconver_path"
+                        )
+                        if not plan_only:
+                            await self.coordinator.async_send_command("start_job")
+                        return
+                    if await self.coordinator.async_plan_route(operational_settings):
+                        if not plan_only:
+                            await self.coordinator.async_send_and_wait(
+                                "start_job", "zone_start_precent_t"
+                            )
+
+            except COMMAND_EXCEPTIONS as exc:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN, translation_key=trans_key
+                ) from exc
+            finally:
+                await self.coordinator.async_request_report_snapshot()
+
+    async def async_dock(self) -> None:
+        """Start docking."""
+        trans_key = "pause_failed"
+
+        await self.coordinator.async_start_report_stream()
+        charge_state = self.rpt_dev_status.charge_state
+        mode = self.rpt_dev_status.sys_status
+        if mode is None:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="device_not_ready"
+            )
+
+        if charge_state == 0 and mode in (
+            WorkMode.MODE_WORKING,
+            WorkMode.MODE_PAUSE,
+            WorkMode.MODE_READY,
+            WorkMode.MODE_RETURNING,
+        ):
+            try:
+                if mode == WorkMode.MODE_WORKING:
+                    trans_key = "pause_failed"
+                    await self.coordinator.async_send_command("pause_execute_task")
+
+                if mode == WorkMode.MODE_RETURNING:
+                    trans_key = "dock_cancel_failed"
+                    await self.coordinator.async_send_command("cancel_return_to_dock")
+                else:
+                    trans_key = "dock_failed"
+                    await self.coordinator.async_send_command("return_to_dock")
+            except COMMAND_EXCEPTIONS as exc:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN, translation_key=trans_key
+                ) from exc
+            finally:
+                await self.coordinator.async_request_report_snapshot()
+
+    async def async_pause(self) -> None:
+        """Pause mower."""
+        trans_key = "pause_failed"
+
+        await self.coordinator.async_ensure_fresh_state()
+        mode = self.rpt_dev_status.sys_status
+        if mode is None:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="device_not_ready"
+            )
+
+        if mode in (
+            WorkMode.MODE_WORKING,
+            WorkMode.MODE_RETURNING,
+        ):
+            try:
+                if mode == WorkMode.MODE_WORKING:
+                    trans_key = "pause_failed"
+                    await self.coordinator.async_send_command("pause_execute_task")
+                if mode == WorkMode.MODE_RETURNING:
+                    trans_key = "dock_cancel_failed"
+                    await self.coordinator.async_send_command("cancel_return_to_dock")
+            except COMMAND_EXCEPTIONS as exc:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN, translation_key=trans_key
+                ) from exc
+            finally:
+                await self.coordinator.async_request_report_snapshot()
+
+    async def async_cancel(self) -> None:
+        """Cancel Job."""
+        trans_key = "pause_failed"
+
+        await self.coordinator.async_ensure_fresh_state()
+        mode = self.rpt_dev_status.sys_status
+        if mode is None:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="device_not_ready"
+            )
+
+        if mode in (
+            WorkMode.MODE_PAUSE,
+            WorkMode.MODE_WORKING,
+            WorkMode.MODE_RETURNING,
+        ):
+            try:
+                if mode != WorkMode.MODE_PAUSE:
+                    if mode == WorkMode.MODE_WORKING:
+                        trans_key = "pause_failed"
+                        await self.coordinator.async_send_command("pause_execute_task")
+                    if mode == WorkMode.MODE_RETURNING:
+                        trans_key = "dock_failed"
+                        await self.coordinator.async_send_command(
+                            "cancel_return_to_dock"
+                        )
+                    await self.coordinator.async_request_report_snapshot()
+                    mode = self.rpt_dev_status.sys_status
+
+                if mode == WorkMode.MODE_PAUSE:
+                    trans_key = "pause_failed"
+                    await self.coordinator.async_send_command("cancel_job")
+
+            except COMMAND_EXCEPTIONS as exc:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN, translation_key=trans_key
+                ) from exc
+            finally:
+                await self.coordinator.async_request_report_snapshot()
+
+    async def async_start_stop_blades(self, **kwargs: Any) -> None:
+        """Start/Stop Blades."""
+        await self.coordinator.async_start_stop_blades(**kwargs)
+
+    async def async_set_non_work_hours(self, **kwargs: Any) -> None:
+        """Set Non Work Hours."""
+        start_time: time = kwargs["start_time"]
+        end_time: time = kwargs["end_time"]
+
+        await self.coordinator.async_set_non_work_hours(
+            start_time=start_time.strftime("%H:%M"), end_time=end_time.strftime("%H:%M")
+        )
+
+    async def async_reset_blade_time(self) -> None:
+        """Reset blade used time to zero."""
+        if DeviceType.is_luba1(self.coordinator.device_name):
+            return
+        await self.coordinator.async_reset_blade_time()
+
+    async def async_set_blade_warning_time(self, hours: int) -> None:
+        """Set blade replacement warning threshold in hours."""
+        if DeviceType.is_luba1(self.coordinator.device_name):
+            return
+        await self.coordinator.async_set_blade_warning_time(hours=hours)
+
+    async def async_added_to_hass(self) -> None:
+        """Register callbacks and verify device linkage after HA setup."""
+        await super().async_added_to_hass()
+
+        # Ensure the entity is actually linked to a device
+        if not self.coordinator.device_name:
+            return
+
+        device_registry = dr.async_get(self.hass)
+
+        device = device_registry.async_get_device(
+            identifiers={(DOMAIN, self.coordinator.device_name)}
+        )
+
+        if device:
+            for conn_type, value in device.connections:
+                if conn_type == dr.CONNECTION_NETWORK_MAC:
+                    self.coordinator.data.mower_state.wifi_mac = value
+                elif conn_type == dr.CONNECTION_BLUETOOTH:
+                    self.coordinator.data.mower_state.ble_mac = value

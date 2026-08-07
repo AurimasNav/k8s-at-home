@@ -1,0 +1,961 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Device is already configured",
+      "already_in_progress": "Configuration flow is already in progress",
+      "no_devices_found": "Could not find devices",
+      "no_devices_found_in_account": "No devices present in your account",
+      "bluetooth_and_account_mismatch": "Bluetooth device not found in your account",
+      "no_longer_present": "Device is no longer present",
+      "not_supported": "Device not supported",
+      "reconfigure_successful": "Re-configure successful",
+      "api_limit_exceeded": "API rate limit has been exceeded. Please try again later."
+    },
+    "error": {
+      "login_failed": "Login failed. Check your account email and password, then try again.",
+      "cannot_connect": "Unable to connect to the Mammotion cloud. Check your credentials and network, then try again.",
+      "no_account_no_ble": "No account details entered and no Bluetooth device found. Enter your Mammotion account credentials, or set up a Bluetooth device."
+    },
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "Set up {name}",
+        "data": {
+          "stay_connected_bluetooth": "Keep Bluetooth connected"
+        }
+      },
+      "reconfigure": {
+        "data": {
+          "use_wifi": "Use Wi-fi",
+          "account_name": "Mammotion email or account number",
+          "password": "Mammotion account password"
+        }
+      },
+      "user": {
+        "data": {
+          "address": "Device",
+          "stay_connected_bluetooth": "Keep Bluetooth connected"
+        },
+        "description": "Select your mower"
+      },
+      "wifi": {
+        "data": {
+          "use_wifi": "Use Wi-fi (un-tick and submit to use Bluetooth)",
+          "account_name": "Mammotion email or account number",
+          "password": "Mammotion account password"
+        },
+        "title": "Connect to Wi-Fi",
+        "description": "Enter your Mammotion account email or id and password"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "title": "Update Configuration",
+          "stay_connected_bluetooth": "Keep Bluetooth connected",
+          "prefer_ble_over_wifi": "Prefer Bluetooth over Wi-Fi when available",
+          "movement_use_wifi": "Send movement commands over Wi-Fi",
+          "mow_path_fetch_enabled": "Enable mow path fetching (cloud)",
+          "full_map_fetch_enabled": "Enable full map fetching (cloud) — when off, only area names are fetched"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "error_1_message": {
+        "name": "Last error"
+      },
+      "error_1_time": {
+        "name": "Last error time"
+      },
+      "error_1_code": {
+        "name": "Last error code"
+      },
+      "battery_percent": {
+        "name": "Battery"
+      },
+      "ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "wifi_rssi": {
+        "name": "WiFi RSSI"
+      },
+      "mnet_rssi": {
+        "name": "Mobile RSSI"
+      },
+      "connect_type": {
+        "name": "Connection"
+      },
+      "gps_stars": {
+        "name": "Satellites (Robot)"
+      },
+      "blade_height": {
+        "name": "Blade height"
+      },
+      "area": {
+        "name": "Area"
+      },
+      "mowing_speed": {
+        "name": "Mowing speed"
+      },
+      "progress": {
+        "name": "Progress"
+      },
+      "total_time": {
+        "name": "Total time"
+      },
+      "elapsed_time": {
+        "name": "Elapsed time"
+      },
+      "left_time": {
+        "name": "Time left"
+      },
+      "l1_satellites": {
+        "name": "L1 Satellites (Co-Viewing)"
+      },
+      "l2_satellites": {
+        "name": "L2 Satellites (Co-Viewing)"
+      },
+      "positioning_mode": {
+        "name": "RTK position"
+      },
+      "position_mode": {
+        "name": "Position mode",
+        "state": {
+          "RTK_OVER_DATALINK": "Antenna Over Datalink",
+          "RTK_OVER_INTERNET": "Antenna Over Internet",
+          "INAVI_NET_RTK": "iNavi NetRTK",
+          "INAVI_RTK_BOX": "iNavi RTK Box",
+          "UNKNOWN": "Unknown"
+        }
+      },
+      "rtk_app_connect_type": {
+        "name": "App Connection Type",
+        "state": {
+          "UNKNOWN": "Unknown",
+          "CON_BLE": "BLE",
+          "CON_WIFI": "Wi-Fi"
+        }
+      },
+      "position_type": {
+        "name": "Device position type"
+      },
+      "visual_positioning_status": {
+        "name": "Visual positioning status",
+        "state": {
+          "SIGNAL_NONE": "None",
+          "SIGNAL_INIT": "Initialising",
+          "SIGNAL_GOOD": "Good",
+          "SIGNAL_BAD": "Bad",
+          "SIGNAL_UNKNOWN": "Unknown"
+        }
+      },
+      "activity_mode": {
+        "name": "Activity mode"
+      },
+      "work_area": {
+        "name": "Current location"
+      },
+      "task_area_status": {
+        "name": "Task area {name}",
+        "state": {
+          "NOT_STARTED": "Not started",
+          "WAITING": "Waiting",
+          "MOWING": "Mowing",
+          "COMPLETE": "Complete",
+          "ABORTED": "Aborted"
+        }
+      },
+      "rtk_latitude": {
+        "name": "RTK latitude"
+      },
+      "rtk_longitude": {
+        "name": "RTK longitude"
+      },
+      "spino_battery": {
+        "name": "Battery"
+      },
+      "spino_status": {
+        "name": "Status",
+        "state": {
+          "UNKNOWN": "Unknown",
+          "IDLE": "Standby",
+          "PREPARE": "Standby",
+          "WAIT_WATER": "Filling with water",
+          "WORKING": "Working",
+          "PAUSE_GO_CHARGE": "Returning to charge (paused)",
+          "END_GO_CHARGE": "Returning to charge",
+          "CHARGING": "Charging",
+          "LEAVE_DOCK": "Leaving dock",
+          "RECALLING": "Returning"
+        }
+      },
+      "spino_work_mode": {
+        "name": "Cleaning mode",
+        "state": {
+          "UNKNOWN": "Unknown",
+          "RECHARGE": "Recharge",
+          "AUTO": "All",
+          "FLOOR": "Floor",
+          "WALL": "Wall",
+          "ECO": "Eco",
+          "LINE": "Waterline",
+          "CUSTOM": "Custom"
+        }
+      }
+    },
+    "button": {
+      "start_map_sync": {
+        "name": "Sync maps"
+      },
+      "resync_rtk_dock": {
+        "name": "Sync RTK and dock"
+      },
+      "release_from_dock": {
+        "name": "Undock"
+      },
+      "emergency_nudge_forward": {
+        "name": "Emergency nudge forward"
+      },
+      "emergency_nudge_left": {
+        "name": "Emergency nudge left"
+      },
+      "emergency_nudge_right": {
+        "name": "Emergency nudge right"
+      },
+      "emergency_nudge_back": {
+        "name": "Emergency nudge back"
+      },
+      "cancel_task": {
+        "name": "Cancel current task"
+      },
+      "clear_all_mapdata": {
+        "name": "Clear maps and area names"
+      },
+      "relocate_charging_station": {
+        "name": "Relocate charging station"
+      },
+      "spino_fetch_map": {
+        "name": "Fetch pool map"
+      },
+      "spino_fetch_line": {
+        "name": "Fetch cleaning route"
+      },
+      "spino_refresh_status": {
+        "name": "Refresh status"
+      }
+    },
+    "switch": {
+      "area": {
+        "name": "Area {name}"
+      },
+      "blade_status": {
+        "name": "Blades on/off"
+      },
+      "is_mow": {
+        "name": "Mowing on/off"
+      },
+      "is_dump": {
+        "name": "Dump grass on/off"
+      },
+      "is_edge": {
+        "name": "Edge cutting"
+      },
+      "rain_tactics": {
+        "name": "Rain detection (during mow) on/off"
+      },
+      "rain_detection": {
+        "name": "Rain detection (mower) On/Off"
+      },
+      "side_led": {
+        "name": "Side LED on/off"
+      },
+      "perimeter_first_on_off": {
+        "name": "Perimeter first"
+      },
+      "schedule_updates": {
+        "name": "Turn updates on/off"
+      },
+      "voice_on_off": {
+        "name": "Voice on/off"
+      },
+      "spino_buzzer": {
+        "name": "Buzzer"
+      },
+      "spino_turbo_clean": {
+        "name": "Turbo cleaning"
+      },
+      "spino_platform_cleaning": {
+        "name": "Platform cleaning"
+      },
+      "spino_waterline_parking": {
+        "name": "Waterline parking"
+      }
+    },
+    "select": {
+      "channel_mode": {
+        "name": "Cutting path mode",
+        "state": {
+          "single_grid": "Zigzag path",
+          "double_grid": "Chessboard path",
+          "segment_grid": "Adaptive zigzag path",
+          "no_grid": "Perimeter only"
+        }
+      },
+      "mowing_laps": {
+        "name": "Perimeter mowing laps",
+        "state": {
+          "none": "None",
+          "one": "One",
+          "two": "Two",
+          "three": "Three",
+          "four": "Four"
+        }
+      },
+      "obstacle_laps": {
+        "name": "No-go zone mowing laps",
+        "state": {
+          "none": "None",
+          "one": "One",
+          "two": "Two",
+          "three": "Three",
+          "four": "Four"
+        }
+      },
+      "border_mode": {
+        "name": "Mow Order",
+        "state": {
+          "border_first": "Perimeter first",
+          "grid_first": "ZigZag / Chessboard first"
+        }
+      },
+      "bypass_mode": {
+        "name": "Obstacle detection",
+        "state": {
+          "direct_touch": "Off",
+          "slow_touch": "Slow touch",
+          "less_touch": "Less touch",
+          "no_touch": "Standard",
+          "sensitive": "Sensitive"
+        }
+      },
+      "cutting_angle_mode": {
+        "name": "Cutting path angle mode",
+        "state": {
+          "relative_angle": "Optimal",
+          "absolute_angle": "North",
+          "random_angle": "Random"
+        }
+      },
+      "voice_gender": {
+        "name": "Voice gender",
+        "state": {
+          "MAN": "Male",
+          "WOMAN": "Female"
+        }
+      },
+      "spino_work_mode": {
+        "name": "Cleaning mode",
+        "state": {
+          "UNKNOWN": "Unknown",
+          "RECHARGE": "Recharge",
+          "AUTO": "All",
+          "FLOOR": "Floor",
+          "WALL": "Wall",
+          "ECO": "Eco",
+          "LINE": "Waterline",
+          "CUSTOM": "Custom"
+        }
+      },
+      "spino_wall_material": {
+        "name": "Wall material",
+        "state": {
+          "GLASS": "Glass",
+          "CERAMICS": "Tile",
+          "SAND_STONE": "Mosaic"
+        }
+      },
+      "spino_bottom_type": {
+        "name": "Pool bottom shape",
+        "state": {
+          "RIGHT_ANGLE_SIMPLE": "Right angle (simple)",
+          "RIGHT_ANGLE_COMPLEX": "Right angle (complex)",
+          "CURVE_SIMPLE": "Curved (simple)",
+          "CURVE_COMPLEX": "Curved (complex)"
+        }
+      }
+    },
+    "number": {
+      "voice_volume": {
+        "name": "Voice volume"
+      },
+      "start_progress": {
+        "name": "Start progress"
+      },
+      "blade_height": {
+        "name": "Blade height"
+      },
+      "working_speed": {
+        "name": "Working speed"
+      },
+      "cutting_angle": {
+        "name": "Cutting path angle"
+      },
+      "path_spacing": {
+        "name": "Path spacing"
+      },
+      "dumping_interval": {
+        "name": "Dumping frequency"
+      },
+      "toward_included_angle": {
+        "name": "Crossing angle"
+      },
+      "map_offset_lat": {
+        "name": "Map offset latitude"
+      },
+      "map_offset_lon": {
+        "name": "Map offset longitude"
+      },
+      "spino_floor_speed": {
+        "name": "Pool floor movement speed"
+      }
+    },
+    "device_tracker": {
+      "name": "Device Tracking"
+    }
+  },
+  "selector": {
+    "border_mode": {
+      "options": {
+        "0": "Perimeter first",
+        "1": "ZigZag/chessboard first"
+      }
+    },
+    "ultra_wave": {
+      "options": {
+        "0": "Direct touch",
+        "1": "Slow touch",
+        "2": "Less touch",
+        "10": "No touch",
+        "11": "Sensitive"
+      }
+    },
+    "channel_mode": {
+      "options": {
+        "0": "Zigzag path",
+        "1": "Chessboard path",
+        "2": "Adaptive zigzag path",
+        "3": "Perimeter only"
+      }
+    },
+    "rain_tactics": {
+      "options": {
+        "0": "Off",
+        "1": "On"
+      }
+    },
+    "toward_mode": {
+      "options": {
+        "0": "Optimal",
+        "1": "North",
+        "2": "Random"
+      }
+    },
+    "mowing_laps": {
+      "options": {
+        "0": "None",
+        "1": "One lap",
+        "2": "Two laps",
+        "3": "Three laps",
+        "4": "Four laps"
+      }
+    },
+    "obstacle_laps": {
+      "options": {
+        "0": "None",
+        "1": "One lap",
+        "2": "Two laps",
+        "3": "Three laps",
+        "4": "Four laps"
+      }
+    }
+  },
+  "services": {
+    "cancel_job": {
+      "name": "Cancel current task",
+      "description": "Stops the mower and clears the current task."
+    },
+    "start_mow": {
+      "name": "Start mowing",
+      "description": "Starts the mowing operation with custom settings.",
+      "fields": {
+        "is_mow": {
+          "name": "Is mowing",
+          "description": "Whether mowing is active. (Yuka)"
+        },
+        "is_dump": {
+          "name": "Is dumping",
+          "description": "Whether grass dumping is active. (Yuka)"
+        },
+        "is_edge": {
+          "name": "Edge mowing",
+          "description": "Whether edge mode is active. (Yuka)"
+        },
+        "collect_grass_frequency": {
+          "name": "Grass collection frequency",
+          "description": "Frequency to collect grass (in meters squared). (Yuka)"
+        },
+        "border_mode": {
+          "name": "Mow order",
+          "description": "Mowing path order (Perimeter first or grid first)."
+        },
+        "job_version": {
+          "name": "Job version",
+          "description": "Job version."
+        },
+        "job_id": {
+          "name": "Job ID",
+          "description": "Job ID."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "Mowing speed."
+        },
+        "ultra_wave": {
+          "name": "Obstacle detection",
+          "description": "Obstacle avoidance mode."
+        },
+        "channel_mode": {
+          "name": "Cutting path mode",
+          "description": "Cutting path (zigzag, chessboard, adaptive zigzag, or perimeter only)."
+        },
+        "channel_width": {
+          "name": "Path width",
+          "description": "Width of the mowing path (in cm)."
+        },
+        "rain_tactics": {
+          "name": "Rain detection",
+          "description": "Rain detection."
+        },
+        "blade_height": {
+          "name": "Blade height",
+          "description": "Height of the blade."
+        },
+        "toward": {
+          "name": "Starting path angle",
+          "description": "Starting direction for mowing."
+        },
+        "toward_included_angle": {
+          "name": "Crossing angle",
+          "description": "When selecting grid change the second angle (default is 90 degrees)."
+        },
+        "toward_mode": {
+          "name": "Cutting angle mode",
+          "description": "Angular direction of mow."
+        },
+        "mowing_laps": {
+          "name": "Perimeter mowing laps",
+          "description": "Number of laps around the mowing area perimeter."
+        },
+        "obstacle_laps": {
+          "name": "No-go zone mowing laps",
+          "description": "Number of laps around No-go zones."
+        },
+        "start_progress": {
+          "name": "Start progress",
+          "description": "Starting progress percentage."
+        },
+        "areas": {
+          "name": "Area selection",
+          "description": "List of areas to mow (represented as integers)."
+        },
+        "plan_only": {
+          "name": "Plan only",
+          "description": "Generate the mowing plan without starting the job."
+        }
+      }
+    },
+    "set_blade_warning_time": {
+      "name": "Set blade warning time",
+      "description": "Set the blade replacement warning time in hours.",
+      "fields": {
+        "hours": {
+          "name": "Hours",
+          "description": "Warning threshold in hours before blade replacement is recommended."
+        }
+      }
+    },
+    "reset_blade_time": {
+      "name": "Reset blade time",
+      "description": "Reset the blade usage time counter."
+    },
+    "get_map_data": {
+      "name": "Get map data",
+      "description": "Returns the raw map data (areas, SVG tiles, area names) for use with the SVG map card.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity",
+          "description": "Any Mammotion entity belonging to the device."
+        }
+      }
+    },
+    "svg_add": {
+      "name": "Add SVG tile",
+      "description": "Send a new SVG tile to the device map. Returns the device-assigned hash.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity",
+          "description": "Any Mammotion entity belonging to the device."
+        },
+        "area_hash": {
+          "name": "Area hash",
+          "description": "Hash of the parent mowing area."
+        },
+        "svg_data": {
+          "name": "SVG data",
+          "description": "Raw SVG markup to display on the map."
+        },
+        "svg_file_name": {
+          "name": "Filename",
+          "description": "Filename stored on the device (default: pattern.svg)."
+        },
+        "scale": {
+          "name": "Scale",
+          "description": "Uniform scale factor (1.0 = no scaling)."
+        },
+        "rotate": {
+          "name": "Rotation",
+          "description": "Rotation in radians (CCW-positive in device ENU frame)."
+        },
+        "base_width_m": {
+          "name": "Width (m)",
+          "description": "Physical width of one tile unit in metres (2.5 for Luba 1/Yuka, 4.0 for Luba 2)."
+        },
+        "base_height_m": {
+          "name": "Height (m)",
+          "description": "Physical height of one tile unit in metres."
+        },
+        "x_move": {
+          "name": "X position",
+          "description": "X coordinate override (metres). Defaults to area centroid."
+        },
+        "y_move": {
+          "name": "Y position",
+          "description": "Y coordinate override (metres). Defaults to area centroid."
+        }
+      }
+    },
+    "svg_update": {
+      "name": "Update SVG tile",
+      "description": "Replace an existing SVG tile on the device map. Use the device_hash returned by svg_add.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity",
+          "description": "Any Mammotion entity belonging to the device."
+        },
+        "device_hash": {
+          "name": "Device hash",
+          "description": "Hash assigned by the device when the tile was first added."
+        },
+        "area_hash": {
+          "name": "Area hash",
+          "description": "Hash of the parent mowing area."
+        },
+        "svg_data": {
+          "name": "SVG data",
+          "description": "Updated SVG markup."
+        },
+        "svg_file_name": {
+          "name": "Filename",
+          "description": "Filename stored on the device."
+        },
+        "scale": {
+          "name": "Scale",
+          "description": "Uniform scale factor."
+        },
+        "rotate": {
+          "name": "Rotation",
+          "description": "Rotation in radians (CCW-positive)."
+        },
+        "base_width_m": {
+          "name": "Width (m)",
+          "description": "Physical width of one tile unit in metres."
+        },
+        "base_height_m": {
+          "name": "Height (m)",
+          "description": "Physical height of one tile unit in metres."
+        },
+        "x_move": {
+          "name": "X position",
+          "description": "X coordinate override (metres)."
+        },
+        "y_move": {
+          "name": "Y position",
+          "description": "Y coordinate override (metres)."
+        }
+      }
+    },
+    "svg_delete": {
+      "name": "Delete SVG tile",
+      "description": "Remove an SVG tile from the device map by its device-assigned hash.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity",
+          "description": "Any Mammotion entity belonging to the device."
+        },
+        "device_hash": {
+          "name": "Device hash",
+          "description": "Hash assigned by the device when the tile was added."
+        },
+        "area_hash": {
+          "name": "Area hash",
+          "description": "Hash of the parent mowing area."
+        }
+      }
+    },
+    "rename_task": {
+      "name": "Rename task",
+      "description": "Rename an existing schedule (mower or pool cleaner). Target the task button entity for the schedule you want to change.",
+      "fields": {
+        "name": {
+          "name": "New name",
+          "description": "New display name for the task."
+        }
+      }
+    },
+    "set_task_enabled": {
+      "name": "Enable / disable task",
+      "description": "Toggle a schedule's enable flag without deleting it. For mowers this rewrites the plan with reserved[2] set; for Spino it sets the (inverted) enable field.",
+      "fields": {
+        "enabled": {
+          "name": "Enabled",
+          "description": "True to enable the schedule, false to disable it."
+        }
+      }
+    },
+    "delete_task": {
+      "name": "Delete task",
+      "description": "Permanently delete the schedule identified by the targeted task button entity."
+    },
+    "copy_task": {
+      "name": "Copy task",
+      "description": "Duplicate a schedule under a new id. The new task name defaults to 'Copy-N' (next free slot) when omitted.",
+      "fields": {
+        "name": {
+          "name": "New name",
+          "description": "Override the auto-generated 'Copy-N' name."
+        }
+      }
+    },
+    "edit_task": {
+      "name": "Edit task",
+      "description": "Modify any subset of a schedule's fields. Unspecified fields keep their stored value (round-trip from the device). Mower-only and Spino-only fields are described per field.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule is active."
+        },
+        "weeks": {
+          "name": "Weekdays",
+          "description": "List of weekday integers (0 = Sunday … 6 = Saturday) the schedule runs on."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "HH:MM (mower only)."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "HH:MM (mower only)."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "YYYY-MM-DD."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "YYYY-MM-DD."
+        },
+        "trigger_type": {
+          "name": "Trigger type",
+          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+        },
+        "day": {
+          "name": "Day interval",
+          "description": "Interval in days when trigger_type is 1 (DAY)."
+        },
+        "knife_height": {
+          "name": "Cut height",
+          "description": "Mower-only blade height in millimetres."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "Mower: driving speed (float). Spino: fixed32 speed value (int)."
+        },
+        "edge_mode": {
+          "name": "Edge mode",
+          "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
+        },
+        "route_angle": {
+          "name": "Route angle",
+          "description": "Mower-only: mowing pattern angle 0–179 degrees."
+        },
+        "route_spacing": {
+          "name": "Route spacing",
+          "description": "Mower-only: spacing between mow lines in cm."
+        },
+        "zone_hashs": {
+          "name": "Zone hashes",
+          "description": "Mower-only: list of area hashes (fixed64) covered by this schedule."
+        },
+        "work_mode": {
+          "name": "Work mode",
+          "description": "Spino-only: 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
+        },
+        "sub_mode": {
+          "name": "Sub-modes",
+          "description": "Spino-only: list of APP_WORK values for multi-stage cleaning."
+        },
+        "operating_power": {
+          "name": "Operating power",
+          "description": "Spino-only: suction power (fixed32 int)."
+        },
+        "starttime": {
+          "name": "Start timestamp",
+          "description": "Spino-only: unix timestamp (seconds) for the start of the cleaning session."
+        }
+      }
+    },
+    "create_task": {
+      "name": "Create task",
+      "description": "Create a brand-new schedule on the targeted device. The integration auto-generates a fresh plan id / jobid. Fields are the union of mower and Spino schedule properties; the relevant subset is applied based on the device kind.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name for the new schedule."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule starts enabled."
+        },
+        "weeks": {
+          "name": "Weekdays",
+          "description": "List of weekday integers (0 = Sunday … 6 = Saturday)."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "HH:MM (mower)."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "HH:MM (mower)."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "YYYY-MM-DD."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "YYYY-MM-DD."
+        },
+        "trigger_type": {
+          "name": "Trigger type",
+          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+        },
+        "day": {
+          "name": "Day interval",
+          "description": "Interval in days for trigger_type = 1."
+        },
+        "knife_height": {
+          "name": "Cut height",
+          "description": "Mower-only blade height in millimetres."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "Mower or Spino speed."
+        },
+        "edge_mode": {
+          "name": "Edge mode",
+          "description": "Mower-only."
+        },
+        "route_angle": {
+          "name": "Route angle",
+          "description": "Mower-only."
+        },
+        "route_spacing": {
+          "name": "Route spacing",
+          "description": "Mower-only."
+        },
+        "zone_hashs": {
+          "name": "Zone hashes",
+          "description": "Mower-only: list of area hashes covered."
+        },
+        "work_mode": {
+          "name": "Work mode",
+          "description": "Spino-only cleaning mode."
+        },
+        "sub_mode": {
+          "name": "Sub-modes",
+          "description": "Spino-only: list of APP_WORK values."
+        },
+        "operating_power": {
+          "name": "Operating power",
+          "description": "Spino-only."
+        },
+        "starttime": {
+          "name": "Start timestamp",
+          "description": "Spino-only: unix start time."
+        }
+      }
+    },
+    "refresh_tasks": {
+      "name": "Refresh tasks",
+      "description": "Re-fetch every schedule from the targeted device. Use after delete-all or to recover from a missed update."
+    },
+    "start_task": {
+      "name": "Start task",
+      "description": "Run a stored schedule immediately (also known as 'start schedule'). Mower-only — the Spino pool cleaner has no equivalent command, so targeting a Spino task entity raises an error."
+    }
+  },
+  "exceptions": {
+    "task_not_found": {
+      "message": "Task {plan_id} could not be found on the device. Refresh the schedule and try again."
+    },
+    "device_not_ready": {
+      "message": "Device is not ready."
+    },
+    "pause_failed": {
+      "message": "Failed to pause the mower."
+    },
+    "resume_failed": {
+      "message": "Failed to resume the mower."
+    },
+    "start_failed": {
+      "message": "Failed to start the mower."
+    },
+    "dock_failed": {
+      "message": "Failed to send the mower to the dock."
+    },
+    "dock_cancel_failed": {
+      "message": "Failed to stop the mower returning to the dock."
+    },
+    "command_failed": {
+      "message": "Failed to send command to the mower."
+    },
+    "api_limit_exceeded": {
+      "message": "API rate limit has been exceeded."
+    },
+    "cloud_setup_failed": {
+      "message": "Unable to connect to the Mammotion cloud. Check your network and try reloading the integration."
+    },
+    "start_task_unsupported_on_spino": {
+      "message": "Starting a schedule on demand is not supported on the Spino pool cleaner — the device firmware has no execute-now command for stored plans."
+    }
+  }
+}

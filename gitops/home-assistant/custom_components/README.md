@@ -11,6 +11,7 @@ identical to upstream so an upgrade is a clean replacement.
 |---|---|
 | `hikvision_next` | [maciej-or/hikvision_next](https://github.com/maciej-or/hikvision_next) |
 | `bhyve` | [sebr/bhyve-home-assistant](https://github.com/sebr/bhyve-home-assistant) |
+| `mammotion` | [mikey0000/Mammotion-HA](https://github.com/mikey0000/Mammotion-HA) |
 
 ## Version tracking
 

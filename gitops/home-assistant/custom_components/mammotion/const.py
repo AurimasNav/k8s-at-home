@@ -1,0 +1,74 @@
+"""Constants for the Mammotion integration."""
+
+import logging
+from datetime import timedelta
+from typing import Final
+
+from bleak.exc import BleakError
+from bleak_retry_connector import BleakNotFoundError
+from pymammotion.aliyun.exceptions import CheckSessionException
+from pymammotion.http.model.http import UnauthorizedExceptionError
+from pymammotion.transport import AuthError
+from pymammotion.transport.base import (
+    LoginFailedError,
+    NoTransportAvailableError,
+)
+from pymammotion.utility.constant import WorkMode
+
+DOMAIN: Final = "mammotion"
+
+DEVICE_SUPPORT = ("Luba", "Yuka")
+SCAN_INTERVAL = timedelta(hours=1)
+ATTR_DIRECTION = "direction"
+
+DEFAULT_RETRY_COUNT = 3
+CONF_RETRY_COUNT = "retry_count"
+LOGGER: Final = logging.getLogger(__package__)
+
+COMMAND_EXCEPTIONS = (
+    BleakNotFoundError,
+    BleakError,
+    NoTransportAvailableError,
+    TimeoutError,
+)
+
+EXPIRED_CREDENTIAL_EXCEPTIONS = (
+    CheckSessionException,
+    AuthError,
+    UnauthorizedExceptionError,
+    LoginFailedError,
+)
+
+CONF_HAS_CLOUD_ACCOUNT: Final = "has_cloud_account"
+CONF_STAY_CONNECTED_BLUETOOTH: Final = "stay_connected_bluetooth"
+CONF_PREFER_BLE: Final = "prefer_ble_over_wifi"
+CONF_MOVEMENT_USE_WIFI: Final = "movement_use_wifi"
+CONF_MOW_PATH_FETCH_ENABLED: Final = "mow_path_fetch_enabled"
+CONF_FULL_MAP_FETCH_ENABLED: Final = "full_map_fetch_enabled"
+CONF_ACCOUNTNAME: Final = "account_name"
+CONF_ACCOUNT_ID: Final = "mammotion_account_id"
+CONF_USE_WIFI: Final = "use_wifi"
+CONF_DEVICE_NAME: Final = "device_name"
+CONF_BLE_DEVICES: Final = "ble_devices"
+CONF_AUTH_DATA: Final = "auth_data"
+CONF_CONNECT_DATA: Final = "connect_data"
+CONF_AEP_DATA: Final = "aep_data"
+CONF_SESSION_DATA: Final = "session_data"
+CONF_REGION_DATA: Final = "region_data"
+CONF_DEVICE_DATA: Final = "device_data"
+CONF_MAMMOTION_DATA: Final = "mammotion_data"
+CONF_MAMMOTION_MQTT = "mammotion_mqtt"
+CONF_MAMMOTION_DEVICE_LIST = "mammotion_device_list"
+CONF_MAMMOTION_DEVICE_RECORDS = "mammotion_device_records"
+CONF_MAMMOTION_JWT_INFO = "mammotion_jwt_info"
+
+NO_REQUEST_MODES = (
+    WorkMode.MODE_JOB_DRAW,
+    WorkMode.MODE_OBSTACLE_DRAW,
+    WorkMode.MODE_CHANNEL_DRAW,
+    WorkMode.MODE_ERASER_DRAW,
+    WorkMode.MODE_UPDATING,
+    WorkMode.MODE_EDIT_BOUNDARY,
+    WorkMode.MODE_LOCK,
+    WorkMode.MODE_MANUAL_MOWING,
+)

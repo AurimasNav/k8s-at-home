@@ -126,6 +126,12 @@ additionalVolumes:
   - name: bhyve-translations
     configMap:
       name: ha-bhyve-translations
+  - name: mammotion
+    configMap:
+      name: ha-mammotion
+  - name: mammotion-translations
+    configMap:
+      name: ha-mammotion-translations
 additionalMounts:
   - name: sungrow-package
     mountPath: /config/packages
@@ -156,6 +162,10 @@ additionalMounts:
     mountPath: /config/custom_components/bhyve/pybhyve
   - name: bhyve-translations
     mountPath: /config/custom_components/bhyve/translations
+  - name: mammotion
+    mountPath: /config/custom_components/mammotion
+  - name: mammotion-translations
+    mountPath: /config/custom_components/mammotion/translations
 
 ingress:
   # Enable ingress for home assistant

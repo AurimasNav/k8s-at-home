@@ -1,0 +1,1088 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Het apparaat is al ingesteld",
+      "already_in_progress": "Een configuratieproces is al gestart",
+      "no_devices_found": "Kon geen apparaten vinden",
+      "no_devices_found_in_account": "Er zijn geen apparaten aan uw account verbonden",
+      "bluetooth_and_account_mismatch": "Bluetooth-apparaat niet gevonden in uw account",
+      "no_longer_present": "Het apparaat is niet langer aanwezig",
+      "not_supported": "Apparaat wordt niet ondersteund",
+      "reconfigure_successful": "Opnieuw instellen gelukt",
+      "api_limit_exceeded": "De API-limiet is overschreden. Probeer het later opnieuw.",
+      "account_in_use": "Uw Mammotion-account is al actief in een andere sessie. Log uit de Mammotion-app en probeer het opnieuw."
+    },
+    "error": {
+      "login_failed": "Inloggen mislukt. Controleer het e-mailadres en wachtwoord van je account en probeer het opnieuw.",
+      "cannot_connect": "Kan geen verbinding maken met de Mammotion-cloud. Controleer uw inloggegevens en netwerk en probeer het opnieuw.",
+      "no_account_no_ble": "Geen accountgegevens ingevoerd en geen Bluetooth-apparaat gevonden. Voer je Mammotion-accountgegevens in of stel een Bluetooth-apparaat in."
+    },
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "Configureer {name}",
+        "data": {
+          "stay_connected_bluetooth": "Houd Bluetooth verbonden"
+        }
+      },
+      "reconfigure": {
+        "data": {
+          "use_wifi": "Gebruik Wi-Fi",
+          "account_name": "Mammotion e-mailadres of accountnummer",
+          "password": "Mammotion account wachtwoord"
+        }
+      },
+      "user": {
+        "data": {
+          "address": "Apparaat",
+          "stay_connected_bluetooth": "Hou bluetooth verbonden"
+        },
+        "description": "Kies uw maaimachines"
+      },
+      "wifi": {
+        "data": {
+          "use_wifi": "Gebruik Wi-Fi (haal het vinkje weg en klik \"ga verder\" om Bluetooth te gebruiken)",
+          "account_name": "Mammotion e-mailadres of accountnummer",
+          "password": "Mammotion account wachtwoord"
+        },
+        "title": "Verbind met Wi-Fi",
+        "description": "Voer je Mammotion account e-mail of id en wachtwoord in"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "title": "Configuratie bijwerken",
+          "stay_connected_bluetooth": "Houd Bluetooth verbonden",
+          "prefer_ble_over_wifi": "Bluetooth verkiezen boven Wi-Fi indien beschikbaar",
+          "movement_use_wifi": "Bewegingsopdrachten via Wi-Fi verzenden",
+          "mow_path_fetch_enabled": "Maaipad ophalen inschakelen (cloud)",
+          "full_map_fetch_enabled": "Volledig kaart ophalen inschakelen (cloud) — wanneer uit worden alleen gebiednamen opgehaald"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "error_1_message": {
+        "name": "Laatste fout"
+      },
+      "error_1_time": {
+        "name": "Laatste fout tijd"
+      },
+      "error_1_code": {
+        "name": "Laatste foutcode"
+      },
+      "battery_percent": {
+        "name": "Batterij"
+      },
+      "ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "camera_brightness": {
+        "name": "Camerahelderheid"
+      },
+      "wifi_rssi": {
+        "name": "WiFi RSSI"
+      },
+      "mnet_rssi": {
+        "name": "Mobiel RSSI"
+      },
+      "connect_type": {
+        "name": "Verbindingsinstellingen"
+      },
+      "gps_stars": {
+        "name": "Satellieten (Robot)"
+      },
+      "blade_height": {
+        "name": "Maaihoogte"
+      },
+      "area": {
+        "name": "Zone"
+      },
+      "mowing_speed": {
+        "name": "Maai snelheid"
+      },
+      "progress": {
+        "name": "Voortgang"
+      },
+      "total_time": {
+        "name": "Totale tijd"
+      },
+      "elapsed_time": {
+        "name": "Verstreken tijd"
+      },
+      "left_time": {
+        "name": "Tijd nog te gaan"
+      },
+      "l1_satellites": {
+        "name": "L1 Satellieten (Samen kijkend)"
+      },
+      "l2_satellites": {
+        "name": "L2 Satellieten (Samen kijkend)"
+      },
+      "positioning_mode": {
+        "name": "RTK-positie"
+      },
+      "position_type": {
+        "name": "Apparaatpositietype",
+        "state": {
+          "AREA_BORDER_ON": "Aan grens",
+          "AREA_INSIDE": "Binnen gebied",
+          "AREA_OUT": "Buiten gebied",
+          "CHANNEL_AREA_OVERLAP": "Pad gebied overlapping",
+          "CHANNEL_ON": "Op pad",
+          "CHARGE_ON": "Bij laadstation",
+          "DUMPING_AREA_INSIDE": "In dumping gebied",
+          "DUMPING_OUTSIDE": "Buiten dumping gebied",
+          "ABNORMAL_POSITIONING": "Positie fout",
+          "NO_AREAS": "Geen gebieden gedefinieerd",
+          "OBS_ON": "Aan obstakel",
+          "TURN_AREA_INSIDE": "In draaigebied",
+          "VIRTUAL_INSIDE": "In virtueel gebied"
+        }
+      },
+      "visual_positioning_status": {
+        "name": "Status visuele positionering",
+        "state": {
+          "SIGNAL_NONE": "Geen",
+          "SIGNAL_INIT": "Initialiseren",
+          "SIGNAL_GOOD": "Goed",
+          "SIGNAL_BAD": "Slecht",
+          "SIGNAL_UNKNOWN": "Onbekend"
+        }
+      },
+      "activity_mode": {
+        "name": "Activiteitsmodus",
+        "state": {
+          "MODE_NOT_ACTIVE": "Niet actief",
+          "MODE_ONLINE": "Online",
+          "MODE_OFFLINE": "Offline",
+          "MODE_DISABLE": "Gedeactiveerd",
+          "MODE_INITIALIZATION": "Initialiseren",
+          "MODE_READY": "Gereed",
+          "MODE_WORKING": "Bezig",
+          "MODE_RETURNING": "Aan het terugkeren",
+          "MODE_CHARGING": "Aan het opladen",
+          "MODE_UPDATING": "Aan het bijwerken",
+          "MODE_LOCK": "Vergrendeld",
+          "MODE_PAUSE": "Gepauzeerd",
+          "MODE_MANUAL_MOWING": "Handmatig aan het maaien",
+          "MODE_UPDATE_SUCCESS": "Bijwerken is gelukt",
+          "MODE_OTA_UPGRADE_FAIL": "Bijwerken mislukt",
+          "MODE_JOB_DRAW": "Taak aan het tekenen",
+          "MODE_OBSTACLE_DRAW": "Obstakels aan het tekenen",
+          "MODE_CHANNEL_DRAW": "Kanaal aan het tekenen",
+          "MODE_ERASER_DRAW": "Tekening aan het verwijderen",
+          "MODE_EDIT_BOUNDARY": "Grens aan het aanpassen",
+          "MODE_LOCATION_ERROR": "Locatie fout",
+          "MODE_BOUNDARY_JUMP": "Grens overschreden",
+          "MODE_CHARGING_PAUSE": "Opladen gepauzeerd",
+          "MODE_POWER_OFF": "Uitschakelen"
+        }
+      },
+      "work_area": {
+        "name": "Huidige locatie"
+      },
+      "maintenance_distance": {
+        "name": "Totale kilometerstand"
+      },
+      "maintenance_work_time": {
+        "name": "Taakduur"
+      },
+      "maintenance_bat_cycles": {
+        "name": "Batterijcycli",
+        "unit_of_measurement": "cycli"
+      },
+      "blade_used_time": {
+        "name": "Mesgebruikstijd"
+      },
+      "blade_used_warn_time": {
+        "name": "Mes slijtage waarschuwingstijd"
+      },
+      "non_work_hours": {
+        "name": "Niet-actieve uren"
+      },
+      "rtk_lora": {
+        "name": "LoRa versie"
+      },
+      "rtk_latitude": {
+        "name": "Breedtegraad"
+      },
+      "rtk_longitude": {
+        "name": "Lengtegraad"
+      },
+      "rtk_wifi_rssi": {
+        "name": "Wi-Fi RSSI"
+      },
+      "rtk_sats_num": {
+        "name": "Satellieten"
+      },
+      "position_mode": {
+        "name": "Positioneringsmodus",
+        "state": {
+          "RTK_OVER_DATALINK": "Antenne via DataLink",
+          "RTK_OVER_INTERNET": "Antenne via internet",
+          "INAVI_NET_RTK": "iNavi NetRTK",
+          "INAVI_RTK_BOX": "iNavi RTK-box",
+          "UNKNOWN": "Onbekend"
+        }
+      },
+      "rtk_app_connect_type": {
+        "name": "Verbindingstype",
+        "state": {
+          "UNKNOWN": "Onbekend",
+          "CON_BLE": "BLE",
+          "CON_WIFI": "Wi-Fi"
+        }
+      },
+      "task_area_status": {
+        "name": "Taakgebied {name}",
+        "state": {
+          "NOT_STARTED": "Niet gestart",
+          "WAITING": "Wachtend",
+          "MOWING": "Aan het maaien",
+          "COMPLETE": "Voltooid",
+          "ABORTED": "Afgebroken"
+        }
+      },
+      "spino_status": {
+        "name": "Status",
+        "state": {
+          "UNKNOWN": "Onbekend",
+          "IDLE": "Stand-by",
+          "PREPARE": "Voorbereiden",
+          "WAIT_WATER": "Vullen met water",
+          "WORKING": "Bezig",
+          "PAUSE_GO_CHARGE": "Terug naar laden (gepauzeerd)",
+          "END_GO_CHARGE": "Terug naar laden",
+          "CHARGING": "Aan het opladen",
+          "LEAVE_DOCK": "Verlaat dock",
+          "RECALLING": "Aan het terugkeren"
+        }
+      },
+      "spino_work_mode": {
+        "name": "Reinigingsmodus",
+        "state": {
+          "UNKNOWN": "Onbekend",
+          "RECHARGE": "Opladen",
+          "AUTO": "Alles",
+          "FLOOR": "Bodem",
+          "WALL": "Wand",
+          "ECO": "Eco",
+          "LINE": "Waterlijn",
+          "CUSTOM": "Aangepast"
+        }
+      }
+    },
+    "button": {
+      "start_map_sync": {
+        "name": "Synchroniseer kaarten"
+      },
+      "start_schedule_sync": {
+        "name": "Schema's synchroniseren"
+      },
+      "resync_rtk_dock": {
+        "name": "Synchroniseer RTK en laadstation"
+      },
+      "release_from_dock": {
+        "name": "Laadstation uitrijden"
+      },
+      "emergency_nudge_forward": {
+        "name": "Nood Duwtje vooruit"
+      },
+      "emergency_nudge_left": {
+        "name": "Nood Duwtje links"
+      },
+      "emergency_nudge_right": {
+        "name": "Nood Duwtje rechts"
+      },
+      "emergency_nudge_back": {
+        "name": "Nood Duwtje terug"
+      },
+      "cancel_task": {
+        "name": "Huidige taak annuleren"
+      },
+      "clear_all_mapdata": {
+        "name": "Kaart- en zone namen wissen"
+      },
+      "relocate_charging_station": {
+        "name": "Verplaats laadstation"
+      },
+      "restart_mower": {
+        "name": "Maaier herstarten"
+      },
+      "spino_refresh_status": {
+        "name": "Status vernieuwen"
+      }
+    },
+    "switch": {
+      "area": {
+        "name": "Zones {name}"
+      },
+      "blade_status": {
+        "name": "Maai Messen aan/uit"
+      },
+      "is_mow": {
+        "name": "Maai-modus aan/uit"
+      },
+      "is_dump": {
+        "name": "Gras collectie modus aan/uit"
+      },
+      "is_edge": {
+        "name": "Rand maaien"
+      },
+      "rain_tactics": {
+        "name": "Regendetectie (tijdens maaien) aan/uit"
+      },
+      "rain_detection": {
+        "name": "Regen­detectie (maaier) aan/uit"
+      },
+      "side_led": {
+        "name": "Zijkant LED's aan/uit"
+      },
+      "perimeter_first_on_off": {
+        "name": "Rand Eerst"
+      },
+      "schedule_updates": {
+        "name": "Updates aan/uit zetten"
+      },
+      "bluetooth_enabled": {
+        "name": "Bluetooth"
+      },
+      "cloud_enabled": {
+        "name": "Cloud"
+      },
+      "manual_light": {
+        "name": "Handmatig licht aan/uit"
+      },
+      "night_light": {
+        "name": "Automatische verlichting aan/uit"
+      },
+      "voice_on_off": {
+        "name": "Stem aan/uit"
+      },
+      "spino_buzzer": {
+        "name": "Zoemer"
+      },
+      "spino_turbo_clean": {
+        "name": "Turbo-reiniging"
+      },
+      "spino_platform_cleaning": {
+        "name": "Platformreiniging"
+      },
+      "spino_waterline_parking": {
+        "name": "Parkeren bij de waterlijn"
+      }
+    },
+    "select": {
+      "channel_mode": {
+        "name": "Snijmodus",
+        "state": {
+          "single_grid": "Zigzag pad",
+          "double_grid": "Schaakbord pad",
+          "segment_grid": "Aangepast Zigzag pad",
+          "no_grid": "Alleen perimeter modus"
+        }
+      },
+      "mowing_laps": {
+        "name": "Hoeveelheid rondes om gazon rand",
+        "state": {
+          "none": "geen",
+          "one": "Één",
+          "two": "Twee",
+          "three": "Drie",
+          "four": "Vier"
+        }
+      },
+      "obstacle_laps": {
+        "name": "Hoeveelheid rondes om opstakel zones",
+        "state": {
+          "none": "geen",
+          "one": "Één",
+          "two": "Twee",
+          "three": "Drie",
+          "four": "Vier"
+        }
+      },
+      "border_mode": {
+        "name": "Volgorde Maaien",
+        "state": {
+          "border_first": "Rand eerst",
+          "grid_first": "ZigZag / Schaakbord eerst"
+        }
+      },
+      "bypass_mode": {
+        "name": "Obstakeldetectie",
+        "state": {
+          "direct_touch": "Uit",
+          "slow_touch": "Langzame aanraking",
+          "less_touch": "Minder aanraking",
+          "no_touch": "Standaard",
+          "sensitive": "Gevoelig"
+        }
+      },
+      "cutting_angle_mode": {
+        "name": "Maai-hoek modus",
+        "state": {
+          "relative_angle": "Relatieve hoek",
+          "absolute_angle": "Absolute hoek",
+          "random_angle": "Willekeurige hoek"
+        }
+      },
+      "traversal_mode": {
+        "name": "Traverseermodus",
+        "state": {
+          "direct": "Direct",
+          "follow_perimeter": "Volg de omtrek"
+        }
+      },
+      "turning_mode": {
+        "name": "Draaimodus",
+        "state": {
+          "multipoint": "Meerpunts draai",
+          "zero_turn": "Nulpunts draai"
+        }
+      },
+      "cutter_mode": {
+        "name": "Maaisnelheid",
+        "state": {
+          "normal": "Gemiddeld",
+          "slow": "Langzaam",
+          "fast": "Snel"
+        }
+      },
+      "voice_gender": {
+        "name": "Stemgeslacht",
+        "state": {
+          "MAN": "Man",
+          "WOMAN": "Vrouw"
+        }
+      },
+      "wildlife_safety": {
+        "name": "Wildveiligheid",
+        "state": {
+          "off": "Uit",
+          "stop_mowing": "Maaien stoppen",
+          "low_speed_mowing": "Maaien op lage snelheid"
+        }
+      },
+      "spino_work_mode": {
+        "name": "Reinigingsmodus",
+        "state": {
+          "UNKNOWN": "Onbekend",
+          "RECHARGE": "Opladen",
+          "AUTO": "Alles",
+          "FLOOR": "Bodem",
+          "WALL": "Wand",
+          "ECO": "Eco",
+          "LINE": "Waterlijn",
+          "CUSTOM": "Aangepast"
+        }
+      }
+    },
+    "number": {
+      "voice_volume": {
+        "name": "Stemvolume"
+      },
+      "start_progress": {
+        "name": "Start voortgang"
+      },
+      "blade_height": {
+        "name": "Mes hoogte"
+      },
+      "working_speed": {
+        "name": "Robot Snelheid"
+      },
+      "cutting_angle": {
+        "name": "Hoek van maaien"
+      },
+      "path_spacing": {
+        "name": "Afstand tussen paden"
+      },
+      "dumping_interval": {
+        "name": "Dumpfrequentie"
+      },
+      "toward_included_angle": {
+        "name": "Kruishoek"
+      },
+      "map_offset_lat": {
+        "name": "Kaartoffset breedtegraad"
+      },
+      "map_offset_lon": {
+        "name": "Kaartoffset lengtegraad"
+      }
+    },
+    "device_tracker": {
+      "name": "Apparaat volgen"
+    }
+  },
+  "selector": {
+    "border_mode": {
+      "options": {
+        "0": "Omtrek eerst",
+        "1": "ZigZag/schaakbord eerst"
+      }
+    },
+    "ultra_wave": {
+      "options": {
+        "0": "Directe aanraking",
+        "1": "Langzame aanraking",
+        "2": "Minder aanraking",
+        "10": "Zonder aanraking",
+        "11": "Gevoelig"
+      }
+    },
+    "channel_mode": {
+      "options": {
+        "0": "Zigzag pad",
+        "1": "Schaakbord pad",
+        "2": "Aangepast Zigzag pad",
+        "3": "Alleen perimeter modus"
+      }
+    },
+    "rain_tactics": {
+      "options": {
+        "0": "Uit",
+        "1": "Aan"
+      }
+    },
+    "toward_mode": {
+      "options": {
+        "0": "Relatieve hoek",
+        "1": "Absolute hoek",
+        "2": "Willekeurige hoek"
+      }
+    },
+    "mowing_laps": {
+      "options": {
+        "0": "Geen",
+        "1": "Eén ronde",
+        "2": "Twee ronden",
+        "3": "Drie ronden",
+        "4": "Vier ronden"
+      }
+    },
+    "obstacle_laps": {
+      "options": {
+        "0": "Geen",
+        "1": "Eén ronde",
+        "2": "Twee ronden",
+        "3": "Drie ronden",
+        "4": "Vier ronden"
+      }
+    }
+  },
+  "services": {
+    "cancel_job": {
+      "name": "Huidige taak annuleren",
+      "description": "Stopt beide de robot en huidige taak."
+    },
+    "start_mow": {
+      "name": "Start met maaien",
+      "description": "Begin met maaien met aangepaste instellingen.",
+      "fields": {
+        "modify": {
+          "name": "Bestaande taak wijzigen",
+          "description": "Of je een bestaande taak wilt wijzigen of een nieuwe wilt starten."
+        },
+        "is_mow": {
+          "name": "Is aan het maaien",
+          "description": "Of maaien actief is. (Yuka)."
+        },
+        "is_dump": {
+          "name": "Bezig met dumpen",
+          "description": "Of gras dumpen actief is. (Yuka)."
+        },
+        "is_edge": {
+          "name": "Maait randen",
+          "description": "Of randmodus actief is. (Yuka)."
+        },
+        "collect_grass_frequency": {
+          "name": "Gras Collectie Frequentie",
+          "description": "Frequentie om gras te verzamelen (in vierkante meters). (Yuka)."
+        },
+        "border_mode": {
+          "name": "Maaivolgorde",
+          "description": "Maaivolgorde (rand eerst of gazon eerst)."
+        },
+        "job_version": {
+          "name": "Taak versie",
+          "description": "Taak versie."
+        },
+        "job_id": {
+          "name": "Taak ID",
+          "description": "Taak ID."
+        },
+        "speed": {
+          "name": "Snelheid",
+          "description": "Maaisnelheid."
+        },
+        "ultra_wave": {
+          "name": "Obstakeldetectie",
+          "description": "Obstakel Vermijding Modus."
+        },
+        "channel_mode": {
+          "name": "Pad-knip mode",
+          "description": "Snijpad (zigzag, schaakbord, adaptieve zigzag, of alleen de rand)."
+        },
+        "channel_width": {
+          "name": "Pad breedte",
+          "description": "Breedte van de paden (in cm)."
+        },
+        "rain_tactics": {
+          "name": "Regendetectie",
+          "description": "Regendetectie."
+        },
+        "blade_height": {
+          "name": "Meshoogte",
+          "description": "Hoogte van de messen."
+        },
+        "toward": {
+          "name": "Beginhoek",
+          "description": "Aanvankelijke richting voor maaien."
+        },
+        "toward_included_angle": {
+          "name": "Kruisende Hoek",
+          "description": "Bij het selecteren van het raster verander de tweede hoek (standaard is 90 graden)."
+        },
+        "toward_mode": {
+          "name": "Hoek modus knippen",
+          "description": "Grijpbare richting maaien."
+        },
+        "mowing_laps": {
+          "name": "Hoeveelheid de rand maaien",
+          "description": "Het aantal ronden rond de rand."
+        },
+        "obstacle_laps": {
+          "name": "Het aantal ronden rond verboden zones",
+          "description": "Het aantal ronden rond verboden zones."
+        },
+        "start_progress": {
+          "name": "Begin Voortgang",
+          "description": "Begin voortgangspercentage."
+        },
+        "areas": {
+          "name": "Gebiedselectie",
+          "description": "Lijst van te maaien gebieden (weergegeven als geheel getal)."
+        },
+        "plan_only": {
+          "name": "Alleen plannen",
+          "description": "Genereer het maaiplan zonder de taak te starten."
+        }
+      }
+    },
+    "start_stop_blades": {
+      "name": "Start of stop de messen",
+      "description": "Start of stop de messen handmatig.",
+      "fields": {
+        "start_stop": {
+          "name": "Start of stop",
+          "description": "Of de messen aan of uit staan."
+        },
+        "blade_height": {
+          "name": "Mes hoogte",
+          "description": "Hoogte van de messen."
+        }
+      }
+    },
+    "set_non_work_hours": {
+      "name": "Niet-actieve uren instellen",
+      "description": "Stel de uren in wanneer de maaier niet actief is.",
+      "fields": {
+        "start_time": {
+          "name": "Starttijd",
+          "description": "Starttijd van de niet-actieve uren."
+        },
+        "end_time": {
+          "name": "Eindtijd",
+          "description": "Eindtijd van de niet-actieve uren."
+        }
+      }
+    },
+    "set_blade_warning_time": {
+      "name": "Meswaartijd instellen",
+      "description": "Stel de waarschuwingstijd voor mesvervanging in uren in.",
+      "fields": {
+        "hours": {
+          "name": "Uren",
+          "description": "Waarschuwingsdrempel in uren voor aanbevolen mesvervanging."
+        }
+      }
+    },
+    "reset_blade_time": {
+      "name": "Mestijd resetten",
+      "description": "Reset de teller voor de gebruikstijd van het mes."
+    },
+    "get_map_data": {
+      "name": "Kaartgegevens ophalen",
+      "description": "Geeft de ruwe kaartgegevens terug (gebieden, SVG-tegels, gebiednamen) voor gebruik met de SVG-kaartkaart.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteit",
+          "description": "Elke Mammotion-entiteit die bij het apparaat hoort."
+        }
+      }
+    },
+    "svg_add": {
+      "name": "SVG-tegel toevoegen",
+      "description": "Stuurt een nieuwe SVG-tegel naar de apparaatkaart. Geeft de door het apparaat toegewezen hash terug.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteit",
+          "description": "Elke Mammotion-entiteit die bij het apparaat hoort."
+        },
+        "area_hash": {
+          "name": "Gebiedshash",
+          "description": "Hash van het bovenliggende maaigebied."
+        },
+        "svg_data": {
+          "name": "SVG-gegevens",
+          "description": "Ruwe SVG-opmaak om op de kaart weer te geven."
+        },
+        "svg_file_name": {
+          "name": "Bestandsnaam",
+          "description": "Bestandsnaam opgeslagen op het apparaat (standaard: pattern.svg)."
+        },
+        "scale": {
+          "name": "Schaal",
+          "description": "Uniforme schaalfactor (1,0 = geen schaling)."
+        },
+        "rotate": {
+          "name": "Rotatie",
+          "description": "Rotatie in radialen (CCW-positief in ENU-frame van het apparaat)."
+        },
+        "base_width_m": {
+          "name": "Breedte (m)",
+          "description": "Fysieke breedte van één tegeleenheid in meters (2,5 voor Luba 1/Yuka, 4,0 voor Luba 2)."
+        },
+        "base_height_m": {
+          "name": "Hoogte (m)",
+          "description": "Fysieke hoogte van één tegeleenheid in meters."
+        },
+        "x_move": {
+          "name": "X-positie",
+          "description": "X-coördinaat overschrijving (meters). Standaard: zwaartepunt van het gebied."
+        },
+        "y_move": {
+          "name": "Y-positie",
+          "description": "Y-coördinaat overschrijving (meters). Standaard: zwaartepunt van het gebied."
+        }
+      }
+    },
+    "svg_update": {
+      "name": "SVG-tegel bijwerken",
+      "description": "Vervangt een bestaande SVG-tegel op de apparaatkaart. Gebruik de device_hash die door svg_add is geretourneerd.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteit",
+          "description": "Elke Mammotion-entiteit die bij het apparaat hoort."
+        },
+        "device_hash": {
+          "name": "Apparaathash",
+          "description": "Hash toegewezen door het apparaat toen de tegel voor het eerst werd toegevoegd."
+        },
+        "area_hash": {
+          "name": "Gebiedshash",
+          "description": "Hash van het bovenliggende maaigebied."
+        },
+        "svg_data": {
+          "name": "SVG-gegevens",
+          "description": "Bijgewerkte SVG-opmaak."
+        },
+        "svg_file_name": {
+          "name": "Bestandsnaam",
+          "description": "Bestandsnaam opgeslagen op het apparaat."
+        },
+        "scale": {
+          "name": "Schaal",
+          "description": "Uniforme schaalfactor."
+        },
+        "rotate": {
+          "name": "Rotatie",
+          "description": "Rotatie in radialen (CCW-positief)."
+        },
+        "base_width_m": {
+          "name": "Breedte (m)",
+          "description": "Fysieke breedte van één tegeleenheid in meters."
+        },
+        "base_height_m": {
+          "name": "Hoogte (m)",
+          "description": "Fysieke hoogte van één tegeleenheid in meters."
+        },
+        "x_move": {
+          "name": "X-positie",
+          "description": "X-coördinaat overschrijving (meters)."
+        },
+        "y_move": {
+          "name": "Y-positie",
+          "description": "Y-coördinaat overschrijving (meters)."
+        }
+      }
+    },
+    "svg_delete": {
+      "name": "SVG-tegel verwijderen",
+      "description": "Verwijdert een SVG-tegel van de apparaatkaart via de door het apparaat toegewezen hash.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteit",
+          "description": "Elke Mammotion-entiteit die bij het apparaat hoort."
+        },
+        "device_hash": {
+          "name": "Apparaathash",
+          "description": "Hash toegewezen door het apparaat toen de tegel werd toegevoegd."
+        },
+        "area_hash": {
+          "name": "Gebiedshash",
+          "description": "Hash van het bovenliggende maaigebied."
+        }
+      }
+    },
+    "rename_task": {
+      "name": "Taak hernoemen",
+      "description": "Hernoemt een bestaand schema (maaier of zwembadrobot). Selecteer de taakknopentiteit.",
+      "fields": {
+        "name": {
+          "name": "Nieuwe naam",
+          "description": "New display name for the task."
+        }
+      }
+    },
+    "set_task_enabled": {
+      "name": "Taak in-/uitschakelen",
+      "description": "Schakelt de actiefvlag van een schema om zonder het te verwijderen.",
+      "fields": {
+        "enabled": {
+          "name": "Ingeschakeld",
+          "description": "True to enable the schedule, false to disable it."
+        }
+      }
+    },
+    "delete_task": {
+      "name": "Taak verwijderen",
+      "description": "Verwijdert het schema permanent."
+    },
+    "copy_task": {
+      "name": "Taak kopiëren",
+      "description": "Dupliceert het schema met een nieuw id. Zonder naam: 'Copy-N'.",
+      "fields": {
+        "name": {
+          "name": "Nieuwe naam",
+          "description": "Override the auto-generated 'Copy-N' name."
+        }
+      }
+    },
+    "edit_task": {
+      "name": "Taak bewerken",
+      "description": "Wijzigt een deelverzameling velden van het schema.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule is active."
+        },
+        "weeks": {
+          "name": "Weekdays",
+          "description": "List of weekday integers (0 = Sunday … 6 = Saturday) the schedule runs on."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "HH:MM (mower only)."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "HH:MM (mower only)."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "YYYY-MM-DD."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "YYYY-MM-DD."
+        },
+        "trigger_type": {
+          "name": "Trigger type",
+          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+        },
+        "day": {
+          "name": "Day interval",
+          "description": "Interval in days when trigger_type is 1 (DAY)."
+        },
+        "knife_height": {
+          "name": "Cut height",
+          "description": "Mower-only blade height in millimetres."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "Mower: driving speed (float). Spino: fixed32 speed value (int)."
+        },
+        "edge_mode": {
+          "name": "Edge mode",
+          "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
+        },
+        "route_angle": {
+          "name": "Route angle",
+          "description": "Mower-only: mowing pattern angle 0–179 degrees."
+        },
+        "route_spacing": {
+          "name": "Route spacing",
+          "description": "Mower-only: spacing between mow lines in cm."
+        },
+        "zone_hashs": {
+          "name": "Zone hashes",
+          "description": "Mower-only: list of area hashes (fixed64) covered by this schedule."
+        },
+        "work_mode": {
+          "name": "Work mode",
+          "description": "Spino-only: 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
+        },
+        "sub_mode": {
+          "name": "Sub-modes",
+          "description": "Spino-only: list of APP_WORK values for multi-stage cleaning."
+        },
+        "operating_power": {
+          "name": "Operating power",
+          "description": "Spino-only: suction power (fixed32 int)."
+        },
+        "starttime": {
+          "name": "Start timestamp",
+          "description": "Spino-only: unix timestamp (seconds) for the start of the cleaning session."
+        }
+      }
+    },
+    "create_task": {
+      "name": "Taak aanmaken",
+      "description": "Maakt een nieuw schema aan op het apparaat.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name for the new schedule."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule starts enabled."
+        },
+        "weeks": {
+          "name": "Weekdays",
+          "description": "List of weekday integers (0 = Sunday … 6 = Saturday)."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "HH:MM (mower)."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "HH:MM (mower)."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "YYYY-MM-DD."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "YYYY-MM-DD."
+        },
+        "trigger_type": {
+          "name": "Trigger type",
+          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+        },
+        "day": {
+          "name": "Day interval",
+          "description": "Interval in days for trigger_type = 1."
+        },
+        "knife_height": {
+          "name": "Cut height",
+          "description": "Mower-only blade height in millimetres."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "Mower or Spino speed."
+        },
+        "edge_mode": {
+          "name": "Edge mode",
+          "description": "Mower-only."
+        },
+        "route_angle": {
+          "name": "Route angle",
+          "description": "Mower-only."
+        },
+        "route_spacing": {
+          "name": "Route spacing",
+          "description": "Mower-only."
+        },
+        "zone_hashs": {
+          "name": "Zone hashes",
+          "description": "Mower-only: list of area hashes covered."
+        },
+        "work_mode": {
+          "name": "Work mode",
+          "description": "Spino-only cleaning mode."
+        },
+        "sub_mode": {
+          "name": "Sub-modes",
+          "description": "Spino-only: list of APP_WORK values."
+        },
+        "operating_power": {
+          "name": "Operating power",
+          "description": "Spino-only."
+        },
+        "starttime": {
+          "name": "Start timestamp",
+          "description": "Spino-only: unix start time."
+        }
+      }
+    },
+    "refresh_tasks": {
+      "name": "Taken vernieuwen",
+      "description": "Haalt alle schema's opnieuw op van het apparaat."
+    },
+    "start_task": {
+      "name": "Taak starten",
+      "description": "Voert een opgeslagen schema direct uit (ook bekend als 'schema starten'). Alleen maaier — de Spino zwembadrobot heeft geen equivalent commando."
+    }
+  },
+  "exceptions": {
+    "device_not_ready": {
+      "message": "Het apparaat is nog niet klaar."
+    },
+    "pause_failed": {
+      "message": "Kon de robot niet pauzeren."
+    },
+    "resume_failed": {
+      "message": "Kon de robot niet hervatten."
+    },
+    "start_failed": {
+      "message": "Kon de robot niet starten."
+    },
+    "dock_failed": {
+      "message": "Kon de robot niet naar het dok sturen."
+    },
+    "dock_cancel_failed": {
+      "message": "Het is niet gelukt om te stoppen met het terugbrengen van de robot naar het laadstation."
+    },
+    "command_failed": {
+      "message": "Verzenden van de opdracht naar de maaier is mislukt."
+    },
+    "api_limit_exceeded": {
+      "message": "De API-limiet is overschreden."
+    },
+    "account_in_use": {
+      "message": "Uw Mammotion-account is al actief in een andere sessie. Log uit de Mammotion-app en probeer het opnieuw."
+    },
+    "cloud_setup_failed": {
+      "message": "Kan geen verbinding maken met de Mammotion-cloud. Controleer uw netwerk en probeer de integratie opnieuw te laden."
+    },
+    "task_not_found": {
+      "message": "Taak {plan_id} is niet gevonden op het apparaat. Vernieuw het schema en probeer opnieuw."
+    },
+    "start_task_unsupported_on_spino": {
+      "message": "Een schema op aanvraag starten wordt niet ondersteund op de Spino zwembadrobot — de firmware heeft geen 'nu uitvoeren' commando voor opgeslagen schema's."
+    }
+  }
+}

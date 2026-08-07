@@ -1,0 +1,1088 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Naprava je že nastavljena",
+      "already_in_progress": "Konfiguracija poteka",
+      "no_devices_found": "Ne morem najti naprav",
+      "no_devices_found_in_account": "V vašem računu ni naprav",
+      "bluetooth_and_account_mismatch": "V vašem računu ni bluetooth naprav",
+      "no_longer_present": "Naprava ni več prisotna",
+      "not_supported": "Naprava ni podprta",
+      "reconfigure_successful": "Ponastavitev uspešna",
+      "api_limit_exceeded": "Prekoračena je bila omejitev API-ja. Poskusite znova pozneje.",
+      "account_in_use": "Vaš račun Mammotion je že aktiven v drugi seji. Odjavite se iz aplikacije Mammotion in poskusite znova."
+    },
+    "error": {
+      "login_failed": "Prijava ni uspela. Preverite e-poštni naslov in geslo računa ter poskusite znova.",
+      "cannot_connect": "Povezava z oblakom Mammotion ni mogoča. Preverite poverilnice in omrežje ter poskusite znova.",
+      "no_account_no_ble": "Podatki računa niso bili vneseni in naprava Bluetooth ni bila najdena. Vnesite poverilnice računa Mammotion ali nastavite napravo Bluetooth."
+    },
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "Nastavitev {name}",
+        "data": {
+          "stay_connected_bluetooth": "Ohranite bluetooth povezavo"
+        }
+      },
+      "reconfigure": {
+        "data": {
+          "use_wifi": "Uporabi Wi-fi",
+          "account_name": "E-poštni naslov Mammotion ali številka računa",
+          "password": "Geslo Mammotion računa"
+        }
+      },
+      "user": {
+        "data": {
+          "address": "Naprava",
+          "stay_connected_bluetooth": "Ohranite bluetooth povezavo"
+        },
+        "description": "Izberite vašo kosilnico"
+      },
+      "wifi": {
+        "data": {
+          "use_wifi": "Uporabi Wi-fi (obkljukajte in pošljite za uporabo bluetooth)",
+          "account_name": "E-poštni naslov Mammotion ali številka računa",
+          "password": "Geslo Mammotion računa"
+        },
+        "title": "Poveži Wi-fi",
+        "description": "Vnesite e-poštni naslov Mammotion računa ali številko računa in geslo"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "title": "Posodobi nastavitev",
+          "stay_connected_bluetooth": "Ohrani bluetooth povezavo",
+          "prefer_ble_over_wifi": "Daj prednost Bluetooth pred Wi-Fi, ko je na voljo",
+          "movement_use_wifi": "Pošiljaj ukaze gibanja prek Wi-Fi",
+          "mow_path_fetch_enabled": "Omogoči pridobivanje poti košnje (oblak)",
+          "full_map_fetch_enabled": "Omogoči pridobivanje celotnega zemljevida (oblak) — če izklopljeno, se pridobijo samo imena območij"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "error_1_message": {
+        "name": "Zadnja napaka"
+      },
+      "error_1_time": {
+        "name": "Čas zadnje napake"
+      },
+      "error_1_code": {
+        "name": "Koda zadnje napake"
+      },
+      "battery_percent": {
+        "name": "Baterija"
+      },
+      "ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "camera_brightness": {
+        "name": "Osvetlitev kamere"
+      },
+      "wifi_rssi": {
+        "name": "Wifi RSSI"
+      },
+      "mnet_rssi": {
+        "name": "Mobilni RSSI"
+      },
+      "connect_type": {
+        "name": "Povezava"
+      },
+      "gps_stars": {
+        "name": "Sateliti (robot)"
+      },
+      "blade_height": {
+        "name": "Višina nožev"
+      },
+      "area": {
+        "name": "Področje"
+      },
+      "mowing_speed": {
+        "name": "Hitrost košnje"
+      },
+      "progress": {
+        "name": "Napredek"
+      },
+      "total_time": {
+        "name": "Skupni čas"
+      },
+      "elapsed_time": {
+        "name": "Pretečni čas"
+      },
+      "left_time": {
+        "name": "Preostali čas"
+      },
+      "l1_satellites": {
+        "name": "L1 sateliti (skupaj)"
+      },
+      "l2_satellites": {
+        "name": "L2 sateliti (skupaj)"
+      },
+      "positioning_mode": {
+        "name": "Položaj RTK postaje"
+      },
+      "position_type": {
+        "name": "Vrsta pozicioniranja",
+        "state": {
+          "AREA_BORDER_ON": "Na obodu",
+          "AREA_INSIDE": "Znotraj področja",
+          "AREA_OUT": "Zunaj področja",
+          "CHANNEL_AREA_OVERLAP": "Prekrivanje področja poti",
+          "CHANNEL_ON": "Na poti",
+          "CHARGE_ON": "Na polnilni postaji",
+          "DUMPING_AREA_INSIDE": "V področju odlaganja",
+          "DUMPING_OUTSIDE": "Zunaj področja odlaganja",
+          "ABNORMAL_POSITIONING": "Napaka pozicije",
+          "NO_AREAS": "Ni definiranih področij",
+          "OBS_ON": "Pri oviri",
+          "TURN_AREA_INSIDE": "V področju obračanja",
+          "VIRTUAL_INSIDE": "V virtualnem področju"
+        }
+      },
+      "visual_positioning_status": {
+        "name": "Stanje vizualnega pozicioniranja",
+        "state": {
+          "SIGNAL_NONE": "Brez",
+          "SIGNAL_INIT": "Inicializacija",
+          "SIGNAL_GOOD": "Dobro",
+          "SIGNAL_BAD": "Slabo",
+          "SIGNAL_UNKNOWN": "Neznano"
+        }
+      },
+      "activity_mode": {
+        "name": "Vrsta dejavnosti",
+        "state": {
+          "MODE_NOT_ACTIVE": "Neaktivno",
+          "MODE_ONLINE": "Online",
+          "MODE_OFFLINE": "Offline",
+          "MODE_DISABLE": "Onemogočeno",
+          "MODE_INITIALIZATION": "Inicializacija",
+          "MODE_READY": "Pripravljeno",
+          "MODE_WORKING": "Deluje",
+          "MODE_RETURNING": "Vrača se",
+          "MODE_CHARGING": "Polnjenje",
+          "MODE_UPDATING": "Posodabljanje",
+          "MODE_LOCK": "Zaklenjeno",
+          "MODE_PAUSE": "Zaustavljeno",
+          "MODE_MANUAL_MOWING": "Ročna košnja",
+          "MODE_UPDATE_SUCCESS": "Posodobitev uspešna",
+          "MODE_OTA_UPGRADE_FAIL": "Posodobitev neuspešna",
+          "MODE_JOB_DRAW": "Risanje naloge",
+          "MODE_OBSTACLE_DRAW": "Risanje ovir",
+          "MODE_CHANNEL_DRAW": "Risanje kanala",
+          "MODE_ERASER_DRAW": "Risanje radirke",
+          "MODE_EDIT_BOUNDARY": "Urejanje meje",
+          "MODE_LOCATION_ERROR": "Napaka lokacije",
+          "MODE_BOUNDARY_JUMP": "Prečkanje meje",
+          "MODE_CHARGING_PAUSE": "Polnjenje zaustavljeno",
+          "MODE_POWER_OFF": "Izklop"
+        }
+      },
+      "work_area": {
+        "name": "Trenutna lokacija"
+      },
+      "maintenance_distance": {
+        "name": "Skupno opravljena pot"
+      },
+      "maintenance_work_time": {
+        "name": "Trajanje naloge"
+      },
+      "maintenance_bat_cycles": {
+        "name": "Baterijski cikli",
+        "unit_of_measurement": "Cikli polnjenja baterije"
+      },
+      "blade_used_time": {
+        "name": "Čas uporabe rezila"
+      },
+      "blade_used_warn_time": {
+        "name": "Čas opozorila obrabe rezila"
+      },
+      "non_work_hours": {
+        "name": "Ure brez dela"
+      },
+      "rtk_lora": {
+        "name": "Različica LoRa"
+      },
+      "rtk_latitude": {
+        "name": "Zemljepisna širina"
+      },
+      "rtk_longitude": {
+        "name": "Zemljepisna dolžina"
+      },
+      "rtk_wifi_rssi": {
+        "name": "Wi-Fi RSSI"
+      },
+      "rtk_sats_num": {
+        "name": "Sateliti"
+      },
+      "position_mode": {
+        "name": "Način pozicioniranja",
+        "state": {
+          "RTK_OVER_DATALINK": "Antena prek DataLink",
+          "RTK_OVER_INTERNET": "Antena prek interneta",
+          "INAVI_NET_RTK": "iNavi NetRTK",
+          "INAVI_RTK_BOX": "iNavi RTK škatla",
+          "UNKNOWN": "Neznano"
+        }
+      },
+      "rtk_app_connect_type": {
+        "name": "Vrsta povezave",
+        "state": {
+          "UNKNOWN": "Neznano",
+          "CON_BLE": "BLE",
+          "CON_WIFI": "Wi-Fi"
+        }
+      },
+      "task_area_status": {
+        "name": "Področje naloge {name}",
+        "state": {
+          "NOT_STARTED": "Ni začeto",
+          "WAITING": "Čaka",
+          "MOWING": "Košnja",
+          "COMPLETE": "Dokončano",
+          "ABORTED": "Prekinjeno"
+        }
+      },
+      "spino_status": {
+        "name": "Stanje",
+        "state": {
+          "UNKNOWN": "Neznano",
+          "IDLE": "Pripravljenost",
+          "PREPARE": "Priprava",
+          "WAIT_WATER": "Polnjenje z vodo",
+          "WORKING": "Deluje",
+          "PAUSE_GO_CHARGE": "Vračanje na polnjenje (zaustavljeno)",
+          "END_GO_CHARGE": "Vračanje na polnjenje",
+          "CHARGING": "Polnjenje",
+          "LEAVE_DOCK": "Zapušča postajo",
+          "RECALLING": "Vrača se"
+        }
+      },
+      "spino_work_mode": {
+        "name": "Način čiščenja",
+        "state": {
+          "UNKNOWN": "Neznano",
+          "RECHARGE": "Ponovno polnjenje",
+          "AUTO": "Vse",
+          "FLOOR": "Dno",
+          "WALL": "Stena",
+          "ECO": "Eko",
+          "LINE": "Vodna gladina",
+          "CUSTOM": "Po meri"
+        }
+      }
+    },
+    "button": {
+      "start_map_sync": {
+        "name": "Sinhronizacija zemljevidov"
+      },
+      "start_schedule_sync": {
+        "name": "Sinhronizacija urnikov"
+      },
+      "resync_rtk_dock": {
+        "name": "Sinhronizacija položaja RTK in polnilne postaje"
+      },
+      "release_from_dock": {
+        "name": "Izvoz"
+      },
+      "emergency_nudge_forward": {
+        "name": "Pomik naprej – za rešitev položaja"
+      },
+      "emergency_nudge_left": {
+        "name": "Pomik levo – za rešitev položaja"
+      },
+      "emergency_nudge_right": {
+        "name": "Pomik desno – za rešitev položaja"
+      },
+      "emergency_nudge_back": {
+        "name": "Pomik nazaj – za rešitev položaja"
+      },
+      "cancel_task": {
+        "name": "Prekini trenutno nalogo"
+      },
+      "clear_all_mapdata": {
+        "name": "Počisti zemljevide in imena področji"
+      },
+      "relocate_charging_station": {
+        "name": "Premesti polnilno postajo"
+      },
+      "restart_mower": {
+        "name": "Ponovni zagon kosilnice"
+      },
+      "spino_refresh_status": {
+        "name": "Osveži stanje"
+      }
+    },
+    "switch": {
+      "area": {
+        "name": "Področje {name}"
+      },
+      "blade_status": {
+        "name": "Noži"
+      },
+      "is_mow": {
+        "name": "Košnja"
+      },
+      "is_dump": {
+        "name": "Odlaganje listja"
+      },
+      "is_edge": {
+        "name": "Način obračanja"
+      },
+      "rain_tactics": {
+        "name": "Zaznavanje dežja (med košnjo) vkl/izkl"
+      },
+      "rain_detection": {
+        "name": "Zaznavanje dežja (kosilnica) vkl/izkl"
+      },
+      "side_led": {
+        "name": "Stranska LED osvetlitev"
+      },
+      "perimeter_first_on_off": {
+        "name": "Prvo obod"
+      },
+      "schedule_updates": {
+        "name": "Vkl/Izkl posodobitve"
+      },
+      "bluetooth_enabled": {
+        "name": "Bluetooth"
+      },
+      "cloud_enabled": {
+        "name": "Cloud"
+      },
+      "manual_light": {
+        "name": "Ročna luč vkl/izkl"
+      },
+      "night_light": {
+        "name": "Samodejna osvetlitev vkl/izkl"
+      },
+      "voice_on_off": {
+        "name": "Glas vklopljeno/izklopljeno"
+      },
+      "spino_buzzer": {
+        "name": "Brenčalo"
+      },
+      "spino_turbo_clean": {
+        "name": "Turbo čiščenje"
+      },
+      "spino_platform_cleaning": {
+        "name": "Čiščenje ploščadi"
+      },
+      "spino_waterline_parking": {
+        "name": "Parkiranje na vodni gladini"
+      }
+    },
+    "select": {
+      "channel_mode": {
+        "name": "Način poti",
+        "state": {
+          "single_grid": "Cikcak",
+          "double_grid": "Šahovnica",
+          "segment_grid": "Prilagodljiva cikcak pot",
+          "no_grid": "Samo obod"
+        }
+      },
+      "mowing_laps": {
+        "name": "Število krogov po obodu",
+        "state": {
+          "none": "Noben",
+          "one": "Eden",
+          "two": "Dva",
+          "three": "Tri",
+          "four": "Štiri"
+        }
+      },
+      "obstacle_laps": {
+        "name": "Število krogov po obodu prepovedanih območij",
+        "state": {
+          "none": "Noben",
+          "one": "Eden",
+          "two": "Dva",
+          "three": "Tri",
+          "four": "Štiri"
+        }
+      },
+      "border_mode": {
+        "name": "Vrstni red košnje",
+        "state": {
+          "border_first": "Najprej obod",
+          "grid_first": "Najprej področje"
+        }
+      },
+      "bypass_mode": {
+        "name": "Zaznavanje ovir",
+        "state": {
+          "direct_touch": "Izklopljeno",
+          "slow_touch": "Počasni dotik",
+          "less_touch": "Manj dotika",
+          "no_touch": "Standard",
+          "sensitive": "Občutljivo"
+        }
+      },
+      "cutting_angle_mode": {
+        "name": "Način poti rezanja",
+        "state": {
+          "relative_angle": "Relativni kot",
+          "absolute_angle": "Absolutni kot",
+          "random_angle": "Naključni kot"
+        }
+      },
+      "traversal_mode": {
+        "name": "Način vračanja",
+        "state": {
+          "direct": "Neposredno",
+          "follow_perimeter": "Sledi obodu"
+        }
+      },
+      "turning_mode": {
+        "name": "Način obračanja",
+        "state": {
+          "multipoint": "Obrat v več točkah",
+          "zero_turn": "Obrat na mestu"
+        }
+      },
+      "cutter_mode": {
+        "name": "Hitrost rezanja",
+        "state": {
+          "normal": "Srednje",
+          "slow": "Počasi",
+          "fast": "Hitro"
+        }
+      },
+      "voice_gender": {
+        "name": "Spol glasu",
+        "state": {
+          "MAN": "Moški",
+          "WOMAN": "Ženski"
+        }
+      },
+      "wildlife_safety": {
+        "name": "Varnost divjih živali",
+        "state": {
+          "off": "Izklopljeno",
+          "stop_mowing": "Ustavi košnjo",
+          "low_speed_mowing": "Košnja z nizko hitrostjo"
+        }
+      },
+      "spino_work_mode": {
+        "name": "Način čiščenja",
+        "state": {
+          "UNKNOWN": "Neznano",
+          "RECHARGE": "Ponovno polnjenje",
+          "AUTO": "Vse",
+          "FLOOR": "Dno",
+          "WALL": "Stena",
+          "ECO": "Eko",
+          "LINE": "Vodna gladina",
+          "CUSTOM": "Po meri"
+        }
+      }
+    },
+    "number": {
+      "voice_volume": {
+        "name": "Glasnost glasu"
+      },
+      "start_progress": {
+        "name": "Napredek"
+      },
+      "blade_height": {
+        "name": "Višina nožev"
+      },
+      "working_speed": {
+        "name": "Hitrost košnje"
+      },
+      "cutting_angle": {
+        "name": "Kot poti rezanja"
+      },
+      "path_spacing": {
+        "name": "Razmik poti"
+      },
+      "dumping_interval": {
+        "name": "Interval praznjenja"
+      },
+      "toward_included_angle": {
+        "name": "Kot prečkanja"
+      },
+      "map_offset_lat": {
+        "name": "Zamik zemljevida širina"
+      },
+      "map_offset_lon": {
+        "name": "Zamik zemljevida dolžina"
+      }
+    },
+    "device_tracker": {
+      "name": "Sledenje"
+    }
+  },
+  "selector": {
+    "border_mode": {
+      "options": {
+        "0": "Najprej obod",
+        "1": "Najprej področje"
+      }
+    },
+    "ultra_wave": {
+      "options": {
+        "0": "Polni dotik",
+        "1": "Počasni dotik",
+        "2": "Manj dotika",
+        "10": "Brez dotika",
+        "11": "Občutljivo"
+      }
+    },
+    "channel_mode": {
+      "options": {
+        "0": "Cikcak",
+        "1": "Šahovnica",
+        "2": "Prilagodljiva cikcak pot",
+        "3": "Samo obod"
+      }
+    },
+    "rain_tactics": {
+      "options": {
+        "0": "Izklop",
+        "1": "Vklop"
+      }
+    },
+    "toward_mode": {
+      "options": {
+        "0": "Relativni kot",
+        "1": "Absolutni kot",
+        "2": "Naključni kot"
+      }
+    },
+    "mowing_laps": {
+      "options": {
+        "0": "Noben",
+        "1": "En krog",
+        "2": "Dva kroga",
+        "3": "Trije krogi",
+        "4": "Štirje krogi"
+      }
+    },
+    "obstacle_laps": {
+      "options": {
+        "0": "Noben",
+        "1": "En krog",
+        "2": "Dva kroga",
+        "3": "Trije krogi",
+        "4": "Štirje krogi"
+      }
+    }
+  },
+  "services": {
+    "cancel_job": {
+      "name": "Prekini trenutno nalogo",
+      "description": "Ustavi kosilnico in prekine trenutno nalogo"
+    },
+    "start_mow": {
+      "name": "Prični košnjo",
+      "description": "Prični košnjo z dodatnimi nastavitvami",
+      "fields": {
+        "modify": {
+          "name": "Uredi obstoječo nalogo",
+          "description": "Ali urediti obstoječo nalogo ali začeti novo."
+        },
+        "is_mow": {
+          "name": "Kosi",
+          "description": "Košnja aktivna. (Yuka)"
+        },
+        "is_dump": {
+          "name": "Pobiranje",
+          "description": "Pobiranje aktivno. (Yuka)"
+        },
+        "is_edge": {
+          "name": "Košnja roba",
+          "description": "Navaja, ali je način rezanja robov aktiven. (Yuka)."
+        },
+        "collect_grass_frequency": {
+          "name": "Interval košnje",
+          "description": "Pogostost zbiranja trave (v kvadratnih metrih). (Yuka)."
+        },
+        "border_mode": {
+          "name": "Vrstni red",
+          "description": "Vrstni red poti (obod ali cikcak prvo)."
+        },
+        "job_version": {
+          "name": "Različica naloge",
+          "description": "Različica naloge."
+        },
+        "job_id": {
+          "name": "ID naloge",
+          "description": "ID naloge."
+        },
+        "speed": {
+          "name": "Hitrost",
+          "description": "Hitrost košnje."
+        },
+        "ultra_wave": {
+          "name": "Način zaznavanja ovir",
+          "description": "Način izmikanja oviram."
+        },
+        "channel_mode": {
+          "name": "Način poti rezanja",
+          "description": "Način poti (cikcak, šahovnica, prilagodljiva cikcak pot, samo obod)."
+        },
+        "channel_width": {
+          "name": "Razmik med potmi",
+          "description": "Razmik med potmi (v cm)."
+        },
+        "rain_tactics": {
+          "name": "Zaznavanje dežja",
+          "description": "Zaznavanje dežja."
+        },
+        "blade_height": {
+          "name": "Višina rezil",
+          "description": "Višina rezil."
+        },
+        "toward": {
+          "name": "Kot rezalne poti",
+          "description": "Kot rezalne poti."
+        },
+        "toward_included_angle": {
+          "name": "Kot prehoda mreže",
+          "description": "Za spreminjanje kota mreže."
+        },
+        "toward_mode": {
+          "name": "Kot rezalne poti",
+          "description": "Kot rezalne poti."
+        },
+        "mowing_laps": {
+          "name": "Krogi košnje po obodu",
+          "description": "Krogi košnje po obodu."
+        },
+        "obstacle_laps": {
+          "name": "Krogi košnje po robu prepovedanih con",
+          "description": "Krogi košnje po robu prepovedanih con."
+        },
+        "start_progress": {
+          "name": "Začetek napredka",
+          "description": "Začetek napredka v odstotkih."
+        },
+        "areas": {
+          "name": "Območje naloge",
+          "description": "Spisek območij."
+        },
+        "plan_only": {
+          "name": "Samo načrt",
+          "description": "Ustvari načrt košnje brez zagona naloge."
+        }
+      }
+    },
+    "start_stop_blades": {
+      "name": "Zaženi ali ustavi rezila",
+      "description": "Ročno zaženite ali ustavite rezila.",
+      "fields": {
+        "start_stop": {
+          "name": "Zaženi ali ustavi",
+          "description": "Ali so rezila vklopljena ali izklopljena."
+        },
+        "blade_height": {
+          "name": "Višina rezila",
+          "description": "Višina rezila."
+        }
+      }
+    },
+    "set_non_work_hours": {
+      "name": "Nastavi ure brez dela",
+      "description": "Nastavi ure, ko kosilnica ne dela.",
+      "fields": {
+        "start_time": {
+          "name": "Začetni čas",
+          "description": "Začetni čas ur brez dela."
+        },
+        "end_time": {
+          "name": "Končni čas",
+          "description": "Končni čas ur brez dela."
+        }
+      }
+    },
+    "set_blade_warning_time": {
+      "name": "Nastavi čas opozorila rezila",
+      "description": "Nastavite čas opozorila za zamenjavo rezila v urah.",
+      "fields": {
+        "hours": {
+          "name": "Ure",
+          "description": "Prag opozorila v urah pred priporočeno zamenjavo rezila."
+        }
+      }
+    },
+    "reset_blade_time": {
+      "name": "Ponastavi čas rezila",
+      "description": "Ponastavi števec časa uporabe rezila."
+    },
+    "get_map_data": {
+      "name": "Pridobi podatke zemljevida",
+      "description": "Vrne surove podatke zemljevida (področja, SVG ploščice, imena področij) za uporabo s kartico SVG zemljevida.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteta",
+          "description": "Katera koli Mammotion entiteta, ki pripada napravi."
+        }
+      }
+    },
+    "svg_add": {
+      "name": "Dodaj SVG ploščico",
+      "description": "Pošlje novo SVG ploščico na zemljevid naprave. Vrne hash, ki ga dodeli naprava.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteta",
+          "description": "Katera koli Mammotion entiteta, ki pripada napravi."
+        },
+        "area_hash": {
+          "name": "Hash področja",
+          "description": "Hash nadrejenega področja košnje."
+        },
+        "svg_data": {
+          "name": "SVG podatki",
+          "description": "Surova SVG koda za prikaz na zemljevidu."
+        },
+        "svg_file_name": {
+          "name": "Ime datoteke",
+          "description": "Ime datoteke, shranjene na napravi (privzeto: pattern.svg)."
+        },
+        "scale": {
+          "name": "Merilo",
+          "description": "Enakomerni faktor merila (1,0 = brez merila)."
+        },
+        "rotate": {
+          "name": "Zasuk",
+          "description": "Zasuk v radianih (CCW-pozitiven v ENU okviru naprave)."
+        },
+        "base_width_m": {
+          "name": "Širina (m)",
+          "description": "Fizična širina ene enote ploščice v metrih (2,5 za Luba 1/Yuka, 4,0 za Luba 2)."
+        },
+        "base_height_m": {
+          "name": "Višina (m)",
+          "description": "Fizična višina ene enote ploščice v metrih."
+        },
+        "x_move": {
+          "name": "Položaj X",
+          "description": "Prepisovanje koordinate X (metri). Privzeto: težišče področja."
+        },
+        "y_move": {
+          "name": "Položaj Y",
+          "description": "Prepisovanje koordinate Y (metri). Privzeto: težišče področja."
+        }
+      }
+    },
+    "svg_update": {
+      "name": "Posodobi SVG ploščico",
+      "description": "Zamenja obstoječo SVG ploščico na zemljevidu naprave. Uporabite device_hash, ki ga vrne svg_add.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteta",
+          "description": "Katera koli Mammotion entiteta, ki pripada napravi."
+        },
+        "device_hash": {
+          "name": "Hash naprave",
+          "description": "Hash, ki ga je naprava dodelila ob prvem dodajanju ploščice."
+        },
+        "area_hash": {
+          "name": "Hash področja",
+          "description": "Hash nadrejenega področja košnje."
+        },
+        "svg_data": {
+          "name": "SVG podatki",
+          "description": "Posodobljena SVG koda."
+        },
+        "svg_file_name": {
+          "name": "Ime datoteke",
+          "description": "Ime datoteke, shranjene na napravi."
+        },
+        "scale": {
+          "name": "Merilo",
+          "description": "Enakomerni faktor merila."
+        },
+        "rotate": {
+          "name": "Zasuk",
+          "description": "Zasuk v radianih (CCW-pozitiven)."
+        },
+        "base_width_m": {
+          "name": "Širina (m)",
+          "description": "Fizična širina ene enote ploščice v metrih."
+        },
+        "base_height_m": {
+          "name": "Višina (m)",
+          "description": "Fizična višina ene enote ploščice v metrih."
+        },
+        "x_move": {
+          "name": "Položaj X",
+          "description": "Prepisovanje koordinate X (metri)."
+        },
+        "y_move": {
+          "name": "Položaj Y",
+          "description": "Prepisovanje koordinate Y (metri)."
+        }
+      }
+    },
+    "svg_delete": {
+      "name": "Izbriši SVG ploščico",
+      "description": "Odstrani SVG ploščico z zemljevida naprave z njenim hashom, ki ga je dodelila naprava.",
+      "fields": {
+        "entity_id": {
+          "name": "Entiteta",
+          "description": "Katera koli Mammotion entiteta, ki pripada napravi."
+        },
+        "device_hash": {
+          "name": "Hash naprave",
+          "description": "Hash, ki ga je naprava dodelila ob dodajanju ploščice."
+        },
+        "area_hash": {
+          "name": "Hash področja",
+          "description": "Hash nadrejenega področja košnje."
+        }
+      }
+    },
+    "rename_task": {
+      "name": "Preimenuj opravilo",
+      "description": "Preimenuje obstoječi urnik (kosilnica ali bazenski robot). Označi entiteto gumba opravila.",
+      "fields": {
+        "name": {
+          "name": "Novo ime",
+          "description": "New display name for the task."
+        }
+      }
+    },
+    "set_task_enabled": {
+      "name": "Omogoči / onemogoči opravilo",
+      "description": "Preklopi zastavico omogočenosti urnika brez izbrisa.",
+      "fields": {
+        "enabled": {
+          "name": "Omogočeno",
+          "description": "True to enable the schedule, false to disable it."
+        }
+      }
+    },
+    "delete_task": {
+      "name": "Izbriši opravilo",
+      "description": "Trajno izbriše urnik."
+    },
+    "copy_task": {
+      "name": "Kopiraj opravilo",
+      "description": "Podvoji urnik z novim id-jem. Brez imena: 'Copy-N'.",
+      "fields": {
+        "name": {
+          "name": "Novo ime",
+          "description": "Override the auto-generated 'Copy-N' name."
+        }
+      }
+    },
+    "edit_task": {
+      "name": "Uredi opravilo",
+      "description": "Spremeni izbrana polja urnika.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule is active."
+        },
+        "weeks": {
+          "name": "Weekdays",
+          "description": "List of weekday integers (0 = Sunday … 6 = Saturday) the schedule runs on."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "HH:MM (mower only)."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "HH:MM (mower only)."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "YYYY-MM-DD."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "YYYY-MM-DD."
+        },
+        "trigger_type": {
+          "name": "Trigger type",
+          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+        },
+        "day": {
+          "name": "Day interval",
+          "description": "Interval in days when trigger_type is 1 (DAY)."
+        },
+        "knife_height": {
+          "name": "Cut height",
+          "description": "Mower-only blade height in millimetres."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "Mower: driving speed (float). Spino: fixed32 speed value (int)."
+        },
+        "edge_mode": {
+          "name": "Edge mode",
+          "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
+        },
+        "route_angle": {
+          "name": "Route angle",
+          "description": "Mower-only: mowing pattern angle 0–179 degrees."
+        },
+        "route_spacing": {
+          "name": "Route spacing",
+          "description": "Mower-only: spacing between mow lines in cm."
+        },
+        "zone_hashs": {
+          "name": "Zone hashes",
+          "description": "Mower-only: list of area hashes (fixed64) covered by this schedule."
+        },
+        "work_mode": {
+          "name": "Work mode",
+          "description": "Spino-only: 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
+        },
+        "sub_mode": {
+          "name": "Sub-modes",
+          "description": "Spino-only: list of APP_WORK values for multi-stage cleaning."
+        },
+        "operating_power": {
+          "name": "Operating power",
+          "description": "Spino-only: suction power (fixed32 int)."
+        },
+        "starttime": {
+          "name": "Start timestamp",
+          "description": "Spino-only: unix timestamp (seconds) for the start of the cleaning session."
+        }
+      }
+    },
+    "create_task": {
+      "name": "Ustvari opravilo",
+      "description": "Ustvari nov urnik na napravi.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name for the new schedule."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule starts enabled."
+        },
+        "weeks": {
+          "name": "Weekdays",
+          "description": "List of weekday integers (0 = Sunday … 6 = Saturday)."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "HH:MM (mower)."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "HH:MM (mower)."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "YYYY-MM-DD."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "YYYY-MM-DD."
+        },
+        "trigger_type": {
+          "name": "Trigger type",
+          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+        },
+        "day": {
+          "name": "Day interval",
+          "description": "Interval in days for trigger_type = 1."
+        },
+        "knife_height": {
+          "name": "Cut height",
+          "description": "Mower-only blade height in millimetres."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "Mower or Spino speed."
+        },
+        "edge_mode": {
+          "name": "Edge mode",
+          "description": "Mower-only."
+        },
+        "route_angle": {
+          "name": "Route angle",
+          "description": "Mower-only."
+        },
+        "route_spacing": {
+          "name": "Route spacing",
+          "description": "Mower-only."
+        },
+        "zone_hashs": {
+          "name": "Zone hashes",
+          "description": "Mower-only: list of area hashes covered."
+        },
+        "work_mode": {
+          "name": "Work mode",
+          "description": "Spino-only cleaning mode."
+        },
+        "sub_mode": {
+          "name": "Sub-modes",
+          "description": "Spino-only: list of APP_WORK values."
+        },
+        "operating_power": {
+          "name": "Operating power",
+          "description": "Spino-only."
+        },
+        "starttime": {
+          "name": "Start timestamp",
+          "description": "Spino-only: unix start time."
+        }
+      }
+    },
+    "refresh_tasks": {
+      "name": "Osveži opravila",
+      "description": "Znova pridobi vse urnike iz naprave."
+    },
+    "start_task": {
+      "name": "Zaženi opravilo",
+      "description": "Takoj zažene shranjen urnik (znano tudi kot „zaženi urnik“). Samo kosilnica — bazenski robot Spino nima enakovrednega ukaza."
+    }
+  },
+  "exceptions": {
+    "device_not_ready": {
+      "message": "Robot ni pripravljen."
+    },
+    "pause_failed": {
+      "message": "Neuspešna zaustavitev košnje."
+    },
+    "resume_failed": {
+      "message": "Neuspešno nadaljevanje košnje."
+    },
+    "start_failed": {
+      "message": "Neuspešen zagon košnje."
+    },
+    "dock_failed": {
+      "message": "Neuspešna vrnitev na polnilno postajo."
+    },
+    "dock_cancel_failed": {
+      "message": "Neuspešna zaustavitev vračanja na polnilno postajo."
+    },
+    "command_failed": {
+      "message": "Ukaza ni bilo možno poslati."
+    },
+    "api_limit_exceeded": {
+      "message": "Prekočena je bila omejitev API-ja."
+    },
+    "account_in_use": {
+      "message": "Vaš račun Mammotion je že aktiven v drugi seji. Odjavite se iz aplikacije Mammotion in poskusite znova."
+    },
+    "cloud_setup_failed": {
+      "message": "Povezava z oblakom Mammotion ni mogoča. Preverite omrežje in poskusite znova naložiti integracijo."
+    },
+    "task_not_found": {
+      "message": "Opravila {plan_id} ni mogoče najti na napravi. Osveži urnik in poskusi znova."
+    },
+    "start_task_unsupported_on_spino": {
+      "message": "Zagon urnika na zahtevo ni podprt na bazenskem robotu Spino — vdelana programska oprema ne ponuja ukaza za takojšen zagon shranjenih urnikov."
+    }
+  }
+}

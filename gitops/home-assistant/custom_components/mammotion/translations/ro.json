@@ -1,0 +1,1088 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Echipamentul este deja configurat",
+      "already_in_progress": "Procesul de configurare este deja în progres",
+      "no_devices_found": "Nu pot găsi niciun dispozitiv",
+      "no_devices_found_in_account": "În cont nu există dispozitive",
+      "bluetooth_and_account_mismatch": "Bluetooth dispozitiv nu a fost găsit în cont",
+      "no_longer_present": "Echipamentul nu mai este prezent",
+      "not_supported": "Dispozitivul nu este suportat",
+      "reconfigure_successful": "Reconfigurare reușită",
+      "api_limit_exceeded": "Limita de solicitări API a fost depășită. Vă rugăm să încercați din nou mai târziu.",
+      "account_in_use": "Contul dvs. Mammotion este deja activ într-o altă sesiune. Deconectați-vă din aplicația Mammotion și încercați din nou."
+    },
+    "error": {
+      "login_failed": "Autentificare eșuată. Verificați adresa de e-mail și parola contului, apoi încercați din nou.",
+      "cannot_connect": "Nu se poate conecta la cloud-ul Mammotion. Verificați datele de autentificare și rețeaua, apoi încercați din nou.",
+      "no_account_no_ble": "Nu au fost introduse datele contului și nu a fost găsit niciun dispozitiv Bluetooth. Introduceți datele de autentificare ale contului Mammotion sau configurați un dispozitiv Bluetooth."
+    },
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "Configurație{name}",
+        "data": {
+          "stay_connected_bluetooth": "Mențineți bluetooth-ul conectat"
+        }
+      },
+      "reconfigure": {
+        "data": {
+          "use_wifi": "Folosește Wi-Fi",
+          "account_name": "Email sau număr de cont Mammotion",
+          "password": "Parola contului Mammotion"
+        }
+      },
+      "user": {
+        "data": {
+          "address": "Dispozitiv",
+          "stay_connected_bluetooth": "Păstrează Bluetooth conectat"
+        },
+        "description": "Selectați mașina de tuns iarba"
+      },
+      "wifi": {
+        "data": {
+          "use_wifi": "Folosește Wi-Fi (debifează și trimite pentru a folosi Bluetooth)",
+          "account_name": "Email sau număr de cont Mammotion",
+          "password": "Parola contului Mammotion"
+        },
+        "title": "Conectează-te la Wi-Fi",
+        "description": "Introdu adresa de email sau id-ul contului Mammotion și parola"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "title": "Actualizarea configurației",
+          "stay_connected_bluetooth": "Mențineți bluetooth-ul conectat",
+          "prefer_ble_over_wifi": "Preferați Bluetooth față de Wi-Fi când este disponibil",
+          "movement_use_wifi": "Trimiteți comenzi de mișcare prin Wi-Fi",
+          "mow_path_fetch_enabled": "Activați descărcarea traseului de tuns (cloud)",
+          "full_map_fetch_enabled": "Activați descărcarea completă a hărții (cloud) — când este oprit, se descarcă doar numele zonelor"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "error_1_message": {
+        "name": "Ultima eroare"
+      },
+      "error_1_time": {
+        "name": "Ora ultimei erori"
+      },
+      "error_1_code": {
+        "name": "Codul ultimei erori"
+      },
+      "battery_percent": {
+        "name": "Acumulator"
+      },
+      "ble_rssi": {
+        "name": "BLE RSSI"
+      },
+      "camera_brightness": {
+        "name": "Luminozitatea camerei"
+      },
+      "wifi_rssi": {
+        "name": "Wi-Fi RSSI"
+      },
+      "mnet_rssi": {
+        "name": "Calitatea semnalului mobil"
+      },
+      "connect_type": {
+        "name": "Conexiune"
+      },
+      "gps_stars": {
+        "name": "Sateliți (Robot)"
+      },
+      "blade_height": {
+        "name": "Înălțimea lamelor"
+      },
+      "area": {
+        "name": "Suprafață"
+      },
+      "mowing_speed": {
+        "name": "Viteza de tundere"
+      },
+      "progress": {
+        "name": "Progres"
+      },
+      "total_time": {
+        "name": "Durata totală"
+      },
+      "elapsed_time": {
+        "name": "Timpul scurs"
+      },
+      "left_time": {
+        "name": "Timpul rămas"
+      },
+      "l1_satellites": {
+        "name": "Sateliți L1 (vedere în comun)"
+      },
+      "l2_satellites": {
+        "name": "Sateliți L2 (vedere în comun)"
+      },
+      "positioning_mode": {
+        "name": "Poziția RTK"
+      },
+      "position_type": {
+        "name": "Tipul de poziționare a dispozitivului",
+        "state": {
+          "AREA_BORDER_ON": "La perimetru",
+          "AREA_INSIDE": "În interiorul zonei",
+          "AREA_OUT": "În afara zonei",
+          "CHANNEL_AREA_OVERLAP": "Suprapunere zonă cale",
+          "CHANNEL_ON": "Pe cale",
+          "CHARGE_ON": "La stația de încărcare",
+          "DUMPING_AREA_INSIDE": "În zona de depozitare",
+          "DUMPING_OUTSIDE": "În afara zonei de depozitare",
+          "ABNORMAL_POSITIONING": "Eroare de poziție",
+          "NO_AREAS": "Nicio zonă definită",
+          "OBS_ON": "La obstacol",
+          "TURN_AREA_INSIDE": "În zona de întoarcere",
+          "VIRTUAL_INSIDE": "În zona virtuală"
+        }
+      },
+      "visual_positioning_status": {
+        "name": "Stare poziționare vizuală",
+        "state": {
+          "SIGNAL_NONE": "Niciunul",
+          "SIGNAL_INIT": "Inițializare",
+          "SIGNAL_GOOD": "Bun",
+          "SIGNAL_BAD": "Slab",
+          "SIGNAL_UNKNOWN": "Necunoscut"
+        }
+      },
+      "activity_mode": {
+        "name": "Tipul de activitate",
+        "state": {
+          "MODE_NOT_ACTIVE": "Inactiv",
+          "MODE_ONLINE": "Online",
+          "MODE_OFFLINE": "Offline",
+          "MODE_DISABLE": "Dezactivat",
+          "MODE_INITIALIZATION": "Inițializare",
+          "MODE_READY": "Pregătit",
+          "MODE_WORKING": "Lucrează",
+          "MODE_RETURNING": "Se întoarce",
+          "MODE_CHARGING": "Încărcare",
+          "MODE_UPDATING": "Actualizare",
+          "MODE_LOCK": "Blocat",
+          "MODE_PAUSE": "În pauză",
+          "MODE_MANUAL_MOWING": "Cosit manual",
+          "MODE_UPDATE_SUCCESS": "Actualizare reușită",
+          "MODE_OTA_UPGRADE_FAIL": "Actualizare eșuată",
+          "MODE_JOB_DRAW": "Desenare sarcină",
+          "MODE_OBSTACLE_DRAW": "Desenare obstacole",
+          "MODE_CHANNEL_DRAW": "Desenare canal",
+          "MODE_ERASER_DRAW": "Desenare radieră",
+          "MODE_EDIT_BOUNDARY": "Editare limită",
+          "MODE_LOCATION_ERROR": "Eroare de localizare",
+          "MODE_BOUNDARY_JUMP": "Limită depășită",
+          "MODE_CHARGING_PAUSE": "Încărcare în pauză",
+          "MODE_POWER_OFF": "Oprire"
+        }
+      },
+      "work_area": {
+        "name": "Locație curentă"
+      },
+      "maintenance_distance": {
+        "name": "Kilometraj total"
+      },
+      "maintenance_work_time": {
+        "name": "Durata sarcinii"
+      },
+      "maintenance_bat_cycles": {
+        "name": "Cicluri baterie",
+        "unit_of_measurement": "cicluri"
+      },
+      "blade_used_time": {
+        "name": "Timp de utilizare a lamei"
+      },
+      "blade_used_warn_time": {
+        "name": "Timp de avertizare uzură lamă"
+      },
+      "non_work_hours": {
+        "name": "Ore nelucrătoare"
+      },
+      "rtk_lora": {
+        "name": "Versiune LoRa"
+      },
+      "rtk_latitude": {
+        "name": "Latitudine"
+      },
+      "rtk_longitude": {
+        "name": "Longitudine"
+      },
+      "rtk_wifi_rssi": {
+        "name": "Wi-Fi RSSI"
+      },
+      "rtk_sats_num": {
+        "name": "Sateliți"
+      },
+      "position_mode": {
+        "name": "Mod de poziționare",
+        "state": {
+          "RTK_OVER_DATALINK": "Antenă prin DataLink",
+          "RTK_OVER_INTERNET": "Antenă prin Internet",
+          "INAVI_NET_RTK": "iNavi NetRTK",
+          "INAVI_RTK_BOX": "Cutie iNavi RTK",
+          "UNKNOWN": "Necunoscut"
+        }
+      },
+      "rtk_app_connect_type": {
+        "name": "Tip de conexiune",
+        "state": {
+          "UNKNOWN": "Necunoscut",
+          "CON_BLE": "BLE",
+          "CON_WIFI": "Wi-Fi"
+        }
+      },
+      "task_area_status": {
+        "name": "Zona de sarcină {name}",
+        "state": {
+          "NOT_STARTED": "Neînceput",
+          "WAITING": "În așteptare",
+          "MOWING": "Cosire",
+          "COMPLETE": "Finalizat",
+          "ABORTED": "Abandonat"
+        }
+      },
+      "spino_status": {
+        "name": "Stare",
+        "state": {
+          "UNKNOWN": "Necunoscut",
+          "IDLE": "Așteptare",
+          "PREPARE": "Pregătire",
+          "WAIT_WATER": "Umplere cu apă",
+          "WORKING": "Lucrează",
+          "PAUSE_GO_CHARGE": "Revine la încărcare (în pauză)",
+          "END_GO_CHARGE": "Revine la încărcare",
+          "CHARGING": "Încărcare",
+          "LEAVE_DOCK": "Părăsește stația",
+          "RECALLING": "Se întoarce"
+        }
+      },
+      "spino_work_mode": {
+        "name": "Mod de curățare",
+        "state": {
+          "UNKNOWN": "Necunoscut",
+          "RECHARGE": "Reîncărcare",
+          "AUTO": "Toate",
+          "FLOOR": "Fund",
+          "WALL": "Perete",
+          "ECO": "Eco",
+          "LINE": "Linia apei",
+          "CUSTOM": "Personalizat"
+        }
+      }
+    },
+    "button": {
+      "start_map_sync": {
+        "name": "Sincronizați harta"
+      },
+      "start_schedule_sync": {
+        "name": "Sincronizați programele"
+      },
+      "resync_rtk_dock": {
+        "name": "Sincronizați RTK și docul"
+      },
+      "release_from_dock": {
+        "name": "Detașare"
+      },
+      "emergency_nudge_forward": {
+        "name": "Un impuls de urgență înainte"
+      },
+      "emergency_nudge_left": {
+        "name": "Un impuls de urgență la stânga"
+      },
+      "emergency_nudge_right": {
+        "name": "Un impuls de urgență la dreapta"
+      },
+      "emergency_nudge_back": {
+        "name": "Un impuls de urgență înapoi"
+      },
+      "cancel_task": {
+        "name": "Anulează sarcina curentă"
+      },
+      "clear_all_mapdata": {
+        "name": "Curăță hărțile și numele zonelor"
+      },
+      "relocate_charging_station": {
+        "name": "Relocați stația de încărcare"
+      },
+      "restart_mower": {
+        "name": "Repornire mașina de tuns"
+      },
+      "spino_refresh_status": {
+        "name": "Reîmprospătează starea"
+      }
+    },
+    "switch": {
+      "area": {
+        "name": "Suprafață {name}"
+      },
+      "blade_status": {
+        "name": "Lame pornite/oprite"
+      },
+      "is_mow": {
+        "name": "Tundere pornită/oprită"
+      },
+      "is_dump": {
+        "name": "Descărcarea ierbii On/Off"
+      },
+      "is_edge": {
+        "name": "Taie marginile"
+      },
+      "rain_tactics": {
+        "name": "Detectare ploaie (tuns) Pornit/Oprit"
+      },
+      "rain_detection": {
+        "name": "Detectare ploaie (Cositor) Pornit/Oprit"
+      },
+      "side_led": {
+        "name": "LED lateral Pornit/Oprit"
+      },
+      "perimeter_first_on_off": {
+        "name": "Perimetrul întâi"
+      },
+      "schedule_updates": {
+        "name": "Activare/Dezactivare actualizări"
+      },
+      "bluetooth_enabled": {
+        "name": "Bluetooth"
+      },
+      "cloud_enabled": {
+        "name": "Cloud"
+      },
+      "manual_light": {
+        "name": "Lumină manuală Pornit/Oprit"
+      },
+      "night_light": {
+        "name": "Iluminare automată Pornit/Oprit"
+      },
+      "voice_on_off": {
+        "name": "Voce pornit/oprit"
+      },
+      "spino_buzzer": {
+        "name": "Avertizor sonor"
+      },
+      "spino_turbo_clean": {
+        "name": "Curățare turbo"
+      },
+      "spino_platform_cleaning": {
+        "name": "Curățarea platformei"
+      },
+      "spino_waterline_parking": {
+        "name": "Parcare la linia de apă"
+      }
+    },
+    "select": {
+      "channel_mode": {
+        "name": "Modul de tăiere",
+        "state": {
+          "single_grid": "Grilă simplă",
+          "double_grid": "Grila de șah",
+          "segment_grid": "Grilă mixtă/segmentată",
+          "no_grid": "Fără grilă"
+        }
+      },
+      "mowing_laps": {
+        "name": "Modul patrulă de graniță",
+        "state": {
+          "none": "Niciuna",
+          "one": "unu",
+          "two": "doi",
+          "three": "trei",
+          "four": "patru"
+        }
+      },
+      "obstacle_laps": {
+        "name": "Modul Secțiuni obstacol",
+        "state": {
+          "none": "Niciuna",
+          "one": "unu",
+          "two": "doi",
+          "three": "trei",
+          "four": "patru"
+        }
+      },
+      "border_mode": {
+        "name": "Ordinea de cosire",
+        "state": {
+          "border_first": "Întâi frontiera",
+          "grid_first": "Mai întâi grila"
+        }
+      },
+      "bypass_mode": {
+        "name": "Detectare obstacole",
+        "state": {
+          "direct_touch": "Oprit",
+          "slow_touch": "Atingere lentă",
+          "less_touch": "Mai puțin atins",
+          "no_touch": "Standard",
+          "sensitive": "Sensibil"
+        }
+      },
+      "cutting_angle_mode": {
+        "name": "Modul unghiului căii tăiate",
+        "state": {
+          "relative_angle": "Unghi relativ",
+          "absolute_angle": "Unghiul absolut",
+          "random_angle": "Unghi aleatoriu"
+        }
+      },
+      "traversal_mode": {
+        "name": "Mod de traversare",
+        "state": {
+          "direct": "Direct",
+          "follow_perimeter": "Urmărește perimetrul"
+        }
+      },
+      "turning_mode": {
+        "name": "Mod de întoarcere",
+        "state": {
+          "multipoint": "Întoarcere în mai multe puncte",
+          "zero_turn": "Întoarcere pe loc"
+        }
+      },
+      "cutter_mode": {
+        "name": "Viteza de tăiere",
+        "state": {
+          "normal": "Medie",
+          "slow": "Lentă",
+          "fast": "Rapidă"
+        }
+      },
+      "voice_gender": {
+        "name": "Genul vocii",
+        "state": {
+          "MAN": "Masculin",
+          "WOMAN": "Feminin"
+        }
+      },
+      "wildlife_safety": {
+        "name": "Siguranța faunei",
+        "state": {
+          "off": "Oprit",
+          "stop_mowing": "Oprire cosire",
+          "low_speed_mowing": "Cosire cu viteză redusă"
+        }
+      },
+      "spino_work_mode": {
+        "name": "Mod de curățare",
+        "state": {
+          "UNKNOWN": "Necunoscut",
+          "RECHARGE": "Reîncărcare",
+          "AUTO": "Toate",
+          "FLOOR": "Fund",
+          "WALL": "Perete",
+          "ECO": "Eco",
+          "LINE": "Linia apei",
+          "CUSTOM": "Personalizat"
+        }
+      }
+    },
+    "number": {
+      "voice_volume": {
+        "name": "Volumul vocii"
+      },
+      "start_progress": {
+        "name": "Progresul la start"
+      },
+      "blade_height": {
+        "name": "Înălțimea lamelor"
+      },
+      "working_speed": {
+        "name": "Viteza de lucru"
+      },
+      "cutting_angle": {
+        "name": "Unghiul de tăiere"
+      },
+      "path_spacing": {
+        "name": "Spațiere traiectorie"
+      },
+      "dumping_interval": {
+        "name": "Frecvența de dumping"
+      },
+      "toward_included_angle": {
+        "name": "Unghiul de trecere"
+      },
+      "map_offset_lat": {
+        "name": "Decalaj hartă latitudine"
+      },
+      "map_offset_lon": {
+        "name": "Decalaj hartă longitudine"
+      }
+    },
+    "device_tracker": {
+      "name": "Monitorizarea dispozitivului"
+    }
+  },
+  "selector": {
+    "border_mode": {
+      "options": {
+        "0": "Perimetrul întâi",
+        "1": "Mai întâi grila"
+      }
+    },
+    "ultra_wave": {
+      "options": {
+        "0": "Atingere directă",
+        "1": "Atingere lentă",
+        "2": "Atingere redusă",
+        "10": "Fără atingere",
+        "11": "Sensibil"
+      }
+    },
+    "channel_mode": {
+      "options": {
+        "0": "Grilă simplă",
+        "1": "Grila de șah",
+        "2": "Grilă mixtă/segmentată",
+        "3": "Fără grilă"
+      }
+    },
+    "rain_tactics": {
+      "options": {
+        "0": "Oprit",
+        "1": "Pornit"
+      }
+    },
+    "toward_mode": {
+      "options": {
+        "0": "Unghi relativ",
+        "1": "Unghi absolut",
+        "2": "Unghi aleatoriu"
+      }
+    },
+    "mowing_laps": {
+      "options": {
+        "0": "Niciuna",
+        "1": "O tură",
+        "2": "Două ture",
+        "3": "Trei ture",
+        "4": "Patru ture"
+      }
+    },
+    "obstacle_laps": {
+      "options": {
+        "0": "Niciuna",
+        "1": "O tură",
+        "2": "Două ture",
+        "3": "Trei ture",
+        "4": "Patru ture"
+      }
+    }
+  },
+  "services": {
+    "cancel_job": {
+      "name": "Anulează sarcina curentă",
+      "description": "Oprește fumătorul și șterge sarcina curentă."
+    },
+    "start_mow": {
+      "name": "Pornește urcarea",
+      "description": "Porniți operația de montare cu setări personalizate.",
+      "fields": {
+        "modify": {
+          "name": "Modificare sarcină existentă",
+          "description": "Dacă se modifică o sarcină existentă sau se pornește una nouă."
+        },
+        "is_mow": {
+          "name": "Se datorează",
+          "description": "Dacă tunderea este activă. (Yuka)."
+        },
+        "is_dump": {
+          "name": "Fac Dumping",
+          "description": "Dacă descărcarea ierbii este activă. (Yuka)."
+        },
+        "is_edge": {
+          "name": "Mat de margine",
+          "description": "Dacă modul de bordură este activ. (Yuka)."
+        },
+        "collect_grass_frequency": {
+          "name": "Frecvență colectare iarbă",
+          "description": "Frecvența de colectare a ierbii (în metri pătrați). (Yuka)."
+        },
+        "border_mode": {
+          "name": "Comanda Mow",
+          "description": "Ordinul căii de mormânt (primul sau grila întâi)."
+        },
+        "job_version": {
+          "name": "Versiune Job",
+          "description": "Versiunea postului."
+        },
+        "job_id": {
+          "name": "ID job",
+          "description": "ID Job"
+        },
+        "speed": {
+          "name": "Viteză",
+          "description": "Viteza mormântării."
+        },
+        "ultra_wave": {
+          "name": "Detectarea obstacolelor",
+          "description": "Modul de evitare a obstacolelor."
+        },
+        "channel_mode": {
+          "name": "Modul cale de tăiere",
+          "description": "Calea de tăiere (doar pentru zigzag, șescom, zigzag adaptiv sau perimetr)."
+        },
+        "channel_width": {
+          "name": "Lățimea căii",
+          "description": "Lățimea căii de cosit (în cm)."
+        },
+        "rain_tactics": {
+          "name": "Detectarea ploii",
+          "description": "Detectarea ploii."
+        },
+        "blade_height": {
+          "name": "Înălțime lamă",
+          "description": "Înălţimea lamei."
+        },
+        "toward": {
+          "name": "Unghiul de pornire a traiectoriei",
+          "description": "Direcţia de pornire pentru umăr."
+        },
+        "toward_included_angle": {
+          "name": "Unghiul de trecere",
+          "description": "La selectarea grilei schimbă al doilea unghi (implicit este de 90 de grade)."
+        },
+        "toward_mode": {
+          "name": "Mod unghi tăiat",
+          "description": "Direcţia glulară a muşchiului."
+        },
+        "mowing_laps": {
+          "name": "Perimetru Lapţi de portaj",
+          "description": "Numărul de robinete în jurul perimetrului zonei de umezire."
+        },
+        "obstacle_laps": {
+          "name": "Zonele fără urme",
+          "description": "Numărul de lacuri în jurul zonelor fără destinaţie."
+        },
+        "start_progress": {
+          "name": "Progres Start",
+          "description": "Progres de inceput procent."
+        },
+        "areas": {
+          "name": "Selecția zonei",
+          "description": "Lista zonelor care trebuie aruncate (reprezentate ca întregi)."
+        },
+        "plan_only": {
+          "name": "Doar planificare",
+          "description": "Generați planul de tuns fără a porni sarcina."
+        }
+      }
+    },
+    "start_stop_blades": {
+      "name": "Pornire sau oprire lame",
+      "description": "Porniți sau opriți lamele manual.",
+      "fields": {
+        "start_stop": {
+          "name": "Pornire sau oprire",
+          "description": "Dacă lamele sunt pornite sau oprite."
+        },
+        "blade_height": {
+          "name": "Înălțimea lamei",
+          "description": "Înălțimea lamei."
+        }
+      }
+    },
+    "set_non_work_hours": {
+      "name": "Setați orele nelucrătoare",
+      "description": "Setați orele când mașina de tuns nu lucrează.",
+      "fields": {
+        "start_time": {
+          "name": "Ora de început",
+          "description": "Ora de început a orelor nelucrătoare."
+        },
+        "end_time": {
+          "name": "Ora de sfârșit",
+          "description": "Ora de sfârșit a orelor nelucrătoare."
+        }
+      }
+    },
+    "set_blade_warning_time": {
+      "name": "Setați timpul de avertizare al lamei",
+      "description": "Setați timpul de avertizare pentru înlocuirea lamei în ore.",
+      "fields": {
+        "hours": {
+          "name": "Ore",
+          "description": "Pragul de avertizare în ore înainte de înlocuirea recomandată a lamei."
+        }
+      }
+    },
+    "reset_blade_time": {
+      "name": "Resetați timpul lamei",
+      "description": "Resetați contorul de timp de utilizare a lamei."
+    },
+    "get_map_data": {
+      "name": "Obțineți datele hărții",
+      "description": "Returnează datele brute ale hărții (zone, plăci SVG, nume de zone) pentru utilizare cu cardul de hartă SVG.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitate",
+          "description": "Orice entitate Mammotion aparținând dispozitivului."
+        }
+      }
+    },
+    "svg_add": {
+      "name": "Adăugați placă SVG",
+      "description": "Trimite o nouă placă SVG pe harta dispozitivului. Returnează hash-ul atribuit de dispozitiv.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitate",
+          "description": "Orice entitate Mammotion aparținând dispozitivului."
+        },
+        "area_hash": {
+          "name": "Hash zonă",
+          "description": "Hash-ul zonei de cosit principale."
+        },
+        "svg_data": {
+          "name": "Date SVG",
+          "description": "Markup SVG brut de afișat pe hartă."
+        },
+        "svg_file_name": {
+          "name": "Nume fișier",
+          "description": "Numele fișierului stocat pe dispozitiv (implicit: pattern.svg)."
+        },
+        "scale": {
+          "name": "Scară",
+          "description": "Factor de scală uniform (1,0 = fără scalare)."
+        },
+        "rotate": {
+          "name": "Rotație",
+          "description": "Rotație în radiani (CCW-pozitiv în cadrul ENU al dispozitivului)."
+        },
+        "base_width_m": {
+          "name": "Lățime (m)",
+          "description": "Lățimea fizică a unei unități de placă în metri (2,5 pentru Luba 1/Yuka, 4,0 pentru Luba 2)."
+        },
+        "base_height_m": {
+          "name": "Înălțime (m)",
+          "description": "Înălțimea fizică a unei unități de placă în metri."
+        },
+        "x_move": {
+          "name": "Poziție X",
+          "description": "Înlocuire coordonată X (metri). Implicit: centroidul zonei."
+        },
+        "y_move": {
+          "name": "Poziție Y",
+          "description": "Înlocuire coordonată Y (metri). Implicit: centroidul zonei."
+        }
+      }
+    },
+    "svg_update": {
+      "name": "Actualizați placă SVG",
+      "description": "Înlocuiește o placă SVG existentă pe harta dispozitivului. Utilizați device_hash returnat de svg_add.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitate",
+          "description": "Orice entitate Mammotion aparținând dispozitivului."
+        },
+        "device_hash": {
+          "name": "Hash dispozitiv",
+          "description": "Hash atribuit de dispozitiv când placa a fost adăugată prima dată."
+        },
+        "area_hash": {
+          "name": "Hash zonă",
+          "description": "Hash-ul zonei de cosit principale."
+        },
+        "svg_data": {
+          "name": "Date SVG",
+          "description": "Markup SVG actualizat."
+        },
+        "svg_file_name": {
+          "name": "Nume fișier",
+          "description": "Numele fișierului stocat pe dispozitiv."
+        },
+        "scale": {
+          "name": "Scară",
+          "description": "Factor de scală uniform."
+        },
+        "rotate": {
+          "name": "Rotație",
+          "description": "Rotație în radiani (CCW-pozitiv)."
+        },
+        "base_width_m": {
+          "name": "Lățime (m)",
+          "description": "Lățimea fizică a unei unități de placă în metri."
+        },
+        "base_height_m": {
+          "name": "Înălțime (m)",
+          "description": "Înălțimea fizică a unei unități de placă în metri."
+        },
+        "x_move": {
+          "name": "Poziție X",
+          "description": "Înlocuire coordonată X (metri)."
+        },
+        "y_move": {
+          "name": "Poziție Y",
+          "description": "Înlocuire coordonată Y (metri)."
+        }
+      }
+    },
+    "svg_delete": {
+      "name": "Ștergeți placă SVG",
+      "description": "Elimină o placă SVG din harta dispozitivului prin hash-ul atribuit de dispozitiv.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitate",
+          "description": "Orice entitate Mammotion aparținând dispozitivului."
+        },
+        "device_hash": {
+          "name": "Hash dispozitiv",
+          "description": "Hash atribuit de dispozitiv când placa a fost adăugată."
+        },
+        "area_hash": {
+          "name": "Hash zonă",
+          "description": "Hash-ul zonei de cosit principale."
+        }
+      }
+    },
+    "rename_task": {
+      "name": "Redenumește sarcina",
+      "description": "Redenumește un program existent (cositoare sau robot piscină). Țintește entitatea butonului sarcinii.",
+      "fields": {
+        "name": {
+          "name": "Nume nou",
+          "description": "New display name for the task."
+        }
+      }
+    },
+    "set_task_enabled": {
+      "name": "Activează / dezactivează sarcina",
+      "description": "Comută indicatorul de activare al programului fără a-l șterge.",
+      "fields": {
+        "enabled": {
+          "name": "Activat",
+          "description": "True to enable the schedule, false to disable it."
+        }
+      }
+    },
+    "delete_task": {
+      "name": "Șterge sarcina",
+      "description": "Șterge definitiv programul."
+    },
+    "copy_task": {
+      "name": "Copiază sarcina",
+      "description": "Duplică programul cu un id nou. Fără nume: 'Copy-N'.",
+      "fields": {
+        "name": {
+          "name": "Nume nou",
+          "description": "Override the auto-generated 'Copy-N' name."
+        }
+      }
+    },
+    "edit_task": {
+      "name": "Editează sarcina",
+      "description": "Modifică un subset al câmpurilor programului.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule is active."
+        },
+        "weeks": {
+          "name": "Weekdays",
+          "description": "List of weekday integers (0 = Sunday … 6 = Saturday) the schedule runs on."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "HH:MM (mower only)."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "HH:MM (mower only)."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "YYYY-MM-DD."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "YYYY-MM-DD."
+        },
+        "trigger_type": {
+          "name": "Trigger type",
+          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+        },
+        "day": {
+          "name": "Day interval",
+          "description": "Interval in days when trigger_type is 1 (DAY)."
+        },
+        "knife_height": {
+          "name": "Cut height",
+          "description": "Mower-only blade height in millimetres."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "Mower: driving speed (float). Spino: fixed32 speed value (int)."
+        },
+        "edge_mode": {
+          "name": "Edge mode",
+          "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
+        },
+        "route_angle": {
+          "name": "Route angle",
+          "description": "Mower-only: mowing pattern angle 0–179 degrees."
+        },
+        "route_spacing": {
+          "name": "Route spacing",
+          "description": "Mower-only: spacing between mow lines in cm."
+        },
+        "zone_hashs": {
+          "name": "Zone hashes",
+          "description": "Mower-only: list of area hashes (fixed64) covered by this schedule."
+        },
+        "work_mode": {
+          "name": "Work mode",
+          "description": "Spino-only: 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
+        },
+        "sub_mode": {
+          "name": "Sub-modes",
+          "description": "Spino-only: list of APP_WORK values for multi-stage cleaning."
+        },
+        "operating_power": {
+          "name": "Operating power",
+          "description": "Spino-only: suction power (fixed32 int)."
+        },
+        "starttime": {
+          "name": "Start timestamp",
+          "description": "Spino-only: unix timestamp (seconds) for the start of the cleaning session."
+        }
+      }
+    },
+    "create_task": {
+      "name": "Creează sarcină",
+      "description": "Creează un program nou pe dispozitiv.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Display name for the new schedule."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule starts enabled."
+        },
+        "weeks": {
+          "name": "Weekdays",
+          "description": "List of weekday integers (0 = Sunday … 6 = Saturday)."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "HH:MM (mower)."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "HH:MM (mower)."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "YYYY-MM-DD."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "YYYY-MM-DD."
+        },
+        "trigger_type": {
+          "name": "Trigger type",
+          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+        },
+        "day": {
+          "name": "Day interval",
+          "description": "Interval in days for trigger_type = 1."
+        },
+        "knife_height": {
+          "name": "Cut height",
+          "description": "Mower-only blade height in millimetres."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "Mower or Spino speed."
+        },
+        "edge_mode": {
+          "name": "Edge mode",
+          "description": "Mower-only."
+        },
+        "route_angle": {
+          "name": "Route angle",
+          "description": "Mower-only."
+        },
+        "route_spacing": {
+          "name": "Route spacing",
+          "description": "Mower-only."
+        },
+        "zone_hashs": {
+          "name": "Zone hashes",
+          "description": "Mower-only: list of area hashes covered."
+        },
+        "work_mode": {
+          "name": "Work mode",
+          "description": "Spino-only cleaning mode."
+        },
+        "sub_mode": {
+          "name": "Sub-modes",
+          "description": "Spino-only: list of APP_WORK values."
+        },
+        "operating_power": {
+          "name": "Operating power",
+          "description": "Spino-only."
+        },
+        "starttime": {
+          "name": "Start timestamp",
+          "description": "Spino-only: unix start time."
+        }
+      }
+    },
+    "refresh_tasks": {
+      "name": "Reîmprospătează sarcinile",
+      "description": "Reia toate programele de pe dispozitiv."
+    },
+    "start_task": {
+      "name": "Pornește sarcina",
+      "description": "Pornește imediat un program stocat (cunoscut și ca „pornește programul”). Doar pentru cositoare — robotul de piscină Spino nu are o comandă echivalentă."
+    }
+  },
+  "exceptions": {
+    "device_not_ready": {
+      "message": "Dispozitivul nu este pregătit."
+    },
+    "pause_failed": {
+      "message": "Nu s-a reușit punerea în pauză a mașinii de tuns iarba."
+    },
+    "resume_failed": {
+      "message": "Nu s-a reușit reluarea activității mașinii de tuns iarba."
+    },
+    "start_failed": {
+      "message": "Nu s-a reușit pornirea mașinii de tuns iarba."
+    },
+    "dock_failed": {
+      "message": "Nu s-a reușit trimiterea cositoarei la doc."
+    },
+    "dock_cancel_failed": {
+      "message": "Nu a reușit să oprească, când se întorcea la doc."
+    },
+    "command_failed": {
+      "message": "Nu s-a reușit trimiterea comenzii către mașina de tuns iarba."
+    },
+    "api_limit_exceeded": {
+      "message": "Limita de solicitări API a fost depăşită."
+    },
+    "account_in_use": {
+      "message": "Contul dvs. Mammotion este deja activ într-o altă sesiune. Deconectați-vă din aplicația Mammotion și încercați din nou."
+    },
+    "cloud_setup_failed": {
+      "message": "Nu se poate conecta la cloud-ul Mammotion. Verificați rețeaua și încercați să reîncărcați integrarea."
+    },
+    "task_not_found": {
+      "message": "Sarcina {plan_id} nu a fost găsită pe dispozitiv. Reîmprospătează programul și încearcă din nou."
+    },
+    "start_task_unsupported_on_spino": {
+      "message": "Pornirea unui program la cerere nu este acceptată pe robotul de piscină Spino — firmware-ul nu oferă o comandă de execuție imediată pentru programele stocate."
+    }
+  }
+}

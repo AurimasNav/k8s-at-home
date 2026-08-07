@@ -1,0 +1,774 @@
+cancel_job:
+  target:
+    entity:
+      integration: mammotion
+      domain: lawn_mower
+start_mow:
+  target:
+    entity:
+      integration: mammotion
+      domain: lawn_mower
+  fields:
+    modify:
+      example: true
+      default: false
+      required: false
+      selector:
+        boolean:
+    is_mow:
+      example: true
+      default: true
+      required: false
+      selector:
+        boolean:
+    is_dump:
+      example: true
+      default: true
+      required: false
+      selector:
+        boolean:
+    is_edge:
+      example: false
+      default: false
+      required: false
+      selector:
+        boolean:
+    collect_grass_frequency:
+      example: 10
+      default: 10
+      required: false
+      selector:
+        number:
+          min: 5
+          max: 100
+          unit_of_measurement: "m²"
+    border_mode:
+      example: "0"
+      default: "0"
+      required: false
+      selector:
+        select:
+          translation_key: "border_mode"
+          options:
+            - "0"
+            - "1"
+    job_version:
+      example: 0
+      default: 0
+      required: false
+      selector:
+        number:
+    job_id:
+      example: 0
+      default: 0
+      required: false
+      selector:
+        number:
+    speed:
+      example: 0.3
+      default: 0.3
+      required: false
+      selector:
+        number:
+          min: 0.2
+          max: 1.2
+          step: 0.1
+          mode: box
+          unit_of_measurement: "m/s"
+    ultra_wave:
+      example: "2"
+      default: "2"
+      selector:
+        select:
+          translation_key: "ultra_wave"
+          options:
+            - "0"
+            - "1"
+            - "2"
+            - "10"
+            - "11"
+      required: false
+    channel_mode:
+      example: "0"
+      default: "0"
+      required: false
+      selector:
+        select:
+          translation_key: "channel_mode"
+          options:
+            - "0"
+            - "1"
+            - "2"
+            - "3"
+    channel_width:
+      example: 25
+      default: 25
+      required: false
+      selector:
+        number:
+          min: 5
+          max: 35
+    rain_tactics:
+      example: "1"
+      default: "1"
+      required: false
+      selector:
+        select:
+          translation_key: "rain_tactics"
+          options:
+            - "0"
+            - "1"
+    blade_height:
+      example: 0
+      default: 25
+      required: false
+      selector:
+        number:
+          min: 15
+          max: 100
+          step: 5
+          unit_of_measurement: "mm"
+    toward:
+      example: 0
+      default: 0
+      required: false
+      selector:
+        number:
+          min: -180
+          max: 180
+          unit_of_measurement: degrees
+    toward_included_angle:
+      example: 0
+      default: 0
+      required: false
+      selector:
+        number:
+          min: -180
+          max: 180
+          unit_of_measurement: degrees
+    toward_mode:
+      example: "0"
+      default: "0"
+      selector:
+        select:
+          translation_key: "toward_mode"
+          options:
+            - "0"
+            - "1"
+            - "2"
+      required: false
+    mowing_laps:
+      example: "1"
+      default: "1"
+      selector:
+        select:
+          translation_key: "mowing_laps"
+          options:
+            - "0"
+            - "1"
+            - "2"
+            - "3"
+            - "4"
+      required: false
+    obstacle_laps:
+      example: "1"
+      default: "1"
+      selector:
+        select:
+          translation_key: "obstacle_laps"
+          options:
+            - "0"
+            - "1"
+            - "2"
+            - "3"
+            - "4"
+      required: false
+    start_progress:
+      example: 0
+      default: 0
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    areas:
+      required: false
+      selector:
+        entity:
+          multiple: true
+          integration: mammotion
+          domain: switch
+    plan_only:
+      required: false
+      default: false
+      selector:
+        boolean:
+start_stop_blades:
+  target:
+    entity:
+      integration: mammotion
+      domain: lawn_mower
+  fields:
+    start_stop:
+      example: true
+      default: true
+      required: true
+      selector:
+        boolean:
+    blade_height:
+      example: 0
+      default: 25
+      required: false
+      selector:
+        number:
+          min: 15
+          max: 100
+          step: 5
+          unit_of_measurement: "mm"
+set_non_work_hours:
+  target:
+    entity:
+      integration: mammotion
+      domain: lawn_mower
+  fields:
+    start_time:
+      example: "09:00"
+      default: "09:00"
+      required: true
+      selector:
+        time:
+    end_time:
+      example: "17:00"
+      default: "17:00"
+      required: true
+      selector:
+        time:
+set_blade_warning_time:
+  target:
+    entity:
+      integration: mammotion
+      domain: lawn_mower
+  fields:
+    hours:
+      example: 50
+      default: 50
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 9999
+          unit_of_measurement: "h"
+reset_blade_time:
+  target:
+    entity:
+      integration: mammotion
+      domain: lawn_mower
+
+get_map_data:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: mammotion
+
+svg_add:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: mammotion
+    area_hash:
+      required: true
+      example: 123456789
+      selector:
+        number:
+          mode: box
+    svg_data:
+      required: true
+      example: "<svg>...</svg>"
+      selector:
+        text:
+          multiline: true
+    svg_file_name:
+      required: false
+      default: "pattern.svg"
+      example: "pattern.svg"
+      selector:
+        text:
+    scale:
+      required: false
+      default: 1.0
+      example: 1.0
+      selector:
+        number:
+          min: 0.1
+          max: 10.0
+          step: 0.01
+          mode: box
+    rotate:
+      required: false
+      default: 0.0
+      example: 0.0
+      selector:
+        number:
+          min: -3.14159
+          max: 3.14159
+          step: 0.001
+          mode: box
+          unit_of_measurement: "rad"
+    base_width_m:
+      required: false
+      default: 2.5
+      example: 2.5
+      selector:
+        number:
+          min: 0.1
+          max: 20.0
+          step: 0.1
+          mode: box
+          unit_of_measurement: "m"
+    base_height_m:
+      required: false
+      default: 2.5
+      example: 2.5
+      selector:
+        number:
+          min: 0.1
+          max: 20.0
+          step: 0.1
+          mode: box
+          unit_of_measurement: "m"
+    x_move:
+      required: false
+      example: 0.0
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "m"
+    y_move:
+      required: false
+      example: 0.0
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "m"
+
+svg_update:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: mammotion
+    device_hash:
+      required: true
+      example: 987654321
+      selector:
+        number:
+          mode: box
+    area_hash:
+      required: true
+      example: 123456789
+      selector:
+        number:
+          mode: box
+    svg_data:
+      required: true
+      example: "<svg>...</svg>"
+      selector:
+        text:
+          multiline: true
+    svg_file_name:
+      required: false
+      default: "pattern.svg"
+      selector:
+        text:
+    scale:
+      required: false
+      default: 1.0
+      selector:
+        number:
+          min: 0.1
+          max: 10.0
+          step: 0.01
+          mode: box
+    rotate:
+      required: false
+      default: 0.0
+      selector:
+        number:
+          min: -3.14159
+          max: 3.14159
+          step: 0.001
+          mode: box
+          unit_of_measurement: "rad"
+    base_width_m:
+      required: false
+      default: 2.5
+      selector:
+        number:
+          min: 0.1
+          max: 20.0
+          step: 0.1
+          mode: box
+          unit_of_measurement: "m"
+    base_height_m:
+      required: false
+      default: 2.5
+      selector:
+        number:
+          min: 0.1
+          max: 20.0
+          step: 0.1
+          mode: box
+          unit_of_measurement: "m"
+    x_move:
+      required: false
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "m"
+    y_move:
+      required: false
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "m"
+
+svg_delete:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: mammotion
+    device_hash:
+      required: true
+      example: 987654321
+      selector:
+        number:
+          mode: box
+    area_hash:
+      required: true
+      example: 123456789
+      selector:
+        number:
+          mode: box
+# === Task / schedule CRUD =================================================
+# Modify ops (rename / set_task_enabled / delete / copy / edit) target an
+# existing task button entity (mower or Spino).  Create and refresh target
+# any entity belonging to the device — typically the lawn_mower or vacuum.
+
+rename_task:
+  target:
+    entity:
+      integration: mammotion
+      domain: button
+  fields:
+    name:
+      required: true
+      example: "Front lawn morning"
+      selector:
+        text:
+
+set_task_enabled:
+  target:
+    entity:
+      integration: mammotion
+      domain: button
+  fields:
+    enabled:
+      required: true
+      example: true
+      selector:
+        boolean:
+
+delete_task:
+  target:
+    entity:
+      integration: mammotion
+      domain: button
+
+copy_task:
+  target:
+    entity:
+      integration: mammotion
+      domain: button
+  fields:
+    name:
+      required: false
+      example: "Copy of front lawn"
+      selector:
+        text:
+
+edit_task:
+  target:
+    entity:
+      integration: mammotion
+      domain: button
+  fields:
+    name:
+      required: false
+      selector:
+        text:
+    enabled:
+      required: false
+      selector:
+        boolean:
+    weeks:
+      required: false
+      example: "[1, 2, 3, 4, 5]"
+      selector:
+        object:
+    start_time:
+      required: false
+      example: "07:30"
+      selector:
+        text:
+    end_time:
+      required: false
+      example: "09:00"
+      selector:
+        text:
+    start_date:
+      required: false
+      example: "2026-06-01"
+      selector:
+        text:
+    end_date:
+      required: false
+      example: "2026-08-31"
+      selector:
+        text:
+    trigger_type:
+      required: false
+      example: 0
+      selector:
+        number:
+          min: 0
+          max: 3
+          mode: box
+    day:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          mode: box
+    # --- Mower-only fields -----------------------------------------------
+    knife_height:
+      required: false
+      example: 60
+      selector:
+        number:
+          min: 20
+          max: 100
+          unit_of_measurement: "mm"
+          mode: box
+    speed:
+      required: false
+      example: 0.4
+      selector:
+        number:
+          min: 0
+          mode: box
+    edge_mode:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 2
+          mode: box
+    route_angle:
+      required: false
+      example: 0
+      selector:
+        number:
+          min: 0
+          max: 179
+          mode: box
+    route_spacing:
+      required: false
+      example: 25
+      selector:
+        number:
+          min: 0
+          mode: box
+    zone_hashs:
+      required: false
+      example: "[123456789, 987654321]"
+      selector:
+        object:
+    # --- Spino-only fields -----------------------------------------------
+    work_mode:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 6
+          mode: box
+    sub_mode:
+      required: false
+      example: "[2, 3]"
+      selector:
+        object:
+    operating_power:
+      required: false
+      example: 50
+      selector:
+        number:
+          min: 0
+          mode: box
+    starttime:
+      required: false
+      example: 1717000000
+      selector:
+        number:
+          min: 0
+          mode: box
+
+create_task:
+  target:
+    entity:
+      integration: mammotion
+  fields:
+    name:
+      required: true
+      example: "Daily lawn"
+      selector:
+        text:
+    enabled:
+      required: false
+      default: true
+      selector:
+        boolean:
+    weeks:
+      required: false
+      example: "[1, 2, 3, 4, 5]"
+      selector:
+        object:
+    start_time:
+      required: false
+      example: "07:30"
+      selector:
+        text:
+    end_time:
+      required: false
+      example: "09:00"
+      selector:
+        text:
+    start_date:
+      required: false
+      example: "2026-06-01"
+      selector:
+        text:
+    end_date:
+      required: false
+      example: "2026-08-31"
+      selector:
+        text:
+    trigger_type:
+      required: false
+      example: 0
+      selector:
+        number:
+          min: 0
+          max: 3
+          mode: box
+    day:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          mode: box
+    knife_height:
+      required: false
+      example: 60
+      selector:
+        number:
+          min: 20
+          max: 100
+          unit_of_measurement: "mm"
+          mode: box
+    speed:
+      required: false
+      example: 0.4
+      selector:
+        number:
+          min: 0
+          mode: box
+    edge_mode:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 2
+          mode: box
+    route_angle:
+      required: false
+      example: 0
+      selector:
+        number:
+          min: 0
+          max: 179
+          mode: box
+    route_spacing:
+      required: false
+      example: 25
+      selector:
+        number:
+          min: 0
+          mode: box
+    zone_hashs:
+      required: false
+      example: "[123456789, 987654321]"
+      selector:
+        object:
+    work_mode:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 6
+          mode: box
+    sub_mode:
+      required: false
+      example: "[2, 3]"
+      selector:
+        object:
+    operating_power:
+      required: false
+      example: 50
+      selector:
+        number:
+          min: 0
+          mode: box
+    starttime:
+      required: false
+      example: 1717000000
+      selector:
+        number:
+          min: 0
+          mode: box
+
+refresh_tasks:
+  target:
+    entity:
+      integration: mammotion
+
+# Run a stored mower schedule immediately ("start task" / "start schedule").
+# Mower-only — Spino has no execute-now command in the proto; the service
+# will raise a translated error if targeted at a Spino task entity.
+start_task:
+  target:
+    entity:
+      integration: mammotion
+      domain: button
