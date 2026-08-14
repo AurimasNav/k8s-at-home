@@ -4,6 +4,16 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
 
 ## Sungrow / energy
 
+- [ ] **The vendored iHomeManager map comes from a retired project.**
+      `Jam3s97/sungrow_ihomemanager` is archived in favour of
+      [`TCzerny/ha-modbus-manager`](https://github.com/TCzerny/ha-modbus-manager)
+      (its issue #12), which polls inverter + iHM through one integration.
+      Ours works and is vendored read-only, so there is no urgency — but any
+      future fixes will land there, not upstream of what we copied.
+      Our charger-power find is reported there as
+      [issue #86](https://github.com/TCzerny/ha-modbus-manager/issues/86);
+      offered a PR into their `sungrow_ihomemanager.yaml` if wanted.
+
 - [x] ~~Sweep the iHomeManager's register map~~ **Done 2026-08-14.** The useful
       map is at `192.168.1.168:502` **unit 247** (registers 8000–8600, the iHM's
       own EMS map): live meter power, per-phase powers/voltages, lifetime grid
