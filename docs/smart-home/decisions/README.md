@@ -2,7 +2,9 @@
 
 Lightweight decision records (ADR-style) for smart-home / IoT choices in this
 homelab — the "why", not just the "how". Setup/how-to docs live one level up in
-[`docs/`](../..) (e.g. [Matter-over-Thread setup](../../matter-thread-setup.md)).
+[`docs/`](../..) (e.g. [Matter-over-Thread setup](../../matter-thread-setup.md)),
+and component-choice guidance in
+[Sensor selection](../sensor-selection.md).
 
 ## Format
 

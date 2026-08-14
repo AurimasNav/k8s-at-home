@@ -2,6 +2,8 @@
 
 This directory contains the ESPHome configurations for all microcontrollers (ESP32 family) deployed in the smart home.
 
+Before picking a sensor for a new node, see [Sensor selection — parts to avoid and what to use instead](../../../docs/smart-home/sensor-selection.md).
+
 ## Directory Layout
 
 - **`boards/`**: Reusable hardware profiles (chip variant, board model, framework settings, any onboard peripherals like the T-CAN485's RS485 transceiver enable pins).
