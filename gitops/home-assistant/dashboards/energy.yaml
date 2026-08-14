@@ -51,6 +51,50 @@ views:
     - entity: sensor.running_state
       name: Inverter state
 
+  - type: entities
+    title: EV charger
+    entities:
+    - entity: sensor.charger_status
+      name: Status
+    - entity: sensor.charger_mode
+      name: Mode
+    - entity: binary_sensor.charger_enabled
+      name: Enabled
+    - entity: binary_sensor.charger_grid_power_draw
+      name: Grid power draw allowed
+    - type: section
+      label: Estimated (no local meter on the wallbox)
+    - entity: sensor.ev_charging_power_estimate
+      name: Charging power (est.)
+    - entity: sensor.ev_charging_energy_today
+      name: Charged today (est.)
+
+  # Supports the open decision on which meter should feed the Energy dashboard:
+  # the iHomeManager sits at the meter, the inverter only sees its own side.
+  - type: entities
+    title: Meter cross-check — iHomeManager vs inverter
+    entities:
+    - entity: sensor.ihm_meter_power_raw
+      name: "iHM grid (+ import / - export)"
+    - entity: sensor.export_power_raw
+      name: "Inverter grid (+ export / - import)"
+    - type: section
+      label: Lifetime counters
+    - entity: sensor.ihm_grid_import_energy
+      name: iHM imported
+    - entity: sensor.total_imported_energy
+      name: Inverter imported
+    - entity: sensor.ihm_grid_export_energy
+      name: iHM exported
+    - entity: sensor.total_exported_energy
+      name: Inverter exported
+    - type: section
+      label: Load
+    - entity: sensor.ihm_load_power
+      name: iHM house load
+    - entity: sensor.load_power
+      name: Inverter house load
+
   - type: horizontal-stack
     cards:
     - type: energy-self-sufficiency-gauge
@@ -86,6 +130,19 @@ views:
       The graphs and table are period totals in kWh, controlled by the date
       picker at the top. The live power rows above are instantaneous watts, so
       they will not add up to the graphs.
+
+      **EV charging power/energy are estimates, not measurements.** The wallbox
+      exposes no charging power locally, so this is house load minus the
+      pre-charge baseline while the charger reports *Charging*. A big appliance
+      running at the same time gets counted as car charging. Status, mode and
+      enabled are real readings from the iHomeManager.
+
+      **Meter cross-check** — the iHomeManager sits at the grid meter, the
+      inverter only sees its own connection, so the two disagree by whatever
+      the inverter cannot see. The Energy dashboard still uses the inverter's
+      figures; the rows are there to judge whether to switch before changing
+      anything, since switching sources mid-history skews self-sufficiency and
+      cost.
 
 - title: Heat pump
   path: heatpump

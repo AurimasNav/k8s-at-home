@@ -1,0 +1,81 @@
+# EV charging power/energy ESTIMATE.
+#
+# The AC011E exposes no charging power or session energy locally: its own :516 is
+# SSL and reserved for the iHomeManager, and the iHM's unit-247 map carries only
+# charger status/mode/enable. Charging therefore shows up only inside
+# sensor.ihm_load_power, mixed with the rest of the house.
+#
+# This derives the car's draw as (load power - pre-charge baseline) while the
+# charger reports Charging. EV charging is a large, steady load, so household
+# fluctuation is noise against it - but a big concurrent appliance IS attributed
+# to the car. Treat these as indicative, not billing-grade; replace with real
+# measurement if the wallbox ever gets a local RS485 path.
+
+input_number:
+  ev_baseline_load:
+    name: EV baseline house load
+    min: 0
+    max: 30000
+    step: 1
+    unit_of_measurement: W
+    icon: mdi:home-lightning-bolt-outline
+
+template:
+  - sensor:
+      - name: EV charging power estimate
+        unique_id: ev_charging_power_estimate
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        icon: mdi:ev-station
+        availability: >-
+          {{ states('sensor.ihm_load_power') | is_number
+             and states('sensor.charger_status') not in ['unknown','unavailable'] }}
+        state: >-
+          {% if states('sensor.charger_status') == 'Charging' %}
+            {{ [ states('sensor.ihm_load_power') | float(0)
+                 - states('input_number.ev_baseline_load') | float(0), 0 ] | max | round(0) }}
+          {% else %}
+            0
+          {% endif %}
+
+sensor:
+  - platform: integration
+    source: sensor.ev_charging_power_estimate
+    name: EV charging energy estimate
+    unique_id: ev_charging_energy_estimate
+    unit_prefix: k
+    unit_time: h
+    method: left
+    max_sub_interval:
+      minutes: 1
+
+utility_meter:
+  ev_charging_energy_daily:
+    name: EV charging energy today
+    source: sensor.ev_charging_energy_estimate
+    cycle: daily
+
+automation:
+  # Keep a rolling pre-charge baseline: whenever the car is NOT drawing, the
+  # current house load is what charging will later be measured against.
+  - id: ev_charger_track_baseline_load
+    alias: EV charger - track pre-charge baseline load
+    triggers:
+      - trigger: time_pattern
+        minutes: /1
+    conditions:
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: sensor.charger_status
+            state: Charging
+      - condition: template
+        value_template: "{{ states('sensor.ihm_load_power') | is_number }}"
+    actions:
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.ev_baseline_load
+        data:
+          value: "{{ states('sensor.ihm_load_power') | float(0) | round(0) }}"
+    mode: single

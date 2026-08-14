@@ -27,6 +27,14 @@ configMapGenerator:
 - name: ha-hikvision-automations
   files:
   - automations/hikvision.yaml
+- name: ha-ev-charger-automations
+  files:
+  - automations/ev-charger.yaml
+# package, not an automations file: ships input_number/integration/utility_meter
+# helpers alongside its own automation
+- name: ha-ev-charger-package
+  files:
+  - packages/ev_charger.yaml
 # package, not an automations file: ships a utility_meter helper too
 - name: ha-nibe-package
   files:

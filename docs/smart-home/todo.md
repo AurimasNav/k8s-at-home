@@ -21,13 +21,38 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
       days against the inverter's `total_imported_energy` /
       `total_exported_energy` before switching the Energy dashboard source —
       switching needs care to avoid double-counting.
-- [ ] **EV charger telemetry beyond status.** The iHM map exposes charger
-      status/mode/enable (`8551/8047/8048`) but no charging power or session
-      energy; charging shows up inside `ihm_load_power`. The charger's own
-      `:516` stays SSL/iHM-reserved (re-verified 2026-08-14; no other ports
-      open). If power/energy per session is wanted, next candidates are the
-      undocumented live regions found on unit 1 (fc3/fc4 29800–36600, unmapped)
-      or **evcc**.
+- [ ] **EV charger real power/energy — needs a local RS485 path.** Status/mode/
+      enable come from the iHM (`8551/8047/8048`); charging power and session
+      energy are **not exposed anywhere locally**. Established 2026-08-14:
+      - charger `:516` only (SSL, iHM-reserved); every other port actively
+        *refused*. It rate-limits fast scans — scan gently or it looks dead.
+      - not reachable through the WiNet-S either: units 2/247 answer on
+        `.119` but the `21xxx` charger registers return ILLEGAL_DATA_ADDRESS,
+        and units 3/248 don't exist. Community setups reach the wallbox that
+        way only when it hangs off the *inverter's* RS485; here the
+        **iHomeManager owns it over Ethernet**, so there is nothing to re-serve.
+      - **evcc needs the same missing local Modbus** (its driver reads 21299/
+        21307/21316 at unit 248), so it is not a workaround. Its sponsorship
+        gate is gone though — removed 2025-09-03, evcc-io/evcc `065bb7ae`;
+        the issue claiming otherwise was filed later against a stale build.
+      - working community fix is **RS485 straight off the wallbox into a
+        serial→Ethernet gateway** (9600 8N1), wallbox set to EMS mode via its
+        WLAN hotspot. Blocked here: no power/Ethernet at the wallbox for the
+        freed Waveshare (`192.168.1.99`, currently unplugged). An **ESP32 +
+        RS485 over WiFi** (same pattern as the T-CAN485 nibegw node, ESPHome
+        `modbus_controller`) would sidestep the cabling — still needs power at
+        the wallbox and a free RS485 port on it (unverified; plausible since
+        the iHM link is Ethernet).
+      - watch for a **two-masters conflict**: reports say the wallbox cannot be
+        driven by the iHM and an external controller at once. Read-only polling
+        may coexist; the EMS-mode change is the risky part.
+- [ ] **Hunt for an undecoded charging-power register on iHM unit 247.** An
+      idle/unplugged baseline of all 2800 readable registers was captured
+      2026-08-14 21:41. Re-snapshot *while the car is charging* and diff: any
+      register tracking the charge is the one we want. Tooling and baseline are
+      session-scratch — recreate with a block scan of the live regions
+      (fc4 2500/4300–4899/7900–8699/40500, fc3 4100/8000/33100/39000–40799) if
+      not still around.
 - [ ] **Disable the WiNet-S WiFi interface** (`192.168.1.116`; same dongle as
       wired `.119`). The dongle tolerates one Modbus client, so a second reachable
       path invites contention — a plausible cause of intermittent modbus errors.

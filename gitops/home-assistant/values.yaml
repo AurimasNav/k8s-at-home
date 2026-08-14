@@ -63,6 +63,7 @@ configuration:
     automation flexit: !include automations_flexit.yaml
     automation lights: !include automations_lights.yaml
     automation hikvision: !include automations_hikvision.yaml
+    automation ev charger: !include automations_ev_charger.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
 
@@ -70,6 +71,7 @@ configuration:
       packages:
         sungrow: !include packages/modbus_sungrow.yaml
         ihomemanager: !include packages/modbus_ihomemanager.yaml
+        ev_charger: !include package_ev_charger.yaml
         nibe: !include package_nibe.yaml
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
@@ -115,6 +117,12 @@ additionalVolumes:
   - name: hikvision-automations
     configMap:
       name: ha-hikvision-automations
+  - name: ev-charger-automations
+    configMap:
+      name: ha-ev-charger-automations
+  - name: ev-charger-package
+    configMap:
+      name: ha-ev-charger-package
   - name: nibe-package
     configMap:
       name: ha-nibe-package
@@ -160,6 +168,12 @@ additionalMounts:
   - name: hikvision-automations
     mountPath: /config/automations_hikvision.yaml
     subPath: hikvision.yaml
+  - name: ev-charger-automations
+    mountPath: /config/automations_ev_charger.yaml
+    subPath: ev-charger.yaml
+  - name: ev-charger-package
+    mountPath: /config/package_ev_charger.yaml
+    subPath: ev_charger.yaml
   - name: nibe-package
     mountPath: /config/package_nibe.yaml
     subPath: nibe.yaml

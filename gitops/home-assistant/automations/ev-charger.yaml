@@ -1,0 +1,58 @@
+- id: ev_charger_plugged_in
+  alias: EV charger - notify when car plugged in
+  triggers:
+  - trigger: state
+    entity_id: sensor.charger_status
+    to: Standby (plugged)
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: EV charger
+      message: >-
+        Car plugged in. Mode: {{ states('sensor.charger_mode') }}.
+  mode: single
+
+- id: ev_charger_charging_complete
+  alias: EV charger - notify when charging completes
+  triggers:
+  - trigger: state
+    entity_id: sensor.charger_status
+    to: Charging completed
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: EV charger
+      message: >-
+        Charging completed. ~{{ states('sensor.ev_charging_energy_today') | float(0)
+        | round(1) }} kWh charged today (estimated).
+  mode: single
+
+- id: ev_charger_fault
+  alias: EV charger - notify on fault or suspension
+  triggers:
+  - trigger: state
+    entity_id: sensor.charger_status
+    to:
+    - Faulted
+    - Unavailable
+    - Charging is suspended (Charge side)
+    - Charging suspended (EV side)
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: EV charger problem
+      message: >-
+        Charger state: {{ states('sensor.charger_status') }}.
+  mode: single
