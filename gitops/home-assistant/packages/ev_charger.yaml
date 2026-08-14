@@ -71,6 +71,13 @@ automation:
   # current house load MINUS the heat pump is what charging will later be
   # measured against. Storing it heat-pump-free is what lets a compressor cycle
   # during charging cancel out instead of landing on the car.
+  #
+  # The value is slow-rise / fast-fall: drops are taken immediately, rises are
+  # capped at 300 W per run. Charger status is polled, so there is a window
+  # between the car actually starting to draw and HA seeing 'Charging' - caught
+  # live 2026-08-14, where the baseline jumped 1295 -> 5215 W and would have
+  # under-reported the session by half. The cap means one poisoned sample can
+  # only shift the baseline by 300 W before the Charging condition freezes it.
   - id: ev_charger_track_baseline_load
     alias: EV charger - track pre-charge baseline load
     triggers:
@@ -92,6 +99,8 @@ automation:
           entity_id: input_number.ev_baseline_load
         data:
           value: >-
-            {{ [ states('sensor.ihm_load_power') | float(0)
-                 - states('sensor.heat_pump_power_estimate') | float(0), 0 ] | max | round(0) }}
+            {% set cur = states('sensor.ihm_load_power') | float(0)
+                         - states('sensor.heat_pump_power_estimate') | float(0) %}
+            {% set prev = states('input_number.ev_baseline_load') | float(0) %}
+            {{ [ [ cur, prev + 300 ] | min, 0 ] | max | round(0) }}
     mode: single

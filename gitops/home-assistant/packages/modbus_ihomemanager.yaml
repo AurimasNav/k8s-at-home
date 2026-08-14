@@ -496,6 +496,10 @@ modbus:
       # Charger Status
       #############
 
+      # Local change from upstream: polled every 5s rather than 60s. The 60s
+      # interval left a window where the car was already drawing but HA still
+      # read 'Standby', which poisoned the EV charging baseline (see
+      # packages/ev_charger.yaml) and delayed the charging-started notification.
       - name: Charger status raw
         unique_id: ihm_charger_status_raw
         slave: 247
@@ -503,7 +507,7 @@ modbus:
         input_type: input
         data_type: uint16
         state_class: measurement
-        scan_interval: *scan_interval_medium
+        scan_interval: *scan_interval_realtime
 
       #####################
       # HOLDING REGISTERS (Read/Write)

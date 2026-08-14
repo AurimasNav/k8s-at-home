@@ -16,6 +16,28 @@
         Car plugged in. Mode: {{ states('sensor.charger_mode') }}.
   mode: single
 
+- id: ev_charger_charging_started
+  alias: EV charger - notify when charging starts
+  triggers:
+  - trigger: state
+    entity_id: sensor.charger_status
+    to: Charging
+  actions:
+  # Let the draw settle so the estimate is meaningful rather than mid-ramp.
+  - delay:
+      seconds: 90
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: EV charger
+      message: >-
+        Charging started, drawing ~{{ states('sensor.ev_charging_power_estimate')
+        | float(0) | round(0) }} W (estimated). Mode: {{ states('sensor.charger_mode') }}.
+  mode: single
+
 - id: ev_charger_charging_complete
   alias: EV charger - notify when charging completes
   triggers:
