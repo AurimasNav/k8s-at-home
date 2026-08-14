@@ -62,9 +62,15 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
 - [ ] **DHCP reservation for `192.168.1.149`** (nibegw). The `nibe_heatpump`
       integration is pinned to that address; a lease change breaks writes to the
       pump.
-- [ ] **Calibrate the heat pump power estimate.** `packages/nibe.yaml` assumes a
-      flat 1600 W while the compressor runs. Watch *House load* step up when the
-      compressor starts at night and set the real figure.
+- [x] ~~Calibrate the heat pump power estimate.~~ **Done 2026-08-14** —
+      `compressor_w` 1600 → **1970 W**, derived from recorder history rather
+      than watched by eye: 44 transitions over 8 days, median house load 4 min
+      before vs after each start/stop, keeping the 19 with a quiet house on both
+      sides. Median step 2014 W (stdev 219), minus the model's own 45 W pump
+      delta. Derivation is in the `packages/nibe.yaml` header. **Recheck in
+      winter** — the immersion heater read zero for the whole sample, so its
+      contribution is untested, and a colder brine temperature may shift the
+      compressor draw.
 - [ ] **Consider real metering** instead of the estimate: a Shelly EM on the
       pump's breaker (local push, no cloud, Matter not needed — Shelly has no
       Matter-over-Thread and does not plan to), or NIBE's own pulse energy meter

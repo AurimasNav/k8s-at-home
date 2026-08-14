@@ -1,8 +1,17 @@
 # NIBE F1245 monitoring. Requires the coils listed in docs/smart-home/nibe-enabled-entities.md.
 
 # F1245 reports no power of its own, so this is modelled: fixed-speed compressor
-# (calibrate compressor_w against the load-power step when it starts) + measured
-# immersion heater + circulation pumps.
+# + measured immersion heater + circulation pumps.
+#
+# compressor_w was calibrated 2026-08-14 from recorder history rather than
+# guessed: 44 compressor transitions over 8 days, comparing median house load in
+# the 4 min before vs after each start/stop (45 s skipped either side of the
+# edge), keeping only the 19 where both sides were quiet (<400 W spread) so
+# other appliances could not contaminate the step. Median step 2014 W
+# (mean 1926, stdev 219, range 1472-2209). The model's own step on start is
+# compressor_w + 60 - 15, hence 2014 - 45 ~= 1970 W. The immersion heater read
+# zero throughout, so this is a clean compressor-only figure - recheck in winter
+# when it runs. Re-derive the same way if the pump is ever serviced or replaced.
 template:
 - sensor:
   - name: Heat pump power estimate
@@ -14,7 +23,7 @@ template:
       {{ states('sensor.compressor_state_ep14_43427') not in ['unknown', 'unavailable']
          and states('sensor.int_el_add_power_43084') not in ['unknown', 'unavailable'] }}
     state: >-
-      {% set compressor_w = 1600 %}
+      {% set compressor_w = 1970 %}
       {% set running = states('sensor.compressor_state_ep14_43427') == 'RUNNING' %}
       {% set add_w = states('sensor.int_el_add_power_43084') | float(0) * 1000 %}
       {{ ((compressor_w if running else 0) + add_w + (60 if running else 15)) | round(0) }}
