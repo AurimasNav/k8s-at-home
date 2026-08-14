@@ -515,7 +515,16 @@ modbus:
       # Found locally 2026-08-14 by diffing every readable unit-247 register
       # between an idle/unplugged baseline and a live charge session: these four
       # read exactly 0 when idle and come alive while charging. 8595/8597/8599
-      # are the three phases and 8593 their total.
+      # are the three phases and 8593 their total. Each is a 32-bit
+      # little-endian pair (value in the low address, high word in the next and
+      # always 0 at these magnitudes) - hence int32 + swap: word, matching how
+      # Sungrow declares every other active-power register (S32, ratio 1, W).
+      #
+      # In SUNGROW's own register numbering (which is address+1, per the
+      # protocol doc) these are registers 8594-8595, 8596-8597, 8598-8599 and
+      # 8600-8601. The official "Communication Protocol of iHomeManager V1.0.2"
+      # read-only table stops at 8573-8574, so these are past the documented
+      # end of the map.
       #
       # Validated against a real session: 8593 held 4056-4071 W across repeated
       # samples while the load-derived estimate wandered 4107-4687 W, and when a
@@ -529,7 +538,8 @@ modbus:
         slave: 247
         address: 8593
         input_type: input
-        data_type: uint16
+        data_type: int32
+        swap: word
         unit_of_measurement: W
         device_class: power
         state_class: measurement
@@ -540,7 +550,8 @@ modbus:
         slave: 247
         address: 8595
         input_type: input
-        data_type: uint16
+        data_type: int32
+        swap: word
         unit_of_measurement: W
         device_class: power
         state_class: measurement
@@ -551,7 +562,8 @@ modbus:
         slave: 247
         address: 8597
         input_type: input
-        data_type: uint16
+        data_type: int32
+        swap: word
         unit_of_measurement: W
         device_class: power
         state_class: measurement
@@ -562,7 +574,8 @@ modbus:
         slave: 247
         address: 8599
         input_type: input
-        data_type: uint16
+        data_type: int32
+        swap: word
         unit_of_measurement: W
         device_class: power
         state_class: measurement
