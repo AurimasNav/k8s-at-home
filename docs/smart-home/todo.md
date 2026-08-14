@@ -21,9 +21,21 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
       days against the inverter's `total_imported_energy` /
       `total_exported_energy` before switching the Energy dashboard source —
       switching needs care to avoid double-counting.
-- [ ] **EV charger real power/energy — needs a local RS485 path.** Status/mode/
-      enable come from the iHM (`8551/8047/8048`); charging power and session
-      energy are **not exposed anywhere locally**. Established 2026-08-14:
+- [x] ~~EV charger real power~~ **Solved 2026-08-14 — no hardware needed.**
+      Diffing every readable unit-247 register between an idle baseline and a
+      live charge session found **8593 (total) and 8595/8597/8599 (per phase)**,
+      undocumented (the community map stops at 8573). Validated live: 8593 held
+      4056–4071 W while a load-derived estimate wandered 4107–4687 W and chased
+      an unrelated household spike that 8593 ignored. Now read in
+      `packages/modbus_ihomemanager.yaml`; the whole estimate layer was deleted.
+      **No energy counter exists** — scanned 8574–8773 across 7 min of charging
+      at 4.06 kW and nothing accumulated (a 1 Wh counter would tick ~470), so
+      kWh comes from integrating the measured power. The RS485/ESP32 work below
+      is therefore **no longer needed for power**; it would only add session
+      energy and control, which the iHM does not expose.
+- [ ] ~~EV charger telemetry — needs a local RS485 path.~~ **Superseded, kept
+      for the topology findings.** Status/mode/enable come from the iHM
+      (`8551/8047/8048`). Established 2026-08-14:
       - charger `:516` only (SSL, iHM-reserved); every other port actively
         *refused*. It rate-limits fast scans — scan gently or it looks dead.
       - not reachable through the WiNet-S either: units 2/247 answer on
