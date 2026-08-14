@@ -52,6 +52,22 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
 - [ ] **Verify that auto-reload actually recovers it** at the next outage, and
       drop the retry count if it proves noisy.
 
+## Presence nodes
+
+- [ ] **Reflash `presence-entrance-hall`** with the engineering-mode retry loop
+      (`features/presence-mmwave.yaml`, needs the Windows/esphome toolchain).
+      After the 2026-08-13 outage the one-shot `on_boot` enable lost the race
+      against the radar's cold boot, the ambient-light reading stayed `unknown`,
+      and the light-on automation never passed its `below: 50` condition. The
+      HA-side guard now reconciles every 5 min as a stopgap, but the node
+      should self-heal without HA.
+- [ ] **HA 2026.7.2 oddity worth an upstream look:** the old edge-triggered
+      guard (`state` trigger, `to: 'off'`, `for: 10s`) verifiably did not fire
+      on the `unavailable → off` transition after the outage (twice), even
+      though the trigger source says `MATCH_ALL` matches any old state. If it
+      reproduces on a future HA restart, file it upstream with the recorder
+      timeline.
+
 ## Housekeeping
 
 - [ ] `plans/esphome-directory-structure.md` is stale — it names an ESP32-C6 as

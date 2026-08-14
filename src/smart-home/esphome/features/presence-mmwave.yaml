@@ -28,19 +28,27 @@ sensor:
 
 # Exposed so engineering mode can be toggled manually if ever needed. Its
 # restore_mode has no effect (this component's EngineeringModeSwitch doesn't
-# implement the setup() hook that honors it) -- see the on_boot lambda below,
-# which is what actually forces the mode on at every boot.
+# implement the setup() hook that honors it) -- the interval below is what
+# actually keeps the mode on.
 switch:
   - platform: ld2410
     engineering_mode:
+      id: eng_mode_switch
       name: "Engineering Mode"
 
 # The light reading only exists in the chip's report frame when engineering
 # mode is on, and the chip doesn't remember that setting across power cycles.
-esphome:
-  on_boot:
+# A one-shot on_boot enable is not enough: on a cold start the ESP boots
+# faster than the radar, the command is lost, and the light sensor stays dead
+# until the next reboot. Retry until the switch state confirms it stuck.
+interval:
+  - interval: 60s
     then:
-      - lambda: id(mmwave_radar).set_engineering_mode(true);
+      - if:
+          condition:
+            switch.is_off: eng_mode_switch
+          then:
+            - switch.turn_on: eng_mode_switch
 
 # timeout/max_move_distance_gate/max_still_distance_gate must be set together
 # (LD2410 firmware treats them as one calibration command)
