@@ -9,10 +9,26 @@
 # endpoint numbers do not reveal position. Buttons 4 and 6 are the in-use wall
 # switches; 5 and 7 are the spare programmable pair.
 #
-# Single press only. The device emits nothing but 'initial_press' - no
-# double_press, no long_press - and presses inside ~1s are coalesced into one
-# event (measured: a double-tap produced a single event), so no multi-tap
-# gesture is available to build on.
+# Single press only, and this is a dead end rather than something to retry.
+# The entity declares event_types ['initial_press'] and nothing else; measured
+# behaviour matches (7 physical presses incl. two deliberate double-taps
+# produced 5 events, each tap coalesced into one).
+#
+# It is not an HA or Matter limitation: the Nanoleaf Sense+ on the same Matter
+# fabric declares ['multi_press_1','multi_press_2','long_press','long_release'].
+# The Matter Switch cluster has optional MSL/MSM features that Aqara has not
+# implemented on this device. Aqara staff, forum.aqara.com/t/51555: "double
+# press and long press options are only available using Aqara Home via Zigbee.
+# For other ecosystems only single press is available" and "for wireless switch
+# with no relay switches we do support these actions... But for the in-wall
+# ones, it's not". No roadmap or timeline was offered when asked directly.
+#
+# Over Zigbee the H2 does expose double-click and hold/release (multi-click must
+# be enabled first: cluster 0xFCC0, attribute 0x0286). Not worth taking here -
+# the only 802.15.4 radio is the ZBT-2 running Thread for OTBR, so it would mean
+# a second coordinator plus re-pairing the switch out of Matter, changing its
+# entity IDs. Firmware is 1.0.1.0 with no update pending;
+# update.aqara_smart_wall_switch_firmware is the tripwire if that ever changes.
 
 input_boolean:
   entrance_hall_manual_light:
