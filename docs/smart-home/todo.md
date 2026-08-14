@@ -68,13 +68,6 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
       - watch for a **two-masters conflict**: reports say the wallbox cannot be
         driven by the iHM and an external controller at once. Read-only polling
         may coexist; the EMS-mode change is the risky part.
-- [ ] **Hunt for an undecoded charging-power register on iHM unit 247.** An
-      idle/unplugged baseline of all 2800 readable registers was captured
-      2026-08-14 21:41. Re-snapshot *while the car is charging* and diff: any
-      register tracking the charge is the one we want. Tooling and baseline are
-      session-scratch — recreate with a block scan of the live regions
-      (fc4 2500/4300–4899/7900–8699/40500, fc3 4100/8000/33100/39000–40799) if
-      not still around.
 - [ ] **Disable the WiNet-S WiFi interface** (`192.168.1.116`; same dongle as
       wired `.119`). The dongle tolerates one Modbus client, so a second reachable
       path invites contention — a plausible cause of intermittent modbus errors.
