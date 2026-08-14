@@ -66,6 +66,12 @@
     to: 'off'
     for:
       seconds: 10
+  - trigger: time_pattern
+    minutes: '/5'
+  conditions:
+  - condition: state
+    entity_id: switch.entrance_hall_entrance_hall_presence_engineering_mode
+    state: 'off'
   actions:
   - action: switch.turn_on
     target:
