@@ -63,15 +63,17 @@ views:
     - entity: binary_sensor.charger_grid_power_draw
       name: Grid power draw allowed
     - type: section
-      label: Estimated (no local meter on the wallbox)
-    - entity: sensor.ev_charging_power_estimate
-      name: Charging power (est.)
+      label: Power (measured at the charger)
+    - entity: sensor.charger_active_power
+      name: Charging power
     - entity: sensor.ev_charging_energy_today
-      name: Charged today (est.)
-    - entity: sensor.heat_pump_power_estimate
-      name: Heat pump (subtracted from the estimate)
-    - entity: input_number.ev_baseline_load
-      name: Baseline load (excl. heat pump)
+      name: Charged today
+    - entity: sensor.charger_phase_a_power
+      name: Phase A
+    - entity: sensor.charger_phase_b_power
+      name: Phase B
+    - entity: sensor.charger_phase_c_power
+      name: Phase C
 
   # Supports the open decision on which meter should feed the Energy dashboard:
   # the iHomeManager sits at the meter, the inverter only sees its own side.
@@ -135,13 +137,10 @@ views:
       picker at the top. The live power rows above are instantaneous watts, so
       they will not add up to the graphs.
 
-      **EV charging power/energy are estimates, not measurements.** The wallbox
-      exposes no charging power locally, so this is house load minus the
-      pre-charge baseline while the charger reports *Charging*. The heat pump is
-      subtracted on both sides, so a compressor cycle mid-charge does not land on
-      the car — but another big appliance (oven, sauna) still would, since
-      nothing else is metered. Status, mode and enabled are real readings from
-      the iHomeManager.
+      **EV charging power is measured, not estimated.** It comes from the
+      iHomeManager's own charger registers (total plus the three phases), found
+      by diffing the register map between an idle and a charging session. It
+      tracks the car only — a household appliance switching on does not move it.
 
       **Meter cross-check** — the iHomeManager sits at the grid meter, the
       inverter only sees its own connection, so the two disagree by whatever

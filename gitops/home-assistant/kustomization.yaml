@@ -30,8 +30,7 @@ configMapGenerator:
 - name: ha-ev-charger-automations
   files:
   - automations/ev-charger.yaml
-# package, not an automations file: ships input_number/integration/utility_meter
-# helpers alongside its own automation
+# package, not an automations file: ships integration/utility_meter helpers
 - name: ha-ev-charger-package
   files:
   - packages/ev_charger.yaml

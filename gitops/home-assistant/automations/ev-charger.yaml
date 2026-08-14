@@ -34,8 +34,8 @@
     data:
       title: EV charger
       message: >-
-        Charging started, drawing ~{{ states('sensor.ev_charging_power_estimate')
-        | float(0) | round(0) }} W (estimated). Mode: {{ states('sensor.charger_mode') }}.
+        Charging started, drawing {{ states('sensor.charger_active_power')
+        | float(0) | round(0) }} W. Mode: {{ states('sensor.charger_mode') }}.
   mode: single
 
 - id: ev_charger_charging_complete
@@ -53,8 +53,8 @@
     data:
       title: EV charger
       message: >-
-        Charging completed. ~{{ states('sensor.ev_charging_energy_today') | float(0)
-        | round(1) }} kWh charged today (estimated).
+        Charging completed. {{ states('sensor.ev_charging_energy_today') | float(0)
+        | round(1) }} kWh charged today.
   mode: single
 
 - id: ev_charger_fault

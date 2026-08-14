@@ -1,59 +1,20 @@
-# EV charging power/energy ESTIMATE.
+# EV charging energy, from the charger's real power measurement.
 #
-# The AC011E exposes no charging power or session energy locally: its own :516 is
-# SSL and reserved for the iHomeManager, and the iHM's unit-247 map carries only
-# charger status/mode/enable. Charging therefore shows up only inside
-# sensor.ihm_load_power, mixed with the rest of the house.
+# sensor.charger_active_power (iHM unit 247 reg 8593, see
+# packages/modbus_ihomemanager.yaml) is a genuine measurement of what the
+# wallbox is delivering - found and validated 2026-08-14. This package only
+# integrates it into energy totals; there is no estimation left here.
 #
-# This derives the car's draw as (load power - pre-charge baseline) while the
-# charger reports Charging. EV charging is a large, steady load, so household
-# fluctuation is noise against it.
-#
-# The heat pump is the one load big enough to wreck that (~1.6 kW compressor,
-# more with the immersion heater) and it cycles on its own schedule, so it is
-# subtracted from BOTH sides: the baseline stores load-minus-heat-pump, and the
-# live figure subtracts it again. A compressor start or stop mid-charge then
-# cancels out instead of being attributed to the car. Other large concurrent
-# appliances (oven, sauna) are still misattributed - nothing else is metered.
-#
-# Treat these as indicative, not billing-grade; replace with real measurement if
-# the wallbox ever gets a local RS485 path.
-
-input_number:
-  ev_baseline_load:
-    name: EV baseline house load (excl. heat pump)
-    min: 0
-    max: 30000
-    step: 1
-    unit_of_measurement: W
-    icon: mdi:home-lightning-bolt-outline
-
-template:
-  - sensor:
-      - name: EV charging power estimate
-        unique_id: ev_charging_power_estimate
-        unit_of_measurement: W
-        device_class: power
-        state_class: measurement
-        icon: mdi:ev-station
-        availability: >-
-          {{ states('sensor.ihm_load_power') | is_number
-             and states('sensor.charger_status') not in ['unknown','unavailable'] }}
-        state: >-
-          {% if states('sensor.charger_status') == 'Charging' %}
-            {% set load = states('sensor.ihm_load_power') | float(0) %}
-            {% set hp = states('sensor.heat_pump_power_estimate') | float(0) %}
-            {% set baseline = states('input_number.ev_baseline_load') | float(0) %}
-            {{ [ load - hp - baseline, 0 ] | max | round(0) }}
-          {% else %}
-            0
-          {% endif %}
+# The previous load-minus-baseline estimate, its rolling-baseline sensor and the
+# heat-pump compensation were all deleted rather than kept as a fallback: they
+# existed solely because no real measurement was available, and keeping a second
+# number that disagrees with the meter is worse than having one.
 
 sensor:
   - platform: integration
-    source: sensor.ev_charging_power_estimate
-    name: EV charging energy estimate
-    unique_id: ev_charging_energy_estimate
+    source: sensor.charger_active_power
+    name: EV charging energy
+    unique_id: ev_charging_energy
     unit_prefix: k
     unit_time: h
     method: left
@@ -63,44 +24,5 @@ sensor:
 utility_meter:
   ev_charging_energy_daily:
     name: EV charging energy today
-    source: sensor.ev_charging_energy_estimate
+    source: sensor.ev_charging_energy
     cycle: daily
-
-automation:
-  # Keep a rolling pre-charge baseline: whenever the car is NOT drawing, the
-  # current house load MINUS the heat pump is what charging will later be
-  # measured against. Storing it heat-pump-free is what lets a compressor cycle
-  # during charging cancel out instead of landing on the car.
-  #
-  # The value is slow-rise / fast-fall: drops are taken immediately, rises are
-  # capped at 300 W per run. Charger status is polled, so there is a window
-  # between the car actually starting to draw and HA seeing 'Charging' - caught
-  # live 2026-08-14, where the baseline jumped 1295 -> 5215 W and would have
-  # under-reported the session by half. The cap means one poisoned sample can
-  # only shift the baseline by 300 W before the Charging condition freezes it.
-  - id: ev_charger_track_baseline_load
-    alias: EV charger - track pre-charge baseline load
-    triggers:
-      - trigger: time_pattern
-        minutes: /1
-    conditions:
-      - condition: not
-        conditions:
-          - condition: state
-            entity_id: sensor.charger_status
-            state: Charging
-      - condition: template
-        value_template: >-
-          {{ states('sensor.ihm_load_power') | is_number
-             and states('sensor.heat_pump_power_estimate') | is_number }}
-    actions:
-      - action: input_number.set_value
-        target:
-          entity_id: input_number.ev_baseline_load
-        data:
-          value: >-
-            {% set cur = states('sensor.ihm_load_power') | float(0)
-                         - states('sensor.heat_pump_power_estimate') | float(0) %}
-            {% set prev = states('input_number.ev_baseline_load') | float(0) %}
-            {{ [ [ cur, prev + 300 ] | min, 0 ] | max | round(0) }}
-    mode: single
