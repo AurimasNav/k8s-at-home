@@ -4,20 +4,30 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
 
 ## Sungrow / energy
 
-- [ ] **Sweep the iHomeManager's register map** (`192.168.1.168:502`, plain Modbus,
-      already open — no device setting needs changing). Find which addresses it
-      actually populates; most of the inverter map reads NaN because it only
-      re-serves what it collects. Then vendor
-      `gitops/home-assistant/packages/modbus_ihomemanager.yaml` next to the
-      Sungrow one.
-- [ ] **Decide where grid import/export should come from.** The Energy dashboard
-      currently uses `sensor.total_imported_energy` / `total_exported_energy`
-      read from the inverter, but with an iHomeManager in the system it is the
-      authority at the meter. If they disagree, self-sufficiency and cost figures
-      are skewed. Switching sources needs care to avoid double-counting.
-- [ ] **EV charger has no local Modbus** — `:516` on it is SSL and reserved for
-      the iHomeManager. If charger state/control in HA is wanted, the options are
-      whatever the iHomeManager exposes on `:502`, or **evcc**.
+- [x] ~~Sweep the iHomeManager's register map~~ **Done 2026-08-14.** The useful
+      map is at `192.168.1.168:502` **unit 247** (registers 8000–8600, the iHM's
+      own EMS map): live meter power, per-phase powers/voltages, lifetime grid
+      import/export, battery state, and EV charger status/mode/enable. Unit 1 on
+      the same port is only a WiNet-mirror of the inverter map whose meter
+      registers all read zero — that was the earlier "mostly NaN/zero" result.
+      Port 503 (community default) is closed here and not needed. Vendored as
+      `gitops/home-assistant/packages/modbus_ihomemanager.yaml` (read-only;
+      upstream Jam3s97/sungrow_ihomemanager also has write entities — EMS mode,
+      forced charge/discharge, charger enable — add deliberately if wanted).
+- [ ] **Decide where grid import/export should come from.** Now actionable: the
+      iHM serves the meter's lifetime counters (`8175/8177`, e.g. 7937.0 kWh
+      import / 5664.7 kWh export on 2026-08-14) as
+      `sensor.ihm_grid_import_energy` / `ihm_grid_export_energy`. Compare a few
+      days against the inverter's `total_imported_energy` /
+      `total_exported_energy` before switching the Energy dashboard source —
+      switching needs care to avoid double-counting.
+- [ ] **EV charger telemetry beyond status.** The iHM map exposes charger
+      status/mode/enable (`8551/8047/8048`) but no charging power or session
+      energy; charging shows up inside `ihm_load_power`. The charger's own
+      `:516` stays SSL/iHM-reserved (re-verified 2026-08-14; no other ports
+      open). If power/energy per session is wanted, next candidates are the
+      undocumented live regions found on unit 1 (fc3/fc4 29800–36600, unmapped)
+      or **evcc**.
 - [ ] **Disable the WiNet-S WiFi interface** (`192.168.1.116`; same dongle as
       wired `.119`). The dongle tolerates one Modbus client, so a second reachable
       path invites contention — a plausible cause of intermittent modbus errors.

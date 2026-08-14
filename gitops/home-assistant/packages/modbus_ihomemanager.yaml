@@ -1,0 +1,1057 @@
+# Sungrow iHomeManager (iHM) telemetry — vendored from
+# https://github.com/Jam3s97/sungrow_ihomemanager (GPL-3.0), last upstream update 2025-02-15.
+# Read-only subset: modbus sensors + template sensor/binary_sensor. Upstream's write
+# entities (modbus switches, template numbers/selects for EMS mode, forced
+# charge/discharge, feed-in limit, charger enable/mode) are not vendored.
+#
+# Connection: iHomeManager at 192.168.1.168, plain Modbus TCP :502, unit 247
+# (the iHM's own EMS map; unit 1 on the same port is a WiNet-mirror whose
+# meter registers read zero). Port 503 is the community default but is not
+# enabled on this unit and is unnecessary while HA is the only :502 client.
+
+modbus:
+  - name: &ihm_hub_name Sungrow_iHM
+    type: tcp
+    host: 192.168.1.168
+    port: 502
+    delay: 15 # delay 5 second after connecting
+    timeout: 30 # timeout while waiting for a response before flooding the log with errors
+    message_wait_milliseconds: 30
+
+    sensors:
+      #####################
+      # INPUT REGISTERS (Read-Only)
+      # Address Type: 3X
+      #####################
+
+      #############
+      # Device Information
+      #############
+
+      - name: iHM device type code
+        unique_id: ihm_device_type_code
+        slave: 247
+        address: 7999 # reg 8000
+        input_type: input
+        data_type: uint16
+        scan_interval: &scan_interval_once 3600
+
+      - name: iHM protocol number
+        unique_id: ihm_protocol_number
+        slave: 247
+        address: 8000 # reg 8001
+        input_type: input
+        data_type: string
+        count: 2
+        scan_interval: *scan_interval_once
+
+      - name: iHM protocol version
+        unique_id: ihm_protocol_version
+        slave: 247
+        address: 8002 # reg 8003
+        input_type: input
+        data_type: uint32
+        swap: word
+        scan_interval: *scan_interval_once
+
+      - name: iHM total devices connected
+        unique_id: ihm_total_devices_connected
+        slave: 247
+        address: 8004 # reg 8005
+        input_type: input
+        data_type: uint16
+        state_class: measurement
+        scan_interval: &scan_interval_slow 300
+
+      - name: iHM devices in fault
+        unique_id: ihm_devices_in_fault
+        slave: 247
+        address: 8005 # reg 8006
+        input_type: input
+        data_type: uint16
+        state_class: measurement
+        scan_interval: &scan_interval_medium 60
+
+      #############
+      # System Capacity
+      #############
+
+      - name: iHM total nominal active power
+        unique_id: ihm_total_nominal_active_power
+        slave: 247
+        address: 8144 # reg 8145
+        input_type: input
+        data_type: uint32
+        swap: word
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kW
+        device_class: power
+        scan_interval: *scan_interval_slow
+
+      - name: iHM total battery rated capacity
+        unique_id: ihm_total_battery_rated_capacity
+        slave: 247
+        address: 8146 # reg 8147
+        input_type: input
+        data_type: uint32
+        swap: word
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kWh
+        device_class: energy
+        scan_interval: *scan_interval_slow
+
+      #############
+      # Battery Limits
+      #############
+
+      - name: iHM battery charge discharge limit
+        unique_id: ihm_battery_charge_discharge_limit
+        slave: 247
+        address: 8148 # reg 8149
+        input_type: input
+        data_type: uint32
+        swap: word
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kW
+        device_class: power
+        scan_interval: *scan_interval_medium
+
+      - name: iHM battery max charge power
+        unique_id: ihm_battery_max_charge_power
+        slave: 247
+        address: 8150 # reg 8151
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kW
+        device_class: power
+        scan_interval: *scan_interval_medium
+
+      - name: iHM battery min charge power
+        unique_id: ihm_battery_min_charge_power
+        slave: 247
+        address: 8151 # reg 8152
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kW
+        device_class: power
+        scan_interval: *scan_interval_medium
+
+      - name: iHM battery max discharge power
+        unique_id: ihm_battery_max_discharge_power
+        slave: 247
+        address: 8152 # reg 8153
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kW
+        device_class: power
+        scan_interval: *scan_interval_medium
+
+      - name: iHM battery min discharge power
+        unique_id: ihm_battery_min_discharge_power
+        slave: 247
+        address: 8153 # reg 8154
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kW
+        device_class: power
+        scan_interval: *scan_interval_medium
+
+      #############
+      # Real-Time Power
+      #############
+
+      - name: iHM total active power
+        unique_id: ihm_total_active_power
+        slave: 247
+        address: 8154 # reg 8155
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        scale: 10
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: &scan_interval_fast 10
+
+      # NOTE: positive when importing, negative when exporting
+      - name: iHM meter power raw
+        unique_id: ihm_meter_power_raw
+        slave: 247
+        address: 8156 # reg 8157
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        scale: 10
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+
+      - name: iHM load power
+        unique_id: ihm_load_power
+        slave: 247
+        address: 8158 # reg 8159
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        scale: 10
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: &scan_interval_realtime 5
+
+      # NOTE: negative when charging, positive when discharging
+      - name: iHM battery power raw
+        unique_id: ihm_battery_power_raw
+        slave: 247
+        address: 8160 # reg 8161
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        scale: 10
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+
+      #############
+      # Battery State
+      #############
+
+      - name: iHM battery level
+        unique_id: ihm_battery_level
+        slave: 247
+        address: 8162 # reg 8163
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: "%"
+        device_class: battery
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+
+      #############
+      # Energy Totals
+      #############
+
+      - name: iHM grid import energy
+        unique_id: ihm_grid_import_energy
+        slave: 247
+        address: 8175 # reg 8176
+        input_type: input
+        data_type: uint32
+        swap: word
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        scan_interval: &scan_interval_slowest 600
+
+      - name: iHM grid export energy
+        unique_id: ihm_grid_export_energy
+        slave: 247
+        address: 8177 # reg 8178
+        input_type: input
+        data_type: uint32
+        swap: word
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        scan_interval: *scan_interval_slowest
+
+      #############
+      # Application Software Version
+      #############
+
+      - name: iHM Application Software Version
+        unique_id: ihm_application_software_version
+        slave: 247
+        address: 8317  # reg 8318
+        input_type: input
+        data_type: string
+        count: 15  # Number of registers (8318 to 8332 = 15 registers)
+        scan_interval: *scan_interval_once
+
+      #############
+      # Grid Meter - Channel 1
+      #############
+
+      # 0: Single-phase
+      # 1:Three-phase four-wire
+      # 2:Three-phase three-wire
+      - name: iHM output type raw
+        unique_id: ihm_output_type_raw
+        slave: 247
+        address: 8553 # reg 8554
+        input_type: input
+        data_type: uint16
+        scan_interval: *scan_interval_slow
+
+      - name: iHM phase A voltage
+        unique_id: ihm_phase_a_voltage
+        slave: 247
+        address: 8554 # reg 8555
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: V
+        device_class: voltage
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: iHM phase B voltage
+        unique_id: ihm_phase_b_voltage
+        slave: 247
+        address: 8555 # reg 8556
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: V
+        device_class: voltage
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: iHM phase C voltage
+        unique_id: ihm_phase_c_voltage
+        slave: 247
+        address: 8556 # reg 8557
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: V
+        device_class: voltage
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: iHM grid frequency
+        unique_id: ihm_grid_frequency
+        slave: 247
+        address: 8557 # reg 8558
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: Hz
+        device_class: frequency
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: iHM phase A active power
+        unique_id: ihm_meter_phase_a_active_power
+        slave: 247
+        address: 8558 # reg 8559
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+
+      - name: iHM phase B active power
+        unique_id: ihm_meter_phase_b_active_power
+        slave: 247
+        address: 8560 # reg 8561
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+
+      - name: iHM phase C active power
+        unique_id: ihm_meter_phase_c_active_power
+        slave: 247
+        address: 8562 # reg 8563
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+
+      #############
+      # Grid Meter - Channel 2
+      #############
+
+      - name: iHM phase A voltage ch2
+        unique_id: ihm_phase_a_voltage_ch2
+        slave: 247
+        address: 8564 # reg 8565
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: V
+        device_class: voltage
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: iHM phase B voltage ch2
+        unique_id: ihm_phase_b_voltage_ch2
+        slave: 247
+        address: 8565 # reg 8566
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: V
+        device_class: voltage
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: iHM phase C voltage ch2
+        unique_id: ihm_phase_c_voltage_ch2
+        slave: 247
+        address: 8566 # reg 8567
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: V
+        device_class: voltage
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: iHM grid frequency ch2
+        unique_id: ihm_grid_frequency_ch2
+        slave: 247
+        address: 8567 # reg 8568
+        input_type: input
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: Hz
+        device_class: frequency
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: iHM phase A active power ch2
+        unique_id: ihm_meter_phase_a_active_power_ch2
+        slave: 247
+        address: 8568 # reg 8569
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+
+      - name: iHM phase B active power ch2
+        unique_id: ihm_meter_phase_b_active_power_ch2
+        slave: 247
+        address: 8570 # reg 8571
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+
+      - name: iHM phase C active power ch2
+        unique_id: ihm_meter_phase_c_active_power_ch2
+        slave: 247
+        address: 8572 # reg 8573
+        input_type: input
+        data_type: int32
+        swap: word
+        precision: 0
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+
+      #############
+      # Charger Status
+      #############
+
+      - name: Charger status raw
+        unique_id: ihm_charger_status_raw
+        slave: 247
+        address: 8551 # reg 8552
+        input_type: input
+        data_type: uint16
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      #####################
+      # HOLDING REGISTERS (Read/Write)
+      # Address Type: 4X
+      #####################
+
+      #############
+      # EMS Settings
+      #############
+
+      - name: iHM energy management mode raw
+        unique_id: ihm_energy_management_mode_raw
+        slave: 247
+        address: 8023 # reg 8024
+        input_type: holding
+        data_type: uint16
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+        
+      # 170 = Charge 187 = Discharge 204 = Stop
+      - name: iHM charging discharging command raw
+        unique_id: ihm_charging_discharging_command_raw
+        slave: 247
+        address: 8024 # reg 8025
+        input_type: holding
+        data_type: uint16
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: iHM charging discharging power
+        unique_id: ihm_charging_discharging_power
+        slave: 247
+        address: 8025 # reg 8026
+        input_type: holding
+        data_type: uint32
+        swap: word
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: kW
+        device_class: power
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      # This controls the abilty to set reg 8029. Setting off mean there is no feed-in limit and will export up to the inverters ac capacity 
+      - name: iHM feed-in power limit mode raw
+        unique_id: iHM_feed_in_power_limit_mode_raw
+        slave: 247
+        address: 8027 # reg 8028
+        input_type: holding
+        data_type: uint16
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      # Protocol documents lists register as 8031 and % but I found 8029 to be kw limit control.
+      - name: iHM feed-in power limit
+        unique_id: ihm_feed_in_power_limit
+        slave: 247
+        address: &ihm_reg_feed_in_power_limit 8028 # reg 8029
+        input_type: holding
+        data_type: uint32
+        swap: word
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: "kW"
+        state_class: measurement
+        scan_interval: *scan_interval_fast
+        
+      # unused? use reg 8029 above?
+      # CHANGED in V1.0.2 protocol document: Data type changed from S32 to S16
+      - name: "iHM feed-in power limit percentage"
+        unique_id: ihm_feedin_power_limit_percentage
+        address: 8030  # reg 8031
+        slave: 247
+        input_type: holding
+        data_type: int16
+        scale: 0.1
+        precision: 1
+        min_value: 0
+        max_value: 1000
+        unit_of_measurement: "%"
+        scan_interval: *scan_interval_medium
+
+      - name: iHM external vpp heartbeat
+        unique_id: ihm_external_vpp_heartbeat
+        slave: 247
+        address: 8032 # reg 8033
+        input_type: holding
+        data_type: uint16
+        unit_of_measurement: s
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+        
+      # on/off to limit active power (Inverters AC port not feed-in power)
+      - name: iHM active power limitation enable raw
+        unique_id: ihm_active_power_limitation_enable_raw
+        slave: 247
+        address: 8050 # reg 8051
+        input_type: holding
+        data_type: uint16
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      # Limit active power % (Inverters AC port not feed-in power)
+      - name: iHM active power limit percentage
+        unique_id: ihm_active_power_limit_percentage
+        slave: 247
+        address: 8051 # reg 8052
+        input_type: holding
+        data_type: uint16
+        precision: 1
+        scale: 0.1
+        unit_of_measurement: "%"
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      #############
+      # System Control
+      #############
+
+      # This switch needs to be on (well not off) for the system to produce power / operate. Out of the Box on mine it was neither off or on. Use "iHM system power" to control.
+      - name: iHM power on off raw
+        unique_id: ihm_power_on_off_raw
+        slave: 247
+        address: 8046 # reg 8047
+        input_type: holding
+        data_type: uint16
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      #############
+      # Charger Control
+      #############
+
+      - name: Charger mode raw
+        unique_id: ihm_charger_mode_raw
+        slave: 247
+        address: 8047 # reg 8048
+        input_type: holding
+        data_type: uint16
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: Charger enable raw
+        unique_id: ihm_charger_enable_raw
+        slave: 247
+        address: 8048 # reg 8049
+        input_type: holding
+        data_type: uint16
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+      - name: Charger grid power draw raw
+        unique_id: ihm_charger_grid_power_draw_raw
+        slave: 247
+        address: 8049 # reg 8050
+        input_type: holding
+        data_type: uint16
+        state_class: measurement
+        scan_interval: *scan_interval_medium
+
+
+template:
+  ###########################
+  # template: sensor
+  ###########################
+  - sensor:
+      #############
+      # Power Flow Sensors
+      #############
+
+      # positive if importing, else zero
+      - name: iHM grid import power
+        unique_id: ihm_grid_import_power
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        availability: >-
+          {{ states('sensor.ihm_meter_power_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {% if states('sensor.ihm_meter_power_raw')|int > 0 %}
+            {{ states('sensor.ihm_meter_power_raw')|int }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:transmission-tower-import
+
+      # positive if exporting, else zero
+      - name: iHM grid export power
+        unique_id: ihm_grid_export_power
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        availability: >-
+          {{ states('sensor.ihm_meter_power_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {% if states('sensor.ihm_meter_power_raw')|int < 0 %}
+            {{ states('sensor.ihm_meter_power_raw')|int * -1 }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:transmission-tower-export
+
+      #############
+      # Battery Power Direction
+      #############
+
+      # NOTE: Use this sensor for the HA energy dashboard.
+      # positive if charging, negative if discharging
+      - name: iHM battery charging power signed
+        unique_id: ihm_battery_charging_power_signed
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        availability: >-
+          {{ states('sensor.ihm_battery_power_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {{ states('sensor.ihm_battery_power_raw')|int * -1 }}
+
+      # positive if charging, else zero
+      - name: iHM battery charging power
+        unique_id: ihm_battery_charging_power
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        availability: >-
+          {{ states('sensor.ihm_battery_charging_power_signed') not in ['unknown','unavailable'] }}
+        state: >-
+          {% if states('sensor.ihm_battery_charging_power_signed')|int > 0 %}
+            {{ states('sensor.ihm_battery_charging_power_signed')|int }}
+          {% else %}
+            0
+          {% endif %}
+
+      # NOTE: Use this sensor for the HA energy dashboard.
+      # positive if discharging, negative if charging
+      - name: iHM battery discharging power signed
+        unique_id: ihm_battery_discharging_power_signed
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        availability: >-
+          {{ states('sensor.ihm_battery_power_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {{ states('sensor.ihm_battery_power_raw')|int }}
+
+      # positive if discharging, else zero
+      - name: iHM battery discharging power
+        unique_id: ihm_battery_discharging_power
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        availability: >-
+          {{ states('sensor.ihm_battery_discharging_power_signed') not in ['unknown','unavailable'] }}
+        state: >-
+          {% if states('sensor.ihm_battery_discharging_power_signed')|int > 0 %}
+            {{ states('sensor.ihm_battery_discharging_power_signed')|int }}
+          {% else %}
+            0
+          {% endif %}
+
+      #############
+      # Friendly Status Text
+      #############
+
+      - name: Charger status
+        unique_id: ihm_charger_status
+        device_class: enum
+        availability: >-
+          {{ states('sensor.charger_status_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {% set status = states('sensor.charger_status_raw')|int %}
+          {% if status == 1 %}
+            Idle (unplugged)
+          {% elif status == 2 %}
+            Standby (plugged)
+          {% elif status == 3 %}
+            Charging
+          {% elif status == 4 %}
+            Charging is suspended (Charge side)
+          {% elif status == 5 %}
+            Charging suspended (EV side)
+          {% elif status == 6 %}
+            Charging completed
+          {% elif status == 7 %}
+            Reserved
+          {% elif status == 8 %}
+            Unavailable
+          {% elif status == 9 %}
+            Faulted
+          {% else %}
+            Unknown ({{ status }})
+          {% endif %}
+        icon: >-
+          {% set status = states('sensor.charger_status_raw')|int %}
+          {% if status == 1 %}
+            mdi:ev-plug-type2
+          {% elif status == 2 %}
+            mdi:battery-charging-outline
+          {% elif status == 3 %}
+            mdi:battery-charging
+          {% elif status == 4 %}
+            mdi:battery-charging-outline
+          {% elif status == 5 %}
+            mdi:battery-charging-outline
+          {% elif status == 6 %}
+            mdi:battery-check
+          {% elif status == 7 %}
+            mdi:battery-unknown
+          {% elif status == 8 %}
+            mdi:battery-unknown
+          {% elif status == 9 %}
+            mdi:battery-alert
+          {% else %}
+            mdi:help-circle
+          {% endif %}
+
+      - name: iHM energy management mode
+        unique_id: ihm_energy_management_mode
+        device_class: enum
+        availability: >-
+          {{ states('sensor.ihm_energy_management_mode_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {% set mode = states('sensor.ihm_energy_management_mode_raw')|int %}
+          {% if mode == 1 %}
+            Self-consumption
+          {% elif mode == 2 %}
+            Time plan
+          {% elif mode == 0 %}
+            AI Mode
+          {% elif mode == 4 %}
+            VPP
+          {% elif mode == 5 %}
+            Forced mode
+          {% else %}
+            Unknown ({{ mode }})
+          {% endif %}
+        icon: >-
+          {% set mode = states('sensor.ihm_energy_management_mode_raw')|int %}
+          {% if mode == 1 %}
+            mdi:home-lightning-bolt
+          {% elif mode == 2 %}
+            mdi:clock-outline
+          {% elif mode == 0 %}
+            mdi:robot
+          {% elif mode == 4 %}
+            mdi:transmission-tower
+          {% elif mode == 5 %}
+            mdi:lock
+          {% else %}
+            mdi:help-circle
+          {% endif %}
+
+      - name: iHM battery command
+        unique_id: ihm_battery_command
+        device_class: enum
+        availability: >-
+          {{ states('sensor.ihm_charging_discharging_command_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {% set cmd = states('sensor.ihm_charging_discharging_command_raw')|int %}
+          {% if cmd == 170 %}
+            Charge
+          {% elif cmd == 187 %}
+            Discharge
+          {% elif cmd == 204 %}
+            Stop
+          {% else %}
+            Unknown ({{ cmd }})
+          {% endif %}
+        icon: >-
+          {% set cmd = states('sensor.ihm_charging_discharging_command_raw')|int %}
+          {% if cmd == 170 %}
+            mdi:battery-charging
+          {% elif cmd == 187 %}
+            mdi:battery-minus
+          {% elif cmd == 204 %}
+            mdi:battery-off
+          {% else %}
+            mdi:help-circle
+          {% endif %}
+
+      # Different regional specs have different charging modes.
+      # Australia has modes 164,165,166.167
+      # Germany has modes 161,162,163,164
+      - name: Charger mode
+        unique_id: ihm_charger_mode
+        device_class: enum
+        availability: >-
+          {{ states('sensor.charger_mode_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {% set mode = states('sensor.charger_mode_raw')|int %}
+          {% if mode == 161 %}
+            ECO mode charging
+          {% elif mode == 162 %}
+            Scheduled charging
+          {% elif mode == 163 %}
+            Customized charging
+          {% elif mode == 164 %}
+            Fast charging
+           {% elif mode == 160 %}
+            Fast charging
+          {% elif mode == 165 %}
+            Eco & fast charging
+          {% elif mode == 166 %}
+            Eco & economic charging
+          {% elif mode == 167 %}
+            Time plan charging
+          {% else %}
+            Unknown ({{ mode }})
+          {% endif %}
+        icon: >-
+          {% set mode = states('sensor.charger_mode_raw')|int %}
+          {% if mode == 161 %}
+            mdi:leaf
+           {% elif mode == 162 %}
+            mdi:car-clock
+          {% elif mode == 163 %}
+            mdi:lightning-bolt
+          {% elif mode == 164 %}
+            mdi:lightning-bolt
+          {% elif mode == 160 %}
+            mdi:lightning-bolt
+          {% elif mode == 165 %}
+            mdi:lightning-bolt
+          {% elif mode == 166 %}
+            mdi:car-clock
+          {% elif mode == 167 %}
+            mdi:leaf
+          {% else %}
+            mdi:help-circle
+          {% endif %}
+
+      - name: iHM output type
+        unique_id: ihm_output_type
+        device_class: enum
+        availability: >-
+          {{ states('sensor.ihm_output_type_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {% set type = states('sensor.ihm_output_type_raw')|int %}
+          {% if type == 0 %}
+            Single-phase
+          {% elif type == 1 %}
+            Three-phase four-wire
+          {% elif type == 2 %}
+            Three-phase three-wire
+          {% else %}
+            Unknown ({{ type }})
+          {% endif %}
+        icon: mdi:sine-wave
+
+  ###########################
+  # template: binary_sensor
+  ###########################
+  - binary_sensor:
+
+      - name: Charger enabled
+        unique_id: ihm_charger_enabled
+        device_class: running
+        availability: >-
+          {{ states('sensor.charger_enable_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {{ states('sensor.charger_enable_raw')|int == 170 }}
+        icon: >-
+          {% if states('sensor.charger_enable_raw')|int == 170 %}
+            mdi:ev-station
+          {% else %}
+            mdi:ev-station-off
+          {% endif %}
+
+      - name: Charger grid power draw
+        unique_id: ihm_charger_grid_power_draw
+        device_class: power
+        availability: >-
+          {{ states('sensor.charger_grid_power_draw_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {{ states('sensor.charger_grid_power_draw_raw')|int == 170 }}
+        icon: >-
+          {% if states('sensor.charger_grid_power_draw_raw')|int == 170 %}
+            mdi:transmission-tower-export
+          {% else %}
+            mdi:transmission-tower-off
+          {% endif %}
+
+      - name: iHM system powered on
+        unique_id: ihm_system_powered_on
+        device_class: power
+        availability: >-
+          {{ states('sensor.ihm_power_on_off_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {{ states('sensor.ihm_power_on_off_raw')|int == 207 }}
+        icon: >-
+          {% if states('sensor.ihm_power_on_off_raw')|int == 207 %}
+            mdi:power-on
+          {% else %}
+            mdi:power-off
+          {% endif %}
+
+      - name: iHM battery charging
+        unique_id: ihm_battery_charging
+        device_class: battery_charging
+        availability: >-
+          {{ states('sensor.ihm_battery_power_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {{ states('sensor.ihm_battery_power_raw')|float(0) < -50 }}
+        icon: >-
+          {% if states('sensor.ihm_battery_power_raw')|float(0) < -50 %}
+            mdi:battery-charging
+          {% else %}
+            mdi:battery
+          {% endif %}
+
+      - name: iHM battery discharging
+        unique_id: ihm_battery_discharging
+        device_class: battery_charging
+        availability: >-
+          {{ states('sensor.ihm_battery_power_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {{ states('sensor.ihm_battery_power_raw')|float(0) > 50 }}
+        icon: >-
+          {% if states('sensor.ihm_battery_power_raw')|float(0) > 50 %}
+            mdi:battery-minus
+          {% else %}
+            mdi:battery
+          {% endif %}
+
+      - name: iHM grid importing
+        unique_id: ihm_grid_importing
+        device_class: power
+        availability: >-
+          {{ states('sensor.ihm_meter_power_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {{ states('sensor.ihm_meter_power_raw')|float(0) > 50 }}
+        icon: >-
+          {% if states('sensor.ihm_meter_power_raw')|float(0) > 50 %}
+            mdi:transmission-tower-import
+          {% else %}
+            mdi:transmission-tower
+          {% endif %}
+
+      - name: iHM Grid exporting
+        unique_id: ihm_grid_exporting
+        device_class: power
+        availability: >-
+          {{ states('sensor.ihm_meter_power_raw') not in ['unknown','unavailable'] }}
+        state: >-
+          {{ states('sensor.ihm_meter_power_raw')|float(0) < -50 }}
+        icon: >-
+          {% if states('sensor.ihm_meter_power_raw')|float(0) < -50 %}
+            mdi:transmission-tower-export
+          {% else %}
+            mdi:transmission-tower
+          {% endif %}

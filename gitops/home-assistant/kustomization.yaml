@@ -13,9 +13,11 @@ namespace: home-assistant
 # than folded into automations.yaml, so the UI-managed automations.yaml stays
 # writable and untouched (see values.yaml comment).
 configMapGenerator:
+# also carries the iHomeManager package — both mount into /config/packages
 - name: ha-sungrow-package
   files:
   - packages/modbus_sungrow.yaml
+  - packages/modbus_ihomemanager.yaml
 - name: ha-flexit-automations
   files:
   - automations/flexit.yaml

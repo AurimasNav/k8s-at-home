@@ -15,6 +15,12 @@ configuration:
   # at /config/packages (see additionalVolumes / additionalMounts below). Secrets are
   # hardcoded in that file; automation/scene sections were dropped (read-only telemetry).
   #
+  # iHomeManager telemetry (packages/modbus_ihomemanager.yaml, from
+  # Jam3s97/sungrow_ihomemanager) rides in the same ConfigMap/mount: meter-authority
+  # grid data + EV charger status over 192.168.1.168:502 unit 247, read-only —
+  # upstream's write entities (EMS mode, forced charge/discharge, charger enable)
+  # were not vendored.
+  #
   # Flexit Nordic automations (automations/flexit.yaml), the entrance-hall
   # lighting automations (automations/lights.yaml, moved out of the UI-managed
   # file), and the Hikvision NVR automations (automations/hikvision.yaml) are
@@ -63,6 +69,7 @@ configuration:
     homeassistant:
       packages:
         sungrow: !include packages/modbus_sungrow.yaml
+        ihomemanager: !include packages/modbus_ihomemanager.yaml
         nibe: !include package_nibe.yaml
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
