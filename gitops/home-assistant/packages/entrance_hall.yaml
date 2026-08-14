@@ -1,0 +1,89 @@
+# Entrance hall manual light hold, driven by the spare Aqara button.
+#
+# Lives in a package rather than automations/lights.yaml because it ships an
+# input_boolean; the presence automations it gates stay in lights.yaml, which
+# carries a pointer back here.
+#
+# Button mapping: event.aqara_smart_wall_switch_button_7. Identified 2026-08-14
+# by snapshotting all four button entities and pressing the physical one -
+# endpoint numbers do not reveal position. Buttons 4 and 6 are the in-use wall
+# switches; 5 and 7 are the spare programmable pair.
+#
+# Single press only. The device emits nothing but 'initial_press' - no
+# double_press, no long_press - and presses inside ~1s are coalesced into one
+# event (measured: a double-tap produced a single event), so no multi-tap
+# gesture is available to build on.
+
+input_boolean:
+  entrance_hall_manual_light:
+    name: Entrance hall manual light hold
+    icon: mdi:hand-back-right
+
+automation:
+  - id: entrance_hall_button_manual_max_light
+    alias: Entrance hall - button toggles manual max light
+    triggers:
+      - trigger: state
+        entity_id: event.aqara_smart_wall_switch_button_7
+    conditions:
+      # The event entity's state is a timestamp, so a real press is a state
+      # change. Restarts restore it from 'unavailable', which would otherwise
+      # look like a press.
+      - condition: template
+        value_template: >-
+          {{ trigger.from_state is not none
+             and trigger.from_state.state not in ['unknown', 'unavailable']
+             and trigger.to_state.state not in ['unknown', 'unavailable'] }}
+    actions:
+      - choose:
+          # Already holding -> second press turns everything off and releases.
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.entrance_hall_manual_light
+                state: 'on'
+            sequence:
+              - action: light.turn_off
+                target:
+                  area_id: entrance_hall
+              - action: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.entrance_hall_manual_light
+        # Not holding -> max bright, max white, and block the presence logic.
+        default:
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.entrance_hall_manual_light
+          - action: light.turn_on
+            target:
+              area_id: entrance_hall
+            data:
+              color_temp_kelvin: 6535
+              brightness_pct: 100
+    mode: single
+
+  # Release the hold if the lights go off by any other route (dashboard, app,
+  # voice) so presence control resumes without needing the button.
+  - id: entrance_hall_manual_light_release_on_off
+    alias: Entrance hall - release manual hold when lights go off
+    triggers:
+      - trigger: state
+        entity_id:
+          - light.entrance_hall_entrance_1
+          - light.entrance_hall_entrance_2
+          - light.entrance_hall_entrance_3
+          - light.entrance_hall_entrance_4
+        to: 'off'
+    conditions:
+      - condition: state
+        entity_id: input_boolean.entrance_hall_manual_light
+        state: 'on'
+      - condition: template
+        value_template: >-
+          {{ ['light.entrance_hall_entrance_1', 'light.entrance_hall_entrance_2',
+              'light.entrance_hall_entrance_3', 'light.entrance_hall_entrance_4']
+             | map('states') | reject('eq', 'on') | list | count == 4 }}
+    actions:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.entrance_hall_manual_light
+    mode: single

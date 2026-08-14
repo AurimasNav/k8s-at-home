@@ -34,6 +34,10 @@ configMapGenerator:
 - name: ha-ev-charger-package
   files:
   - packages/ev_charger.yaml
+# package, not an automations file: ships the manual-light input_boolean
+- name: ha-entrance-hall-package
+  files:
+  - packages/entrance_hall.yaml
 # package, not an automations file: ships a utility_meter helper too
 - name: ha-nibe-package
   files:

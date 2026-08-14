@@ -72,6 +72,7 @@ configuration:
         sungrow: !include packages/modbus_sungrow.yaml
         ihomemanager: !include packages/modbus_ihomemanager.yaml
         ev_charger: !include package_ev_charger.yaml
+        entrance_hall: !include package_entrance_hall.yaml
         nibe: !include package_nibe.yaml
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
@@ -123,6 +124,9 @@ additionalVolumes:
   - name: ev-charger-package
     configMap:
       name: ha-ev-charger-package
+  - name: entrance-hall-package
+    configMap:
+      name: ha-entrance-hall-package
   - name: nibe-package
     configMap:
       name: ha-nibe-package
@@ -174,6 +178,9 @@ additionalMounts:
   - name: ev-charger-package
     mountPath: /config/package_ev_charger.yaml
     subPath: ev_charger.yaml
+  - name: entrance-hall-package
+    mountPath: /config/package_entrance_hall.yaml
+    subPath: entrance_hall.yaml
   - name: nibe-package
     mountPath: /config/package_nibe.yaml
     subPath: nibe.yaml
