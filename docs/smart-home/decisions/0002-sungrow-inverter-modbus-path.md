@@ -1,6 +1,8 @@
 # 0002 — Sungrow inverter integration path
 
-- **Status:** **Deployed** 2026-07-24 — read over the WiNet-S dongle via native Modbus TCP
+- **Status:** **Deployed** 2026-07-24 — read over the WiNet-S dongle via native Modbus TCP.
+  Extended 2026-08-14 with a **second Modbus source**, the iHomeManager on unit 247 (meter,
+  battery and EV charger telemetry, including real charging power).
 - **Scope:** *How* the Sungrow system is physically/logically connected to Home Assistant
   (devices, modules, transport). The actual sensor/register definitions live in code
   (`gitops/home-assistant/packages/modbus_sungrow.yaml`) and are not duplicated here.
@@ -15,7 +17,7 @@
 | **Sungrow WiNet-S dongle** (on the inverter) | **the connection module we use** — native Modbus TCP + iSolarCloud uplink |
 | **Waveshare RS485-to-ETH (B)** (`192.168.1.99`, on inverter COM2) | evaluated then **abandoned** — now free for another Modbus RTU device |
 | **Sungrow iHomeManager** (`192.168.1.168`, WiFi) | energy manager / smart meter. Serves **plain Modbus TCP `:502`**: unit 1 is a WiNet-mirror with dead meter registers; **unit 247** carries its own EMS map (regs 8000–8600) with meter, battery, and EV charger data — read by HA via `packages/modbus_ihomemanager.yaml` |
-| **Sungrow EV charger AC011E** (`192.168.1.191`, wired) | serves **`:516` only** (SSL, reserved for the iHomeManager) — no plain-Modbus port to read locally |
+| **Sungrow EV charger AC011E** (`192.168.1.191`, wired) | serves **`:516` only** (SSL, reserved for the iHomeManager) — no local Modbus of its own; HA reads it *through* the iHomeManager |
 | **k3s node `ubuntu-k8s`** | runs Home Assistant (container) |
 
 Identified by scanning for who listens on 502 vs 516 and comparing register reads
@@ -32,8 +34,19 @@ HA reads the inverter through the **WiNet-S dongle over native Modbus TCP**:
 - **SSL/encryption OFF** on the WiNet-S — HA/pymodbus speaks *plain* Modbus TCP; Modbus-over-TLS is unsupported.
 - Use the WiNet-S **wired Ethernet** uplink (more stable than WiFi); that same link carries the iSolarCloud connection.
 
+Since 2026-08-14 HA also reads the **iHomeManager** as a second, independent hub:
+
+- **host `192.168.1.168`, port `502`, unit id `247`, `type: tcp`** — the manager's own EMS map
+  (regs 8000–8600), not the inverter mirror. Unit 1 on the same port *is* that mirror and its
+  meter registers all read zero, which is what made the first sweep look empty.
+- Port `503` is the community default for this device but is **closed** here; `:502` needed no
+  device-side change. No contention with the WiNet-S — different device, different socket.
+- Read-only. Upstream's write entities (EMS mode, forced charge/discharge, charger enable) were
+  deliberately not vendored; adding control should be a separate decision.
+
 Where the config lives (GitOps, no manual PVC drift): the mkaiser register package is vendored
-at `gitops/home-assistant/packages/modbus_sungrow.yaml`, shipped as a **ConfigMap** and mounted
+at `gitops/home-assistant/packages/modbus_sungrow.yaml` and the iHomeManager map at
+`packages/modbus_ihomemanager.yaml`, both shipped in one **ConfigMap** and mounted
 at `/config/packages` (chart `additionalVolumes` / `additionalMounts`), and included from
 `configuration.templateConfig` in `values.yaml`.
 
@@ -59,11 +72,17 @@ Instruction Timeout only persists with **Multi-host = Yes** and must be a **mult
 - **Single Modbus client** on the WiNet-S — the iSolarCloud app can contend for it.
 - The WiNet-S serves **a subset** of the inverter's registers (the internal LAN port / COM2 expose
   more). Registers it doesn't serve were trimmed from the package to stop error spam.
-- The **EV charger (AC011E)** is **not** on this Modbus map. Port `516` on it is the channel the
-  *iHomeManager dials into*, SSL-encrypted — not a port HA can usefully poll. Charger
-  status/mode/enable **are** on the iHomeManager's unit-247 map (read via
-  `packages/modbus_ihomemanager.yaml`); charging power / session energy is still not exposed
-  locally — see [todo](../todo.md).
+- The **EV charger (AC011E)** is **not** on the inverter's map, and has no local port of its own:
+  `516` is the SSL channel the *iHomeManager dials into*, and every other port is actively
+  refused. It also rate-limits fast connection scans, so an aggressive port scan makes it look
+  entirely dead — scan gently.
+  Everything HA gets about the charger therefore comes via the **iHomeManager's unit-247 map**:
+  status/mode/enable at `8551/8047/8048`, and **real charging power at `8593` (total) with
+  `8595/8597/8599` per phase**. Those four are *not* in the upstream community map (which stops
+  at 8573) — they were found by diffing every readable register between an idle baseline and a
+  live charge session, and validated against it. **Session/accumulated energy does not exist**
+  anywhere on this map (8574–8773 scanned across 7 min of charging at 4.06 kW, nothing
+  accumulates), so kWh is integrated from the measured power in `packages/ev_charger.yaml`.
 - The **WiNet-S is reachable twice** (wired `.119`, WiFi `.116`, same serial). Given it tolerates
   only one Modbus client, the WiFi interface is worth disabling.
 - **iHomeManager settings to leave alone:** RS485 mode stays **collection** (the manager polling
