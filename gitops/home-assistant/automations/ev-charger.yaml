@@ -78,3 +78,68 @@
       message: >-
         Charger state: {{ states('sensor.charger_status') }}.
   mode: single
+
+# BYD cloud polling is a fixed timer with no sleep/parked back-off (checked in
+# coordinator.py), and both intervals default to 300s - ~288 wake-ups a day
+# versus a handful from opening the app. Each poll wakes the car and draws its
+# 12V battery, so idle polling is pushed right down and only telemetry is sped
+# up while the charger reports Charging. Polling then is close to free: the car
+# is awake and on shore power anyway.
+#
+# GPS stays slow even while charging - the car is parked, so location cannot
+# change. Raise it in the UI if live tracking while driving is ever wanted.
+#
+# Entity IDs are discovered via integration_entities() because they carry the
+# vehicle name, which is not known until the integration is configured. Before
+# that this automation finds nothing and does nothing.
+#
+# Reconciles on a timer as well as on charger-status changes: a missed edge
+# would otherwise leave the car being polled every 5 minutes indefinitely,
+# which is exactly the failure this exists to prevent.
+- id: byd_adaptive_poll_interval
+  alias: BYD - fast telemetry poll only while charging
+  triggers:
+  - trigger: state
+    entity_id: sensor.charger_status
+  - trigger: time_pattern
+    minutes: /30
+  - trigger: homeassistant
+    event: start
+  actions:
+  - variables:
+      idle_seconds: 14400        # 4 h; max the integration allows is 28800 (8 h)
+      charging_seconds: 300
+      telemetry: >-
+        {{ integration_entities('byd_vehicle')
+           | select('search', 'telemetry_poll_interval') | list }}
+      gps: >-
+        {{ integration_entities('byd_vehicle')
+           | select('search', 'gps_poll_interval') | list }}
+      wanted_telemetry: >-
+        {{ charging_seconds if states('sensor.charger_status') == 'Charging'
+           else idle_seconds }}
+  - repeat:
+      for_each: "{{ telemetry }}"
+      sequence:
+      - if:
+        - condition: template
+          value_template: "{{ states(repeat.item) | int(0) != wanted_telemetry | int }}"
+        then:
+        - action: number.set_value
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            value: "{{ wanted_telemetry | int }}"
+  - repeat:
+      for_each: "{{ gps }}"
+      sequence:
+      - if:
+        - condition: template
+          value_template: "{{ states(repeat.item) | int(0) != idle_seconds | int }}"
+        then:
+        - action: number.set_value
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            value: "{{ idle_seconds | int }}"
+  mode: single
