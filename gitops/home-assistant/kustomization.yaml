@@ -171,6 +171,40 @@ configMapGenerator:
   - custom_components/mammotion/translations/ro.json
   - custom_components/mammotion/translations/sl.json
   - custom_components/mammotion/translations/sv.json
+# Vendored jkaberg/hass-byd-vehicle (BYD car: SoC, range, charging state, location).
+# Needs pybyd pip-installed by HA on boot, like mammotion's pymammotion.
+# Only en.json is vendored - upstream ships 24 translations (318 KB) and this
+# house runs HA in English; same choice as bhyve. Renovate tracks the source tag:
+# https://github.com/jkaberg/hass-byd-vehicle/archive/refs/tags/0.0.84.tar.gz
+# ServerSideApply: the component files exceed the 256 KB client-side apply annotation
+- name: ha-byd-vehicle
+  options:
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
+  files:
+  - custom_components/byd_vehicle/__init__.py
+  - custom_components/byd_vehicle/binary_sensor.py
+  - custom_components/byd_vehicle/button.py
+  - custom_components/byd_vehicle/climate.py
+  - custom_components/byd_vehicle/config_flow.py
+  - custom_components/byd_vehicle/const.py
+  - custom_components/byd_vehicle/coordinator.py
+  - custom_components/byd_vehicle/device_fingerprint.py
+  - custom_components/byd_vehicle/device_pool.json
+  - custom_components/byd_vehicle/device_tracker.py
+  - custom_components/byd_vehicle/entity.py
+  - custom_components/byd_vehicle/lock.py
+  - custom_components/byd_vehicle/manifest.json
+  - custom_components/byd_vehicle/number.py
+  - custom_components/byd_vehicle/select.py
+  - custom_components/byd_vehicle/sensor.py
+  - custom_components/byd_vehicle/services.yaml
+  - custom_components/byd_vehicle/strings.json
+  - custom_components/byd_vehicle/switch.py
+  - custom_components/byd_vehicle/time.py
+- name: ha-byd-vehicle-translations
+  files:
+  - custom_components/byd_vehicle/translations/en.json
 generatorOptions:
   disableNameSuffixHash: true
 

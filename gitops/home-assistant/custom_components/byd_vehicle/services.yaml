@@ -1,0 +1,107 @@
+fetch_realtime:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: byd_vehicle
+
+fetch_gps:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: byd_vehicle
+
+fetch_hvac:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: byd_vehicle
+
+fetch_charging:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: byd_vehicle
+
+fetch_energy:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: byd_vehicle
+
+start_charging:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: byd_vehicle
+
+save_charging_schedule:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: byd_vehicle
+    start_time:
+      required: true
+      example: "00:00"
+      selector:
+        time:
+    end_time:
+      default: "06:00"
+      example: "06:00"
+      selector:
+        time:
+    until_full:
+      default: true
+      selector:
+        boolean:
+    repeat:
+      default: every_day
+      selector:
+        select:
+          options:
+            - value: single
+              label: Single (one-shot)
+            - value: every_day
+              label: Every day
+            - value: weekdays
+              label: Weekdays
+            - value: weekends
+              label: Weekends
+            - value: custom
+              label: Custom weekdays
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options:
+            - value: mon
+              label: Monday
+            - value: tue
+              label: Tuesday
+            - value: wed
+              label: Wednesday
+            - value: thu
+              label: Thursday
+            - value: fri
+              label: Friday
+            - value: sat
+              label: Saturday
+            - value: sun
+              label: Sunday
+    enabled:
+      default: true
+      selector:
+        boolean:

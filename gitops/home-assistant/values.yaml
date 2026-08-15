@@ -160,6 +160,12 @@ additionalVolumes:
   - name: mammotion-translations
     configMap:
       name: ha-mammotion-translations
+  - name: byd-vehicle
+    configMap:
+      name: ha-byd-vehicle
+  - name: byd-vehicle-translations
+    configMap:
+      name: ha-byd-vehicle-translations
 additionalMounts:
   - name: sungrow-package
     mountPath: /config/packages
@@ -206,6 +212,10 @@ additionalMounts:
     mountPath: /config/custom_components/mammotion
   - name: mammotion-translations
     mountPath: /config/custom_components/mammotion/translations
+  - name: byd-vehicle
+    mountPath: /config/custom_components/byd_vehicle
+  - name: byd-vehicle-translations
+    mountPath: /config/custom_components/byd_vehicle/translations
 
 ingress:
   # Enable ingress for home assistant

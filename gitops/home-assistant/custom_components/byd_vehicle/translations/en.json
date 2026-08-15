@@ -1,0 +1,625 @@
+{
+  "services": {
+    "fetch_realtime": {
+      "name": "Fetch telemetry data",
+      "description": "Force-fetch the latest vehicle telemetry from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_gps": {
+      "name": "Fetch GPS data",
+      "description": "Force-fetch the latest GPS location from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_hvac": {
+      "name": "Fetch HVAC status",
+      "description": "Force-fetch the latest HVAC / climate status from the BYD cloud.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_charging": {
+      "name": "Fetch charging status",
+      "description": "Force-fetch the live charging state and the configured smart-charging schedule from the BYD cloud (one homePage call) and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "fetch_energy": {
+      "name": "Fetch energy consumption",
+      "description": "Force-fetch the latest energy consumption data from the BYD cloud and log the raw response.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to fetch data for."
+        }
+      }
+    },
+    "start_charging": {
+      "name": "Start charging",
+      "description": "Start charging the vehicle immediately. Only succeeds when the charger is connected and the vehicle isn't already charging or at 100% SoC.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to start charging."
+        }
+      }
+    },
+    "save_charging_schedule": {
+      "name": "Save charging schedule",
+      "description": "Push a new smart-charging schedule to the vehicle.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The BYD vehicle device to update the schedule on."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "Time of day to begin charging, in HH:MM (24-hour)."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "Time of day to stop charging, in HH:MM. Ignored when 'Charge until full' is enabled."
+        },
+        "until_full": {
+          "name": "Charge until full",
+          "description": "When enabled, charge from the start time until the battery is full instead of stopping at the end time."
+        },
+        "repeat": {
+          "name": "Repeat",
+          "description": "How often the schedule runs: single (one-shot), every day, weekdays, weekends, or custom weekday selection."
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Which weekdays the schedule runs on. Only used when Repeat is set to 'custom'."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule is active."
+        }
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to BYD",
+        "description": "Set up your BYD account. If no Control PIN is set, action entities are disabled.",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "control_pin": "Control PIN (optional, 6-digit)",
+          "country_code": "Country",
+          "climate_duration": "Climate duration (time_span)",
+          "debug_dumps": "Debug dump API responses"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure BYD Vehicle",
+        "description": "Update your account credentials and Control PIN.",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "control_pin": "Control PIN (6-digit)",
+          "country_code": "Country",
+          "climate_duration": "Climate duration",
+          "debug_dumps": "Debug dump API responses"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_control_pin": "Invalid control PIN or cloud control is temporarily locked",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This account is already configured",
+      "wrong_account": "The account does not match the one being reauthenticated",
+      "reauth_successful": "Reauthentication was successful",
+      "reconfigure_successful": "Reconfiguration was successful"
+    }
+  },
+  "entity": {
+    "number": {
+      "realtime_poll_interval": {
+        "name": "Telemetry poll interval"
+      },
+      "gps_poll_interval": {
+        "name": "GPS poll interval"
+      }
+    },
+    "sensor": {
+      "elec_percent": {
+        "name": "Battery level"
+      },
+      "endurance_mileage": {
+        "name": "Range"
+      },
+      "total_mileage": {
+        "name": "Odometer"
+      },
+      "speed": {
+        "name": "Speed"
+      },
+      "temp_in_car": {
+        "name": "Cabin temperature"
+      },
+      "left_front_tire_pressure": {
+        "name": "Front left tire pressure"
+      },
+      "right_front_tire_pressure": {
+        "name": "Front right tire pressure"
+      },
+      "left_rear_tire_pressure": {
+        "name": "Rear left tire pressure"
+      },
+      "right_rear_tire_pressure": {
+        "name": "Rear right tire pressure"
+      },
+      "temp_out_car": {
+        "name": "Exterior temperature"
+      },
+      "pm": {
+        "name": "PM2.5"
+      },
+      "power_battery": {
+        "name": "Power battery level"
+      },
+      "ev_endurance": {
+        "name": "EV endurance"
+      },
+      "endurance_mileage_v2": {
+        "name": "Range V2"
+      },
+      "total_mileage_v2": {
+        "name": "Odometer V2"
+      },
+      "charging_state": {
+        "name": "Charging state"
+      },
+      "charge_state": {
+        "name": "Charge state"
+      },
+      "wait_status": {
+        "name": "Charge wait status"
+      },
+      "full_hour": {
+        "name": "Hours to full"
+      },
+      "full_minute": {
+        "name": "Minutes to full"
+      },
+      "scheduled_charge_start_time": {
+        "name": "Scheduled charge start time"
+      },
+      "scheduled_charge_end_time": {
+        "name": "Scheduled charge end time"
+      },
+      "scheduled_charge_repeat": {
+        "name": "Scheduled charge repeat"
+      },
+      "total_power": {
+        "name": "Total power"
+      },
+      "nearest_energy_consumption": {
+        "name": "Recent energy consumption"
+      },
+      "recent_50km_energy": {
+        "name": "Recent 50km energy"
+      },
+      "oil_endurance": {
+        "name": "Fuel range"
+      },
+      "oil_percent": {
+        "name": "Fuel level"
+      },
+      "total_oil": {
+        "name": "Total fuel consumption"
+      },
+      "engine_status": {
+        "name": "Engine status"
+      },
+      "epb": {
+        "name": "Electronic parking brake"
+      },
+      "ect_value": {
+        "name": "Coolant temperature"
+      },
+      "refrigerator_state": {
+        "name": "Refrigerator"
+      },
+      "refrigerator_door_state": {
+        "name": "Refrigerator door"
+      },
+      "last_updated": {
+        "name": "Telemetry last updated"
+      },
+      "gps_last_updated": {
+        "name": "GPS last updated"
+      },
+      "remaining_hours": {
+        "name": "Charge remaining hours"
+      },
+      "remaining_minutes": {
+        "name": "Charge remaining minutes"
+      },
+      "charge_remaining_time": {
+        "name": "Charge remaining time"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "total_energy": {
+        "name": "Total energy"
+      },
+      "nearest_energy_consumption_unit": {
+        "name": "Nearest energy consumption unit"
+      },
+      "endurance_mileage_v2_unit": {
+        "name": "Endurance mileage V2 unit"
+      },
+      "total_mileage_v2_unit": {
+        "name": "Total mileage V2 unit"
+      },
+      "rate": {
+        "name": "Rate"
+      },
+      "energy_consumption": {
+        "name": "Energy consumption"
+      },
+      "total_consumption": {
+        "name": "Total consumption"
+      },
+      "total_consumption_en": {
+        "name": "Total consumption EN"
+      },
+      "ok_light": {
+        "name": "OK light"
+      },
+      "power_battery_connection": {
+        "name": "Power battery connection"
+      },
+      "ins": {
+        "name": "INS"
+      },
+      "repair_mode_switch": {
+        "name": "Repair mode switch"
+      },
+      "vehicle_time_zone": {
+        "name": "Vehicle time zone"
+      },
+      "last_50km_avg_ev_consumption": {
+        "name": "Last 50km average EV consumption"
+      },
+      "last_50km_avg_fuel_consumption": {
+        "name": "Last 50km average fuel consumption"
+      },
+      "last_50km_avg_eq_consumption": {
+        "name": "Last 50km equivalent consumption"
+      },
+      "lifetime_avg_ev_consumption": {
+        "name": "Lifetime average EV consumption"
+      },
+      "lifetime_avg_fuel_consumption": {
+        "name": "Lifetime average fuel consumption"
+      },
+      "energy_cumulative_total_mileage": {
+        "name": "Cumulative total mileage"
+      },
+      "energy_last_50km_ev_consumption": {
+        "name": "Last 50km EV consumption"
+      },
+      "energy_last_50km_oil_consumption": {
+        "name": "Last 50km fuel consumption"
+      },
+"energy_last_50km_drive_distribution": {
+        "name": "Last 50km drive distribution"
+      },
+      "energy_last_50km_elect_distribution": {
+        "name": "Last 50km electric distribution"
+      },
+      "energy_last_50km_air_distribution": {
+        "name": "Last 50km HVAC distribution"
+      },
+      "energy_last_50km_other_distribution": {
+        "name": "Last 50km other distribution"
+      },
+      "energy_self_graph_today": {
+        "name": "Today's energy consumption"
+      },
+      "energy_auto_model_graph_today": {
+        "name": "Today's model-average consumption"
+      }
+    },
+    "binary_sensor": {
+      "is_online": {
+        "name": "Online"
+      },
+      "is_charging": {
+        "name": "Charging"
+      },
+      "is_any_door_open": {
+        "name": "Doors"
+      },
+      "is_any_window_open": {
+        "name": "Windows"
+      },
+      "is_locked": {
+        "name": "Locked"
+      },
+      "sentry_status": {
+        "name": "Sentry mode"
+      },
+      "left_front_door": {
+        "name": "Front left door"
+      },
+      "right_front_door": {
+        "name": "Front right door"
+      },
+      "left_rear_door": {
+        "name": "Rear left door"
+      },
+      "right_rear_door": {
+        "name": "Rear right door"
+      },
+      "trunk_lid": {
+        "name": "Trunk"
+      },
+      "sliding_door": {
+        "name": "Sliding door"
+      },
+      "forehold": {
+        "name": "Frunk"
+      },
+      "left_front_window": {
+        "name": "Front left window"
+      },
+      "right_front_window": {
+        "name": "Front right window"
+      },
+      "left_rear_window": {
+        "name": "Rear left window"
+      },
+      "right_rear_window": {
+        "name": "Rear right window"
+      },
+      "skylight": {
+        "name": "Skylight"
+      },
+      "battery_heat_state": {
+        "name": "Battery heating"
+      },
+      "charge_heat_state": {
+        "name": "Charge heating"
+      },
+      "vehicle_state": {
+        "name": "Vehicle on"
+      },
+      "abs_warning": {
+        "name": "ABS warning"
+      },
+      "svs": {
+        "name": "Service vehicle soon"
+      },
+      "srs": {
+        "name": "Airbag warning"
+      },
+      "eps": {
+        "name": "Electric power steering"
+      },
+      "esp": {
+        "name": "Electronic stability"
+      },
+      "pwr": {
+        "name": "Power warning"
+      },
+      "power_system": {
+        "name": "Power system"
+      },
+      "ect": {
+        "name": "Coolant temperature warning"
+      },
+      "tirepressure_system": {
+        "name": "TPMS state"
+      },
+      "rapid_tire_leak": {
+        "name": "Rapid tire leak"
+      },
+      "left_front_tire_status": {
+        "name": "Front left tire status"
+      },
+      "right_front_tire_status": {
+        "name": "Front right tire status"
+      },
+      "left_rear_tire_status": {
+        "name": "Rear left tire status"
+      },
+      "right_rear_tire_status": {
+        "name": "Rear right tire status"
+      },
+      "upgrade_status": {
+        "name": "OTA upgrade status"
+      },
+      "oil_pressure_system": {
+        "name": "Oil pressure system"
+      },
+      "braking_system": {
+        "name": "Braking system"
+      },
+      "charging_system": {
+        "name": "Charging system"
+      },
+      "steering_system": {
+        "name": "Steering system"
+      },
+      "less_one_min": {
+        "name": "Less one min"
+      },
+      "scheduled_charge_enabled": {
+        "name": "Scheduled charge enabled"
+      },
+      "scheduled_charge_until_full": {
+        "name": "Scheduled charge until full"
+      }
+    },
+    "button": {
+      "flash_lights": {
+        "name": "Flash lights"
+      },
+      "find_car": {
+        "name": "Find car"
+      },
+      "close_windows": {
+        "name": "Close windows"
+      },
+      "force_poll": {
+        "name": "Force poll"
+      },
+      "start_charging": {
+        "name": "Start charging"
+      },
+      "stop_charging": {
+        "name": "Stop charging"
+      },
+      "fetch_energy": {
+        "name": "Fetch energy data"
+      }
+    },
+    "select": {
+      "driver_seat_heat": {
+        "name": "Driver seat heating",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "high": "High"
+        }
+      },
+      "driver_seat_ventilation": {
+        "name": "Driver seat ventilation",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "high": "High"
+        }
+      },
+      "passenger_seat_heat": {
+        "name": "Passenger seat heating",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "high": "High"
+        }
+      },
+      "passenger_seat_ventilation": {
+        "name": "Passenger seat ventilation",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "high": "High"
+        }
+      },
+      "rear_left_seat_heat": {
+        "name": "Rear left seat heating",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "high": "High"
+        }
+      },
+      "rear_left_seat_ventilation": {
+        "name": "Rear left seat ventilation",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "high": "High"
+        }
+      },
+      "rear_right_seat_heat": {
+        "name": "Rear right seat heating",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "high": "High"
+        }
+      },
+      "rear_right_seat_ventilation": {
+        "name": "Rear right seat ventilation",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "high": "High"
+        }
+      }
+    },
+    "switch": {
+      "battery_heat": {
+        "name": "Battery heat"
+      },
+      "car_on": {
+        "name": "A/C on"
+      },
+      "steering_wheel_heat": {
+        "name": "Steering wheel heating"
+      },
+      "disable_polling": {
+        "name": "Disable polling"
+      },
+      "schedule_enabled": {
+        "name": "Schedule enabled"
+      },
+      "charge_to_full": {
+        "name": "Charge to full"
+      },
+      "repeat_daily": {
+        "name": "Repeat daily"
+      }
+    },
+    "time": {
+      "start_time": {
+        "name": "Start time"
+      },
+      "end_time": {
+        "name": "End time"
+      }
+    },
+    "climate": {
+      "climate": {
+        "name": "Climate",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "max_heat": "Max Heat",
+              "max_cool": "Max Cool"
+            }
+          }
+        }
+      }
+    },
+    "lock": {
+      "lock": {
+        "name": "Lock"
+      }
+    },
+    "device_tracker": {
+      "location": {
+        "name": "Location"
+      }
+    }
+  }
+}
