@@ -75,6 +75,16 @@ views:
     - entity: sensor.charger_phase_c_power
       name: Phase C
     - type: section
+      label: Charging strategy
+    - entity: switch.charger_allow_grid_charging
+      name: Grid charging allowed
+    - entity: input_boolean.ev_deadline_charging
+      name: Deadline charging
+    - entity: input_number.ev_target_soc
+      name: Target charge level
+    - entity: input_datetime.ev_ready_by
+      name: Ready by
+    - type: section
       label: Car (polled every 4 h unless charging)
     - entity: sensor.byd_atto_2_battery_level
       name: Battery
@@ -153,6 +163,14 @@ views:
       iHomeManager's own charger registers (total plus the three phases), found
       by diffing the register map between an idle and a charging session. It
       tracks the car only — a household appliance switching on does not move it.
+
+      **Charging strategy** — the charger normally runs surplus-only: it takes
+      solar that would otherwise be exported and never imports. *Grid charging
+      allowed* is switched on automatically only when the car is below the
+      target and the current hour is among the cheapest remaining before the
+      *Ready by* time, then off again. Turn *Deadline charging* off to stay
+      surplus-only regardless. This needs the charger left in **Eco mode** in
+      the Sungrow app; the mode itself is not written from here.
 
       **The car rows come from BYD's cloud, not the charger**, and are only
       refreshed every 4 hours while idle (every 5 minutes during charging) to

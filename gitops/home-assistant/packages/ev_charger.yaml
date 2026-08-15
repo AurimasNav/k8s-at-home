@@ -10,6 +10,30 @@
 # existed solely because no real measurement was available, and keeping a second
 # number that disagrees with the meter is worse than having one.
 
+# Settings for deadline charging. These are genuine user inputs - things you
+# decide - unlike the derived baseline helper removed earlier, which represented
+# a computed value that had no business being adjustable.
+input_number:
+  ev_target_soc:
+    name: EV target charge level
+    min: 30
+    max: 100
+    step: 5
+    unit_of_measurement: "%"
+    icon: mdi:battery-charging-80
+
+input_datetime:
+  ev_ready_by:
+    name: EV ready by
+    has_date: false
+    has_time: true
+
+input_boolean:
+  ev_deadline_charging:
+    name: EV deadline charging
+    icon: mdi:calendar-clock
+
+
 sensor:
   - platform: integration
     source: sensor.charger_active_power

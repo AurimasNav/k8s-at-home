@@ -175,3 +175,112 @@
         Car has been plugged in for 20 min without charging. Mode:
         {{ states('sensor.charger_mode') }}.
   mode: single
+
+# Solar-surplus charging with a cheap-grid deadline guarantee.
+#
+# Sungrow already implements surplus charging: in Eco mode with "grid power draw
+# permission" denied, the charger takes PV surplus only and never imports. So
+# this arbitrates that one permission rather than modulating current from HA -
+# the EMS keeps doing the hard part, and nothing breaks if HA is down.
+#
+#   default            -> permission OFF: surplus only, never imports
+#   below target, and
+#   now is one of the
+#   cheapest hours     -> permission ON: import allowed to meet the deadline
+#   target reached     -> permission OFF
+#
+# Re-evaluated every 15 min against the CURRENT SoC, which is what makes it
+# self-correcting: if charging turns out slower than the assumed rate, later
+# runs see a bigger remaining gap and fewer hours left, so more of those hours
+# get selected. The assumed rate therefore only has to be roughly right.
+#
+# Fails safe: no Nord Pool, no SoC, or any missing input all fall through to
+# surplus-only rather than granting grid import.
+#
+# NOTE: the charger must be left in Eco mode (set once in the Sungrow app) -
+# this repo deliberately does not write the mode register.
+- id: ev_surplus_and_cheap_grid
+  alias: EV charger - surplus by default, cheapest grid hours for deadline
+  triggers:
+  - trigger: time_pattern
+    minutes: /15
+  - trigger: state
+    entity_id:
+    - sensor.charger_status
+    - input_number.ev_target_soc
+    - input_datetime.ev_ready_by
+    - input_boolean.ev_deadline_charging
+  - trigger: homeassistant
+    event: start
+  variables:
+    assumed_charge_kw: 7        # planning rate only; self-corrects (see above)
+    battery_kwh: 45             # BYD Atto 2 usable; calibrate from measured kWh vs SoC delta
+    area: LT
+  actions:
+  # --- surplus-only fast paths -------------------------------------------
+  - if:
+    - condition: template
+      value_template: >-
+        {{ states('sensor.charger_status') not in ['Standby (plugged)', 'Charging']
+           or is_state('input_boolean.ev_deadline_charging', 'off')
+           or not states('sensor.byd_atto_2_battery_level') | is_number
+           or states('sensor.byd_atto_2_battery_level') | float(0)
+              >= states('input_number.ev_target_soc') | float(80)
+           or integration_entities('nordpool') | count == 0 }}
+    then:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.charger_allow_grid_charging
+    - stop: surplus only
+
+  # --- fetch prices ------------------------------------------------------
+  - variables:
+      np_entry: "{{ config_entry_id(integration_entities('nordpool') | first) }}"
+  - action: nordpool.get_prices_for_date
+    data:
+      config_entry: "{{ np_entry }}"
+      date: "{{ now().date() }}"
+      areas: ["{{ area }}"]
+    response_variable: prices_today
+  - action: nordpool.get_prices_for_date
+    data:
+      config_entry: "{{ np_entry }}"
+      date: "{{ (now() + timedelta(days=1)).date() }}"
+      areas: ["{{ area }}"]
+    response_variable: prices_tomorrow
+
+  # --- decide ------------------------------------------------------------
+  - variables:
+      allow_grid: >-
+        {% set soc = states('sensor.byd_atto_2_battery_level') | float(0) %}
+        {% set target = states('input_number.ev_target_soc') | float(80) %}
+        {% set h = state_attr('input_datetime.ev_ready_by', 'hour') | int(7) %}
+        {% set m = state_attr('input_datetime.ev_ready_by', 'minute') | int(0) %}
+        {% set dl0 = today_at('%02d:%02d' | format(h, m)) %}
+        {% set deadline = dl0 if dl0 > now() else dl0 + timedelta(days=1) %}
+        {% set this_hour = now().replace(minute=0, second=0, microsecond=0) %}
+        {% set need_kwh = (target - soc) / 100 * battery_kwh %}
+        {% set hours_needed = (need_kwh / assumed_charge_kw) | round(0, 'ceil') | int %}
+        {% set entries = (prices_today.get(area, []) + prices_tomorrow.get(area, [])) %}
+        {% set ns = namespace(win=[]) %}
+        {% for e in entries %}
+          {% set st = e.start | as_datetime | as_local %}
+          {% if st >= this_hour and st < deadline %}
+            {% set ns.win = ns.win + [{'start': st, 'price': e.price}] %}
+          {% endif %}
+        {% endfor %}
+        {% set chosen = (ns.win | sort(attribute='price'))[:hours_needed] %}
+        {{ hours_needed > 0
+           and chosen | selectattr('start', 'eq', this_hour) | list | count > 0 }}
+  - if:
+    - condition: template
+      value_template: "{{ allow_grid }}"
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.charger_allow_grid_charging
+    else:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.charger_allow_grid_charging
+  mode: single

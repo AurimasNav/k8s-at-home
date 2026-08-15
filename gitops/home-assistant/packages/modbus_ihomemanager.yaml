@@ -741,6 +741,35 @@ modbus:
         scan_interval: *scan_interval_medium
 
 
+    #####################
+    # modbus switches — the ONLY write in this package.
+    #
+    # Register 8049 (Sungrow reg 8050) "Grid power draw permission". Per the
+    # official protocol it is settable only while the charger is in Eco mode,
+    # which is exactly the surplus-charging case: Eco + permission denied means
+    # the car charges from PV surplus and never imports; granting permission
+    # lets it pull from the grid.
+    #
+    # Deliberately the only writable register here. Mode (8047) and charger
+    # enable (8048) stay read-only so HA can grant or deny grid import but can
+    # neither start/stop charging nor change the charging mode.
+    #####################
+    switches:
+      - name: Charger allow grid charging
+        unique_id: ihm_charger_allow_grid_charging
+        slave: 247
+        address: 8049 # reg 8050
+        write_type: holding
+        command_on: 170  # 0xAA — may draw from grid
+        command_off: 85  # 0x55 — surplus only
+        verify:
+          input_type: holding
+          address: 8049
+          state_on: 170
+          state_off: 85
+          delay: 1
+
+
 template:
   ###########################
   # template: sensor
