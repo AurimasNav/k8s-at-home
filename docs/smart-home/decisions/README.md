@@ -27,3 +27,4 @@ Keep them short and self-contained. Supersede rather than rewrite: mark the old 
 | [0001](0001-nibe-f1245-integration-path.md) | NIBE F1245 integration path (ESP32 NibeGW over WiFi, retire Waveshare) | Accepted 2026-07-22 |
 | [0002](0002-sungrow-inverter-modbus-path.md) | Sungrow integration path (WiNet-S native Modbus TCP; iHomeManager unit 247 for meter + EV charger) | Deployed 2026-07-24, extended 2026-08-14 |
 | [0003](0003-bathroom-presence-radar-retrofit.md) | Bathroom presence + ambient-light retrofit (ESP32-C6 SuperMini + mmWave, mains-fed) | Proposed 2026-08-02 |
+| [0004](0004-whole-home-backup-not-automatic.md) | Whole-home backup does not transfer automatically (manual changeover in the load path) | Diagnosed 2026-08-15 |

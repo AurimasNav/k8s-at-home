@@ -4,6 +4,17 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
 
 ## Sungrow / energy
 
+- [ ] **Backup does not transfer automatically — get the installer back.** Cause
+      diagnosed 2026-08-15, see
+      [ADR 0004](decisions/0004-whole-home-backup-not-automatic.md): both inverter
+      AC ports are wired and backup mode is enabled, but an **ETI SSQ 340 manual
+      changeover** sits between the `LOAD` output and the house, so nothing can
+      transfer unattended. Fix is to feed the house DB permanently from `LOAD` and
+      demote the SSQ to a maintenance bypass. Decide the **EV charger** question at
+      the same time (11 kW against a 15 kW off-grid limit would drain the battery in
+      ~1 h) and put the **k3s node on the backed-up side** so the next outage is
+      actually recorded.
+
 - [ ] **The vendored iHomeManager map comes from a retired project.**
       `Jam3s97/sungrow_ihomemanager` is archived in favour of
       [`TCzerny/ha-modbus-manager`](https://github.com/TCzerny/ha-modbus-manager)
