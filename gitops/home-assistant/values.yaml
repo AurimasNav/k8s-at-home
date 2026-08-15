@@ -68,6 +68,11 @@ configuration:
     scene: !include scenes.yaml
 
     homeassistant:
+      # Lithuania. Was Europe/Kyiv - same EET/EEST offset and DST rules today, so
+      # no effect on existing history, but wrong, and the EV deadline logic ranks
+      # Nord Pool LT prices by local hour so a future divergence would silently
+      # shift the chosen cheap hours.
+      time_zone: Europe/Vilnius
       packages:
         sungrow: !include packages/modbus_sungrow.yaml
         ihomemanager: !include packages/modbus_ihomemanager.yaml

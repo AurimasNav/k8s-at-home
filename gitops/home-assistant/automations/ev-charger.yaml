@@ -187,7 +187,12 @@
 #   below target, and
 #   now is one of the
 #   cheapest hours     -> permission ON: import allowed to meet the deadline
-#   target reached     -> permission OFF
+#   target reached     -> permission OFF (surplus continues, uncapped)
+#
+# The target gates GRID charging only. This automation never stops charging - it
+# only grants or denies import - so once the target is reached the car keeps
+# taking free surplus all the way to 100%. Capping that would need a write to
+# the charger-enable register, which is deliberately read-only here.
 #
 # Re-evaluated every 15 min against the CURRENT SoC, which is what makes it
 # self-correcting: if charging turns out slower than the assumed rate, later

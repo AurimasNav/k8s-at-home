@@ -15,7 +15,8 @@
 # a computed value that had no business being adjustable.
 input_number:
   ev_target_soc:
-    name: EV target charge level
+    # Gates GRID charging only - surplus charging is never capped by it.
+    name: EV grid-charge target
     min: 30
     max: 100
     step: 5

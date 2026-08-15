@@ -81,7 +81,7 @@ views:
     - entity: input_boolean.ev_deadline_charging
       name: Deadline charging
     - entity: input_number.ev_target_soc
-      name: Target charge level
+      name: Grid-charge target (surplus ignores this)
     - entity: input_datetime.ev_ready_by
       name: Ready by
     - type: section
@@ -167,9 +167,14 @@ views:
       **Charging strategy** — the charger normally runs surplus-only: it takes
       solar that would otherwise be exported and never imports. *Grid charging
       allowed* is switched on automatically only when the car is below the
-      target and the current hour is among the cheapest remaining before the
-      *Ready by* time, then off again. Turn *Deadline charging* off to stay
-      surplus-only regardless. This needs the charger left in **Eco mode** in
+      *Grid-charge target* and the current hour is among the cheapest remaining
+      before the *Ready by* time, then off again. Turn *Deadline charging* off to
+      stay surplus-only regardless.
+
+      **The target applies to paid grid charging only.** Surplus charging is
+      never capped: once the target is reached HA simply stops granting grid
+      import and leaves the charger taking free solar, so sunshine fills the car
+      to 100%. Nothing here stops charging — the only limits are the car's own. This needs the charger left in **Eco mode** in
       the Sungrow app; the mode itself is not written from here.
 
       **The car rows come from BYD's cloud, not the charger**, and are only
