@@ -53,8 +53,11 @@
     data:
       title: EV charger
       message: >-
-        Charging completed. {{ states('sensor.ev_charging_energy_today') | float(0)
-        | round(1) }} kWh charged today.
+        Charging completed{% if states('sensor.byd_atto_2_battery_level') | is_number %},
+        battery at {{ states('sensor.byd_atto_2_battery_level') | round(0) }}%
+        ({{ states('sensor.byd_atto_2_range') }} km){% endif %}.
+        {{ states('sensor.ev_charging_energy_today') | float(0) | round(1) }} kWh
+        charged today.
   mode: single
 
 - id: ev_charger_fault
@@ -95,14 +98,16 @@
 #
 # Reconciles on a timer as well as on charger-status changes: a missed edge
 # would otherwise leave the car being polled every 5 minutes indefinitely,
-# which is exactly the failure this exists to prevent.
+# which is exactly the failure this exists to prevent. Every 10 min rather than
+# 30 so a freshly-added integration (which starts at upstream's 300s default)
+# is pulled down promptly; the action is a no-op when the value already matches.
 - id: byd_adaptive_poll_interval
   alias: BYD - fast telemetry poll only while charging
   triggers:
   - trigger: state
     entity_id: sensor.charger_status
   - trigger: time_pattern
-    minutes: /30
+    minutes: /10
   - trigger: homeassistant
     event: start
   actions:
@@ -142,4 +147,31 @@
             entity_id: "{{ repeat.item }}"
           data:
             value: "{{ idle_seconds | int }}"
+  mode: single
+
+# Plugged in and then nothing happens is the classic EV failure - you walk away
+# assuming it is charging. Triggered from the charger (5s polling, authoritative
+# on plug state) rather than the car, whose plug sensor only refreshes every 4h
+# while idle and would report this hours late.
+#
+# 20 minutes of grace so a scheduled or solar-waiting start is not flagged.
+- id: ev_charger_plugged_but_idle
+  alias: EV charger - plugged in but not charging
+  triggers:
+  - trigger: state
+    entity_id: sensor.charger_status
+    to: Standby (plugged)
+    for:
+      minutes: 20
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: EV charger
+      message: >-
+        Car has been plugged in for 20 min without charging. Mode:
+        {{ states('sensor.charger_mode') }}.
   mode: single

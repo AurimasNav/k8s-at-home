@@ -74,6 +74,18 @@ views:
       name: Phase B
     - entity: sensor.charger_phase_c_power
       name: Phase C
+    - type: section
+      label: Car (polled every 4 h unless charging)
+    - entity: sensor.byd_atto_2_battery_level
+      name: Battery
+    - entity: sensor.byd_atto_2_range
+      name: Range
+    - entity: binary_sensor.byd_atto_2_plug
+      name: Plugged in
+    - entity: binary_sensor.byd_atto_2_charging
+      name: Charging (car)
+    - entity: sensor.byd_atto_2_telemetry_last_updated
+      name: Car data as of
 
   # Supports the open decision on which meter should feed the Energy dashboard:
   # the iHomeManager sits at the meter, the inverter only sees its own side.
@@ -141,6 +153,12 @@ views:
       iHomeManager's own charger registers (total plus the three phases), found
       by diffing the register map between an idle and a charging session. It
       tracks the car only — a household appliance switching on does not move it.
+
+      **The car rows come from BYD's cloud, not the charger**, and are only
+      refreshed every 4 hours while idle (every 5 minutes during charging) to
+      avoid waking the car and draining its 12 V battery. So *Battery* and
+      *Range* can be hours old when parked — check *Car data as of*. The
+      charger rows above are live to within seconds either way.
 
       **Meter cross-check** — the iHomeManager sits at the grid meter, the
       inverter only sees its own connection, so the two disagree by whatever
