@@ -4,6 +4,20 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
 
 ## Sungrow / energy
 
+- [ ] **Rework EV surplus charging — the first attempt was based on a wrong
+      assumption.** "Eco mode + grid power draw permission denied" does **not**
+      mean charge-from-surplus-only; denying that register (8049 / Sungrow 8050)
+      stops the charger operating at all. Proven 2026-08-16: car plugged at 87%
+      all day, export steady at 4488–6123 W from 09:03–09:17 (14 min, no dips,
+      well above the 4100 W / 6 A-per-phase floor), charger drew 0 W and the
+      surplus went to the grid. The automation was removed and the permission
+      restored to 0xAA; `switch.charger_allow_grid_charging` remains as a manual
+      control. Solar priority comes from Eco mode itself. A real "never import"
+      policy needs a wider write scope — mode (8047) and/or charger enable
+      (8048) — which was deliberately excluded, so re-scoping is a decision, not
+      an increment. **Verify any next attempt against a real sunny day before
+      trusting it.**
+
 - [ ] **Backup does not transfer automatically — get the installer back.** Cause
       diagnosed 2026-08-15, see
       [ADR 0004](decisions/0004-whole-home-backup-not-automatic.md): both inverter

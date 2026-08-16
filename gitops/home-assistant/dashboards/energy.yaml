@@ -164,18 +164,12 @@ views:
       by diffing the register map between an idle and a charging session. It
       tracks the car only — a household appliance switching on does not move it.
 
-      **Charging strategy** — the charger normally runs surplus-only: it takes
-      solar that would otherwise be exported and never imports. *Grid charging
-      allowed* is switched on automatically only when the car is below the
-      *Grid-charge target* and the current hour is among the cheapest remaining
-      before the *Ready by* time, then off again. Turn *Deadline charging* off to
-      stay surplus-only regardless.
-
-      **The target applies to paid grid charging only.** Surplus charging is
-      never capped: once the target is reached HA simply stops granting grid
-      import and leaves the charger taking free solar, so sunshine fills the car
-      to 100%. Nothing here stops charging — the only limits are the car's own. This needs the charger left in **Eco mode** in
-      the Sungrow app; the mode itself is not written from here.
+      **Charging strategy** — the charger runs in **Eco mode**, which prioritises
+      solar. *Grid charging allowed* is a manual switch: denying it does **not**
+      restrict the charger to surplus, it stops it charging altogether (proven
+      2026-08-16 — a full day plugged at 87% with 5–6 kW of surplus exported and
+      nothing drawn). Leave it on. The target and ready-by settings below are
+      inert for now; the automation that used them was removed.
 
       **The car rows come from BYD's cloud, not the charger**, and are only
       refreshed every 4 hours while idle (every 5 minutes during charging) to
