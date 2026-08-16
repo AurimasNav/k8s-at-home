@@ -171,6 +171,12 @@ additionalVolumes:
   - name: byd-vehicle-translations
     configMap:
       name: ha-byd-vehicle-translations
+  - name: eso
+    configMap:
+      name: ha-eso
+  - name: eso-translations
+    configMap:
+      name: ha-eso-translations
 additionalMounts:
   - name: sungrow-package
     mountPath: /config/packages
@@ -221,6 +227,10 @@ additionalMounts:
     mountPath: /config/custom_components/byd_vehicle
   - name: byd-vehicle-translations
     mountPath: /config/custom_components/byd_vehicle/translations
+  - name: eso
+    mountPath: /config/custom_components/eso
+  - name: eso-translations
+    mountPath: /config/custom_components/eso/translations
 
 ingress:
   # Enable ingress for home assistant

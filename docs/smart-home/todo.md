@@ -49,6 +49,15 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
       `gitops/home-assistant/packages/modbus_ihomemanager.yaml` (read-only;
       upstream Jam3s97/sungrow_ihomemanager also has write entities — EMS mode,
       forced charge/discharge, charger enable — add deliberately if wanted).
+- [ ] **Decide where grid import/export should come from — now settleable against
+      the actual bill.** The `eso` integration (vendored 2026-08-16, Ignitis
+      "Energy Smart" path) imports the DSO's own metered consumption and export,
+      i.e. what you are actually billed on. Compare it against
+      `ihm_grid_import_energy` and the inverter's `total_imported_energy` over a
+      few days and pick whichever matches the meter, rather than choosing on
+      principle. Data is previous-day only, so allow a couple of days. It also
+      exposes the **kaupimas storage-bank balance**, which is not derivable from
+      any local measurement.
 - [ ] **Decide where grid import/export should come from.** Now actionable: the
       iHM serves the meter's lifetime counters (`8175/8177`, e.g. 7937.0 kWh
       import / 5664.7 kWh export on 2026-08-14) as

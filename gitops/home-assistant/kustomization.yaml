@@ -205,6 +205,33 @@ configMapGenerator:
 - name: ha-byd-vehicle-translations
   files:
   - custom_components/byd_vehicle/translations/en.json
+# Vendored algirdasc/hass-eso — imports metered consumption/export statistics from
+# the DSO (ESO or Ignitis "Energy Smart"), plus the kaupimas storage-bank balance.
+# Previous-day data only, one import per day, so it is for reconciliation and
+# billing insight - not usable for automations.
+#
+# Pinned to commit bcb95c4fb8 (2026-08-12): this project publishes NO tags or
+# releases, so unlike every other vendored component here it cannot be pinned to
+# a version. The manifest says 1.3.0 but no such tag exists. Upstream also warns
+# it is still in testing and may break. Re-pin by picking a newer SHA:
+# https://github.com/algirdasc/hass-eso/archive/bcb95c4fb8.tar.gz
+- name: ha-eso
+  files:
+  - custom_components/eso/__init__.py
+  - custom_components/eso/config_flow.py
+  - custom_components/eso/const.py
+  - custom_components/eso/eso_client.py
+  - custom_components/eso/form_parser.py
+  - custom_components/eso/ignitis_client.py
+  - custom_components/eso/manifest.json
+  - custom_components/eso/objects_parser.py
+  - custom_components/eso/repairs.py
+  - custom_components/eso/sensor.py
+  - custom_components/eso/services.yaml
+  - custom_components/eso/strings.json
+- name: ha-eso-translations
+  files:
+  - custom_components/eso/translations/en.json
 generatorOptions:
   disableNameSuffixHash: true
 
