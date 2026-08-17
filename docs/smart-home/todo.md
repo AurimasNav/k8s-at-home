@@ -158,6 +158,56 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
       reproduces on a future HA restart, file it upstream with the recorder
       timeline.
 
+## Cameras / CCTV
+
+Current kit (nothing here is old — both lines are still in Hikvision's 2026
+catalogue, installed ~June 2023):
+
+| | |
+|---|---|
+| NVR | `DS-7604NXI-K1/4P`, fw V4.76.015 — 4-ch AcuSense |
+| Cameras ×3 | `DS-2CD2346G2-IU` — 4 MP AcuSense turret, Darkfighter, 120 dB WDR, mic, IP66 |
+
+- [ ] **Keep Frigate in mind — it is the answer if the Hikvision integration
+      dies, and it fixes a gap we already have.** The problem is software, not
+      hardware: `hikvision_next` is dormant (last real commit 2024-12-15, 111
+      open issues) and warns it stops working in HA 2027.2. Replacing cameras
+      would fix nothing.
+
+      [Frigate](https://frigate.video) keeps the existing cameras (they do RTSP)
+      and replaces the NVR's *software* role, running in this k3s cluster. It
+      brings a maintained HA integration, local AI object detection, and
+      **notifications carrying video clips** — which is exactly why the
+      Hikvision native app currently beats HA, and why the motion notifications
+      were dropped from HA in the first place (see
+      `automations/hikvision.yaml`).
+
+      Free and open source (AGPL-3.0). Frigate+ (~$50/yr, custom model
+      training) is optional and not needed. Real costs are **inference**
+      — free if the k3s node has an Intel iGPU (OpenVINO), else a Coral TPU
+      at ~€30–70 — and **storage**, which is the bigger one for three 4 MP
+      streams. Check the node for an Intel iGPU first; that decides whether
+      this costs anything at all.
+
+      Trade-off worth naming: it is another service to run, update and back up,
+      versus an appliance that just works. The NVR keeps recording regardless,
+      so it can be trialled alongside rather than as a cutover.
+
+- [ ] **Lighter fallback if Frigate is not wanted:** core `onvif` gives streams
+      and motion/tamper events from the same cameras, vendor-neutral and
+      maintained. The only thing lost is the NVR reboot service, which becomes a
+      `rest_command` against the ISAPI endpoint. Our exposure is already small —
+      since motion notifications moved to the native app, HA only uses
+      tamper/video-loss sensors plus that reboot.
+
+- [ ] **Update camera firmware.** All three are on V5.7.13 build 230706 (July
+      2023) — three years stale on network-facing devices.
+
+- [ ] **Keep the NVR and cameras off the internet** (no port forwarding, LAN or
+      VLAN only). Hikvision is on the US FCC covered list and barred from UK
+      government sites; for a private home that is a personal call, but it is a
+      strong argument against any remote/cloud exposure.
+
 ## Housekeeping
 
 - [ ] `plans/esphome-directory-structure.md` is stale — it names an ESP32-C6 as
