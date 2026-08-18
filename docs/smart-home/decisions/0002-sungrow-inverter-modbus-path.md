@@ -44,6 +44,17 @@ Since 2026-08-14 HA also reads the **iHomeManager** as a second, independent hub
 - Read-only. Upstream's write entities (EMS mode, forced charge/discharge, charger enable) were
   deliberately not vendored; adding control should be a separate decision.
 
+**Register definitions are vendored, and each file carries its own provenance header** —
+source repo, version marker, and the local changes that must be re-applied on update. Read
+those headers before editing either file. In short: the inverter map comes from
+[mkaiser/Sungrow-SHx](https://github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant)
+(actively maintained, but publishes no tags — the `Release date` line is the only version
+marker), and the iHomeManager map from
+[Jam3s97/sungrow_ihomemanager](https://github.com/Jam3s97/sungrow_ihomemanager) (archived;
+see [todo](../todo.md) for why migration to its successor was declined). Both are *data
+only* — the code polling them is Home Assistant's own core `modbus` integration, so there is
+no custom component in this path.
+
 Where the config lives (GitOps, no manual PVC drift): the mkaiser register package is vendored
 at `gitops/home-assistant/packages/modbus_sungrow.yaml` and the iHomeManager map at
 `packages/modbus_ihomemanager.yaml`, both shipped in one **ConfigMap** and mounted

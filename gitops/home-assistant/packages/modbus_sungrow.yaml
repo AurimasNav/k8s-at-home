@@ -1,3 +1,39 @@
+# PROVENANCE — vendored, not written here.
+#
+# Source: https://github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant
+#   file: modbus_sungrow.yaml
+#
+# Upstream publishes NO tags or releases, so the "Release date" line below is
+# the only version marker there is. It read 2026-06-19 when vendored and still
+# matches upstream main as of 2026-08-18, i.e. we are current. To check for
+# drift, diff against the raw file on main; to update, re-download and re-apply
+# the local changes listed here.
+#
+# NOTE: these are register DEFINITIONS only. The code polling them is Home
+# Assistant's own core `modbus` integration - there is no custom component in
+# this path. The iHomeManager map is a separate file with its own provenance
+# header (packages/modbus_ihomemanager.yaml, from the now-archived
+# Jam3s97/sungrow_ihomemanager).
+#
+# LOCAL CHANGES vs upstream (re-apply these on every update):
+#   1. Secrets inlined - upstream uses !secret for host/port/device_address/
+#      message_wait_milliseconds, but this ships as a ConfigMap with no
+#      secrets.yaml alongside it. Set to 192.168.1.119:502, unit 1, 30 ms.
+#   2. `automation:` and `scene:` sections dropped - this package is read-only
+#      telemetry; control logic lives in automations/ where it can be reviewed.
+#   3. 9 sensors trimmed: the WiNet-S serves only a subset of the inverter's
+#      registers, and the ones it does not answer produced constant error spam
+#      (see ADR 0002). Removed:
+#      - Meter phase A current
+#      - Meter phase A voltage
+#      - Meter phase B current
+#      - Meter phase B voltage
+#      - Meter phase C current
+#      - Meter phase C voltage
+#      - Sungrow Version 2
+#      - Sungrow Version 3
+#      - Sungrow Version 4 (Sungrow Battery)
+#
 # Release date 2026-06-19
 #
 # INSTALLATION GUIDE: https://github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant/blob/main/doc/installation.md
