@@ -5,17 +5,20 @@
   the lever to the other position feeds the house through the inverter's `LOAD` output, and
   automatic islanding then works. See *Resolution* below.
 - ~~**Status:** Diagnosed 2026-08-15 — cause identified, fix is electrician work~~
-- **Scope:** *Why* the SH15T does not carry the house automatically during a grid outage, and what
-  would have to change. Electrical work itself is out of scope for this repo — this exists so the
-  evidence is written down when the installer is challenged.
+- **Scope:** *Why* the SH15T did not carry the house automatically during a grid outage.
+  Kept because the diagnostic method is reusable, not because anything is outstanding.
 - **Related:** [0002 — Sungrow integration path](0002-sungrow-inverter-modbus-path.md)
 
-## Symptom
+## Symptom (as it appeared)
 
-On a grid outage the house goes dark. Power is restored only by manually flipping a switch in the
-meter box, after which the house runs from battery. The installer intended whole-home automatic
-backup and did not achieve it; the manual switch is a fallback, not a design choice. There is no
-critical-loads subpanel.
+On a grid outage the house went dark. Power was restored only by manually flipping a switch in the
+meter box, after which the house ran from battery.
+
+**The installation was correct throughout.** Everything — the `LOAD` feed, the changeover, the
+inverter settings — was wired and configured properly. The only thing wrong was the *position the
+changeover lever was left in* at handover: grid-direct rather than through the inverter. Nobody
+was told which position maintains the backup path, so it sat in the wrong one and the symptom
+looked like a wiring or configuration fault. It was neither.
 
 ## What was measured
 
@@ -48,9 +51,12 @@ The SH15T is designed to need no such switch: nameplate `AC-Backup` **43000 W / 
 a **40 A** supply (SSQ 340 40 A, ETIMAT6 C40), comfortably inside the 63 A bypass — so capacity was
 never the blocker either.
 
-## What would have to change
+## What was believed to be needed (superseded)
 
-Target topology, for the installer/electrician to implement and certify:
+This was the conclusion before the lever was tried — recorded because the reasoning was sound
+given the evidence available, and wrong. **No rework was needed; see Resolution.**
+
+Target topology, which turned out to be what was *already installed*:
 
 ```
 Grid ──▶ inverter GRID port ──▶ [internal 63 A bypass] ──▶ inverter LOAD port ──▶ house DB
@@ -58,8 +64,9 @@ Grid ──▶ inverter GRID port ──▶ [internal 63 A bypass] ──▶ inv
 
 - Feed the house distribution board **permanently** from `LOAD`. The inverter passes grid through in
   normal operation and opens its grid relay on failure, unattended.
-- **Keep the SSQ 340, repurposed as a maintenance bypass** (grid-direct, past the inverter) so the
-  house can still be powered if the inverter fails or needs service. It stops being the everyday path.
+- **Keep the SSQ 340 as a maintenance bypass** (grid-direct, past the inverter) so the house can
+  still be powered if the inverter fails or needs service. This is exactly what it is — it was
+  simply being left in the bypass position permanently.
 - **Neutral–earth bonding while islanded** must be handled — an off-grid inverter has to establish the
   N-PE reference, and getting it wrong breaks RCD protection downstream.
 - Keep the **DTSU666 CTs on the grid side** so import/export metering still reads correctly.
@@ -94,8 +101,8 @@ outage.
   changeover in the normal position, which should not happen if that port is open-circuit. Possibly
   measurement offset, possibly a small circuit tapped ahead of the switch. Worth asking about; not
   load-bearing for the diagnosis.
-- This is mains work involving islanding and earthing. It belongs with a qualified electrician, and
-  it is reasonable to hold the original installer to finishing what was intended.
+- Islanding and earthing are mains work. Nothing here required any, in the end — but the RCD
+  question below still does if it is ever pursued.
 
 ## Sources
 
@@ -111,9 +118,12 @@ outage.
 
 ## Resolution — 2026-08-18
 
-The diagnosis was right about *what* was wrong (a manual changeover in the load path) but
-wrong about the *remedy*: it assumed the load side needed re-terminating. It did not. The
-`LOAD` output was already wired to the changeover, so flipping the lever was the whole fix.
+**Nothing was miswired and nothing was misconfigured. The changeover was in the wrong position.**
+
+The diagnosis was right about *what* was in the way (a manual changeover between `LOAD` and the
+house) but wrong about *why*: it assumed the load side needed re-terminating. It did not. The
+`LOAD` output was already wired to the changeover, the inverter settings were already correct,
+and flipping the lever was the entire fix — a handover gap, not an installation fault.
 
 Measured before and after, house otherwise unchanged:
 

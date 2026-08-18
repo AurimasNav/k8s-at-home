@@ -18,41 +18,17 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
       an increment. **Verify any next attempt against a real sunny day before
       trusting it.**
 
-- [ ] **Backup does not transfer automatically — get the installer back.** Cause
-      diagnosed 2026-08-15, see
-      [ADR 0004](decisions/0004-whole-home-backup-not-automatic.md): both inverter
-      AC ports are wired and backup mode is enabled, but an **ETI SSQ 340 manual
-      changeover** sits between the `LOAD` output and the house, so nothing can
-      transfer unattended. Fix is to feed the house DB permanently from `LOAD` and
-      demote the SSQ to a maintenance bypass. Decide the **EV charger** question at
-      the same time (11 kW against a 15 kW off-grid limit would drain the battery in
-      ~1 h) and put the **k3s node on the backed-up side** so the next outage is
-      actually recorded.
-
-- [ ] **The vendored iHomeManager map comes from a retired project — migration
-      to [`ha-modbus-manager`](https://github.com/TCzerny/ha-modbus-manager)
-      evaluated 2026-08-18 and declined for now.** `Jam3s97/sungrow_ihomemanager`
-      is archived in favour of that project, and our charger-power find was
-      accepted into it ([#86](https://github.com/TCzerny/ha-modbus-manager/issues/86),
-      released in v1.1.2 / iHM template v1.0.10).
-
-      Compared register-for-register against their v1.0.10 template: **they have
-      nothing we lack** (40 sensors + 13 controls vs our 53; identical coverage),
-      and of four differing definitions three are cosmetic (`scale: 1` vs none)
-      while the fourth is arguably wrong upstream — they apply `scale: 0.1` to
-      8553 *output type*, which is an enum (0/1/2), inherited from a stray
-      "0.1 / V" in Sungrow's own protocol table.
-
-      So migration buys no data and costs: every entity ID changes (their
-      `default_prefix: "IHM"`), breaking automations, the Energy+ dashboard, the
-      EV integration/utility_meter and Energy-dashboard config, and **discarding
-      long-term statistics history** — including the grid counters needed for the
-      meter comparison below. It would also displace the mkaiser inverter map,
-      and moves configuration into a UI config flow rather than git.
-
-      Revisit if we actually need something only they have, or if maintaining
-      the vendored map becomes a burden. **Worth reporting the 8553 scale bug
-      upstream** as a return favour.
+- [x] ~~Backup does not transfer automatically~~ **Resolved 2026-08-18 — nothing was
+      wrong with the installation.** The ETI SSQ 340 changeover was simply left in the
+      grid-direct position at handover; nobody was told which position keeps the house
+      fed through the inverter's `LOAD` output. Flipping it was the whole fix. Islanding
+      then verified by opening the grid breaker: seamless transfer, no reboot, all three
+      grid CTs at zero, house running on solar. See
+      [ADR 0004](decisions/0004-whole-home-backup-not-automatic.md).
+      Side effect: the k3s node is now on the backed-up side, so HA survives an outage —
+      which is what makes `automations/backup-power.yaml` possible.
+      **Still untested:** RCD operation while islanded (N-PE bonding). Deferred; needs a
+      plug-in RCD tester pressed during an outage.
 
 - [x] ~~Sweep the iHomeManager's register map~~ **Done 2026-08-14.** The useful
       map is at `192.168.1.168:502` **unit 247** (registers 8000–8600, the iHM's
