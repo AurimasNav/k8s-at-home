@@ -1,0 +1,122 @@
+# Grid-loss / backup-mode handling.
+#
+# Signal: sensor.running_state_raw (inverter reg 13000). Values are EMPIRICAL,
+# established during a deliberate islanding test on 2026-08-18 by opening the
+# house grid breaker with the changeover feeding the house via the inverter's
+# LOAD output:
+#
+#   16384 (0x4000) = grid-connected   — observed continuously 08-13 .. 08-18
+#    4096 (0x1000) = islanded/off-grid — observed the moment the grid was cut
+#
+# Chosen over watching the grid CTs because those legitimately read 0/0/0 for a
+# sample while grid-connected and balanced, which would false-positive. The
+# state register is discrete and unambiguous.
+#
+# `for: 15s` on both triggers so a transient does not flap the charger or spam
+# notifications. The <10 ms transfer itself is seamless, so 15 s costs nothing.
+#
+# NOTE these automations can only run because the house is now fed through the
+# inverter — the k3s node stays powered during an outage, so HA is alive to act.
+# In the old changeover position HA died with the grid and none of this worked.
+
+- id: backup_disable_ev_charging_when_islanded
+  alias: Backup - block EV charging while off-grid
+  description: >-
+    Off-grid the inverter is limited to 15 kW and the battery is the only
+    reserve; an 11 kW car would empty it in about an hour. Denying grid-draw
+    permission is what actually stops this charger (established 2026-08-16 —
+    denying it prevents charging entirely rather than restricting it to
+    surplus), so it is reused here as the off-switch, needing no extra write
+    scope beyond the one register this repo already writes.
+  triggers:
+  - trigger: state
+    entity_id: sensor.running_state_raw
+    to: '4096'
+    for:
+      seconds: 15
+  actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.charger_allow_grid_charging
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Backup power - EV charging blocked
+      message: >-
+        Running on battery/solar. EV charging disabled to protect the reserve.
+        Battery {{ states('sensor.battery_level') }}%, house load
+        {{ states('sensor.load_power') }} W.
+  mode: single
+
+- id: backup_restore_ev_charging_on_grid_return
+  alias: Backup - re-allow EV charging when grid returns
+  description: >-
+    Must exist. Leaving grid-draw denied would silently prevent charging
+    indefinitely once the grid is back — exactly the failure that cost a day of
+    free charging on 2026-08-16.
+  triggers:
+  - trigger: state
+    entity_id: sensor.running_state_raw
+    to: '16384'
+    for:
+      seconds: 15
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.charger_allow_grid_charging
+  mode: single
+
+- id: backup_mode_entered_alert
+  alias: Backup - alert when switching to battery
+  triggers:
+  - trigger: state
+    entity_id: sensor.running_state_raw
+    to: '4096'
+    for:
+      seconds: 15
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: ⚡ Grid lost - house on backup
+      message: >-
+        Battery {{ states('sensor.battery_level') }}%
+        ({{ states('sensor.battery_charge') }} kWh stored), house load
+        {{ states('sensor.load_power') }} W, PV
+        {{ states('sensor.total_dc_power') }} W. Reserve floor is
+        {{ states('sensor.battery_reserved_soc_for_backup') }}%.
+  mode: single
+
+- id: backup_mode_left_alert
+  alias: Backup - alert when grid returns
+  triggers:
+  - trigger: state
+    entity_id: sensor.running_state_raw
+    to: '16384'
+    for:
+      seconds: 15
+  conditions:
+  # Only announce a genuine return from backup, not the first reading after an
+  # HA restart (where the previous state is unknown/unavailable).
+  - condition: template
+    value_template: >-
+      {{ trigger.from_state is not none
+         and trigger.from_state.state not in ['unknown', 'unavailable'] }}
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: ✅ Grid restored
+      message: >-
+        Back on grid. Battery {{ states('sensor.battery_level') }}%. EV charging
+        re-enabled.
+  mode: single

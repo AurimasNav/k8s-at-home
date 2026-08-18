@@ -1,6 +1,10 @@
 # 0004 — Whole-home backup does not transfer automatically
 
-- **Status:** **Diagnosed** 2026-08-15 — cause identified, fix is electrician work, not yet done
+- **Status:** **RESOLVED 2026-08-18 — no electrician required.** The wiring was already
+  correct; the ETI SSQ 340 changeover was simply parked in the grid-direct position. Moving
+  the lever to the other position feeds the house through the inverter's `LOAD` output, and
+  automatic islanding then works. See *Resolution* below.
+- ~~**Status:** Diagnosed 2026-08-15 — cause identified, fix is electrician work~~
 - **Scope:** *Why* the SH15T does not carry the house automatically during a grid outage, and what
   would have to change. Electrical work itself is out of scope for this repo — this exists so the
   evidence is written down when the installer is challenged.
@@ -103,3 +107,50 @@ outage.
 - Inverter nameplate, S/N A2511008987: `AC-Backup` 43000 W / 63 A, 15000 W / 15000 VA
 - Measurements: HA recorder (`sensor.total_backup_power`, `sensor.load_power`) and direct Modbus
   reads on the iHomeManager, unit 247
+
+
+## Resolution — 2026-08-18
+
+The diagnosis was right about *what* was wrong (a manual changeover in the load path) but
+wrong about the *remedy*: it assumed the load side needed re-terminating. It did not. The
+`LOAD` output was already wired to the changeover, so flipping the lever was the whole fix.
+
+Measured before and after, house otherwise unchanged:
+
+| | grid-direct position | via inverter `LOAD` |
+|---|---|---|
+| Backup output total | **8 W** | **650 W** ≈ house load |
+| Backup phases A/B/C | −1 / 5 / 4 W | 160 / 83 / 389 W |
+| House load | 651 W | 651 W |
+
+Then the grid breaker was opened deliberately to test islanding:
+
+- **Transfer was seamless** — lights did not blink, HA and the k3s node did not reboot
+  (0 restarts), consistent with the datasheet's <10 ms switch time. Flipping the lever
+  *slowly* does drop power; flipping it quickly does not.
+- **Genuinely islanded** — all three grid CTs read exactly `0 W` (they had read −49/−117/+193
+  moments earlier), grid meter 0 W.
+- **Ran on solar, not battery** — house 650 W while the battery still *charged* at −2050 W
+  from 3 kW of PV; SoC rose through the test.
+- **Inverter state register flipped**, which is the signal the automations now use:
+  `sensor.running_state_raw` **16384 (0x4000) grid-connected → 4096 (0x1000) islanded**.
+
+### Consequences
+
+- **HA now survives an outage.** The k3s node is fed through `LOAD`, so Home Assistant stays
+  up and can both act and record during a grid failure. That closes the "put the node on the
+  backed-up side" item and makes the automations below possible at all.
+- `automations/backup-power.yaml` blocks EV charging while islanded and restores it when the
+  grid returns, and notifies on both transitions.
+- The SSQ 340 keeps its value as a **manual bypass** — flip back to grid-direct to run the
+  house straight from the grid if the inverter ever fails or needs service.
+
+### Still untested
+
+- **RCD operation while islanded** (the N-PE bonding question) — unproven, and not inferable
+  from any register. Until tested with a plug-in RCD tester *while off-grid*, treat
+  earth-fault protection as unknown in backup mode.
+- **Behaviour under real load at night** — the test ran with PV exceeding house load. The
+  stress case is no sun, battery near the 20% reserve.
+- Island output measured ~221 V phase / 382 V line, a few percent below nominal. Fine, but
+  worth watching on a longer outage.
