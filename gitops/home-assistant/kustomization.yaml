@@ -45,6 +45,10 @@ configMapGenerator:
 - name: ha-nibe-package
   files:
   - packages/nibe.yaml
+# package, not an automations file: ships the off-grid template binary_sensor
+- name: ha-backup-power-package
+  files:
+  - packages/backup_power.yaml
 - name: ha-energy-dashboard
   files:
   - dashboards/energy.yaml

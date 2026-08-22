@@ -9,6 +9,34 @@ views:
   # scope their queries to.
   - type: energy-date-selection
 
+  # Grid is down and the house is islanding on the battery — loudest thing on the page.
+  - type: conditional
+    conditions:
+    - condition: state
+      entity: binary_sensor.off_grid
+      state: "on"
+    card:
+      type: markdown
+      content: |
+        {% set soc = states('sensor.battery_level') | float(0) %}
+        {% set flow = states('sensor.battery_power') | float(0) %}
+        {% set kwh = states('sensor.battery_charge') | float(0) %}
+        {% set pv = states('sensor.total_dc_power') | float(0) %}
+        <ha-alert alert-type="error" title="ON BATTERY — GRID IS DOWN">
+        Battery <b>{{ soc | round(1) }}%</b> ({{ kwh | round(2) }} kWh) &nbsp;·&nbsp;
+        House load <b>{{ states('sensor.load_power') }} W</b> &nbsp;·&nbsp;
+        PV <b>{{ pv | round(0) | int }} W</b>
+        {% if flow > 50 %}
+        <br><br><b>Discharging at {{ flow | round(0) | int }} W.</b>
+        {% if kwh > 0 %}Roughly <b>{{ (kwh / (flow / 1000)) | round(1) }} h</b> left at this rate.{% endif %}
+        {% elif flow < -50 %}
+        <br><br>Charging at {{ (flow * -1) | round(0) | int }} W from solar.
+        {% else %}
+        <br><br>Battery flow is idle.
+        {% endif %}
+        <br><br>Inverter state: {{ states('sensor.sungrow_inverter_state') }}
+        </ha-alert>
+
   - type: horizontal-stack
     cards:
     - type: gauge
@@ -48,8 +76,10 @@ views:
       name: Stored energy
     - entity: sensor.battery_charge_nominal
       name: Stored energy (usable, min/max SOC)
-    - entity: sensor.running_state
+    - entity: sensor.sungrow_inverter_state
       name: Inverter state
+    - entity: binary_sensor.off_grid
+      name: Off grid
 
   - type: entities
     title: EV charger

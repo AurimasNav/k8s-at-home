@@ -80,6 +80,7 @@ configuration:
         ev_charger: !include package_ev_charger.yaml
         entrance_hall: !include package_entrance_hall.yaml
         nibe: !include package_nibe.yaml
+        backup_power: !include package_backup_power.yaml
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
 securityContext:
@@ -139,6 +140,9 @@ additionalVolumes:
   - name: nibe-package
     configMap:
       name: ha-nibe-package
+  - name: backup-power-package
+    configMap:
+      name: ha-backup-power-package
   - name: energy-dashboard
     configMap:
       name: ha-energy-dashboard
@@ -208,6 +212,9 @@ additionalMounts:
   - name: nibe-package
     mountPath: /config/package_nibe.yaml
     subPath: nibe.yaml
+  - name: backup-power-package
+    mountPath: /config/package_backup_power.yaml
+    subPath: backup_power.yaml
   - name: energy-dashboard
     mountPath: /config/dashboard_energy.yaml
     subPath: energy.yaml

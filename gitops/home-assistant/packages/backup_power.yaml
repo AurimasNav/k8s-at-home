@@ -1,0 +1,17 @@
+# Companion to automations/backup-power.yaml: exposes the same grid-loss signal
+# as an entity so dashboards can condition on it.
+#
+# 4096 (0x1000) is the only off-grid code this inverter has ever reported — see
+# the islanding test recorded in automations/backup-power.yaml. The vendored
+# mkaiser decode map lists other islanding codes (Microgrid Operation,
+# Off-grid Charge, Emergency Charging), none of which appear on this unit, and
+# one of them (0x4001) sits one bit off the grid-connected 0x4000. Matching the
+# single observed value keeps this consistent with the automations.
+template:
+  - binary_sensor:
+      - name: Off grid
+        unique_id: sg_off_grid
+        device_class: problem
+        icon: mdi:transmission-tower-off
+        availability: "{{ states('sensor.running_state_raw') not in ['unknown','unavailable'] }}"
+        state: "{{ states('sensor.running_state_raw') | int(-1) == 4096 }}"
