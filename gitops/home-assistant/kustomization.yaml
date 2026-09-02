@@ -182,7 +182,7 @@ configMapGenerator:
 # Needs pybyd pip-installed by HA on boot, like mammotion's pymammotion.
 # Only en.json is vendored - upstream ships 24 translations (318 KB) and this
 # house runs HA in English; same choice as bhyve. Renovate tracks the source tag:
-# https://github.com/jkaberg/hass-byd-vehicle/archive/refs/tags/0.0.84.tar.gz
+# https://github.com/jkaberg/hass-byd-vehicle/archive/refs/tags/0.0.87.tar.gz
 # ServerSideApply: the component files exceed the 256 KB client-side apply annotation
 - name: ha-byd-vehicle
   options:
