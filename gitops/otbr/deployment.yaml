@@ -27,7 +27,7 @@ spec:
       # docs/matter-thread-setup.md. ip6table_filter is not needed here (FIREWALL=0).
       initContainers:
       - name: host-ipv6-sysctls
-        image: busybox:1.36
+        image: busybox:1.38
         securityContext:
           privileged: true
         command:

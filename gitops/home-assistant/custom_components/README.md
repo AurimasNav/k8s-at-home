@@ -18,7 +18,7 @@ identical to upstream so an upgrade is a clean replacement.
 The version of record is the source-tarball URL in the comment above each
 component's ConfigMap generators in `../kustomization.yaml`
 (`.../archive/refs/tags/<tag>.tar.gz`). A regex manager in
-`gitops/renovate-bot/ConfigMap.yaml` parses those URLs against the
+`renovate.json` at the repo root parses those URLs against the
 `github-tags` datasource, so Renovate opens a PR when upstream tags a new
 release. **That PR only bumps the comment** — the component itself is upgraded
 by re-vendoring the files (below) on the same branch before merging.
