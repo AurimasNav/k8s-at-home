@@ -488,14 +488,23 @@
       "close_windows": {
         "name": "Close windows"
       },
+      "open_windows": {
+        "name": "Open windows"
+      },
+      "open_trunk": {
+        "name": "Open trunk"
+      },
+      "close_trunk": {
+        "name": "Close trunk"
+      },
+      "shutdown_vehicle": {
+        "name": "Shut down vehicle"
+      },
       "force_poll": {
         "name": "Force poll"
       },
       "start_charging": {
         "name": "Start charging"
-      },
-      "stop_charging": {
-        "name": "Stop charging"
       },
       "fetch_energy": {
         "name": "Fetch energy data"
