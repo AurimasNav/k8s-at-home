@@ -1,3 +1,40 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "dependencyDashboard": true,
+  "dependencyDashboardAutoclose": false,
+  "branchConcurrentLimit": 100,
+  "prHourlyLimit": 20,
+  "pruneStaleBranches": true,
+  "separateMajorMinor": false,
+  "gitIgnoredAuthors": ["fake@mail.com"],
+  "enabledManagers": ["kubernetes", "kustomize", "custom.regex"],
+  "kubernetes": {
+    "managerFilePatterns": ["/gitops/.*/.*\\.ya?ml$/"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/kustomization\\.yaml/"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>.*/.*?)/releases/download/(?<currentValue>.*?)/"
+      ],
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/kustomization\\.yaml/"],
+      "matchStrings": [
+        "https://raw\\.githubusercontent\\.com/(?<depName>[^/]*/[^/]*)/(?<currentValue>.*?)/"
+      ],
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/kustomization\\.yaml/"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>[^/]+/[^/]+)/archive/refs/tags/(?<currentValue>.+?)\\.tar\\.gz"
+      ],
+      "datasourceTemplate": "github-tags"
+    }
+  ]
 }
