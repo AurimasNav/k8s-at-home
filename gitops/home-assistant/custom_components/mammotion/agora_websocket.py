@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import ipaddress
 import json
 import logging
@@ -10,6 +11,7 @@ import secrets
 import ssl
 import time
 import uuid
+from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
@@ -79,7 +81,7 @@ class ResponseInfo:
 class SdpInfo:
     """SDP parsing information."""
 
-    parsed_sdp: dict
+    parsed_sdp: dict[str, Any]
     fingerprint: str
     ice_ufrag: str
     ice_pwd: str
@@ -102,6 +104,19 @@ class AgoraWebSocketHandler:
     # don't run another recovery within the cooldown window (anti-thrash).
     PEER_REJOIN_DEBOUNCE_SECS = 2.0
     PEER_RECOVER_COOLDOWN_SECS = 15.0
+    # A mower that keeps rejoining and quitting is not recoverable by retrying:
+    # without this the handler resurrects it forever, so an unwatched stream
+    # runs until Home Assistant restarts.  Consecutive recoveries with no
+    # viewer-visible progress are capped; a healthy stream resets the count.
+    PEER_RECOVER_MAX_ATTEMPTS = 5
+    # A stream that ran this long since the last recovery clearly settled, so
+    # the next drop starts a fresh budget rather than counting toward the cap.
+    PEER_RECOVER_RESET_SECS = 600.0
+    # The client-level codec spec.  The SDK sends this same value in `join_v3`
+    # and in every `subscribe` (`this.spec.codec` at both call sites), so it is
+    # one setting for the session — not a description of what the publisher
+    # encodes — and the two messages must never disagree.
+    CLIENT_CODEC = "vp8"
 
     def __init__(
         self,
@@ -127,16 +142,16 @@ class AgoraWebSocketHandler:
         self._keepalive = keepalive
         self._websocket: ClientConnection | None = None
         self._connection_state = "DISCONNECTED"
-        self._message_handlers: dict[str, Callable] = {}
-        self._response_handlers: dict[str, asyncio.Future] = {}
+        self._message_handlers: dict[str, Callable[..., Any]] = {}
+        self._response_handlers: dict[str, asyncio.Future[Any]] = {}
         self.candidates: list[RTCIceCandidateInit] = []
         self._online_users: set[int] = set()
         self._video_streams: dict[int, dict[str, Any]] = {}
         self._answer_sdp: str | None = None
         # Background tasks
-        self._message_loop_task: asyncio.Task | None = None
-        self._ping_task: asyncio.Task | None = None
-        self._fpv_keepalive_task: asyncio.Task | None = None
+        self._message_loop_task: asyncio.Task[None] | None = None
+        self._ping_task: asyncio.Task[None] | None = None
+        self._fpv_keepalive_task: asyncio.Task[None] | None = None
         # Token refresh state
         self._rejoin_token: str | None = None
         self._session_id: str | None = None
@@ -160,8 +175,12 @@ class AgoraWebSocketHandler:
         # of the last attempt; the gateway treats one renew as authoritative.
         self._last_renew_token_at: float = 0.0
         # Peer-recovery debounce task + cooldown timestamp (see _schedule_peer_recovery).
-        self._peer_recover_task: asyncio.Task | None = None
+        self._peer_recover_task: asyncio.Task[None] | None = None
         self._last_peer_recover_at: float = 0.0
+        self._peer_recover_attempts: int = 0
+        # Whether the gateway offered RTX payload types for this session — see
+        # _handle_join_success.
+        self._sub_rtx: bool = False
         self._setup_message_handlers()
 
     def _setup_message_handlers(self) -> None:
@@ -211,6 +230,7 @@ class AgoraWebSocketHandler:
         self._msid_audio_track_id = str(uuid.uuid4())
         # Fresh session — clear any peer-recovery cooldown from a prior stream.
         self._last_peer_recover_at = 0.0
+        self._peer_recover_attempts = 0
 
         # Store for later use in token refresh / rejoin / restart
         self._agora_data = agora_data
@@ -295,19 +315,15 @@ class AgoraWebSocketHandler:
                     "Connection timeout for edge address %s, trying next", ws_url
                 )
                 if self._websocket:
-                    try:
+                    with contextlib.suppress(Exception):
                         await self._websocket.close()
-                    except Exception:
-                        pass
                     self._websocket = None
                 continue
             except (WebSocketException, json.JSONDecodeError) as ex:
                 _LOGGER.warning("WebSocket connection failed for %s: %s", ws_url, ex)
                 if self._websocket:
-                    try:
+                    with contextlib.suppress(Exception):
                         await self._websocket.close()
-                    except Exception:
-                        pass
                     self._websocket = None
                 continue
 
@@ -603,6 +619,14 @@ class AgoraWebSocketHandler:
                     "Injected %d new fingerprints from Auth Response", injected_count
                 )
 
+        # The gateway only sends RTX for payload types it offered here, and the
+        # answer advertises exactly those, so asking for RTX when it offered none
+        # means the browser drops every retransmission as an unknown payload type.
+        self._sub_rtx = any(
+            (codec.get("rtpMap", {}).get("encodingName") or "").lower() == "rtx"
+            for codec in self._negotiated_caps(ortc).get("videoCodecs", []) or []
+        )
+
         # Generate answer SDP from ORTC parameters.
         # We force 'active' role here to match Agora SDK behavior for the audience role,
         # ensuring the browser behaves as the DTLS server and Agora as the DTLS client.
@@ -708,15 +732,7 @@ class AgoraWebSocketHandler:
                     )
                     stream_info["subscribed"] = True
                     await self._send_subscribe(
-                        stream_id=uid,
-                        ssrc_id=stream_info["ssrcId"],
-                        # Mammotion mowers publish H264 from their hardware
-                        # encoder; subscribing with codec="vp8" tells the SFU to
-                        # forward a non-existent VP8 stream, so no video RTP
-                        # arrives.  Use the codec the publisher actually sent
-                        # (logged on on_add_video_stream) when available, else
-                        # default to h264.
-                        codec=stream_info.get("codec") or "h264",
+                        stream_id=uid, ssrc_id=stream_info["ssrcId"]
                     )
 
     async def _handle_add_video_stream(self, response: dict[str, Any]) -> None:
@@ -731,9 +747,21 @@ class AgoraWebSocketHandler:
         ssrc_id = message.get("ssrcId")
         rtx_ssrc_id = message.get("rtxSsrcId")
         cname = message.get("cname")
-        # Some Agora SFU versions include a codec hint on the add-stream
-        # notification; capture it if present so subscribe asks for the same.
+        # `subscribe` carries the client codec spec, not whatever the publisher
+        # happens to encode (see CLIENT_CODEC).
         stream_codec = (message.get("codec") or "").lower() or None
+        # `pt` is the payload type the gateway will relay this stream on, chosen
+        # from the codecs the browser offered.  0 means it found none it could
+        # use — the mower publishes H265 and the browser no longer offers it, so
+        # the stream arrives on a payload type that decodes to nothing.
+        if message.get("pt") == 0:
+            _LOGGER.warning(
+                "Agora negotiated no video payload type for uid %s (pt=0): the "
+                "browser offered no codec the mower's stream can be sent as. "
+                "Mammotion mowers publish H265; check chrome://gpu for HEVC "
+                "decode support",
+                message.get("uid"),
+            )
 
         if uid:
             # Full message dump so any unknown fields (codec hints, profile, …)
@@ -763,14 +791,7 @@ class AgoraWebSocketHandler:
                     "User %s already online, subscribing to video stream now", uid
                 )
                 self._video_streams[uid]["subscribed"] = True
-                await self._send_subscribe(
-                    stream_id=uid,
-                    ssrc_id=ssrc_id,
-                    # Mammotion mowers publish H264 from their hardware encoder.
-                    # Subscribing with the wrong codec means the SFU has no
-                    # matching stream to forward and no video RTP arrives.
-                    codec=stream_codec or "h264",
-                )
+                await self._send_subscribe(stream_id=uid, ssrc_id=ssrc_id)
 
     async def _handle_user_offline(self, response: dict[str, Any]) -> None:
         """Handle user offline notification.
@@ -833,6 +854,21 @@ class AgoraWebSocketHandler:
             return  # websocket gone — viewer stopped watching; don't recover
 
         now = time.monotonic()
+        if (
+            self._peer_recover_attempts
+            and now - self._last_peer_recover_at > self.PEER_RECOVER_RESET_SECS
+        ):
+            self._peer_recover_attempts = 0
+
+        if self._peer_recover_attempts >= self.PEER_RECOVER_MAX_ATTEMPTS:
+            _LOGGER.warning(
+                "Peer %s left the channel %s times without the stream settling — "
+                "giving up instead of re-requesting it indefinitely",
+                peer_uid,
+                self._peer_recover_attempts,
+            )
+            return
+
         if now - self._last_peer_recover_at < self.PEER_RECOVER_COOLDOWN_SECS:
             _LOGGER.debug(
                 "Peer %s still gone but stream recovery is within the %.0fs cooldown — skipping",
@@ -841,11 +877,15 @@ class AgoraWebSocketHandler:
             )
             return
         self._last_peer_recover_at = now
+        self._peer_recover_attempts += 1
 
         _LOGGER.debug(
-            "Peer %s did not rejoin within %.0fs — recovering stream (BLE sync + subscription)",
+            "Peer %s did not rejoin within %.0fs — recovering stream "
+            "(BLE sync + subscription, attempt %s/%s)",
             peer_uid,
             self.PEER_REJOIN_DEBOUNCE_SECS,
+            self._peer_recover_attempts,
+            self.PEER_RECOVER_MAX_ATTEMPTS,
         )
         if self._recover_stream is None:
             return
@@ -910,7 +950,7 @@ class AgoraWebSocketHandler:
                 "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
                 "process_id": process_id,
                 "mode": "live",
-                "codec": "vp8",
+                "codec": self.CLIENT_CODEC,
                 "role": "host",
                 "has_changed_gateway": False,
                 "ap_response": agora_response.to_ap_response(4096),
@@ -979,12 +1019,10 @@ class AgoraWebSocketHandler:
         self,
         stream_id: int,
         ssrc_id: int,
-        codec: str = "h264",
         stream_type: str = "video",
         mode: str = "live",
         p2p_id: int = 1,
         twcc: bool = True,
-        rtx: bool = True,
         extend: str = "",
     ) -> None:
         """Send subscribe message to Agora.
@@ -992,12 +1030,10 @@ class AgoraWebSocketHandler:
         Args:
             stream_id: Stream ID (usually the uid)
             ssrc_id: SSRC ID from on_add_video_stream
-            codec: Video codec (default: "h264")
             stream_type: Stream type (default: "video")
             mode: Mode (default: "live")
             p2p_id: P2P ID (default: 1)
             twcc: Enable transport-wide congestion control
-            rtx: Enable retransmission
             extend: Extended info
 
         """
@@ -1013,10 +1049,10 @@ class AgoraWebSocketHandler:
                 "stream_id": stream_id,
                 "stream_type": stream_type,
                 "mode": mode,
-                "codec": codec,
+                "codec": self.CLIENT_CODEC,
                 "p2p_id": p2p_id,
                 "twcc": twcc,
-                "rtx": rtx,
+                "rtx": self._sub_rtx,
                 "extend": extend,
                 "ssrcId": ssrc_id,
             },
@@ -1340,24 +1376,28 @@ class AgoraWebSocketHandler:
             _LOGGER.error("Failed to parse offer SDP with sdp_transform: %s", ex)
             return None
 
+    @staticmethod
+    def _negotiated_caps(ortc: dict[str, Any]) -> dict[str, Any]:
+        """Return the gateway's RTP capabilities.
+
+        The server may return them under 'sendrecv', 'recv' or 'send'.
+        """
+        rtp_capabilities = ortc.get("rtpCapabilities", {})
+        return (
+            rtp_capabilities.get("sendrecv")
+            or rtp_capabilities.get("recv")
+            or rtp_capabilities.get("send")
+            or rtp_capabilities
+        )
+
     def _generate_answer_sdp(
         self, ortc: dict[str, Any], sdp_info: SdpInfo
     ) -> str | None:
         """Generate SDP answer from ORTC parameters."""
         try:
-            import secrets
-            from collections import defaultdict
-
             ice_params = ortc.get("iceParameters", {})
             dtls_params = ortc.get("dtlsParameters", {})
-            # Server may return caps under 'sendrecv', 'recv', or 'send' keys
-            rtp_capabilities = ortc.get("rtpCapabilities", {})
-            rtp_caps = (
-                rtp_capabilities.get("sendrecv")
-                or rtp_capabilities.get("recv")
-                or rtp_capabilities.get("send")
-                or rtp_capabilities
-            )
+            rtp_caps = self._negotiated_caps(ortc)
 
             _LOGGER.debug("ICE params: %s", ice_params)
             _LOGGER.debug("DTLS params: %s", dtls_params)
@@ -1460,9 +1500,15 @@ class AgoraWebSocketHandler:
             )
             bundle_mids = bundle_group.get("mids", "0 1") if bundle_group else "0 1"
 
-            # Determine answer setup role based on offer
-            # Working SDK Answer shows setup:active
-            answer_setup = "active"
+            # Mirror the DTLS role Agora reports rather than assuming one: server
+            # means we answer passive, so the browser is the client and opens the
+            # handshake from the pair it nominated.  An Agora that insists on being
+            # the client still gets a consistent answer instead of a deadlock.
+            agora_dtls_role = dtls_params.get("role", "client")
+            answer_setup = "passive" if agora_dtls_role == "server" else "active"
+            _LOGGER.debug(
+                "Agora DTLS role %s — answering setup:%s", agora_dtls_role, answer_setup
+            )
 
             # build base sdp header
             # f"o=- {sdp_info.parsed_sdp['origin']['sessionId']} {sdp_info.parsed_sdp['origin']['sessionVersion']} IN IP4 127.0.0.1",
@@ -1515,8 +1561,7 @@ class AgoraWebSocketHandler:
                 sdp_lines.append(f"a=mid:{mid}")
 
                 # Add candidates from Agora response
-                for cl in candidates_by_mid.get("*", []):
-                    sdp_lines.append(cl)
+                sdp_lines.extend(candidates_by_mid.get("*", []))
 
                 # Add RTP extensions - MUST use offer's extension IDs
                 # Build mapping from offer's extension URIs to their IDs
@@ -1583,16 +1628,12 @@ class AgoraWebSocketHandler:
                             )
                             sdp_lines.append(f"a=fmtp:{pt} {param_str}")
 
-                # Working SDK answer DOES NOT include a=ssrc for audience/receiver section
-                # Omit SSRC for receiver role
-
                 # Append candidates from Agora response for trickle ICE initialization
                 # These are the TURN/STUN candidates provided by Agora in the join_success response
                 specific = candidates_by_mid.get(mid, []) + candidates_by_mid.get(
                     str(idx), []
                 )
-                for cl in specific:
-                    sdp_lines.append(cl)
+                sdp_lines.extend(specific)
 
                 if specific:
                     _LOGGER.debug(
@@ -1606,14 +1647,14 @@ class AgoraWebSocketHandler:
             # _LOGGER.info("Generated SDP lines count: %s", len(sdp_lines))
             # _LOGGER.debug("Generated SDP content: %s", generated_sdp)
 
-            if self._validate_sdp(generated_sdp):
-                return generated_sdp
-            _LOGGER.error("Generated SDP failed validation")
-            return None
-
         except (KeyError, ValueError, AttributeError) as ex:
             _LOGGER.error("Failed to generate answer SDP: %s", ex)
             return None
+
+        if self._validate_sdp(generated_sdp):
+            return generated_sdp
+        _LOGGER.error("Generated SDP failed validation")
+        return None
 
     def _validate_sdp(self, sdp: str) -> bool:
         """Validate SDP format to ensure it's parseable by WebRTC."""
@@ -1890,10 +1931,8 @@ class AgoraWebSocketHandler:
             self._ping_task = None
 
         if self._websocket:
-            try:
+            with contextlib.suppress(Exception):
                 await self._websocket.close()
-            except Exception:  # noqa: BLE001
-                pass
             self._websocket = None
 
         self._connection_state = "DISCONNECTED"
@@ -1935,6 +1974,7 @@ class AgoraWebSocketHandler:
         if self._peer_recover_task and not self._peer_recover_task.done():
             self._peer_recover_task.cancel()
             self._peer_recover_task = None
+        self._peer_recover_attempts = 0
         if self._fpv_keepalive_task and not self._fpv_keepalive_task.done():
             self._fpv_keepalive_task.cancel()
             self._fpv_keepalive_task = None
@@ -1960,12 +2000,12 @@ class AgoraWebSocketHandler:
         self._online_users.clear()
         self._video_streams.clear()
 
-    def add_ice_candidate(self, candidate: RTCIceCandidateInit):
+    def add_ice_candidate(self, candidate: RTCIceCandidateInit) -> None:
         """Add an ICE candidate to the pending candidates list."""
         self.candidates.append(candidate)
 
     @staticmethod
-    def is_ipv4(ip_string):
+    def is_ipv4(ip_string: str) -> bool:
         """Check if a given string is a valid IPv4 address.
 
         Args:
@@ -1978,7 +2018,6 @@ class AgoraWebSocketHandler:
         try:
             # Attempt to create an IPv4Address object
             ipaddress.IPv4Address(ip_string)
-            return True
         except ipaddress.AddressValueError:
             # If it's not a valid IPv4 address, an exception will be raised
             return False
@@ -1987,3 +2026,5 @@ class AgoraWebSocketHandler:
             # and ensure it's specifically an IPv4Address error.
             # This is a more robust way to handle potential edge cases.
             return False
+        else:
+            return True

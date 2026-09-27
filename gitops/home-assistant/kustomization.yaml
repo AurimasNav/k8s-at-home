@@ -146,11 +146,14 @@ configMapGenerator:
   - custom_components/mammotion/device_tracker.py
   - custom_components/mammotion/diagnostics.py
   - custom_components/mammotion/entity.py
+  - custom_components/mammotion/error_codes.py
+  - custom_components/mammotion/event.py
   - custom_components/mammotion/geojson_utils.py
   - custom_components/mammotion/icons.json
   - custom_components/mammotion/lawn_mower.py
   - custom_components/mammotion/manifest.json
   - custom_components/mammotion/models.py
+  - custom_components/mammotion/notifications.py
   - custom_components/mammotion/number.py
   - custom_components/mammotion/placeholder.png
   - custom_components/mammotion/select.py

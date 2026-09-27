@@ -1,5 +1,6 @@
 """Data models for the Mammotion integration."""
 
+import asyncio
 from dataclasses import dataclass
 
 from pymammotion.aliyun.model.dev_by_account_response import Device
@@ -14,6 +15,7 @@ from .coordinator import (
     MammotionRTKCoordinator,
     MammotionSpinoCoordinator,
 )
+from .notifications import MowerNotifier
 
 
 @dataclass
@@ -28,6 +30,7 @@ class MammotionMowerData:
     version_coordinator: MammotionDeviceVersionUpdateCoordinator
     map_coordinator: MammotionMapUpdateCoordinator
     error_coordinator: MammotionDeviceErrorUpdateCoordinator
+    notifier: MowerNotifier
     device: Device
 
 
@@ -60,3 +63,5 @@ class MammotionDevices:
     mowers: list[MammotionMowerData]
     RTK: list[MammotionRTKData]
     spino: list[MammotionSpinoData]
+    #: The startup bring-up task; unload cancels it before tearing the handles down.
+    bring_up_task: asyncio.Task[None] | None = None

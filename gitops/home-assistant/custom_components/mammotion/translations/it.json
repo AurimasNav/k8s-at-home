@@ -9,8 +9,11 @@
       "no_longer_present": "Il dispositivo non è più presente",
       "not_supported": "Dispositivo non supportato",
       "reconfigure_successful": "Riconfigurazione avvenuta con successo",
+      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
       "api_limit_exceeded": "Il limite di frequenza dell'API è stato superato. Si prega di riprovare più tardi.",
-      "account_in_use": "Il tuo account Mammotion è già attivo in un'altra sessione. Disconnettiti dall'app Mammotion e riprova."
+      "account_in_use": "Il tuo account Mammotion è già attivo in un'altra sessione. Disconnettiti dall'app Mammotion e riprova.",
+      "reauth_successful": "Nuova autenticazione riuscita",
+      "wrong_account": "Queste credenziali appartengono a un altro account Mammotion. Autenticati di nuovo con l'account con cui è stata configurata questa voce."
     },
     "error": {
       "login_failed": "Accesso non riuscito. Controlla l'email e la password del tuo account, quindi riprova.",
@@ -20,33 +23,34 @@
     "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Configura {name}",
-        "data": {
-          "stay_connected_bluetooth": "Mantieni Bluetooth connesso"
-        }
+        "description": "Configura {name}"
       },
       "reconfigure": {
         "data": {
-          "use_wifi": "Usa Wi-Fi",
           "account_name": "Email o numero di conto Mammotion",
           "password": "Password dell'account Mammotion"
         }
       },
       "user": {
         "data": {
-          "address": "Dispositivo",
-          "stay_connected_bluetooth": "Mantieni Bluetooth connesso"
+          "address": "Dispositivo"
         },
         "description": "Seleziona il tuo tagliaerba"
       },
       "wifi": {
         "data": {
-          "use_wifi": "Usa Wi-Fi (deseleziona e invia per utilizzare il Bluetooth)",
           "account_name": "Email o numero di conto Mammotion",
           "password": "Password dell'account Mammotion"
         },
         "title": "Connetti al Wi-Fi",
-        "description": "Inserisci l'email o l'id del tuo account Mammotion e la password"
+        "description": "Inserisci l'email o l'id del tuo account Mammotion e la password. Lascia entrambi i campi vuoti per utilizzare solo il Bluetooth, senza account."
+      },
+      "reauth_confirm": {
+        "title": "Autentica di nuovo Mammotion",
+        "description": "Il cloud Mammotion ha rifiutato le credenziali salvate per {account}. Inserisci la password per accedere di nuovo.",
+        "data": {
+          "password": "Password dell'account Mammotion"
+        }
       }
     }
   },
@@ -55,11 +59,11 @@
       "init": {
         "data": {
           "title": "Aggiorna Configurazione",
-          "stay_connected_bluetooth": "Mantieni Bluetooth connesso",
           "prefer_ble_over_wifi": "Preferisci Bluetooth rispetto al Wi-Fi quando disponibile",
           "movement_use_wifi": "Invia comandi di movimento tramite Wi-Fi",
           "mow_path_fetch_enabled": "Abilita recupero percorso di taglio (cloud)",
-          "full_map_fetch_enabled": "Abilita recupero completo della mappa (cloud) — se disabilitato, vengono recuperati solo i nomi delle aree"
+          "full_map_fetch_enabled": "Abilita recupero completo della mappa (cloud) — se disabilitato, vengono recuperati solo i nomi delle aree",
+          "notify": "Mostra notifiche persistenti per"
         }
       }
     }
@@ -368,6 +372,9 @@
       "release_from_dock": {
         "name": "Esci dalla base"
       },
+      "start_dropmow": {
+        "name": "Avvia DropMow"
+      },
       "emergency_nudge_forward": {
         "name": "Muovi avanti"
       },
@@ -391,6 +398,9 @@
       },
       "restart_mower": {
         "name": "Riavvia il tagliaerba"
+      },
+      "refresh_status": {
+        "name": "Aggiorna stato"
       },
       "spino_fetch_map": {
         "name": "Recupera mappa della piscina"
@@ -421,8 +431,14 @@
       "rain_tactics": {
         "name": "Rilevazione pioggia (durante la falciatura) On/Off"
       },
+      "auto_change_direction": {
+        "name": "Inversione automatica della direzione di taglio"
+      },
       "rain_detection": {
         "name": "Rilevamento pioggia (Tosaerba) On/Off"
+      },
+      "smart_charge": {
+        "name": "Ricarica intelligente"
       },
       "side_led": {
         "name": "LED laterale On/Off"
@@ -448,6 +464,12 @@
       "voice_on_off": {
         "name": "Voce on/off"
       },
+      "manual_grass_collection": {
+        "name": "Raccolta erba manuale"
+      },
+      "manual_grass_dump": {
+        "name": "Scarico erba manuale"
+      },
       "spino_buzzer": {
         "name": "Cicalino"
       },
@@ -458,7 +480,7 @@
         "name": "Pulizia della piattaforma"
       },
       "spino_waterline_parking": {
-        "name": "Parcheggio a pelo d'acqua"
+        "name": "Aggancio al bordo piscina"
       }
     },
     "select": {
@@ -501,10 +523,10 @@
       "bypass_mode": {
         "name": "Rilevamento ostacoli",
         "state": {
-          "direct_touch": "Disattivato",
-          "slow_touch": "Tocco lento",
-          "less_touch": "Meno tocco",
-          "no_touch": "Standard",
+          "off": "Disattivato",
+          "slow_touch": "Base",
+          "less_touch": "Meno contatto",
+          "standard": "Normale",
           "sensitive": "Sensibile"
         }
       },
@@ -567,10 +589,10 @@
         }
       },
       "spino_wall_material": {
-        "name": "Materiale delle pareti",
+        "name": "Materiale parete",
         "state": {
           "GLASS": "Vetro",
-          "CERAMICS": "Piastrelle",
+          "CERAMICS": "Piastrella",
           "SAND_STONE": "Aggregato",
           "VINYL": "Vinile"
         }
@@ -588,6 +610,9 @@
     "number": {
       "voice_volume": {
         "name": "Volume della voce"
+      },
+      "charge_limit": {
+        "name": "Limite di ricarica"
       },
       "start_progress": {
         "name": "Avanzamento iniziale"
@@ -622,6 +647,24 @@
     },
     "device_tracker": {
       "name": "Tracciamento del dispositivo"
+    },
+    "event": {
+      "notification": {
+        "name": "Notifiche",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "device_notification_event": "Notifica",
+              "device_information_event": "Informazione",
+              "device_warning_code_event": "Codici di avviso",
+              "device_warning_event": "Avviso",
+              "device_biz_req_event": "Richiesta di servizio",
+              "device_log_progress_event": "Avanzamento caricamento log",
+              "device_config_req_event": "Richiesta di configurazione"
+            }
+          }
+        }
+      }
     }
   },
   "selector": {
@@ -633,10 +676,10 @@
     },
     "ultra_wave": {
       "options": {
-        "0": "Tocco diretto",
-        "1": "Tocco lento",
-        "2": "Meno tocco",
-        "10": "Nessun tocco",
+        "0": "Disattivato",
+        "1": "Base",
+        "2": "Meno contatto",
+        "10": "Normale",
         "11": "Sensibile"
       }
     },
@@ -677,6 +720,12 @@
         "2": "Due giri",
         "3": "Tre giri",
         "4": "Quattro giri"
+      }
+    },
+    "notify": {
+      "options": {
+        "warnings": "Avvisi e codici di errore",
+        "notifications": "Notifiche e informazioni del dispositivo"
       }
     }
   },
@@ -779,6 +828,48 @@
         }
       }
     },
+    "modify_running_job": {
+      "name": "Modifica lavoro in corso",
+      "description": "Modifica le impostazioni del lavoro già in esecuzione senza riavviarlo. Disponibile solo su Luba 2 e successivi durante un lavoro in corso.",
+      "fields": {
+        "blade_height": {
+          "name": "Altezza lama",
+          "description": "Altezza lama"
+        },
+        "speed": {
+          "name": "Velocità di lavoro",
+          "description": "Velocità di lavoro"
+        },
+        "ultra_wave": {
+          "name": "Rilevamento ostacoli",
+          "description": "Rilevamento ostacoli"
+        },
+        "channel_width": {
+          "name": "Distanza tra i passaggi",
+          "description": "Distanza tra i passaggi"
+        },
+        "channel_mode": {
+          "name": "Modalità percorso",
+          "description": "Modalità percorso"
+        },
+        "obstacle_laps": {
+          "name": "Giri zona vietata",
+          "description": "Giri zona vietata"
+        },
+        "rain_tactics": {
+          "name": "Strategia pioggia",
+          "description": "Strategia pioggia"
+        },
+        "auto_change_direction": {
+          "name": "Cambio direzione automatico",
+          "description": "Cambio direzione automatico"
+        },
+        "start_progress": {
+          "name": "Avanzamento",
+          "description": "Avanzamento"
+        }
+      }
+    },
     "start_stop_blades": {
       "name": "Avvia o ferma lame",
       "description": "Avvia o arresta le lame manualmente.",
@@ -817,9 +908,39 @@
         }
       }
     },
+    "set_blade_height": {
+      "name": "Imposta altezza lama",
+      "description": "Invia un'altezza della lama direttamente al motore di taglio del tosaerba.",
+      "fields": {
+        "height": {
+          "name": "Altezza",
+          "description": "Altezza della lama in millimetri."
+        }
+      }
+    },
     "reset_blade_time": {
       "name": "Reimposta tempo lama",
       "description": "Reimposta il contatore del tempo di utilizzo della lama."
+    },
+    "start_dump_point_setup": {
+      "name": "Avvia configurazione punti di scarico",
+      "description": "Porta il robot in modalità di configurazione dei punti di scarico dell'erba, così da poterli registrare."
+    },
+    "add_dump_point": {
+      "name": "Aggiungi punto di scarico",
+      "description": "Registra un punto di scarico dell'erba nella posizione attuale del robot."
+    },
+    "undo_dump_point": {
+      "name": "Annulla ultimo punto di scarico",
+      "description": "Scarta l'ultimo punto di scarico registrato."
+    },
+    "finish_dump_point_setup": {
+      "name": "Termina configurazione punti di scarico",
+      "description": "Salva i punti di scarico registrati ed esce dalla modalità di configurazione."
+    },
+    "finish_outside_dump_point": {
+      "name": "Termina punto di scarico fuori area",
+      "description": "Completa la configurazione di un punto di scarico registrato fuori dall'area di taglio."
     },
     "get_map_data": {
       "name": "Ottieni dati mappa",
@@ -1147,9 +1268,79 @@
       "name": "Aggiorna attività",
       "description": "Riscarica tutte le pianificazioni dal dispositivo."
     },
+    "get_tasks": {
+      "name": "Ottieni attività",
+      "description": "Restituisce tutte le pianificazioni che l'integrazione conserva per il dispositivo selezionato, indicando se ciascuna è abilitata. Utile per verificare che una modifica sia stata applicata; «Aggiorna attività» le recupera prima dal dispositivo."
+    },
     "start_task": {
       "name": "Avvia attività",
       "description": "Esegue immediatamente una pianificazione memorizzata (nota anche come 'avvia pianificazione'). Solo per tagliaerba — il robot piscina Spino non ha un comando equivalente."
+    },
+    "backup_map": {
+      "name": "Esegui backup mappa",
+      "description": "Carica la mappa del tosaerba sul tuo account cloud Mammotion. Restituisce l'ID del backup. Indica l'ID di un backup esistente per sovrascriverlo invece di crearne uno nuovo.",
+      "fields": {
+        "name": {
+          "name": "Nome",
+          "description": "Nome del backup."
+        },
+        "backup_id": {
+          "name": "ID backup",
+          "description": "Backup esistente da sovrascrivere. Lascia vuoto per creare un nuovo backup."
+        }
+      }
+    },
+    "restore_map": {
+      "name": "Ripristina mappa",
+      "description": "Sostituisce la mappa attuale del tosaerba con un backup dell'account Mammotion con cui è connessa questa integrazione. Il tosaerba si riavvia al termine del ripristino.",
+      "fields": {
+        "backup_id": {
+          "name": "ID backup",
+          "description": "Backup da ripristinare, come restituito da 'Ottieni backup mappe'."
+        }
+      }
+    },
+    "get_map_backups": {
+      "name": "Ottieni backup mappe",
+      "description": "Restituisce i backup delle mappe dell'account Mammotion con cui è connessa questa integrazione. I backup appartengono all'account, quindi quelli creati nell'app con un altro account non vengono elencati."
+    },
+    "get_map_backup_progress": {
+      "name": "Ottieni avanzamento backup mappa",
+      "description": "Restituisce a che punto è un backup o un ripristino della mappa.",
+      "fields": {
+        "backup_id": {
+          "name": "ID backup",
+          "description": "Backup di cui controllare l'operazione."
+        },
+        "restore": {
+          "name": "Ripristino",
+          "description": "Controlla un ripristino invece di un backup."
+        }
+      }
+    },
+    "cancel_map_backup": {
+      "name": "Annulla backup mappa",
+      "description": "Annulla un backup o un ripristino della mappa ancora in corso.",
+      "fields": {
+        "backup_id": {
+          "name": "ID backup",
+          "description": "Backup di cui annullare l'operazione."
+        },
+        "restore": {
+          "name": "Ripristino",
+          "description": "Annulla un ripristino invece di un backup."
+        }
+      }
+    },
+    "delete_map_backup": {
+      "name": "Elimina backup mappa",
+      "description": "Elimina un backup della mappa dal cloud Mammotion.",
+      "fields": {
+        "backup_id": {
+          "name": "ID backup",
+          "description": "Backup da eliminare."
+        }
+      }
     }
   },
   "exceptions": {
@@ -1188,6 +1379,21 @@
     },
     "start_task_unsupported_on_spino": {
       "message": "Avviare una pianificazione su richiesta non è supportato sul robot piscina Spino — il firmware non offre un comando di esecuzione immediata per le pianificazioni memorizzate."
+    },
+    "grass_collection_unsupported": {
+      "message": "Questo robot non supporta la raccolta dell'erba."
+    },
+    "map_backup_cloud_unavailable": {
+      "message": "I backup delle mappe richiedono un accesso funzionante al cloud Mammotion."
+    },
+    "map_backup_failed": {
+      "message": "Il cloud Mammotion ha rifiutato la richiesta di backup della mappa: {reason}"
+    },
+    "map_backup_device_not_found": {
+      "message": "{device_name} non è elencato per i backup delle mappe in questo account Mammotion."
+    },
+    "map_backup_mower_not_found": {
+      "message": "{entity_id} non è un tosaerba Mammotion."
     }
   }
 }
