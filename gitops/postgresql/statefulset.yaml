@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: postgresql
-        image: postgres:17-alpine
+        image: postgres:18-alpine
         ports:
         - containerPort: 5432
         envFrom:
@@ -26,7 +26,7 @@ spec:
             name: postgresql
         volumeMounts:
         - name: data
-          mountPath: /var/lib/postgresql/data
+          mountPath: /var/lib/postgresql
         readinessProbe:
           exec:
             command: [pg_isready, -U, hairsera, -d, hairsera]
