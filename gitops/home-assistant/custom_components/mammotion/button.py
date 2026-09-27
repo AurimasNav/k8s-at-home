@@ -4,6 +4,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from dataclasses import replace as dataclass_replace
 from functools import partial
+from typing import Any, cast
 
 from homeassistant.components.button import DOMAIN as BUTTON_DOMAIN
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
@@ -14,6 +15,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pymammotion.data.model.hash_list import Plan
 from pymammotion.data.model.pool_state import PoolPlan
 from pymammotion.transport.base import TransportType
+from pymammotion.utility.constant import WorkMode
 from pymammotion.utility.device_type import DeviceType
 
 from . import MammotionConfigEntry
@@ -23,15 +25,19 @@ from .coordinator import (
     MammotionReportUpdateCoordinator,
     MammotionSpinoCoordinator,
 )
-from .entity import MammotionBaseEntity, MammotionBaseSpinoEntity
+from .entity import (
+    MammotionBaseEntity,
+    MammotionBaseSpinoEntity,
+    supports_no_area_work,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
 class MammotionButtonSensorEntityDescription(ButtonEntityDescription):
     """Describes Mammotion button sensor entity."""
 
-    press_fn: Callable[[MammotionBaseUpdateCoordinator], Awaitable[None]]
-    available_fn: Callable[[MammotionBaseUpdateCoordinator], bool] | None = None
+    press_fn: Callable[[MammotionBaseUpdateCoordinator[Any]], Awaitable[None]]
+    available_fn: Callable[[MammotionBaseUpdateCoordinator[Any]], bool] | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -39,7 +45,7 @@ class MammotionTaskButtonSensorEntityDescription(ButtonEntityDescription):
     """Describes Mammotion button sensor entity."""
 
     plan_id: str
-    press_fn: Callable[[MammotionBaseUpdateCoordinator, str], Awaitable[None]]
+    press_fn: Callable[[MammotionBaseUpdateCoordinator[Any], str], Awaitable[None]]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -83,7 +89,7 @@ SPINO_BUTTON_SENSORS: tuple[MammotionSpinoButtonEntityDescription, ...] = (
 )
 
 
-def _nudge_available(coordinator: MammotionBaseUpdateCoordinator) -> bool:
+def _nudge_available(coordinator: MammotionBaseUpdateCoordinator[Any]) -> bool:
     """Return True when movement via BLE or Wi-Fi is possible."""
     if coordinator.config_entry.options.get(CONF_MOVEMENT_USE_WIFI, False):
         return True
@@ -92,6 +98,31 @@ def _nudge_available(coordinator: MammotionBaseUpdateCoordinator) -> bool:
         return False
     ble = handle.get_transport(TransportType.BLE)
     return ble is not None and ble.is_usable
+
+
+#: The two states the app's DropMowHandler accepts a map-free mow in.
+_DROPMOW_MODES = (WorkMode.MODE_READY, WorkMode.MODE_CORRIDOR_DRAW)
+
+
+def _is_idle(coordinator: MammotionBaseUpdateCoordinator[Any]) -> bool:
+    """Whether the mower is in a state that accepts a map-free mow."""
+    data = coordinator.data
+    if data is None:
+        return False
+    return data.report_data.dev.sys_status in _DROPMOW_MODES
+
+
+#: Map-free mowing, which the app keeps behind its Beta Features screen and
+#: offers only on the X5 platform.
+BUTTON_DROPMOW: tuple[MammotionButtonSensorEntityDescription, ...] = (
+    MammotionButtonSensorEntityDescription(
+        key="start_dropmow",
+        press_fn=lambda coordinator: coordinator.async_start_no_area_work(),
+        # The device rejects it outside these two modes ("Robot is mowing.
+        # Please retry when the robot is idle"), so do not offer it then.
+        available_fn=_is_idle,
+    ),
+)
 
 
 BUTTON_SENSORS: tuple[MammotionButtonSensorEntityDescription, ...] = (
@@ -104,6 +135,11 @@ BUTTON_SENSORS: tuple[MammotionButtonSensorEntityDescription, ...] = (
         key="start_schedule_sync",
         press_fn=lambda coordinator: coordinator.async_sync_schedule(),
         entity_category=EntityCategory.CONFIG,
+    ),
+    MammotionButtonSensorEntityDescription(
+        key="refresh_status",
+        press_fn=lambda coordinator: coordinator.async_ensure_fresh_state(),
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     MammotionButtonSensorEntityDescription(
         key="resync_rtk_dock",
@@ -188,6 +224,7 @@ async def async_setup_entry(
             async_add_entities,
         )
 
+        async_remove_orphaned_task_entities(coordinator)
         update_tasks()
         coordinator.async_add_listener(update_tasks)
 
@@ -195,6 +232,14 @@ async def async_setup_entry(
             MammotionButtonSensorEntity(mower.reporting_coordinator, entity_description)
             for entity_description in BUTTON_SENSORS
         )
+
+        if supports_no_area_work(mower.device.device_name):
+            async_add_entities(
+                MammotionButtonSensorEntity(
+                    mower.reporting_coordinator, entity_description
+                )
+                for entity_description in BUTTON_DROPMOW
+            )
 
         if not DeviceType.is_luba1(mower.device.device_name):
             async_add_entities(
@@ -235,7 +280,7 @@ class MammotionButtonSensorEntity(MammotionBaseEntity, ButtonEntity):
 
     def __init__(
         self,
-        coordinator: MammotionBaseUpdateCoordinator,
+        coordinator: MammotionBaseUpdateCoordinator[Any],
         entity_description: MammotionButtonSensorEntityDescription,
     ) -> None:
         """Initialize the button sensor entity."""
@@ -265,14 +310,34 @@ class MammotionTaskButtonSensorEntity(MammotionBaseEntity, ButtonEntity):
 
     def __init__(
         self,
-        coordinator: MammotionBaseUpdateCoordinator,
+        coordinator: MammotionBaseUpdateCoordinator[Any],
         entity_description: MammotionTaskButtonSensorEntityDescription,
     ) -> None:
         """Initialize the button task sensor entity."""
         super().__init__(coordinator, entity_description.key)
         self.entity_description = entity_description
         self._attr_translation_key = entity_description.key
-        self._attr_extra_state_attributes = {"task_id": entity_description.plan_id}
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the schedule's enable flag alongside its id.
+
+        A property rather than a value set in ``__init__``: the flag changes on
+        the device, and a frozen copy would report whatever was true at setup
+        (issue #890).  ``get_tasks`` returns the rest of the schedule.
+        """
+        attributes: dict[str, Any] = {"task_id": self.entity_description.plan_id}
+        plan = self._plan()
+        if plan is not None:
+            attributes["enabled"] = plan.is_enabled()
+        return attributes
+
+    def _plan(self) -> Plan | None:
+        """Return this schedule as the coordinator holds it, None before the first refresh."""
+        data = self.coordinator.data
+        if data is None:
+            return None
+        return cast("Plan | None", data.map.plan.get(self.entity_description.plan_id))
 
     def update_name(self, new_name: str) -> None:
         """Update the display name when the plan's task_name changes."""
@@ -321,8 +386,8 @@ def async_add_task_entities(
         return
 
     button_entities: list[MammotionTaskButtonSensorEntity] = []
-    tasks = list(map(str, coordinator.data.map.plan.keys()))
-    new_tasks = set(tasks) - added_tasks
+    tasks = set(map(str, coordinator.data.map.plan.keys()))
+    new_tasks = tasks - added_tasks
 
     if new_tasks:
         for task_id in new_tasks:
@@ -337,7 +402,7 @@ def async_add_task_entities(
 
             if existing_plan is None:
                 del coordinator.data.map.plan[task_id]
-                return
+                continue
 
             base_plan_button_entity = MammotionTaskButtonSensorEntityDescription(
                 key=task_id,
@@ -345,7 +410,7 @@ def async_add_task_entities(
                 translation_placeholders={"name": existing_plan.task_name},
                 plan_id=task_id,
                 name=existing_plan.task_name,
-                press_fn=lambda coord, value: (coord.start_task(value)),
+                press_fn=lambda coord, value: coord.start_task(value),
             )
             entity = MammotionTaskButtonSensorEntity(
                 coordinator, base_plan_button_entity
@@ -356,7 +421,7 @@ def async_add_task_entities(
 
     _update_task_names(coordinator, added_tasks, task_entities_by_id)
 
-    old_tasks = set(tasks) - added_tasks
+    old_tasks = added_tasks - tasks
     if old_tasks:
         async_remove_entities(coordinator, old_tasks)
         for plan in old_tasks:
@@ -366,18 +431,51 @@ def async_add_task_entities(
         async_add_entities(button_entities)
 
 
+def _task_unique_id(coordinator: MammotionBaseUpdateCoordinator[Any], task_id: str) -> str:
+    """Registry unique_id for a task button, matching MammotionBaseEntity."""
+    return f"{coordinator.unique_name}_{task_id}"
+
+
 def async_remove_entities(
-    coordinator: MammotionBaseUpdateCoordinator,
+    coordinator: MammotionBaseUpdateCoordinator[Any],
     old_tasks: set[str],
 ) -> None:
     """Remove task buttons from Home Assistant."""
     registry = er.async_get(coordinator.hass)
     for task in old_tasks:
         entity_id = registry.async_get_entity_id(
-            BUTTON_DOMAIN, DOMAIN, f"{coordinator.device_name}_{task}"
+            BUTTON_DOMAIN, DOMAIN, _task_unique_id(coordinator, task)
         )
         if entity_id:
             registry.async_remove(entity_id)
+
+
+@callback
+def async_remove_orphaned_task_entities(
+    coordinator: MammotionReportUpdateCoordinator,
+) -> None:
+    """Remove task buttons whose plan vanished while this session was not tracking it.
+
+    The in-session sync only knows plans it has seen, so plans dropped while HA
+    was down leave registry rows behind. Task buttons are the device's button
+    entities with an all-digit unique_id suffix: plan ids are 21-digit strings,
+    while the static buttons use word keys.
+    """
+    if coordinator.data is None:
+        return
+    registry = er.async_get(coordinator.hass)
+    prefix = f"{coordinator.unique_name}_"
+    current_tasks = set(map(str, coordinator.data.map.plan.keys()))
+    for reg_entry in list(registry.entities.values()):
+        if (
+            reg_entry.domain != BUTTON_DOMAIN
+            or reg_entry.platform != DOMAIN
+            or not reg_entry.unique_id.startswith(prefix)
+        ):
+            continue
+        task_id = reg_entry.unique_id.removeprefix(prefix)
+        if task_id.isdigit() and task_id not in current_tasks:
+            registry.async_remove(reg_entry.entity_id)
 
 
 class MammotionSpinoTaskButtonEntity(MammotionBaseSpinoEntity, ButtonEntity):
@@ -414,6 +512,15 @@ class MammotionSpinoTaskButtonEntity(MammotionBaseSpinoEntity, ButtonEntity):
             "task_id": str(entity_description.jobid),
             "jobid": entity_description.jobid,
         }
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the schedule's enable flag alongside its ids."""
+        attributes = dict(self._attr_extra_state_attributes)
+        plan = self.coordinator.data.plans.get(self.entity_description.jobid)
+        if plan is not None:
+            attributes["enabled"] = plan.enabled
+        return attributes
 
     def update_name(self, new_name: str) -> None:
         """Update the display name when the plan's jobname changes."""

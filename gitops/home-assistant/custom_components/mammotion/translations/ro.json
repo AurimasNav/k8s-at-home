@@ -9,8 +9,11 @@
       "no_longer_present": "Echipamentul nu mai este prezent",
       "not_supported": "Dispozitivul nu este suportat",
       "reconfigure_successful": "Reconfigurare reușită",
+      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
       "api_limit_exceeded": "Limita de solicitări API a fost depășită. Vă rugăm să încercați din nou mai târziu.",
-      "account_in_use": "Contul dvs. Mammotion este deja activ într-o altă sesiune. Deconectați-vă din aplicația Mammotion și încercați din nou."
+      "account_in_use": "Contul dvs. Mammotion este deja activ într-o altă sesiune. Deconectați-vă din aplicația Mammotion și încercați din nou.",
+      "reauth_successful": "Reautentificarea a reușit",
+      "wrong_account": "Aceste date de autentificare aparțin altui cont Mammotion. Reautentificați-vă cu contul cu care a fost configurată această intrare."
     },
     "error": {
       "login_failed": "Autentificare eșuată. Verificați adresa de e-mail și parola contului, apoi încercați din nou.",
@@ -20,33 +23,34 @@
     "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Configurație{name}",
-        "data": {
-          "stay_connected_bluetooth": "Mențineți bluetooth-ul conectat"
-        }
+        "description": "Configurație{name}"
       },
       "reconfigure": {
         "data": {
-          "use_wifi": "Folosește Wi-Fi",
           "account_name": "Email sau număr de cont Mammotion",
           "password": "Parola contului Mammotion"
         }
       },
       "user": {
         "data": {
-          "address": "Dispozitiv",
-          "stay_connected_bluetooth": "Păstrează Bluetooth conectat"
+          "address": "Dispozitiv"
         },
         "description": "Selectați mașina de tuns iarba"
       },
       "wifi": {
         "data": {
-          "use_wifi": "Folosește Wi-Fi (debifează și trimite pentru a folosi Bluetooth)",
           "account_name": "Email sau număr de cont Mammotion",
           "password": "Parola contului Mammotion"
         },
         "title": "Conectează-te la Wi-Fi",
-        "description": "Introdu adresa de email sau id-ul contului Mammotion și parola"
+        "description": "Introdu adresa de email sau id-ul contului Mammotion și parola. Lasă ambele câmpuri goale pentru a folosi doar Bluetooth, fără cont."
+      },
+      "reauth_confirm": {
+        "title": "Reautentificare Mammotion",
+        "description": "Cloudul Mammotion a respins datele de autentificare salvate pentru {account}. Introduceți parola pentru a vă conecta din nou.",
+        "data": {
+          "password": "Parola contului Mammotion"
+        }
       }
     }
   },
@@ -55,11 +59,11 @@
       "init": {
         "data": {
           "title": "Actualizarea configurației",
-          "stay_connected_bluetooth": "Mențineți bluetooth-ul conectat",
           "prefer_ble_over_wifi": "Preferați Bluetooth față de Wi-Fi când este disponibil",
           "movement_use_wifi": "Trimiteți comenzi de mișcare prin Wi-Fi",
           "mow_path_fetch_enabled": "Activați descărcarea traseului de tuns (cloud)",
-          "full_map_fetch_enabled": "Activați descărcarea completă a hărții (cloud) — când este oprit, se descarcă doar numele zonelor"
+          "full_map_fetch_enabled": "Activați descărcarea completă a hărții (cloud) — când este oprit, se descarcă doar numele zonelor",
+          "notify": "Afișează notificări persistente pentru"
         }
       }
     }
@@ -368,6 +372,9 @@
       "release_from_dock": {
         "name": "Detașare"
       },
+      "start_dropmow": {
+        "name": "Pornește DropMow"
+      },
       "emergency_nudge_forward": {
         "name": "Un impuls de urgență înainte"
       },
@@ -391,6 +398,9 @@
       },
       "restart_mower": {
         "name": "Repornire mașina de tuns"
+      },
+      "refresh_status": {
+        "name": "Reîmprospătează starea"
       },
       "spino_fetch_map": {
         "name": "Preia harta piscinei"
@@ -421,8 +431,14 @@
       "rain_tactics": {
         "name": "Detectare ploaie (tuns) Pornit/Oprit"
       },
+      "auto_change_direction": {
+        "name": "Inversare automată a direcției de tuns"
+      },
       "rain_detection": {
         "name": "Detectare ploaie (Cositor) Pornit/Oprit"
+      },
+      "smart_charge": {
+        "name": "Încărcare inteligentă"
       },
       "side_led": {
         "name": "LED lateral Pornit/Oprit"
@@ -448,17 +464,23 @@
       "voice_on_off": {
         "name": "Voce pornit/oprit"
       },
+      "manual_grass_collection": {
+        "name": "Colectare manuală a ierbii"
+      },
+      "manual_grass_dump": {
+        "name": "Golire manuală a ierbii"
+      },
       "spino_buzzer": {
-        "name": "Avertizor sonor"
+        "name": "Buzzer"
       },
       "spino_turbo_clean": {
         "name": "Curățare turbo"
       },
       "spino_platform_cleaning": {
-        "name": "Curățarea platformei"
+        "name": "Curățare platformă"
       },
       "spino_waterline_parking": {
-        "name": "Parcare la linia de apă"
+        "name": "Parcare la linia apei"
       }
     },
     "select": {
@@ -501,10 +523,10 @@
       "bypass_mode": {
         "name": "Detectare obstacole",
         "state": {
-          "direct_touch": "Oprit",
-          "slow_touch": "Atingere lentă",
+          "off": "Oprit",
+          "slow_touch": "De bază",
           "less_touch": "Mai puțin atins",
-          "no_touch": "Standard",
+          "standard": "Standard",
           "sensitive": "Sensibil"
         }
       },
@@ -567,7 +589,7 @@
         }
       },
       "spino_wall_material": {
-        "name": "Materialul pereților",
+        "name": "Material perete",
         "state": {
           "GLASS": "Sticlă",
           "CERAMICS": "Faianță",
@@ -588,6 +610,9 @@
     "number": {
       "voice_volume": {
         "name": "Volumul vocii"
+      },
+      "charge_limit": {
+        "name": "Limită de încărcare"
       },
       "start_progress": {
         "name": "Progresul la start"
@@ -622,6 +647,24 @@
     },
     "device_tracker": {
       "name": "Monitorizarea dispozitivului"
+    },
+    "event": {
+      "notification": {
+        "name": "Notificări",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "device_notification_event": "Notificare",
+              "device_information_event": "Informație",
+              "device_warning_code_event": "Coduri de avertizare",
+              "device_warning_event": "Avertizare",
+              "device_biz_req_event": "Cerere de serviciu",
+              "device_log_progress_event": "Progresul încărcării jurnalului",
+              "device_config_req_event": "Cerere de configurare"
+            }
+          }
+        }
+      }
     }
   },
   "selector": {
@@ -633,10 +676,10 @@
     },
     "ultra_wave": {
       "options": {
-        "0": "Atingere directă",
-        "1": "Atingere lentă",
-        "2": "Atingere redusă",
-        "10": "Fără atingere",
+        "0": "Oprit",
+        "1": "De bază",
+        "2": "Mai puțin atins",
+        "10": "Standard",
         "11": "Sensibil"
       }
     },
@@ -677,6 +720,12 @@
         "2": "Două ture",
         "3": "Trei ture",
         "4": "Patru ture"
+      }
+    },
+    "notify": {
+      "options": {
+        "warnings": "Avertizări și coduri de eroare",
+        "notifications": "Notificări și informații despre dispozitiv"
       }
     }
   },
@@ -779,6 +828,48 @@
         }
       }
     },
+    "modify_running_job": {
+      "name": "Modifică sarcina în curs",
+      "description": "Modifică setările sarcinii pe care robotul o execută deja, fără a o reporni. Disponibil doar pe Luba 2 și mai noi, în timpul unei sarcini în curs.",
+      "fields": {
+        "blade_height": {
+          "name": "Înălțime lamă",
+          "description": "Înălțime lamă"
+        },
+        "speed": {
+          "name": "Viteză de lucru",
+          "description": "Viteză de lucru"
+        },
+        "ultra_wave": {
+          "name": "Detectare obstacole",
+          "description": "Detectare obstacole"
+        },
+        "channel_width": {
+          "name": "Distanță între treceri",
+          "description": "Distanță între treceri"
+        },
+        "channel_mode": {
+          "name": "Mod traseu",
+          "description": "Mod traseu"
+        },
+        "obstacle_laps": {
+          "name": "Ture zonă interzisă",
+          "description": "Ture zonă interzisă"
+        },
+        "rain_tactics": {
+          "name": "Tactică ploaie",
+          "description": "Tactică ploaie"
+        },
+        "auto_change_direction": {
+          "name": "Schimbare automată a direcției",
+          "description": "Schimbare automată a direcției"
+        },
+        "start_progress": {
+          "name": "Progres",
+          "description": "Progres"
+        }
+      }
+    },
     "start_stop_blades": {
       "name": "Pornire sau oprire lame",
       "description": "Porniți sau opriți lamele manual.",
@@ -817,9 +908,39 @@
         }
       }
     },
+    "set_blade_height": {
+      "name": "Setează înălțimea lamei",
+      "description": "Trimite o înălțime a lamei direct către motorul de tăiere al mașinii de tuns.",
+      "fields": {
+        "height": {
+          "name": "Înălțime",
+          "description": "Înălțimea lamei în milimetri."
+        }
+      }
+    },
     "reset_blade_time": {
       "name": "Resetați timpul lamei",
       "description": "Resetați contorul de timp de utilizare a lamei."
+    },
+    "start_dump_point_setup": {
+      "name": "Pornește configurarea punctelor de golire",
+      "description": "Trece mașina în modul de configurare a punctelor de golire a ierbii, pentru a putea înregistra puncte."
+    },
+    "add_dump_point": {
+      "name": "Adaugă punct de golire",
+      "description": "Înregistrează un punct de golire a ierbii în poziția curentă a mașinii."
+    },
+    "undo_dump_point": {
+      "name": "Anulează ultimul punct de golire",
+      "description": "Renunță la ultimul punct de golire înregistrat."
+    },
+    "finish_dump_point_setup": {
+      "name": "Finalizează configurarea punctelor de golire",
+      "description": "Salvează punctele de golire înregistrate și iese din modul de configurare."
+    },
+    "finish_outside_dump_point": {
+      "name": "Finalizează punctul de golire din afara zonei",
+      "description": "Finalizează configurarea unui punct de golire înregistrat în afara zonei de tuns."
     },
     "get_map_data": {
       "name": "Obțineți datele hărții",
@@ -1147,9 +1268,79 @@
       "name": "Reîmprospătează sarcinile",
       "description": "Reia toate programele de pe dispozitiv."
     },
+    "get_tasks": {
+      "name": "Obține sarcinile",
+      "description": "Returnează toate programările pe care integrarea le deține pentru dispozitivul vizat, inclusiv dacă fiecare este activată. Folosiți-o pentru a confirma că o modificare a fost aplicată; „Reîmprospătează sarcinile” le preia mai întâi din nou de pe dispozitiv."
+    },
     "start_task": {
       "name": "Pornește sarcina",
       "description": "Pornește imediat un program stocat (cunoscut și ca „pornește programul”). Doar pentru cositoare — robotul de piscină Spino nu are o comandă echivalentă."
+    },
+    "backup_map": {
+      "name": "Salvează harta",
+      "description": "Încarcă harta mașinii de tuns în contul tău cloud Mammotion. Returnează ID-ul copiei de rezervă. Indică ID-ul unei copii existente pentru a o suprascrie în loc să creezi una nouă.",
+      "fields": {
+        "name": {
+          "name": "Nume",
+          "description": "Numele copiei de rezervă."
+        },
+        "backup_id": {
+          "name": "ID copie de rezervă",
+          "description": "Copie de rezervă existentă de suprascris. Lasă gol pentru a crea o copie nouă."
+        }
+      }
+    },
+    "restore_map": {
+      "name": "Restaurează harta",
+      "description": "Înlocuiește harta curentă a mașinii de tuns cu o copie de rezervă din contul Mammotion cu care este conectată această integrare. Mașina de tuns repornește după terminarea restaurării.",
+      "fields": {
+        "backup_id": {
+          "name": "ID copie de rezervă",
+          "description": "Copia de rezervă de restaurat, așa cum o returnează „Obține copiile de rezervă ale hărților”."
+        }
+      }
+    },
+    "get_map_backups": {
+      "name": "Obține copiile de rezervă ale hărților",
+      "description": "Returnează copiile de rezervă ale hărților din contul Mammotion cu care este conectată această integrare. Copiile aparțin contului, așa că cele create în aplicație cu alt cont nu sunt afișate."
+    },
+    "get_map_backup_progress": {
+      "name": "Obține progresul copiei de rezervă",
+      "description": "Returnează cât de departe a ajuns o salvare sau o restaurare a hărții.",
+      "fields": {
+        "backup_id": {
+          "name": "ID copie de rezervă",
+          "description": "Copia de rezervă a cărei operațiuni se verifică."
+        },
+        "restore": {
+          "name": "Restaurare",
+          "description": "Verifică o restaurare în loc de o salvare."
+        }
+      }
+    },
+    "cancel_map_backup": {
+      "name": "Anulează copia de rezervă a hărții",
+      "description": "Anulează o salvare sau o restaurare a hărții aflată în desfășurare.",
+      "fields": {
+        "backup_id": {
+          "name": "ID copie de rezervă",
+          "description": "Copia de rezervă a cărei operațiuni se anulează."
+        },
+        "restore": {
+          "name": "Restaurare",
+          "description": "Anulează o restaurare în loc de o salvare."
+        }
+      }
+    },
+    "delete_map_backup": {
+      "name": "Șterge copia de rezervă a hărții",
+      "description": "Șterge o copie de rezervă a hărții din cloudul Mammotion.",
+      "fields": {
+        "backup_id": {
+          "name": "ID copie de rezervă",
+          "description": "Copia de rezervă de șters."
+        }
+      }
     }
   },
   "exceptions": {
@@ -1188,6 +1379,21 @@
     },
     "start_task_unsupported_on_spino": {
       "message": "Pornirea unui program la cerere nu este acceptată pe robotul de piscină Spino — firmware-ul nu oferă o comandă de execuție imediată pentru programele stocate."
+    },
+    "grass_collection_unsupported": {
+      "message": "Această mașină de tuns nu acceptă colectarea ierbii."
+    },
+    "map_backup_cloud_unavailable": {
+      "message": "Copiile de rezervă ale hărților necesită o autentificare funcțională în cloudul Mammotion."
+    },
+    "map_backup_failed": {
+      "message": "Cloudul Mammotion a refuzat cererea de copie de rezervă a hărții: {reason}"
+    },
+    "map_backup_device_not_found": {
+      "message": "{device_name} nu este listat pentru copii de rezervă ale hărților în acest cont Mammotion."
+    },
+    "map_backup_mower_not_found": {
+      "message": "{entity_id} nu este o mașină de tuns Mammotion."
     }
   }
 }

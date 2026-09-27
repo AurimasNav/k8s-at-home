@@ -16,8 +16,29 @@ from pymammotion.transport.base import (
 from pymammotion.utility.constant import WorkMode
 
 DOMAIN: Final = "mammotion"
+EVENT_MAMMOTION: Final = f"{DOMAIN}_event"
+
+CONF_NOTIFY: Final = "notify"
+NOTIFY_WARNINGS: Final = "warnings"
+NOTIFY_NOTIFICATIONS: Final = "notifications"
+NOTIFY_CATEGORIES: Final = (NOTIFY_WARNINGS, NOTIFY_NOTIFICATIONS)
+#: Off by default; entries created before 0.6.8 are migrated to ``[NOTIFY_WARNINGS]``.
+DEFAULT_NOTIFY: Final[list[str]] = []
+#: Which persistent-notification category each thing/event identifier belongs to.
+NOTIFY_CATEGORY_BY_EVENT: Final = {
+    "device_warning_code_event": NOTIFY_WARNINGS,
+    "device_warning_event": NOTIFY_WARNINGS,
+    "device_notification_event": NOTIFY_NOTIFICATIONS,
+    "device_information_event": NOTIFY_NOTIFICATIONS,
+}
 
 DEVICE_SUPPORT = ("Luba", "Yuka")
+# Pool cleaners, kept apart from DEVICE_SUPPORT because that tuple also answers
+# "is this a mower" on the cloud path.  "SDPX" is deliberately absent: the PC210
+# charging pile is not a cleaner.
+POOL_CLEANER_SUPPORT = ("Spino",)
+# Everything the integration will set up over Bluetooth alone.
+BLE_SUPPORT = DEVICE_SUPPORT + POOL_CLEANER_SUPPORT
 SCAN_INTERVAL = timedelta(hours=1)
 ATTR_DIRECTION = "direction"
 
@@ -61,6 +82,23 @@ CONF_MAMMOTION_MQTT = "mammotion_mqtt"
 CONF_MAMMOTION_DEVICE_LIST = "mammotion_device_list"
 CONF_MAMMOTION_DEVICE_RECORDS = "mammotion_device_records"
 CONF_MAMMOTION_JWT_INFO = "mammotion_jwt_info"
+
+# Every credential-bearing cache blob stored on the config entry.  Cleared as a
+# unit whenever the server rejects the cached session (a rejected refresh token
+# does not become valid by waiting), so the next setup attempt or reauth goes
+# straight to a fresh login instead of re-spending dead tokens — the 40102
+# retry-per-restart loop that got accounts flagged.
+CREDENTIAL_CACHE_KEYS: Final = (
+    CONF_AUTH_DATA,
+    CONF_CONNECT_DATA,
+    CONF_AEP_DATA,
+    CONF_SESSION_DATA,
+    CONF_REGION_DATA,
+    CONF_DEVICE_DATA,
+    CONF_MAMMOTION_DATA,
+    CONF_MAMMOTION_MQTT,
+    CONF_MAMMOTION_JWT_INFO,
+)
 
 NO_REQUEST_MODES = (
     WorkMode.MODE_JOB_DRAW,

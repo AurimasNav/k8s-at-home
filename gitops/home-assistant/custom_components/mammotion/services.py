@@ -11,8 +11,11 @@ from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, cal
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.service import async_register_admin_service
+from homeassistant.util import dt as dt_util
 from pymammotion.data.model.hash_list import CommDataCouple, Plan
 from pymammotion.data.model.pool_state import PoolPlan
+from pymammotion.http.model.map_backup import BACKUP_STATE_DONE, BackupMapItem
 from pymammotion.utility.device_type import DeviceType
 
 from .const import DOMAIN, LOGGER
@@ -43,12 +46,25 @@ SERVICE_SET_TASK_ENABLED = "set_task_enabled"
 SERVICE_DELETE_TASK = "delete_task"
 SERVICE_COPY_TASK = "copy_task"
 SERVICE_REFRESH_TASKS = "refresh_tasks"
+# Read the schedules back.  ``refresh_tasks`` re-syncs them from the device;
+# this returns what the integration now holds, so a script can confirm a
+# ``set_task_enabled`` actually landed (issue #890).
+SERVICE_GET_TASKS = "get_tasks"
 # "start task" === "start schedule" — runs a stored mower schedule now.
 # Backed by ``NavPlanTaskExecute(sub_cmd=1, id=plan_id)`` on the wire (see
 # APK ``MACommandHelper.singleSchedule`` / docs/tasks_and_schedules.md § 1.6).
 # Spino has no equivalent in the proto — the service rejects Spino targets
 # with a translated error.
 SERVICE_START_TASK = "start_task"
+
+# Cloud map backup and restore (``/device-server/v1/map/backup`` in the app).
+# Everything but the reads is admin-only: a restore overwrites the mower's map.
+SERVICE_BACKUP_MAP = "backup_map"
+SERVICE_RESTORE_MAP = "restore_map"
+SERVICE_GET_MAP_BACKUPS = "get_map_backups"
+SERVICE_GET_MAP_BACKUP_PROGRESS = "get_map_backup_progress"
+SERVICE_CANCEL_MAP_BACKUP = "cancel_map_backup"
+SERVICE_DELETE_MAP_BACKUP = "delete_map_backup"
 
 # Optional schedule fields shared by both device kinds.  The HA service
 # layer normalises them into the per-kind Plan / PoolPlan dataclass.
@@ -154,6 +170,29 @@ REFRESH_TASKS_SCHEMA = vol.Schema(
 
 START_TASK_SCHEMA = vol.Schema(
     {vol.Required(ATTR_ENTITY_ID): _single_entity_id}, extra=vol.ALLOW_EXTRA
+)
+
+GET_TASKS_SCHEMA = vol.Schema(
+    {vol.Required(ATTR_ENTITY_ID): _single_entity_id}, extra=vol.ALLOW_EXTRA
+)
+
+MAP_BACKUP_TARGET_SCHEMA = vol.Schema(
+    {vol.Required(ATTR_ENTITY_ID): _single_entity_id}, extra=vol.ALLOW_EXTRA
+)
+
+BACKUP_MAP_SCHEMA = MAP_BACKUP_TARGET_SCHEMA.extend(
+    {
+        vol.Required("name"): vol.All(cv.string, vol.Length(min=1, max=64)),
+        vol.Optional("backup_id"): cv.string,
+    }
+)
+
+MAP_BACKUP_ID_SCHEMA = MAP_BACKUP_TARGET_SCHEMA.extend(
+    {vol.Required("backup_id"): cv.string}
+)
+
+MAP_BACKUP_JOB_SCHEMA = MAP_BACKUP_ID_SCHEMA.extend(
+    {vol.Optional("restore", default=False): cv.boolean}
 )
 
 GEOJSON_SCHEMA = vol.Schema(
@@ -335,6 +374,83 @@ def _resolve_device(
             if entry.unique_id.startswith(spino.coordinator.unique_name):
                 return spino.coordinator, "spino"
     return None
+
+
+def _map_backup_info(backup: BackupMapItem) -> dict[str, Any]:
+    """Return the service-response view of a stored map backup."""
+    return {
+        "backup_id": backup.biz_id,
+        "name": backup.name,
+        "device_name": backup.device_name,
+        "nick_name": backup.nick_name,
+        "area": backup.area,
+        "backup_time": (
+            dt_util.utc_from_timestamp(backup.backup_time / 1000).isoformat()
+            if backup.backup_time
+            else None
+        ),
+        "state": backup.state,
+        "progress": backup.progress,
+    }
+
+
+def _map_backup_coordinator(
+    hass: HomeAssistant, entity_id: str
+) -> MammotionReportUpdateCoordinator:
+    """Return the reporting coordinator of the mower a backup service targets."""
+    mower = _get_mower_by_entity_id(hass, entity_id)
+    if mower is None:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="map_backup_mower_not_found",
+            translation_placeholders={"entity_id": entity_id},
+        )
+    return mower.reporting_coordinator
+
+
+def _mower_task_info(plan: Plan) -> dict[str, Any]:
+    """Describe a mower schedule for the get_tasks response.
+
+    ``task_id`` matches the task button's attribute of the same name, so a
+    script can line a response row up with the entity it came from.
+    """
+    return {
+        "task_id": plan.plan_id,
+        "name": plan.task_name,
+        "enabled": plan.is_enabled(),
+        "start_time": plan.start_time,
+        "end_time": plan.end_time,
+        "weeks": list(plan.weeks),
+        "start_date": plan.start_date,
+        "end_date": plan.end_date,
+        "trigger_type": plan.trigger_type,
+        "day": plan.day,
+        "knife_height": plan.knife_height,
+        "speed": plan.speed,
+        "edge_mode": plan.edge_mode,
+        "route_angle": plan.route_angle,
+        "route_spacing": plan.route_spacing,
+        "zone_hashs": list(plan.zone_hashs),
+    }
+
+
+def _spino_task_info(plan: PoolPlan) -> dict[str, Any]:
+    """Describe a Spino schedule for the get_tasks response."""
+    return {
+        "task_id": str(plan.jobid),
+        "name": plan.jobname,
+        "enabled": plan.enabled,
+        "start_time": plan.starttime,
+        "weeks": list(plan.weeks),
+        "start_date": plan.startdate,
+        "end_date": plan.enddate,
+        "trigger_type": plan.triggertype,
+        "day": plan.day,
+        "work_mode": plan.work_mode,
+        "sub_mode": list(plan.sub_mode),
+        "speed": plan.speed,
+        "operating_power": plan.operating_power,
+    }
 
 
 def _raise_task_not_found(entity_id: str) -> None:
@@ -699,6 +815,22 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
         else:
             await cast(MammotionSpinoCoordinator, coord).async_refresh_spino_tasks()
 
+    async def handle_get_tasks(call: ServiceCall) -> dict[str, Any]:
+        """Return the schedules the integration currently holds for a device."""
+        entity_id = call.data[ATTR_ENTITY_ID]
+        resolved = _resolve_device(hass, entity_id)
+        if resolved is None:
+            _raise_task_not_found(entity_id)
+            return {}
+        coord, kind = resolved
+        if kind == "mower":
+            plans = cast(MammotionReportUpdateCoordinator, coord).data.map.plan
+            tasks = [_mower_task_info(plan) for plan in plans.values()]
+        else:
+            pool_plans = cast(MammotionSpinoCoordinator, coord).data.plans
+            tasks = [_spino_task_info(plan) for plan in pool_plans.values()]
+        return cast(dict[str, Any], _stringify_large_ints({"tasks": tasks}))
+
     async def handle_start_task(call: ServiceCall) -> None:
         """Run a stored mower schedule immediately ("start task" / "start schedule").
 
@@ -745,4 +877,98 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
     )
     hass.services.async_register(
         DOMAIN, SERVICE_START_TASK, handle_start_task, schema=START_TASK_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_TASKS,
+        handle_get_tasks,
+        schema=GET_TASKS_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    async def handle_backup_map(call: ServiceCall) -> dict[str, Any]:
+        """Upload the mower's map to the cloud, as a new backup or over an old one."""
+        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        backup = await coord.async_backup_map(
+            call.data["name"], call.data.get("backup_id")
+        )
+        return {"backup_id": backup.biz_id}
+
+    async def handle_restore_map(call: ServiceCall) -> None:
+        """Replace the mower's map with a stored backup."""
+        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        await coord.async_restore_map(call.data["backup_id"])
+
+    async def handle_get_map_backups(call: ServiceCall) -> dict[str, Any]:
+        """Return every map backup on the targeted mower's account."""
+        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        backups = await coord.async_list_map_backups()
+        return {"backups": [_map_backup_info(backup) for backup in backups]}
+
+    async def handle_get_map_backup_progress(call: ServiceCall) -> dict[str, Any]:
+        """Return how far a backup or restore job has got."""
+        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        progress = await coord.async_get_map_backup_progress(
+            call.data["backup_id"], call.data["restore"]
+        )
+        return {
+            "progress": progress.progress,
+            "state": progress.state,
+            "finished": progress.state == BACKUP_STATE_DONE,
+        }
+
+    async def handle_cancel_map_backup(call: ServiceCall) -> None:
+        """Cancel a running backup or restore job."""
+        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        await coord.async_cancel_map_backup(
+            call.data["backup_id"], call.data["restore"]
+        )
+
+    async def handle_delete_map_backup(call: ServiceCall) -> None:
+        """Delete a stored map backup."""
+        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        await coord.async_delete_map_backup(call.data["backup_id"])
+
+    async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_BACKUP_MAP,
+        handle_backup_map,
+        schema=BACKUP_MAP_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_RESTORE_MAP,
+        handle_restore_map,
+        schema=MAP_BACKUP_ID_SCHEMA,
+    )
+    async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_CANCEL_MAP_BACKUP,
+        handle_cancel_map_backup,
+        schema=MAP_BACKUP_JOB_SCHEMA,
+    )
+    async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_DELETE_MAP_BACKUP,
+        handle_delete_map_backup,
+        schema=MAP_BACKUP_ID_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_MAP_BACKUPS,
+        handle_get_map_backups,
+        schema=MAP_BACKUP_TARGET_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_MAP_BACKUP_PROGRESS,
+        handle_get_map_backup_progress,
+        schema=MAP_BACKUP_JOB_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )

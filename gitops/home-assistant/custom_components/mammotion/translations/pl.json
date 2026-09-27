@@ -9,8 +9,11 @@
       "no_longer_present": "Urządzenie nie jest już dostępne",
       "not_supported": "Urządzenie nie jest obsługiwane",
       "reconfigure_successful": "Ponowna konfiguracja zakończona powodzeniem",
+      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
       "api_limit_exceeded": "Przekroczono limit API. Spróbuj ponownie później.",
-      "account_in_use": "Twoje konto Mammotion jest już aktywne w innej sesji. Wyloguj się z aplikacji Mammotion i spróbuj ponownie."
+      "account_in_use": "Twoje konto Mammotion jest już aktywne w innej sesji. Wyloguj się z aplikacji Mammotion i spróbuj ponownie.",
+      "reauth_successful": "Ponowne uwierzytelnienie powiodło się",
+      "wrong_account": "Te dane logowania należą do innego konta Mammotion. Uwierzytelnij się ponownie kontem, którym skonfigurowano ten wpis."
     },
     "error": {
       "login_failed": "Logowanie nie powiodło się. Sprawdź adres e-mail i hasło konta, a następnie spróbuj ponownie.",
@@ -20,33 +23,34 @@
     "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Skonfiguruj {name}",
-        "data": {
-          "stay_connected_bluetooth": "Utrzymuj połączenie Bluetooth"
-        }
+        "description": "Skonfiguruj {name}"
       },
       "reconfigure": {
         "data": {
-          "use_wifi": "Użyj Wi-Fi",
           "account_name": "E-mail lub numer konta Mammotion",
           "password": "Hasło do konta Mammotion"
         }
       },
       "user": {
         "data": {
-          "address": "Urządzenie",
-          "stay_connected_bluetooth": "Utrzymuj połączenie Bluetooth"
+          "address": "Urządzenie"
         },
         "description": "Wybierz swoją kosiarkę"
       },
       "wifi": {
         "data": {
-          "use_wifi": "Użyj Wi-Fi",
           "account_name": "E-mail lub numer konta Mammotion",
           "password": "Hasło do konta Mammotion"
         },
         "title": "Połącz z Wi-Fi",
-        "description": "Wprowadź adres e-mail lub identyfikator oraz hasło do swojego konta Mammotion"
+        "description": "Wprowadź adres e-mail lub identyfikator oraz hasło do swojego konta Mammotion. Pozostaw oba pola puste, aby używać tylko Bluetooth, bez konta."
+      },
+      "reauth_confirm": {
+        "title": "Ponowne uwierzytelnienie Mammotion",
+        "description": "Chmura Mammotion odrzuciła zapisane dane logowania dla {account}. Wprowadź hasło, aby zalogować się ponownie.",
+        "data": {
+          "password": "Hasło konta Mammotion"
+        }
       }
     }
   },
@@ -55,11 +59,11 @@
       "init": {
         "data": {
           "title": "Aktualizuj konfigurację",
-          "stay_connected_bluetooth": "Użyj połączenia Bluetooth",
           "prefer_ble_over_wifi": "Preferuj Bluetooth zamiast Wi-Fi, gdy dostępne",
           "movement_use_wifi": "Wysyłaj polecenia ruchu przez Wi-Fi",
           "mow_path_fetch_enabled": "Włącz pobieranie ścieżki koszenia (chmura)",
-          "full_map_fetch_enabled": "Włącz pełne pobieranie mapy (chmura) — gdy wyłączone, pobierane są tylko nazwy obszarów"
+          "full_map_fetch_enabled": "Włącz pełne pobieranie mapy (chmura) — gdy wyłączone, pobierane są tylko nazwy obszarów",
+          "notify": "Pokazuj trwałe powiadomienia dla"
         }
       }
     }
@@ -368,6 +372,9 @@
       "release_from_dock": {
         "name": "Oddokuj"
       },
+      "start_dropmow": {
+        "name": "Uruchom DropMow"
+      },
       "emergency_nudge_forward": {
         "name": "Awaryjne ruszenie do przodu"
       },
@@ -391,6 +398,9 @@
       },
       "restart_mower": {
         "name": "Uruchom ponownie kosiarkę"
+      },
+      "refresh_status": {
+        "name": "Odśwież stan"
       },
       "spino_fetch_map": {
         "name": "Pobierz mapę basenu"
@@ -421,8 +431,14 @@
       "rain_tactics": {
         "name": "Wykrywanie deszczu (podczas koszenia) wł/wył"
       },
+      "auto_change_direction": {
+        "name": "Automatyczna zmiana kierunku koszenia"
+      },
       "rain_detection": {
         "name": "Wykrywanie deszczu (kosiarka) wł/wył"
+      },
+      "smart_charge": {
+        "name": "Inteligentne ładowanie"
       },
       "side_led": {
         "name": "Boczna dioda LED wł/wył"
@@ -448,6 +464,12 @@
       "voice_on_off": {
         "name": "Głos wł./wył."
       },
+      "manual_grass_collection": {
+        "name": "Ręczne zbieranie trawy"
+      },
+      "manual_grass_dump": {
+        "name": "Ręczne wysypywanie trawy"
+      },
       "spino_buzzer": {
         "name": "Brzęczyk"
       },
@@ -458,7 +480,7 @@
         "name": "Czyszczenie platformy"
       },
       "spino_waterline_parking": {
-        "name": "Parkowanie na linii wody"
+        "name": "Parkowanie przy linii wodnej"
       }
     },
     "select": {
@@ -501,10 +523,10 @@
       "bypass_mode": {
         "name": "Wykrywanie przeszkód",
         "state": {
-          "direct_touch": "Wyłączone",
-          "slow_touch": "Wolne dotknięcie",
+          "off": "Wyłączony",
+          "slow_touch": "Podstawowy",
           "less_touch": "Mniej dotyku",
-          "no_touch": "Standard",
+          "standard": "Standard",
           "sensitive": "Czułe"
         }
       },
@@ -567,11 +589,11 @@
         }
       },
       "spino_wall_material": {
-        "name": "Materiał ścian",
+        "name": "Materiał ściany",
         "state": {
           "GLASS": "Szkło",
-          "CERAMICS": "Płytki",
-          "SAND_STONE": "Kruszywo",
+          "CERAMICS": "Płytka",
+          "SAND_STONE": "Agregat",
           "VINYL": "Winyl"
         }
       },
@@ -588,6 +610,9 @@
     "number": {
       "voice_volume": {
         "name": "Głośność głosu"
+      },
+      "charge_limit": {
+        "name": "Limit ładowania"
       },
       "start_progress": {
         "name": "Rozpocznij koszenie przy x% postępie"
@@ -622,6 +647,24 @@
     },
     "device_tracker": {
       "name": "Śledzenie urządzenia"
+    },
+    "event": {
+      "notification": {
+        "name": "Powiadomienia",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "device_notification_event": "Powiadomienie",
+              "device_information_event": "Informacja",
+              "device_warning_code_event": "Kody ostrzeżeń",
+              "device_warning_event": "Ostrzeżenie",
+              "device_biz_req_event": "Żądanie biznesowe",
+              "device_log_progress_event": "Postęp przesyłania dziennika",
+              "device_config_req_event": "Żądanie konfiguracji"
+            }
+          }
+        }
+      }
     }
   },
   "selector": {
@@ -633,10 +676,10 @@
     },
     "ultra_wave": {
       "options": {
-        "0": "Bezpośrednie dotknięcie",
-        "1": "Wolne dotknięcie",
+        "0": "Wyłączony",
+        "1": "Podstawowy",
         "2": "Mniej dotyku",
-        "10": "Brak dotyku",
+        "10": "Standard",
         "11": "Czułe"
       }
     },
@@ -677,6 +720,12 @@
         "2": "Dwa razy",
         "3": "Trzy razy",
         "4": "Cztery razy"
+      }
+    },
+    "notify": {
+      "options": {
+        "warnings": "Ostrzeżenia i kody błędów",
+        "notifications": "Powiadomienia i informacje urządzenia"
       }
     }
   },
@@ -779,6 +828,48 @@
         }
       }
     },
+    "modify_running_job": {
+      "name": "Zmień trwające zadanie",
+      "description": "Zmienia ustawienia zadania już wykonywanego przez kosiarkę, bez jego restartu. Dostępne tylko na Luba 2 i nowszych w trakcie trwania zadania.",
+      "fields": {
+        "blade_height": {
+          "name": "Wysokość ostrza",
+          "description": "Wysokość ostrza"
+        },
+        "speed": {
+          "name": "Prędkość pracy",
+          "description": "Prędkość pracy"
+        },
+        "ultra_wave": {
+          "name": "Wykrywanie przeszkód",
+          "description": "Wykrywanie przeszkód"
+        },
+        "channel_width": {
+          "name": "Odstęp ścieżek",
+          "description": "Odstęp ścieżek"
+        },
+        "channel_mode": {
+          "name": "Tryb trasy",
+          "description": "Tryb trasy"
+        },
+        "obstacle_laps": {
+          "name": "Okrążenia strefy zakazanej",
+          "description": "Okrążenia strefy zakazanej"
+        },
+        "rain_tactics": {
+          "name": "Taktyka deszczowa",
+          "description": "Taktyka deszczowa"
+        },
+        "auto_change_direction": {
+          "name": "Automatyczna zmiana kierunku",
+          "description": "Automatyczna zmiana kierunku"
+        },
+        "start_progress": {
+          "name": "Postęp",
+          "description": "Postęp"
+        }
+      }
+    },
     "start_stop_blades": {
       "name": "Uruchom lub zatrzymaj ostrza",
       "description": "Uruchom lub zatrzymaj ostrza ręcznie.",
@@ -817,9 +908,39 @@
         }
       }
     },
+    "set_blade_height": {
+      "name": "Ustaw wysokość noża",
+      "description": "Wysyła wysokość noża bezpośrednio do silnika tnącego kosiarki.",
+      "fields": {
+        "height": {
+          "name": "Wysokość",
+          "description": "Wysokość noża w milimetrach."
+        }
+      }
+    },
     "reset_blade_time": {
       "name": "Resetuj czas noża",
       "description": "Resetuj licznik czasu użytkowania noża."
+    },
+    "start_dump_point_setup": {
+      "name": "Rozpocznij konfigurację punktów wysypu",
+      "description": "Przełącza kosiarkę w tryb konfiguracji punktów wysypu trawy, aby można było je zapisać."
+    },
+    "add_dump_point": {
+      "name": "Dodaj punkt wysypu",
+      "description": "Zapisuje punkt wysypu trawy w bieżącym położeniu kosiarki."
+    },
+    "undo_dump_point": {
+      "name": "Cofnij ostatni punkt wysypu",
+      "description": "Odrzuca ostatnio zapisany punkt wysypu trawy."
+    },
+    "finish_dump_point_setup": {
+      "name": "Zakończ konfigurację punktów wysypu",
+      "description": "Zapisuje zarejestrowane punkty wysypu i kończy tryb konfiguracji."
+    },
+    "finish_outside_dump_point": {
+      "name": "Zakończ punkt wysypu poza obszarem",
+      "description": "Kończy konfigurację punktu wysypu zapisanego poza obszarem koszenia."
     },
     "get_map_data": {
       "name": "Pobierz dane mapy",
@@ -1147,9 +1268,79 @@
       "name": "Odśwież zadania",
       "description": "Pobiera ponownie wszystkie plany z urządzenia."
     },
+    "get_tasks": {
+      "name": "Pobierz zadania",
+      "description": "Zwraca wszystkie harmonogramy przechowywane przez integrację dla wybranego urządzenia, w tym informację, czy każdy z nich jest włączony. Służy do potwierdzenia, że zmiana została zastosowana; „Odśwież zadania” najpierw pobiera je ponownie z urządzenia."
+    },
     "start_task": {
       "name": "Uruchom zadanie",
       "description": "Natychmiast uruchamia zapisany plan (znane też jako „uruchom plan”). Tylko kosiarka — robot basenowy Spino nie ma równoważnego polecenia."
+    },
+    "backup_map": {
+      "name": "Utwórz kopię mapy",
+      "description": "Przesyła mapę kosiarki na Twoje konto w chmurze Mammotion. Zwraca identyfikator kopii. Podaj identyfikator istniejącej kopii, aby ją nadpisać zamiast tworzyć nową.",
+      "fields": {
+        "name": {
+          "name": "Nazwa",
+          "description": "Nazwa kopii zapasowej."
+        },
+        "backup_id": {
+          "name": "Identyfikator kopii",
+          "description": "Istniejąca kopia do nadpisania. Pozostaw puste, aby utworzyć nową kopię."
+        }
+      }
+    },
+    "restore_map": {
+      "name": "Przywróć mapę",
+      "description": "Zastępuje bieżącą mapę kosiarki kopią z konta Mammotion, na które zalogowana jest ta integracja. Po zakończeniu przywracania kosiarka uruchomi się ponownie.",
+      "fields": {
+        "backup_id": {
+          "name": "Identyfikator kopii",
+          "description": "Kopia do przywrócenia, zwrócona przez 'Pobierz kopie map'."
+        }
+      }
+    },
+    "get_map_backups": {
+      "name": "Pobierz kopie map",
+      "description": "Zwraca kopie map zapisane na koncie Mammotion, na które zalogowana jest ta integracja. Kopie należą do konta, więc kopie utworzone w aplikacji na innym koncie nie są wyświetlane."
+    },
+    "get_map_backup_progress": {
+      "name": "Pobierz postęp kopii mapy",
+      "description": "Zwraca postęp tworzenia lub przywracania kopii mapy.",
+      "fields": {
+        "backup_id": {
+          "name": "Identyfikator kopii",
+          "description": "Kopia, której zadanie sprawdzić."
+        },
+        "restore": {
+          "name": "Przywracanie",
+          "description": "Sprawdź przywracanie zamiast tworzenia kopii."
+        }
+      }
+    },
+    "cancel_map_backup": {
+      "name": "Anuluj kopię mapy",
+      "description": "Anuluje trwające tworzenie lub przywracanie kopii mapy.",
+      "fields": {
+        "backup_id": {
+          "name": "Identyfikator kopii",
+          "description": "Kopia, której zadanie anulować."
+        },
+        "restore": {
+          "name": "Przywracanie",
+          "description": "Anuluj przywracanie zamiast tworzenia kopii."
+        }
+      }
+    },
+    "delete_map_backup": {
+      "name": "Usuń kopię mapy",
+      "description": "Usuwa kopię mapy z chmury Mammotion.",
+      "fields": {
+        "backup_id": {
+          "name": "Identyfikator kopii",
+          "description": "Kopia do usunięcia."
+        }
+      }
     }
   },
   "exceptions": {
@@ -1188,6 +1379,21 @@
     },
     "start_task_unsupported_on_spino": {
       "message": "Uruchomienie planu na żądanie nie jest obsługiwane na robocie basenowym Spino — firmware urządzenia nie ma polecenia natychmiastowego uruchomienia zapisanego planu."
+    },
+    "grass_collection_unsupported": {
+      "message": "Ta kosiarka nie obsługuje zbierania trawy."
+    },
+    "map_backup_cloud_unavailable": {
+      "message": "Kopie map wymagają działającego logowania do chmury Mammotion."
+    },
+    "map_backup_failed": {
+      "message": "Chmura Mammotion odrzuciła żądanie kopii mapy: {reason}"
+    },
+    "map_backup_device_not_found": {
+      "message": "{device_name} nie jest dostępne do tworzenia kopii map na tym koncie Mammotion."
+    },
+    "map_backup_mower_not_found": {
+      "message": "{entity_id} nie jest kosiarką Mammotion."
     }
   }
 }

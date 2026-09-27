@@ -9,8 +9,11 @@
       "no_longer_present": "Zařízení již není k dispozici",
       "not_supported": "Zařízení není podporováno",
       "reconfigure_successful": "Rekonfigurace úspěšná",
+      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
       "api_limit_exceeded": "Byl překročen limit požadavků API. Zkuste to prosím znovu později.",
-      "account_in_use": "Váš účet Mammotion je již aktivní v jiné relaci. Odhlaste se z aplikace Mammotion a zkuste to znovu."
+      "account_in_use": "Váš účet Mammotion je již aktivní v jiné relaci. Odhlaste se z aplikace Mammotion a zkuste to znovu.",
+      "reauth_successful": "Opětovné ověření bylo úspěšné",
+      "wrong_account": "Tyto přihlašovací údaje patří k jinému účtu Mammotion. Ověřte se znovu účtem, se kterým byla tato položka nastavena."
     },
     "error": {
       "login_failed": "Přihlášení se nezdařilo. Zkontrolujte e-mail a heslo svého účtu a zkuste to znovu.",
@@ -20,33 +23,34 @@
     "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Nastavení {name}",
-        "data": {
-          "stay_connected_bluetooth": "Udržovat připojení Bluetooth"
-        }
+        "description": "Nastavení {name}"
       },
       "reconfigure": {
         "data": {
-          "use_wifi": "Použít Wi-Fi",
           "account_name": "Mammotion e-mail nebo číslo účtu",
           "password": "Mammotion heslo k účtu"
         }
       },
       "user": {
         "data": {
-          "address": "Zařízení",
-          "stay_connected_bluetooth": "Udržovat připojení Bluetooth"
+          "address": "Zařízení"
         },
         "description": "Vyberte si svou sekačku"
       },
       "wifi": {
         "data": {
-          "use_wifi": "Použít Wi-Fi (odškrtněte a odešlete pro použití Bluetooth)",
           "account_name": "Mammotion e-mail nebo číslo účtu",
           "password": "Heslo k účtu Mammotion"
         },
         "title": "Připojit k Wi-Fi",
-        "description": "Zadejte svůj Mammotion e-mail nebo ID účtu a heslo"
+        "description": "Zadejte svůj Mammotion e-mail nebo ID účtu a heslo. Ponechte obě pole prázdná, pokud chcete používat pouze Bluetooth bez účtu."
+      },
+      "reauth_confirm": {
+        "title": "Opětovné ověření Mammotion",
+        "description": "Cloud Mammotion odmítl uložené přihlašovací údaje pro {account}. Zadejte heslo a přihlaste se znovu.",
+        "data": {
+          "password": "Heslo k účtu Mammotion"
+        }
       }
     }
   },
@@ -55,11 +59,11 @@
       "init": {
         "data": {
           "title": "Aktualizovat konfiguraci",
-          "stay_connected_bluetooth": "Udržovat připojení Bluetooth",
           "prefer_ble_over_wifi": "Upřednostňovat Bluetooth před Wi-Fi, je-li dostupné",
           "movement_use_wifi": "Odesílat příkazy pohybu přes Wi-Fi",
           "mow_path_fetch_enabled": "Povolit načítání cesty sekání (cloud)",
-          "full_map_fetch_enabled": "Povolit úplné načítání mapy (cloud) — pokud vypnuto, načítají se pouze názvy oblastí"
+          "full_map_fetch_enabled": "Povolit úplné načítání mapy (cloud) — pokud vypnuto, načítají se pouze názvy oblastí",
+          "notify": "Zobrazovat trvalá oznámení pro"
         }
       }
     }
@@ -368,6 +372,9 @@
       "release_from_dock": {
         "name": "Odpojit z doku"
       },
+      "start_dropmow": {
+        "name": "Spustit DropMow"
+      },
       "emergency_nudge_forward": {
         "name": "Nouzové postrčení vpřed"
       },
@@ -391,6 +398,9 @@
       },
       "restart_mower": {
         "name": "Restartovat sekačku"
+      },
+      "refresh_status": {
+        "name": "Obnovit stav"
       },
       "spino_fetch_map": {
         "name": "Načíst mapu bazénu"
@@ -421,8 +431,14 @@
       "rain_tactics": {
         "name": "Detekce deště (během sečení) Zap/Vyp"
       },
+      "auto_change_direction": {
+        "name": "Automatické střídání směru sečení"
+      },
       "rain_detection": {
         "name": "Detekce deště (sekačky) Zap/Vyp"
+      },
+      "smart_charge": {
+        "name": "Chytré nabíjení"
       },
       "side_led": {
         "name": "Boční světla"
@@ -448,6 +464,12 @@
       "voice_on_off": {
         "name": "Hlas zapnuto/vypnuto"
       },
+      "manual_grass_collection": {
+        "name": "Ruční sběr trávy"
+      },
+      "manual_grass_dump": {
+        "name": "Ruční vysypání trávy"
+      },
       "spino_buzzer": {
         "name": "Bzučák"
       },
@@ -458,7 +480,7 @@
         "name": "Čištění plošiny"
       },
       "spino_waterline_parking": {
-        "name": "Parkování na hladině"
+        "name": "Parkování u hladiny"
       }
     },
     "select": {
@@ -501,10 +523,10 @@
       "bypass_mode": {
         "name": "Detekce překážek",
         "state": {
-          "direct_touch": "Vypnuto",
-          "slow_touch": "Pomalý dotek",
+          "off": "Vypnuto",
+          "slow_touch": "Základní",
           "less_touch": "Méně dotyků",
-          "no_touch": "Standard",
+          "standard": "Standard",
           "sensitive": "Citlivý"
         }
       },
@@ -567,11 +589,11 @@
         }
       },
       "spino_wall_material": {
-        "name": "Materiál stěn",
+        "name": "Materiál stěny",
         "state": {
           "GLASS": "Sklo",
           "CERAMICS": "Dlaždice",
-          "SAND_STONE": "Kamenivo",
+          "SAND_STONE": "Agregát",
           "VINYL": "Vinyl"
         }
       },
@@ -588,6 +610,9 @@
     "number": {
       "voice_volume": {
         "name": "Hlasitost hlasu"
+      },
+      "charge_limit": {
+        "name": "Limit nabíjení"
       },
       "start_progress": {
         "name": "Pokrok při zahájení"
@@ -622,6 +647,24 @@
     },
     "device_tracker": {
       "name": "Sledování zařízení"
+    },
+    "event": {
+      "notification": {
+        "name": "Oznámení",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "device_notification_event": "Oznámení",
+              "device_information_event": "Informace",
+              "device_warning_code_event": "Kódy varování",
+              "device_warning_event": "Varování",
+              "device_biz_req_event": "Obchodní požadavek",
+              "device_log_progress_event": "Průběh nahrávání protokolu",
+              "device_config_req_event": "Požadavek na konfiguraci"
+            }
+          }
+        }
+      }
     }
   },
   "selector": {
@@ -633,10 +676,10 @@
     },
     "ultra_wave": {
       "options": {
-        "0": "Přímý dotek",
-        "1": "Pomalý dotek",
-        "2": "Méně dotyku",
-        "10": "Bez dotyku",
+        "0": "Vypnuto",
+        "1": "Základní",
+        "2": "Méně dotyků",
+        "10": "Standard",
         "11": "Citlivý"
       }
     },
@@ -677,6 +720,12 @@
         "2": "Dvě kola",
         "3": "Tři kola",
         "4": "Čtyři kola"
+      }
+    },
+    "notify": {
+      "options": {
+        "warnings": "Varování a chybové kódy",
+        "notifications": "Oznámení a informace zařízení"
       }
     }
   },
@@ -779,6 +828,48 @@
         }
       }
     },
+    "modify_running_job": {
+      "name": "Upravit probíhající úlohu",
+      "description": "Změní nastavení úlohy, kterou sekačka právě provádí, bez jejího restartování. Dostupné pouze na Luba 2 a novějších během probíhající úlohy.",
+      "fields": {
+        "blade_height": {
+          "name": "Výška nože",
+          "description": "Výška nože"
+        },
+        "speed": {
+          "name": "Pracovní rychlost",
+          "description": "Pracovní rychlost"
+        },
+        "ultra_wave": {
+          "name": "Detekce překážek",
+          "description": "Detekce překážek"
+        },
+        "channel_width": {
+          "name": "Rozteč drah",
+          "description": "Rozteč drah"
+        },
+        "channel_mode": {
+          "name": "Režim trasy",
+          "description": "Režim trasy"
+        },
+        "obstacle_laps": {
+          "name": "Okruhy zakázané zóny",
+          "description": "Okruhy zakázané zóny"
+        },
+        "rain_tactics": {
+          "name": "Taktika za deště",
+          "description": "Taktika za deště"
+        },
+        "auto_change_direction": {
+          "name": "Automatická změna směru",
+          "description": "Automatická změna směru"
+        },
+        "start_progress": {
+          "name": "Průběh",
+          "description": "Průběh"
+        }
+      }
+    },
     "start_stop_blades": {
       "name": "Spustit nebo zastavit nože",
       "description": "Manuální spuštění nebo zastavení břitů.",
@@ -817,9 +908,39 @@
         }
       }
     },
+    "set_blade_height": {
+      "name": "Nastavit výšku nože",
+      "description": "Odešle výšku nože přímo do motoru sekačky.",
+      "fields": {
+        "height": {
+          "name": "Výška",
+          "description": "Výška nože v milimetrech."
+        }
+      }
+    },
     "reset_blade_time": {
       "name": "Resetovat čas nože",
       "description": "Resetovat čítač doby používání nože."
+    },
+    "start_dump_point_setup": {
+      "name": "Zahájit nastavení míst vysypání",
+      "description": "Přepne sekačku do režimu nastavení míst vysypání trávy, aby bylo možné místa zaznamenat."
+    },
+    "add_dump_point": {
+      "name": "Přidat místo vysypání",
+      "description": "Zaznamená místo vysypání trávy na aktuální pozici sekačky."
+    },
+    "undo_dump_point": {
+      "name": "Zrušit poslední místo vysypání",
+      "description": "Zahodí naposledy zaznamenané místo vysypání trávy."
+    },
+    "finish_dump_point_setup": {
+      "name": "Dokončit nastavení míst vysypání",
+      "description": "Uloží zaznamenaná místa vysypání trávy a ukončí režim nastavení."
+    },
+    "finish_outside_dump_point": {
+      "name": "Dokončit místo vysypání mimo oblast",
+      "description": "Dokončí nastavení místa vysypání trávy zaznamenaného mimo sekanou oblast."
     },
     "get_map_data": {
       "name": "Získat data mapy",
@@ -1147,9 +1268,79 @@
       "name": "Obnovit úlohy",
       "description": "Znovu načte všechny plány ze zařízení."
     },
+    "get_tasks": {
+      "name": "Získat úlohy",
+      "description": "Vrátí všechny plány, které integrace pro cílové zařízení uchovává, včetně toho, zda je každý z nich povolen. Slouží k ověření, že se změna projevila; „Obnovit úlohy“ je nejprve znovu načte ze zařízení."
+    },
     "start_task": {
       "name": "Spustit úlohu",
       "description": "Okamžitě spustí uložený plán (známé také jako „spustit plán“). Pouze pro sekačku — robot bazénový čistič Spino nemá ekvivalentní příkaz."
+    },
+    "backup_map": {
+      "name": "Zálohovat mapu",
+      "description": "Nahraje mapu sekačky do vašeho cloudového účtu Mammotion. Vrátí ID zálohy. Zadáním ID existující zálohy ji přepíšete místo vytvoření nové.",
+      "fields": {
+        "name": {
+          "name": "Název",
+          "description": "Název zálohy."
+        },
+        "backup_id": {
+          "name": "ID zálohy",
+          "description": "Existující záloha k přepsání. Ponechte prázdné pro vytvoření nové zálohy."
+        }
+      }
+    },
+    "restore_map": {
+      "name": "Obnovit mapu",
+      "description": "Nahradí aktuální mapu sekačky zálohou z účtu Mammotion, ke kterému je tato integrace přihlášena. Po dokončení obnovy se sekačka restartuje.",
+      "fields": {
+        "backup_id": {
+          "name": "ID zálohy",
+          "description": "Záloha k obnovení, jak ji vrací 'Získat zálohy map'."
+        }
+      }
+    },
+    "get_map_backups": {
+      "name": "Získat zálohy map",
+      "description": "Vrátí zálohy map uložené v účtu Mammotion, ke kterému je tato integrace přihlášena. Zálohy patří k účtu, takže zálohy vytvořené v aplikaci pod jiným účtem se nezobrazí."
+    },
+    "get_map_backup_progress": {
+      "name": "Získat průběh zálohy mapy",
+      "description": "Vrátí, jak daleko je záloha nebo obnova mapy.",
+      "fields": {
+        "backup_id": {
+          "name": "ID zálohy",
+          "description": "Záloha, jejíž úlohu zkontrolovat."
+        },
+        "restore": {
+          "name": "Obnova",
+          "description": "Zkontrolovat obnovu místo zálohy."
+        }
+      }
+    },
+    "cancel_map_backup": {
+      "name": "Zrušit zálohu mapy",
+      "description": "Zruší probíhající zálohu nebo obnovu mapy.",
+      "fields": {
+        "backup_id": {
+          "name": "ID zálohy",
+          "description": "Záloha, jejíž úlohu zrušit."
+        },
+        "restore": {
+          "name": "Obnova",
+          "description": "Zrušit obnovu místo zálohy."
+        }
+      }
+    },
+    "delete_map_backup": {
+      "name": "Smazat zálohu mapy",
+      "description": "Smaže zálohu mapy z cloudu Mammotion.",
+      "fields": {
+        "backup_id": {
+          "name": "ID zálohy",
+          "description": "Záloha ke smazání."
+        }
+      }
     }
   },
   "exceptions": {
@@ -1188,6 +1379,21 @@
     },
     "start_task_unsupported_on_spino": {
       "message": "Spuštění plánu na vyžádání není u bazénového čističe Spino podporováno — firmware nemá příkaz pro okamžité spuštění uloženého plánu."
+    },
+    "grass_collection_unsupported": {
+      "message": "Tato sekačka nepodporuje sběr trávy."
+    },
+    "map_backup_cloud_unavailable": {
+      "message": "Zálohy map vyžadují funkční přihlášení ke cloudu Mammotion."
+    },
+    "map_backup_failed": {
+      "message": "Cloud Mammotion odmítl požadavek na zálohu mapy: {reason}"
+    },
+    "map_backup_device_not_found": {
+      "message": "{device_name} není v tomto účtu Mammotion uvedeno pro zálohy map."
+    },
+    "map_backup_mower_not_found": {
+      "message": "{entity_id} není sekačka Mammotion."
     }
   }
 }
