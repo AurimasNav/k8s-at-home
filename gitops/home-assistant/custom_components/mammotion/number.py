@@ -28,7 +28,11 @@ from pymammotion.utility.device_type import DeviceType
 
 from . import MammotionConfigEntry
 from .coordinator import MammotionBaseUpdateCoordinator, MammotionSpinoCoordinator
-from .entity import MammotionBaseEntity, MammotionBaseSpinoEntity
+from .entity import (
+    MammotionBaseEntity,
+    MammotionBaseSpinoEntity,
+    device_firmware_version,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -106,16 +110,37 @@ AUDIO_NUMBER_ENTITIES: tuple[MammotionConfigNumberEntityDescription, ...] = (
     ),
 )
 
+# Same bounds as the app's charge-limit slider; gated on DeviceType.supports_charge_limit.
+CHARGE_LIMIT_NUMBER_ENTITY = MammotionConfigNumberEntityDescription(
+    key="charge_limit",
+    native_min_value=80,
+    native_max_value=100,
+    native_step=5,
+    mode=NumberMode.SLIDER,
+    native_unit_of_measurement=PERCENTAGE,
+    set_async_fn=lambda coordinator, value: coordinator.async_set_charge_limit(
+        int(value)
+    ),
+    # 0 means the device has not reported its settings yet.
+    get_fn=lambda coordinator: (
+        coordinator.data.mower_state.charge_settings.charge_limit or None
+    ),
+)
+
 NUMBER_ENTITIES: tuple[MammotionConfigNumberEntityDescription, ...] = (
     MammotionConfigNumberEntityDescription(
         key="start_progress",
         native_min_value=0,
-        native_max_value=100,
+        # The cloud's own schema caps this at 99, not 100.
+        native_max_value=99,
         native_step=1,
         mode=NumberMode.SLIDER,
         native_unit_of_measurement=PERCENTAGE,
         set_fn=lambda coordinator, value: setattr(
-            coordinator.operation_settings, "start_progress", value
+            coordinator.operation_settings, "start_progress", int(value)
+        ),
+        set_async_fn=lambda coordinator, value: (
+            coordinator.async_change_progress_if_working()
         ),
     ),
     MammotionConfigNumberEntityDescription(
@@ -166,8 +191,9 @@ LUBA_WORKING_ENTITIES: tuple[MammotionConfigNumberEntityDescription, ...] = (
         set_fn=lambda coordinator, value: setattr(
             coordinator.operation_settings, "blade_height", int(value)
         ),
-        set_async_fn=lambda coordinator,
-        value: coordinator.async_modify_plan_if_mowing(),
+        set_async_fn=lambda coordinator, value: (
+            coordinator.async_change_blade_height_if_working()
+        ),
         get_fn=lambda coordinator: coordinator.operation_settings.blade_height,
     ),
 )
@@ -181,8 +207,9 @@ NUMBER_WORKING_ENTITIES: tuple[MammotionConfigNumberEntityDescription, ...] = (
         native_step=0.1,
         native_min_value=0.2,
         native_max_value=0.6,
-        set_async_fn=lambda coordinator,
-        value: coordinator.async_modify_plan_if_mowing(),
+        set_async_fn=lambda coordinator, value: (
+            coordinator.async_change_speed_if_working()
+        ),
         set_fn=lambda coordinator, value: setattr(
             coordinator.operation_settings, "speed", value
         ),
@@ -217,51 +244,61 @@ async def async_setup_entry(
             limits = handle.device_limits
         entities: list[MammotionConfigNumberEntity] = []
 
-        for entity_description in NUMBER_WORKING_ENTITIES:
-            entities.append(
-                MammotionWorkingNumberEntity(
-                    mower.reporting_coordinator, entity_description, limits
-                )
+        entities.extend(
+            MammotionWorkingNumberEntity(
+                mower.reporting_coordinator, entity_description, limits
             )
+            for entity_description in NUMBER_WORKING_ENTITIES
+        )
 
         if DeviceType.is_luba_pro(mower.device.device_name):
-            for entity_description in AUDIO_NUMBER_ENTITIES:
-                entities.append(
-                    MammotionConfigNumberEntity(
-                        mower.reporting_coordinator, entity_description
-                    )
-                )
-
-        for entity_description in MAP_OFFSET_ENTITIES:
-            entities.append(
+            entities.extend(
                 MammotionConfigNumberEntity(
                     mower.reporting_coordinator, entity_description
                 )
+                for entity_description in AUDIO_NUMBER_ENTITIES
             )
 
-        for entity_description in NUMBER_ENTITIES:
+        if DeviceType.supports_charge_limit(
+            mower.device.device_name,
+            device_firmware_version(mower.reporting_coordinator.data),
+        ):
             entities.append(
                 MammotionConfigNumberEntity(
-                    mower.reporting_coordinator, entity_description
+                    mower.reporting_coordinator, CHARGE_LIMIT_NUMBER_ENTITY
                 )
             )
+
+        entities.extend(
+            MammotionConfigNumberEntity(
+                mower.reporting_coordinator, entity_description
+            )
+            for entity_description in MAP_OFFSET_ENTITIES
+        )
+
+        entities.extend(
+            MammotionConfigNumberEntity(
+                mower.reporting_coordinator, entity_description
+            )
+            for entity_description in NUMBER_ENTITIES
+        )
 
         if DeviceType.is_yuka(mower.device.device_name) and not DeviceType.is_yuka_mini(
             mower.device.device_name
         ):
-            for entity_description in YUKA_NUMBER_ENTITIES:
-                entities.append(
-                    MammotionConfigNumberEntity(
-                        mower.reporting_coordinator, entity_description
-                    )
+            entities.extend(
+                MammotionConfigNumberEntity(
+                    mower.reporting_coordinator, entity_description
                 )
+                for entity_description in YUKA_NUMBER_ENTITIES
+            )
         if not DeviceType.is_yuka(mower.device.device_name):
-            for entity_description in LUBA_WORKING_ENTITIES:
-                entities.append(
-                    MammotionWorkingNumberEntity(
-                        mower.reporting_coordinator, entity_description, limits
-                    )
+            entities.extend(
+                MammotionWorkingNumberEntity(
+                    mower.reporting_coordinator, entity_description, limits
                 )
+                for entity_description in LUBA_WORKING_ENTITIES
+            )
 
         async_add_entities(entities)
 

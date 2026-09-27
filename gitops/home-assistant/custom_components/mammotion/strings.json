@@ -9,8 +9,11 @@
       "no_longer_present": "Device is no longer present",
       "not_supported": "Device not supported",
       "reconfigure_successful": "Re-configure successful",
+      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
       "api_limit_exceeded": "API rate limit has been exceeded. Please try again later.",
-      "account_in_use": "Your Mammotion account is already in use in another session. Sign out of the Mammotion app and try again."
+      "account_in_use": "Your Mammotion account is already in use in another session. Sign out of the Mammotion app and try again.",
+      "reauth_successful": "Re-authentication was successful",
+      "wrong_account": "These credentials belong to a different Mammotion account. Re-authenticate with the account this entry was set up with."
     },
     "error": {
       "login_failed": "Login failed. Check your account email and password, then try again.",
@@ -20,33 +23,34 @@
     "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Set up {name}",
-        "data": {
-          "stay_connected_bluetooth": "Keep Bluetooth connected"
-        }
+        "description": "Set up {name}"
       },
       "reconfigure": {
         "data": {
-          "use_wifi": "Use Wi-fi",
           "account_name": "Mammotion email or account number",
           "password": "Mammotion account password"
         }
       },
       "user": {
         "data": {
-          "address": "Device",
-          "stay_connected_bluetooth": "Keep Bluetooth connected"
+          "address": "Device"
         },
         "description": "Select your mower"
       },
       "wifi": {
         "data": {
-          "use_wifi": "Use Wi-fi (un-tick and submit to use Bluetooth)",
           "account_name": "Mammotion email or account number",
           "password": "Mammotion account password"
         },
         "title": "Connect to Wi-Fi",
-        "description": "Enter your Mammotion account email or id and password"
+        "description": "Enter your Mammotion account email or id and password. Leave both fields blank to use Bluetooth only, without an account."
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Mammotion",
+        "description": "The Mammotion cloud rejected the stored credentials for {account}. Enter your password to sign in again.",
+        "data": {
+          "password": "Mammotion account password"
+        }
       }
     }
   },
@@ -55,11 +59,14 @@
       "init": {
         "data": {
           "title": "Update Configuration",
-          "stay_connected_bluetooth": "Keep Bluetooth connected",
           "prefer_ble_over_wifi": "Prefer Bluetooth over Wi-Fi when available",
           "movement_use_wifi": "Send movement commands over Wi-Fi",
           "mow_path_fetch_enabled": "Enable mow path fetching (cloud)",
-          "full_map_fetch_enabled": "Enable full map fetching (cloud) — when off, only area names are fetched"
+          "full_map_fetch_enabled": "Enable full map fetching (cloud) — when off, only area names are fetched",
+          "notify": "Show persistent notifications for"
+        },
+        "data_description": {
+          "notify": "Off by default. Every notification also fires the mower's notification event entity and a mammotion_event bus event, which automations can use instead."
         }
       }
     }
@@ -368,6 +375,9 @@
       "release_from_dock": {
         "name": "Undock"
       },
+      "start_dropmow": {
+        "name": "Start DropMow"
+      },
       "emergency_nudge_forward": {
         "name": "Emergency nudge forward"
       },
@@ -391,6 +401,9 @@
       },
       "restart_mower": {
         "name": "Restart mower"
+      },
+      "refresh_status": {
+        "name": "Refresh status"
       },
       "spino_fetch_map": {
         "name": "Fetch pool map"
@@ -421,8 +434,14 @@
       "rain_tactics": {
         "name": "Rain detection (during mow) on/off"
       },
+      "auto_change_direction": {
+        "name": "Auto-reverse mowing direction"
+      },
       "rain_detection": {
         "name": "Rain detection (mower) On/Off"
+      },
+      "smart_charge": {
+        "name": "Smart charging"
       },
       "side_led": {
         "name": "Side LED on/off"
@@ -447,6 +466,12 @@
       },
       "voice_on_off": {
         "name": "Voice on/off"
+      },
+      "manual_grass_collection": {
+        "name": "Manual grass sweeping"
+      },
+      "manual_grass_dump": {
+        "name": "Manual grass dumping"
       },
       "spino_buzzer": {
         "name": "Buzzer"
@@ -501,10 +526,10 @@
       "bypass_mode": {
         "name": "Obstacle detection",
         "state": {
-          "direct_touch": "Off",
-          "slow_touch": "Slow touch",
+          "off": "Off",
+          "slow_touch": "Basic",
           "less_touch": "Less touch",
-          "no_touch": "Standard",
+          "standard": "Standard",
           "sensitive": "Sensitive"
         }
       },
@@ -589,6 +614,9 @@
       "voice_volume": {
         "name": "Voice volume"
       },
+      "charge_limit": {
+        "name": "Charge limit"
+      },
       "start_progress": {
         "name": "Start progress"
       },
@@ -622,6 +650,24 @@
     },
     "device_tracker": {
       "name": "Device Tracking"
+    },
+    "event": {
+      "notification": {
+        "name": "Notifications",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "device_notification_event": "Notification",
+              "device_information_event": "Information",
+              "device_warning_code_event": "Warning codes",
+              "device_warning_event": "Warning",
+              "device_biz_req_event": "Business request",
+              "device_log_progress_event": "Log upload progress",
+              "device_config_req_event": "Configuration request"
+            }
+          }
+        }
+      }
     }
   },
   "selector": {
@@ -633,10 +679,10 @@
     },
     "ultra_wave": {
       "options": {
-        "0": "Direct touch",
-        "1": "Slow touch",
+        "0": "Off",
+        "1": "Basic",
         "2": "Less touch",
-        "10": "No touch",
+        "10": "Standard",
         "11": "Sensitive"
       }
     },
@@ -677,6 +723,12 @@
         "2": "Two laps",
         "3": "Three laps",
         "4": "Four laps"
+      }
+    },
+    "notify": {
+      "options": {
+        "warnings": "Warnings and error codes",
+        "notifications": "Device notifications and information"
       }
     }
   },
@@ -779,6 +831,48 @@
         }
       }
     },
+    "modify_running_job": {
+      "name": "Modify running job",
+      "description": "Changes settings on the job the mower is already running, without restarting it. Only available on Luba 2 and newer while a route job is in progress.",
+      "fields": {
+        "blade_height": {
+          "name": "Blade height",
+          "description": "Blade height"
+        },
+        "speed": {
+          "name": "Working speed",
+          "description": "Working speed"
+        },
+        "ultra_wave": {
+          "name": "Obstacle detection",
+          "description": "Obstacle detection"
+        },
+        "channel_width": {
+          "name": "Path spacing",
+          "description": "Path spacing"
+        },
+        "channel_mode": {
+          "name": "Route mode",
+          "description": "Route mode"
+        },
+        "obstacle_laps": {
+          "name": "No-go zone laps",
+          "description": "No-go zone laps"
+        },
+        "rain_tactics": {
+          "name": "Rain tactics",
+          "description": "Rain tactics"
+        },
+        "auto_change_direction": {
+          "name": "Auto change direction",
+          "description": "Auto change direction"
+        },
+        "start_progress": {
+          "name": "Progress",
+          "description": "Progress"
+        }
+      }
+    },
     "start_stop_blades": {
       "name": "Start or stop blades",
       "description": "Start or stop the blades manually.",
@@ -817,9 +911,39 @@
         }
       }
     },
+    "set_blade_height": {
+      "name": "Set blade height",
+      "description": "Send a blade height directly to the mower's cutter motor.",
+      "fields": {
+        "height": {
+          "name": "Height",
+          "description": "Blade height in millimetres."
+        }
+      }
+    },
     "reset_blade_time": {
       "name": "Reset blade time",
       "description": "Reset the blade usage time counter."
+    },
+    "start_dump_point_setup": {
+      "name": "Start dump point setup",
+      "description": "Put the mower into grass-collection point setup mode, so that collection points can be recorded."
+    },
+    "add_dump_point": {
+      "name": "Add dump point",
+      "description": "Record a grass-collection point at the mower's current position."
+    },
+    "undo_dump_point": {
+      "name": "Undo last dump point",
+      "description": "Discard the grass-collection point recorded most recently."
+    },
+    "finish_dump_point_setup": {
+      "name": "Finish dump point setup",
+      "description": "Save the recorded grass-collection points and leave setup mode."
+    },
+    "finish_outside_dump_point": {
+      "name": "Finish dump point outside area",
+      "description": "Finish setup for a grass-collection point recorded outside the mowing area."
     },
     "get_map_data": {
       "name": "Get map data",
@@ -1147,9 +1271,79 @@
       "name": "Refresh tasks",
       "description": "Re-fetch every schedule from the targeted device. Use after delete-all or to recover from a missed update."
     },
+    "get_tasks": {
+      "name": "Get tasks",
+      "description": "Return every schedule the integration holds for the targeted device, including whether each one is enabled. Use it to confirm a change landed; 'Refresh tasks' re-fetches them from the device first."
+    },
     "start_task": {
       "name": "Start task",
       "description": "Run a stored schedule immediately (also known as 'start schedule'). Mower-only — the Spino pool cleaner has no equivalent command, so targeting a Spino task entity raises an error."
+    },
+    "backup_map": {
+      "name": "Back up map",
+      "description": "Upload the mower's map to your Mammotion cloud account. Returns the backup ID. Pass an existing backup ID to overwrite that backup instead of creating a new one.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Name for the backup."
+        },
+        "backup_id": {
+          "name": "Backup ID",
+          "description": "Existing backup to overwrite. Leave empty to create a new backup."
+        }
+      }
+    },
+    "restore_map": {
+      "name": "Restore map",
+      "description": "Replace the mower's current map with a backup from the Mammotion account this integration is signed in with. The mower restarts once the restore finishes.",
+      "fields": {
+        "backup_id": {
+          "name": "Backup ID",
+          "description": "Backup to restore, as returned by 'Get map backups'."
+        }
+      }
+    },
+    "get_map_backups": {
+      "name": "Get map backups",
+      "description": "Return the map backups stored on the Mammotion account this integration is signed in with. Backups are per account, so ones made in the app under a different account are not listed."
+    },
+    "get_map_backup_progress": {
+      "name": "Get map backup progress",
+      "description": "Return how far a map backup or restore has got.",
+      "fields": {
+        "backup_id": {
+          "name": "Backup ID",
+          "description": "Backup whose job to check."
+        },
+        "restore": {
+          "name": "Restore",
+          "description": "Check a restore instead of a backup."
+        }
+      }
+    },
+    "cancel_map_backup": {
+      "name": "Cancel map backup",
+      "description": "Cancel a map backup or restore that is still running.",
+      "fields": {
+        "backup_id": {
+          "name": "Backup ID",
+          "description": "Backup whose job to cancel."
+        },
+        "restore": {
+          "name": "Restore",
+          "description": "Cancel a restore instead of a backup."
+        }
+      }
+    },
+    "delete_map_backup": {
+      "name": "Delete map backup",
+      "description": "Delete a map backup from the Mammotion cloud.",
+      "fields": {
+        "backup_id": {
+          "name": "Backup ID",
+          "description": "Backup to delete."
+        }
+      }
     }
   },
   "exceptions": {
@@ -1188,6 +1382,21 @@
     },
     "start_task_unsupported_on_spino": {
       "message": "Starting a schedule on demand is not supported on the Spino pool cleaner — the device firmware has no execute-now command for stored plans."
+    },
+    "grass_collection_unsupported": {
+      "message": "This mower does not support grass collection."
+    },
+    "map_backup_cloud_unavailable": {
+      "message": "Map backups need a working Mammotion cloud login."
+    },
+    "map_backup_failed": {
+      "message": "The Mammotion cloud refused the map backup request: {reason}"
+    },
+    "map_backup_device_not_found": {
+      "message": "{device_name} is not listed for map backups on this Mammotion account."
+    },
+    "map_backup_mower_not_found": {
+      "message": "{entity_id} is not a Mammotion mower."
     }
   }
 }

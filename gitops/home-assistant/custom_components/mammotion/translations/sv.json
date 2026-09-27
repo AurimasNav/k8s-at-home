@@ -9,8 +9,11 @@
       "no_longer_present": "Enheten finns inte längre",
       "not_supported": "Enheten stöds inte",
       "reconfigure_successful": "Omkonfigurering lyckades",
+      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
       "api_limit_exceeded": "API-anropsgränsen har överskridits. Försök igen senare.",
-      "account_in_use": "Ditt Mammotion-konto är redan aktivt i en annan session. Logga ut från Mammotion-appen och försök igen."
+      "account_in_use": "Ditt Mammotion-konto är redan aktivt i en annan session. Logga ut från Mammotion-appen och försök igen.",
+      "reauth_successful": "Omautentiseringen lyckades",
+      "wrong_account": "De här uppgifterna tillhör ett annat Mammotion-konto. Autentisera på nytt med kontot som posten skapades med."
     },
     "error": {
       "login_failed": "Inloggningen misslyckades. Kontrollera kontots e-postadress och lösenord och försök igen.",
@@ -20,33 +23,34 @@
     "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Konfiguration {name}",
-        "data": {
-          "stay_connected_bluetooth": "Behåll Bluetooth anslutningen aktiv"
-        }
+        "description": "Konfiguration {name}"
       },
       "reconfigure": {
         "data": {
-          "use_wifi": "Använd Wi-Fi",
           "account_name": "E-post eller kontonummer för Mammotion",
           "password": "Lösenord för Mammotion-konto"
         }
       },
       "user": {
         "data": {
-          "address": "Enhet",
-          "stay_connected_bluetooth": "Behåll Bluetooth anslutningen aktiv"
+          "address": "Enhet"
         },
         "description": "Välj gräsklippare"
       },
       "wifi": {
         "data": {
-          "use_wifi": "Använd Wi-Fi (avmarkera och klicka på skicka för att använda Bluetooth)",
           "account_name": "E-post eller kontonummer för Mammotion",
           "password": "Lösenord för Mammotion-konto"
         },
         "title": "Anslut till Wi-Fi",
-        "description": "Ange din e-postadress eller kontonummer samt lösenord för ditt Mammotion-konto"
+        "description": "Ange din e-postadress eller kontonummer samt lösenord för ditt Mammotion-konto. Lämna båda fälten tomma för att endast använda Bluetooth, utan konto."
+      },
+      "reauth_confirm": {
+        "title": "Autentisera Mammotion på nytt",
+        "description": "Mammotion-molnet avvisade de sparade uppgifterna för {account}. Ange ditt lösenord för att logga in igen.",
+        "data": {
+          "password": "Lösenord för Mammotion-konto"
+        }
       }
     }
   },
@@ -55,11 +59,11 @@
       "init": {
         "data": {
           "title": "Uppdatera konfigurationen",
-          "stay_connected_bluetooth": "Behåll Bluetooth anslutningen aktiv",
           "prefer_ble_over_wifi": "Föredra Bluetooth framför Wi-Fi när tillgängligt",
           "movement_use_wifi": "Skicka rörelsekommandon via Wi-Fi",
           "mow_path_fetch_enabled": "Aktivera hämtning av klippväg (moln)",
-          "full_map_fetch_enabled": "Aktivera fullständig karthämtning (moln) — när av hämtas endast områdesnamn"
+          "full_map_fetch_enabled": "Aktivera fullständig karthämtning (moln) — när av hämtas endast områdesnamn",
+          "notify": "Visa beständiga aviseringar för"
         }
       }
     }
@@ -270,8 +274,8 @@
         "name": "Status",
         "state": {
           "UNKNOWN": "Okänd",
-          "IDLE": "Standby",
-          "PREPARE": "Standby",
+          "IDLE": "Väntar",
+          "PREPARE": "Väntar",
           "WAIT_WATER": "Fyller med vatten",
           "WORKING": "Arbetar",
           "PAUSE_GO_CHARGE": "Återvänder för laddning (pausad)",
@@ -368,6 +372,9 @@
       "release_from_dock": {
         "name": "Lämna laddstationen"
       },
+      "start_dropmow": {
+        "name": "Starta DropMow"
+      },
       "emergency_nudge_forward": {
         "name": "Ett steg framåt"
       },
@@ -391,6 +398,9 @@
       },
       "restart_mower": {
         "name": "Starta om gräsklipparen"
+      },
+      "refresh_status": {
+        "name": "Uppdatera status"
       },
       "spino_fetch_map": {
         "name": "Hämta poolkarta"
@@ -421,8 +431,14 @@
       "rain_tactics": {
         "name": "Regndetektering (under klippning) på/av"
       },
+      "auto_change_direction": {
+        "name": "Automatisk växling av klippriktning"
+      },
       "rain_detection": {
         "name": "Regndetektering (gräsklippare) på/av"
+      },
+      "smart_charge": {
+        "name": "Smart laddning"
       },
       "side_led": {
         "name": "Sido-LED på/av"
@@ -448,14 +464,20 @@
       "voice_on_off": {
         "name": "Röst på/av"
       },
+      "manual_grass_collection": {
+        "name": "Manuell gräsuppsamling"
+      },
+      "manual_grass_dump": {
+        "name": "Manuell grästömning"
+      },
       "spino_buzzer": {
-        "name": "Summer"
+        "name": "Summerton"
       },
       "spino_turbo_clean": {
-        "name": "Turborengöring"
+        "name": "Turbo-rengöring"
       },
       "spino_platform_cleaning": {
-        "name": "Plattformsrengöring"
+        "name": "Plattformrengöring"
       },
       "spino_waterline_parking": {
         "name": "Parkering vid vattenlinjen"
@@ -501,10 +523,10 @@
       "bypass_mode": {
         "name": "Hinderdetektering",
         "state": {
-          "direct_touch": "Av",
-          "slow_touch": "Långsam kontakt",
-          "less_touch": "Mindre kontakt",
-          "no_touch": "Standard",
+          "off": "Av",
+          "slow_touch": "Grundläggande",
+          "less_touch": "Mindre beröring",
+          "standard": "Standard",
           "sensitive": "Känslig"
         }
       },
@@ -571,7 +593,7 @@
         "state": {
           "GLASS": "Glas",
           "CERAMICS": "Kakel",
-          "SAND_STONE": "Stenmaterial",
+          "SAND_STONE": "Aggregat",
           "VINYL": "Vinyl"
         }
       },
@@ -588,6 +610,9 @@
     "number": {
       "voice_volume": {
         "name": "Röstvolym"
+      },
+      "charge_limit": {
+        "name": "Laddningsgräns"
       },
       "start_progress": {
         "name": "Starta klippning"
@@ -622,6 +647,24 @@
     },
     "device_tracker": {
       "name": "Spårning av enhet"
+    },
+    "event": {
+      "notification": {
+        "name": "Aviseringar",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "device_notification_event": "Avisering",
+              "device_information_event": "Information",
+              "device_warning_code_event": "Varningskoder",
+              "device_warning_event": "Varning",
+              "device_biz_req_event": "Verksamhetsbegäran",
+              "device_log_progress_event": "Förlopp för loggöverföring",
+              "device_config_req_event": "Konfigurationsbegäran"
+            }
+          }
+        }
+      }
     }
   },
   "selector": {
@@ -633,10 +676,10 @@
     },
     "ultra_wave": {
       "options": {
-        "0": "Direkt kontakt",
-        "1": "Långsam kontakt",
-        "2": "Mindre kontakt",
-        "10": "Ingen kontakt",
+        "0": "Av",
+        "1": "Grundläggande",
+        "2": "Mindre beröring",
+        "10": "Standard",
         "11": "Känslig"
       }
     },
@@ -677,6 +720,12 @@
         "2": "Två varv",
         "3": "Tre varv",
         "4": "Fyra varv"
+      }
+    },
+    "notify": {
+      "options": {
+        "warnings": "Varningar och felkoder",
+        "notifications": "Enhetsaviseringar och information"
       }
     }
   },
@@ -779,6 +828,48 @@
         }
       }
     },
+    "modify_running_job": {
+      "name": "Ändra pågående uppdrag",
+      "description": "Ändrar inställningar för uppdraget som klipparen redan utför, utan att starta om det. Endast tillgängligt på Luba 2 och nyare under ett pågående uppdrag.",
+      "fields": {
+        "blade_height": {
+          "name": "Knivhöjd",
+          "description": "Knivhöjd"
+        },
+        "speed": {
+          "name": "Arbetshastighet",
+          "description": "Arbetshastighet"
+        },
+        "ultra_wave": {
+          "name": "Hinderdetektering",
+          "description": "Hinderdetektering"
+        },
+        "channel_width": {
+          "name": "Banavstånd",
+          "description": "Banavstånd"
+        },
+        "channel_mode": {
+          "name": "Ruttläge",
+          "description": "Ruttläge"
+        },
+        "obstacle_laps": {
+          "name": "Varv i förbjuden zon",
+          "description": "Varv i förbjuden zon"
+        },
+        "rain_tactics": {
+          "name": "Regnstrategi",
+          "description": "Regnstrategi"
+        },
+        "auto_change_direction": {
+          "name": "Automatiskt riktningsbyte",
+          "description": "Automatiskt riktningsbyte"
+        },
+        "start_progress": {
+          "name": "Förlopp",
+          "description": "Förlopp"
+        }
+      }
+    },
     "start_stop_blades": {
       "name": "Starta eller stoppa knivar",
       "description": "Starta eller stoppa knivarna manuellt.",
@@ -817,9 +908,39 @@
         }
       }
     },
+    "set_blade_height": {
+      "name": "Ställ in klipphöjd",
+      "description": "Skickar en knivhöjd direkt till klipparens knivmotor.",
+      "fields": {
+        "height": {
+          "name": "Höjd",
+          "description": "Knivhöjd i millimeter."
+        }
+      }
+    },
     "reset_blade_time": {
       "name": "Återställ bladtid",
       "description": "Återställ räknaren för bladanvändningstid."
+    },
+    "start_dump_point_setup": {
+      "name": "Starta inställning av tömningspunkter",
+      "description": "Försätter klipparen i inställningsläge för tömningspunkter så att punkter kan registreras."
+    },
+    "add_dump_point": {
+      "name": "Lägg till tömningspunkt",
+      "description": "Registrerar en tömningspunkt vid klipparens aktuella position."
+    },
+    "undo_dump_point": {
+      "name": "Ångra senaste tömningspunkten",
+      "description": "Förkastar den senast registrerade tömningspunkten."
+    },
+    "finish_dump_point_setup": {
+      "name": "Slutför inställning av tömningspunkter",
+      "description": "Sparar de registrerade tömningspunkterna och lämnar inställningsläget."
+    },
+    "finish_outside_dump_point": {
+      "name": "Slutför tömningspunkt utanför området",
+      "description": "Slutför inställningen av en tömningspunkt som registrerats utanför klippområdet."
     },
     "get_map_data": {
       "name": "Hämta kartdata",
@@ -1147,9 +1268,79 @@
       "name": "Uppdatera uppgifter",
       "description": "Hämtar om alla scheman från enheten."
     },
+    "get_tasks": {
+      "name": "Hämta uppgifter",
+      "description": "Returnerar alla scheman som integrationen har för den valda enheten, inklusive om respektive schema är aktiverat. Använd den för att bekräfta att en ändring gick igenom; ”Uppdatera uppgifter” hämtar dem först på nytt från enheten."
+    },
     "start_task": {
       "name": "Starta uppgift",
       "description": "Kör ett sparat schema omedelbart (även kallat 'starta schema'). Endast gräsklippare — Spino-poolroboten har inte motsvarande kommando."
+    },
+    "backup_map": {
+      "name": "Säkerhetskopiera karta",
+      "description": "Laddar upp gräsklipparens karta till ditt Mammotion-molnkonto. Returnerar säkerhetskopians ID. Ange ett befintligt säkerhetskopie-ID för att skriva över den i stället för att skapa en ny.",
+      "fields": {
+        "name": {
+          "name": "Namn",
+          "description": "Namn på säkerhetskopian."
+        },
+        "backup_id": {
+          "name": "Säkerhetskopie-ID",
+          "description": "Befintlig säkerhetskopia att skriva över. Lämna tomt för att skapa en ny."
+        }
+      }
+    },
+    "restore_map": {
+      "name": "Återställ karta",
+      "description": "Ersätter gräsklipparens nuvarande karta med en säkerhetskopia från det Mammotion-konto som den här integrationen är inloggad med. Gräsklipparen startar om när återställningen är klar.",
+      "fields": {
+        "backup_id": {
+          "name": "Säkerhetskopie-ID",
+          "description": "Säkerhetskopia att återställa, som returneras av 'Hämta kartsäkerhetskopior'."
+        }
+      }
+    },
+    "get_map_backups": {
+      "name": "Hämta kartsäkerhetskopior",
+      "description": "Returnerar kartsäkerhetskopiorna på det Mammotion-konto som den här integrationen är inloggad med. Säkerhetskopior hör till kontot, så de som gjorts i appen med ett annat konto visas inte."
+    },
+    "get_map_backup_progress": {
+      "name": "Hämta förlopp för kartsäkerhetskopia",
+      "description": "Returnerar hur långt en säkerhetskopiering eller återställning av kartan har kommit.",
+      "fields": {
+        "backup_id": {
+          "name": "Säkerhetskopie-ID",
+          "description": "Säkerhetskopia vars jobb ska kontrolleras."
+        },
+        "restore": {
+          "name": "Återställning",
+          "description": "Kontrollera en återställning i stället för en säkerhetskopiering."
+        }
+      }
+    },
+    "cancel_map_backup": {
+      "name": "Avbryt kartsäkerhetskopia",
+      "description": "Avbryter en pågående säkerhetskopiering eller återställning av kartan.",
+      "fields": {
+        "backup_id": {
+          "name": "Säkerhetskopie-ID",
+          "description": "Säkerhetskopia vars jobb ska avbrytas."
+        },
+        "restore": {
+          "name": "Återställning",
+          "description": "Avbryt en återställning i stället för en säkerhetskopiering."
+        }
+      }
+    },
+    "delete_map_backup": {
+      "name": "Ta bort kartsäkerhetskopia",
+      "description": "Tar bort en kartsäkerhetskopia från Mammotion-molnet.",
+      "fields": {
+        "backup_id": {
+          "name": "Säkerhetskopie-ID",
+          "description": "Säkerhetskopia att ta bort."
+        }
+      }
     }
   },
   "exceptions": {
@@ -1188,6 +1379,21 @@
     },
     "start_task_unsupported_on_spino": {
       "message": "Att starta ett schema på begäran stöds inte på Spino-poolroboten — enhetens firmware har inget 'kör nu'-kommando för sparade scheman."
+    },
+    "grass_collection_unsupported": {
+      "message": "Den här klipparen har inte stöd för gräsuppsamling."
+    },
+    "map_backup_cloud_unavailable": {
+      "message": "Kartsäkerhetskopior kräver en fungerande inloggning i Mammotion-molnet."
+    },
+    "map_backup_failed": {
+      "message": "Mammotion-molnet avvisade begäran om kartsäkerhetskopia: {reason}"
+    },
+    "map_backup_device_not_found": {
+      "message": "{device_name} finns inte med för kartsäkerhetskopior på det här Mammotion-kontot."
+    },
+    "map_backup_mower_not_found": {
+      "message": "{entity_id} är inte en Mammotion-gräsklippare."
     }
   }
 }

@@ -1,5 +1,6 @@
 """Config for Mammotion."""
 
+from datetime import datetime
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -16,6 +17,12 @@ SAVE_DELAY = 300
 
 STORE_DATA_KEY = f"{DOMAIN}_store"
 
+STORE_VERSION = 1
+STORE_MINOR_VERSION = 5
+
+TRANSPORT_BLUETOOTH = "bluetooth_enabled"
+TRANSPORT_CLOUD = "cloud_enabled"
+
 LEGACY_STORAGE_VERSION = 1
 LEGACY_STORAGE_MINOR_VERSION = 2
 
@@ -25,14 +32,101 @@ class MammotionConfigStore(Store):  # type: ignore[misc]
 
     def __init__(self, hass: HomeAssistant, entry_id: str) -> None:
         """Initialize the store for a config entry."""
-        super().__init__(hass, version=1, minor_version=1, key=f"{DOMAIN}.{entry_id}")
+        super().__init__(
+            hass,
+            version=STORE_VERSION,
+            minor_version=STORE_MINOR_VERSION,
+            key=f"{DOMAIN}.{entry_id}",
+        )
         # In-memory state of the entry's devices, keyed by device name
         self.device_data: dict[str, Any] = {}
+        # Connectivity switch positions per device, keyed by device name
+        self.transport_settings: dict[str, dict[str, bool]] = {}
+        # When each device's firmware was last checked against the cloud, as an
+        # ISO timestamp keyed by device name
+        self.firmware_checks: dict[str, str] = {}
+        # The work-setting schema the cloud serves per hardware model, keyed
+        # "<product_key>/<int_mod>" rather than by device: it describes the
+        # model, so two mowers of the same model share one copy.
+        self.capabilities: dict[str, dict[str, Any]] = {}
         self._save_pending = False
 
+    async def _async_migrate_func(
+        self, old_major_version: int, old_minor_version: int, old_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Nest the flat device map so transport settings get their own section."""
+        if old_major_version == 1 and old_minor_version < 2:
+            old_data = {"devices": old_data, "transports": {}}
+        if old_major_version == 1 and old_minor_version < 3:
+            old_data = {**old_data, "firmware_checks": {}}
+        if old_major_version == 1 and old_minor_version < 4:
+            # The error-code table moved out of the device record and into one
+            # process-wide copy.  Stored blobs are ignored on load, but each was
+            # ~470 rows in 26 languages and there was one per device, so drop
+            # them rather than carry them until the device next saves.
+            for device in old_data.get("devices", {}).values():
+                if isinstance(device, dict) and isinstance(device.get("errors"), dict):
+                    device["errors"].pop("error_codes", None)
+        if old_major_version == 1 and old_minor_version < 5:
+            old_data = {**old_data, "capabilities": {}}
+        return old_data
+
     async def async_load_device_data(self) -> None:
-        """Load the persisted device state into memory."""
-        self.device_data = await self.async_load() or {}
+        """Load the persisted device state and transport settings into memory."""
+        data = await self.async_load() or {}
+        self.device_data = data.get("devices", {})
+        self.transport_settings = data.get("transports", {})
+        self.firmware_checks = data.get("firmware_checks", {})
+        self.capabilities = data.get("capabilities", {})
+
+    def transport_enabled(self, device_name: str, transport: str) -> bool:
+        """Return the stored switch position of a device's transport, on by default."""
+        return self.transport_settings.get(device_name, {}).get(transport, True)
+
+    async def async_set_transport_enabled(
+        self, device_name: str, transport: str, enabled: bool
+    ) -> None:
+        """Persist a connectivity switch position right away; toggles are rare."""
+        self.transport_settings.setdefault(device_name, {})[transport] = enabled
+        await self.async_save(self._data_to_save())
+
+    def firmware_checked_at(self, device_name: str) -> datetime | None:
+        """Return when this device's firmware was last checked, if ever."""
+        if (raw := self.firmware_checks.get(device_name)) is None:
+            return None
+        try:
+            parsed = datetime.fromisoformat(raw)
+        except TypeError, ValueError:
+            # A corrupted timestamp should read as never checked, so the next
+            # contact fixes it rather than suppressing checks forever.
+            return None
+        # A naive value would raise when subtracted from an aware utcnow().
+        return parsed if parsed.tzinfo is not None else None
+
+    async def async_set_firmware_checked(
+        self, device_name: str, when: datetime
+    ) -> None:
+        """Persist a firmware check straight away; it happens about once a week."""
+        self.firmware_checks[device_name] = when.isoformat()
+        await self.async_save(self._data_to_save())
+
+    @staticmethod
+    def capability_key(product_key: str, int_mod: str) -> str:
+        """Return the key a model's schema is stored under."""
+        return f"{product_key}/{int_mod}"
+
+    def model_capabilities(
+        self, product_key: str, int_mod: str
+    ) -> dict[str, Any] | None:
+        """Return the stored schema for a model, or None when it has none yet."""
+        return self.capabilities.get(self.capability_key(product_key, int_mod))
+
+    async def async_set_model_capabilities(
+        self, product_key: str, int_mod: str, schema: dict[str, Any]
+    ) -> None:
+        """Persist a model's schema right away; it is fetched about once per model."""
+        self.capabilities[self.capability_key(product_key, int_mod)] = schema
+        await self.async_save(self._data_to_save())
 
     async def async_device_data(self, device_name: str) -> dict[str, Any] | None:
         """Return the stored state of a device, migrating any legacy store."""
@@ -63,7 +157,12 @@ class MammotionConfigStore(Store):  # type: ignore[misc]
     def _data_to_save(self) -> dict[str, Any]:
         """Return a snapshot to persist; runs in the executor thread."""
         self._save_pending = False
-        return dict(self.device_data)
+        return {
+            "devices": dict(self.device_data),
+            "transports": dict(self.transport_settings),
+            "firmware_checks": dict(self.firmware_checks),
+            "capabilities": dict(self.capabilities),
+        }
 
     async def async_flush(self) -> None:
         """Write queued device state to disk, cancelling the delayed write."""
@@ -72,8 +171,11 @@ class MammotionConfigStore(Store):  # type: ignore[misc]
         await self.async_save(self._data_to_save())
 
     async def async_remove_device(self, device_name: str) -> None:
-        """Drop the stored state of a single device."""
-        if self.device_data.pop(device_name, None) is None:
+        """Drop the stored state and transport settings of a single device."""
+        had_data = self.device_data.pop(device_name, None) is not None
+        had_settings = self.transport_settings.pop(device_name, None) is not None
+        had_check = self.firmware_checks.pop(device_name, None) is not None
+        if not (had_data or had_settings or had_check):
             return
         self._save_pending = True
         await self.async_flush()

@@ -23,7 +23,6 @@ resources:
 #- ./apps/blocky
 - ./apps/unbound
 - ./apps/seerr
-- ./apps/renovate-bot
 #- ./apps/sonarr1
 #- ./apps/minecraft
 #- ./apps/vrising

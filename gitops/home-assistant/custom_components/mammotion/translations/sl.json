@@ -9,8 +9,11 @@
       "no_longer_present": "Naprava ni več prisotna",
       "not_supported": "Naprava ni podprta",
       "reconfigure_successful": "Ponastavitev uspešna",
+      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
       "api_limit_exceeded": "Prekoračena je bila omejitev API-ja. Poskusite znova pozneje.",
-      "account_in_use": "Vaš račun Mammotion je že aktiven v drugi seji. Odjavite se iz aplikacije Mammotion in poskusite znova."
+      "account_in_use": "Vaš račun Mammotion je že aktiven v drugi seji. Odjavite se iz aplikacije Mammotion in poskusite znova.",
+      "reauth_successful": "Ponovna overitev je uspela",
+      "wrong_account": "Ti poverilnici pripadata drugemu računu Mammotion. Ponovno se overite z računom, s katerim je bil ta vnos nastavljen."
     },
     "error": {
       "login_failed": "Prijava ni uspela. Preverite e-poštni naslov in geslo računa ter poskusite znova.",
@@ -20,33 +23,34 @@
     "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Nastavitev {name}",
-        "data": {
-          "stay_connected_bluetooth": "Ohranite bluetooth povezavo"
-        }
+        "description": "Nastavitev {name}"
       },
       "reconfigure": {
         "data": {
-          "use_wifi": "Uporabi Wi-fi",
           "account_name": "E-poštni naslov Mammotion ali številka računa",
           "password": "Geslo Mammotion računa"
         }
       },
       "user": {
         "data": {
-          "address": "Naprava",
-          "stay_connected_bluetooth": "Ohranite bluetooth povezavo"
+          "address": "Naprava"
         },
         "description": "Izberite vašo kosilnico"
       },
       "wifi": {
         "data": {
-          "use_wifi": "Uporabi Wi-fi (obkljukajte in pošljite za uporabo bluetooth)",
           "account_name": "E-poštni naslov Mammotion ali številka računa",
           "password": "Geslo Mammotion računa"
         },
         "title": "Poveži Wi-fi",
-        "description": "Vnesite e-poštni naslov Mammotion računa ali številko računa in geslo"
+        "description": "Vnesite e-poštni naslov Mammotion računa ali številko računa in geslo. Pustite obe polji prazni, če želite uporabljati samo Bluetooth brez računa."
+      },
+      "reauth_confirm": {
+        "title": "Ponovna overitev Mammotion",
+        "description": "Oblak Mammotion je zavrnil shranjene poverilnice za {account}. Vnesite geslo za ponovno prijavo.",
+        "data": {
+          "password": "Geslo računa Mammotion"
+        }
       }
     }
   },
@@ -55,11 +59,11 @@
       "init": {
         "data": {
           "title": "Posodobi nastavitev",
-          "stay_connected_bluetooth": "Ohrani bluetooth povezavo",
           "prefer_ble_over_wifi": "Daj prednost Bluetooth pred Wi-Fi, ko je na voljo",
           "movement_use_wifi": "Pošiljaj ukaze gibanja prek Wi-Fi",
           "mow_path_fetch_enabled": "Omogoči pridobivanje poti košnje (oblak)",
-          "full_map_fetch_enabled": "Omogoči pridobivanje celotnega zemljevida (oblak) — če izklopljeno, se pridobijo samo imena območij"
+          "full_map_fetch_enabled": "Omogoči pridobivanje celotnega zemljevida (oblak) — če izklopljeno, se pridobijo samo imena območij",
+          "notify": "Prikaži trajna obvestila za"
         }
       }
     }
@@ -368,6 +372,9 @@
       "release_from_dock": {
         "name": "Izvoz"
       },
+      "start_dropmow": {
+        "name": "Zaženi DropMow"
+      },
       "emergency_nudge_forward": {
         "name": "Pomik naprej – za rešitev položaja"
       },
@@ -391,6 +398,9 @@
       },
       "restart_mower": {
         "name": "Ponovni zagon kosilnice"
+      },
+      "refresh_status": {
+        "name": "Osveži stanje"
       },
       "spino_fetch_map": {
         "name": "Pridobi zemljevid bazena"
@@ -421,8 +431,14 @@
       "rain_tactics": {
         "name": "Zaznavanje dežja (med košnjo) vkl/izkl"
       },
+      "auto_change_direction": {
+        "name": "Samodejno menjavanje smeri košnje"
+      },
       "rain_detection": {
         "name": "Zaznavanje dežja (kosilnica) vkl/izkl"
+      },
+      "smart_charge": {
+        "name": "Pametno polnjenje"
       },
       "side_led": {
         "name": "Stranska LED osvetlitev"
@@ -448,6 +464,12 @@
       "voice_on_off": {
         "name": "Glas vklopljeno/izklopljeno"
       },
+      "manual_grass_collection": {
+        "name": "Ročno zbiranje trave"
+      },
+      "manual_grass_dump": {
+        "name": "Ročno praznjenje trave"
+      },
       "spino_buzzer": {
         "name": "Zvočni signal"
       },
@@ -455,10 +477,10 @@
         "name": "Turbo čiščenje"
       },
       "spino_platform_cleaning": {
-        "name": "Čiščenje ploščadi"
+        "name": "Čiščenje platforme"
       },
       "spino_waterline_parking": {
-        "name": "Parkiranje na vodni gladini"
+        "name": "Parkiranje na vodni črti"
       }
     },
     "select": {
@@ -501,10 +523,10 @@
       "bypass_mode": {
         "name": "Zaznavanje ovir",
         "state": {
-          "direct_touch": "Izklopljeno",
-          "slow_touch": "Počasni dotik",
+          "off": "Izklopljeno",
+          "slow_touch": "Osnovno",
           "less_touch": "Manj dotika",
-          "no_touch": "Standard",
+          "standard": "Standardno",
           "sensitive": "Občutljivo"
         }
       },
@@ -567,10 +589,10 @@
         }
       },
       "spino_wall_material": {
-        "name": "Material sten",
+        "name": "Material stene",
         "state": {
           "GLASS": "Steklo",
-          "CERAMICS": "Ploščice",
+          "CERAMICS": "Ploščica",
           "SAND_STONE": "Agregat",
           "VINYL": "Vinil"
         }
@@ -588,6 +610,9 @@
     "number": {
       "voice_volume": {
         "name": "Glasnost glasu"
+      },
+      "charge_limit": {
+        "name": "Omejitev polnjenja"
       },
       "start_progress": {
         "name": "Napredek"
@@ -622,6 +647,24 @@
     },
     "device_tracker": {
       "name": "Sledenje"
+    },
+    "event": {
+      "notification": {
+        "name": "Obvestila",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "device_notification_event": "Obvestilo",
+              "device_information_event": "Informacija",
+              "device_warning_code_event": "Opozorilne kode",
+              "device_warning_event": "Opozorilo",
+              "device_biz_req_event": "Poslovna zahteva",
+              "device_log_progress_event": "Napredek nalaganja dnevnika",
+              "device_config_req_event": "Zahteva za konfiguracijo"
+            }
+          }
+        }
+      }
     }
   },
   "selector": {
@@ -633,10 +676,10 @@
     },
     "ultra_wave": {
       "options": {
-        "0": "Polni dotik",
-        "1": "Počasni dotik",
+        "0": "Izklopljeno",
+        "1": "Osnovno",
         "2": "Manj dotika",
-        "10": "Brez dotika",
+        "10": "Standardno",
         "11": "Občutljivo"
       }
     },
@@ -677,6 +720,12 @@
         "2": "Dva kroga",
         "3": "Trije krogi",
         "4": "Štirje krogi"
+      }
+    },
+    "notify": {
+      "options": {
+        "warnings": "Opozorila in kode napak",
+        "notifications": "Obvestila in informacije naprave"
       }
     }
   },
@@ -779,6 +828,48 @@
         }
       }
     },
+    "modify_running_job": {
+      "name": "Spremeni izvajajoče se opravilo",
+      "description": "Spremeni nastavitve opravila, ki ga kosilnica že izvaja, brez ponovnega zagona. Na voljo le na Luba 2 in novejših med izvajanjem opravila.",
+      "fields": {
+        "blade_height": {
+          "name": "Višina rezila",
+          "description": "Višina rezila"
+        },
+        "speed": {
+          "name": "Delovna hitrost",
+          "description": "Delovna hitrost"
+        },
+        "ultra_wave": {
+          "name": "Zaznavanje ovir",
+          "description": "Zaznavanje ovir"
+        },
+        "channel_width": {
+          "name": "Razmik poti",
+          "description": "Razmik poti"
+        },
+        "channel_mode": {
+          "name": "Način poti",
+          "description": "Način poti"
+        },
+        "obstacle_laps": {
+          "name": "Krogi prepovedanega območja",
+          "description": "Krogi prepovedanega območja"
+        },
+        "rain_tactics": {
+          "name": "Taktika ob dežju",
+          "description": "Taktika ob dežju"
+        },
+        "auto_change_direction": {
+          "name": "Samodejna sprememba smeri",
+          "description": "Samodejna sprememba smeri"
+        },
+        "start_progress": {
+          "name": "Napredek",
+          "description": "Napredek"
+        }
+      }
+    },
     "start_stop_blades": {
       "name": "Zaženi ali ustavi rezila",
       "description": "Ročno zaženite ali ustavite rezila.",
@@ -817,9 +908,39 @@
         }
       }
     },
+    "set_blade_height": {
+      "name": "Nastavi višino rezila",
+      "description": "Pošlje višino rezila neposredno motorju rezila kosilnice.",
+      "fields": {
+        "height": {
+          "name": "Višina",
+          "description": "Višina rezila v milimetrih."
+        }
+      }
+    },
     "reset_blade_time": {
       "name": "Ponastavi čas rezila",
       "description": "Ponastavi števec časa uporabe rezila."
+    },
+    "start_dump_point_setup": {
+      "name": "Začni nastavitev točk praznjenja",
+      "description": "Kosilnico preklopi v način nastavitve točk praznjenja trave, da jih je mogoče zabeležiti."
+    },
+    "add_dump_point": {
+      "name": "Dodaj točko praznjenja",
+      "description": "Zabeleži točko praznjenja trave na trenutnem položaju kosilnice."
+    },
+    "undo_dump_point": {
+      "name": "Razveljavi zadnjo točko praznjenja",
+      "description": "Zavrže nazadnje zabeleženo točko praznjenja trave."
+    },
+    "finish_dump_point_setup": {
+      "name": "Končaj nastavitev točk praznjenja",
+      "description": "Shrani zabeležene točke praznjenja in zapusti način nastavitve."
+    },
+    "finish_outside_dump_point": {
+      "name": "Končaj točko praznjenja zunaj območja",
+      "description": "Dokonča nastavitev točke praznjenja, zabeležene zunaj območja košnje."
     },
     "get_map_data": {
       "name": "Pridobi podatke zemljevida",
@@ -1147,9 +1268,79 @@
       "name": "Osveži opravila",
       "description": "Znova pridobi vse urnike iz naprave."
     },
+    "get_tasks": {
+      "name": "Pridobi opravila",
+      "description": "Vrne vse urnike, ki jih integracija hrani za izbrano napravo, vključno s tem, ali je posamezen urnik omogočen. Uporabite za potrditev, da je sprememba obveljala; »Osveži opravila« jih najprej znova prebere z naprave."
+    },
     "start_task": {
       "name": "Zaženi opravilo",
       "description": "Takoj zažene shranjen urnik (znano tudi kot „zaženi urnik“). Samo kosilnica — bazenski robot Spino nima enakovrednega ukaza."
+    },
+    "backup_map": {
+      "name": "Varnostno kopiraj zemljevid",
+      "description": "Naloži zemljevid kosilnice v vaš oblačni račun Mammotion. Vrne ID varnostne kopije. Z ID-jem obstoječe varnostne kopije jo prepišete, namesto da ustvarite novo.",
+      "fields": {
+        "name": {
+          "name": "Ime",
+          "description": "Ime varnostne kopije."
+        },
+        "backup_id": {
+          "name": "ID varnostne kopije",
+          "description": "Obstoječa varnostna kopija za prepis. Pustite prazno za novo varnostno kopijo."
+        }
+      }
+    },
+    "restore_map": {
+      "name": "Obnovi zemljevid",
+      "description": "Trenutni zemljevid kosilnice zamenja z varnostno kopijo iz računa Mammotion, s katerim je prijavljena ta integracija. Po končani obnovi se kosilnica znova zažene.",
+      "fields": {
+        "backup_id": {
+          "name": "ID varnostne kopije",
+          "description": "Varnostna kopija za obnovo, kot jo vrne 'Pridobi varnostne kopije zemljevidov'."
+        }
+      }
+    },
+    "get_map_backups": {
+      "name": "Pridobi varnostne kopije zemljevidov",
+      "description": "Vrne varnostne kopije zemljevidov iz računa Mammotion, s katerim je prijavljena ta integracija. Varnostne kopije pripadajo računu, zato kopije, ustvarjene v aplikaciji z drugim računom, niso prikazane."
+    },
+    "get_map_backup_progress": {
+      "name": "Pridobi napredek varnostne kopije",
+      "description": "Vrne, kako daleč je varnostno kopiranje ali obnova zemljevida.",
+      "fields": {
+        "backup_id": {
+          "name": "ID varnostne kopije",
+          "description": "Varnostna kopija, katere opravilo preverite."
+        },
+        "restore": {
+          "name": "Obnova",
+          "description": "Preveri obnovo namesto varnostnega kopiranja."
+        }
+      }
+    },
+    "cancel_map_backup": {
+      "name": "Prekliči varnostno kopijo zemljevida",
+      "description": "Prekliče varnostno kopiranje ali obnovo zemljevida, ki še poteka.",
+      "fields": {
+        "backup_id": {
+          "name": "ID varnostne kopije",
+          "description": "Varnostna kopija, katere opravilo prekličete."
+        },
+        "restore": {
+          "name": "Obnova",
+          "description": "Prekliči obnovo namesto varnostnega kopiranja."
+        }
+      }
+    },
+    "delete_map_backup": {
+      "name": "Izbriši varnostno kopijo zemljevida",
+      "description": "Izbriše varnostno kopijo zemljevida iz oblaka Mammotion.",
+      "fields": {
+        "backup_id": {
+          "name": "ID varnostne kopije",
+          "description": "Varnostna kopija za izbris."
+        }
+      }
     }
   },
   "exceptions": {
@@ -1188,6 +1379,21 @@
     },
     "start_task_unsupported_on_spino": {
       "message": "Zagon urnika na zahtevo ni podprt na bazenskem robotu Spino — vdelana programska oprema ne ponuja ukaza za takojšen zagon shranjenih urnikov."
+    },
+    "grass_collection_unsupported": {
+      "message": "Ta kosilnica ne podpira zbiranja trave."
+    },
+    "map_backup_cloud_unavailable": {
+      "message": "Varnostne kopije zemljevidov zahtevajo delujočo prijavo v oblak Mammotion."
+    },
+    "map_backup_failed": {
+      "message": "Oblak Mammotion je zavrnil zahtevo za varnostno kopijo zemljevida: {reason}"
+    },
+    "map_backup_device_not_found": {
+      "message": "{device_name} v tem računu Mammotion ni na seznamu za varnostne kopije zemljevidov."
+    },
+    "map_backup_mower_not_found": {
+      "message": "{entity_id} ni kosilnica Mammotion."
     }
   }
 }
