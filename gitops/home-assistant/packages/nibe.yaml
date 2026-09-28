@@ -187,6 +187,57 @@ automation:
       hours: 3
   mode: single
 
+- id: nibe_hot_water_running_out
+  alias: NIBE - hot water running out
+  description: >-
+    BT7 (tank top) normally stays 49-58 C; it only fell below 45 C once in
+    09-18..09-28 (a ~30 min draw on 09-27 took it to 36 C).
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.bt7_hw_top_40013
+    below: 40
+    for:
+      minutes: 2
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Hot water running out
+      message: >-
+        Tank top is down to {{ states('sensor.bt7_hw_top_40013') }} C (bottom
+        {{ states('sensor.bt6_hw_load_40014') }} C). If nobody is having a bath or
+        long shower, check for a hot tap left running.
+  mode: single
+
+- id: nibe_hot_water_not_recovering
+  alias: NIBE - hot water not recovering
+  description: >-
+    After a normal big draw the pump brings BT7 back above 40 C in ~35 min
+    (09-27). Still below after an hour means hot water is still being drawn.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.bt7_hw_top_40013
+    below: 40
+    for:
+      minutes: 60
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Hot water still being drawn
+      message: >-
+        Tank top has been below 40 C for an hour (now
+        {{ states('sensor.bt7_hw_top_40013') }} C, bottom
+        {{ states('sensor.bt6_hw_load_40014') }} C, priority
+        {{ states('sensor.prio_43086') }}). A hot tap is probably open.
+  mode: single
+
 - id: nibe_compressor_short_cycling
   alias: NIBE - compressor short cycling
   description: >-
