@@ -121,6 +121,15 @@
     to: unavailable
     for:
       minutes: 5
+  # the state trigger misses a Flexit that is already unavailable when HA starts (09-27)
+  - trigger: time_pattern
+    minutes: /15
+  conditions:
+  - condition: state
+    entity_id: climate.flexit_nordic
+    state: unavailable
+    for:
+      minutes: 5
   actions:
   - repeat:
       sequence:
@@ -149,11 +158,16 @@
           title: Flexit offline
           message: >-
             Flexit has been unreachable for 30+ minutes and six reload attempts
-            did not recover it (192.168.1.134, BACnet id 2). It is most likely off
-            the network after a power cut - replug its UTP cable or power-cycle
-            the unit. Ventilation itself keeps running on its own controller;
-            only monitoring and automations are affected.
+            did not recover it (192.168.1.139, BACnet id 2, router name POS3). Check
+            it still has that IP (DHCP reservation for 00:05:19:22:06:0A), else
+            replug its UTP cable or power-cycle the unit. Ventilation itself keeps
+            running on its own controller; only monitoring and automations are
+            affected.
+      # Keeps the run alive so the time_pattern trigger doesn't re-notify for 6 h.
+      - delay:
+          hours: 6
   mode: single
+  max_exceeded: silent
 
 - id: flexit_back_online
   alias: Flexit - back online

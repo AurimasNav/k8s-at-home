@@ -124,14 +124,14 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
 
 ## Flexit Nordic
 
-- [ ] **Fix the real cause of the post-outage dropout** (`192.168.1.134`): a DHCP
-      reservation or a static address on the unit, plus a UPS on the switch so the
-      network is up before the unit. The replug ritual points at its link or DHCP
-      not recovering when the switch comes up after it. The HA-side auto-reload in
-      `automations/flexit.yaml` only fixes a stale connection, never an absent
-      device.
-- [ ] **Verify that auto-reload actually recovers it** at the next outage, and
-      drop the retry count if it proves noisy.
+- [x] **Fix the real cause of the post-outage dropout**: its DHCP lease moved it
+      from `.134` to `.139` (seen 2026-09-28, BACnet Who-Is reply from `.139`,
+      router name `POS3`, MAC `00:05:19:22:06:0A`). Reserved `.139` on the Asus
+      and edited the HA config entry to it (the integration has no reconfigure step). A UPS on the switch is still worth it.
+- [x] **Verify that auto-reload actually recovers it**: it can't. A reload never
+      fixes an IP change, and the `to: unavailable` trigger never fired because
+      Flexit was already unavailable when HA started (09-27 20:17). It now also
+      checks every 15 min and throttles its alert to one per 6 h.
 
 ## Presence nodes
 
