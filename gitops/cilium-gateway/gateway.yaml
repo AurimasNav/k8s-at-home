@@ -196,3 +196,16 @@ spec:
       - kind: Secret
         name: flood-tls
         namespace: cilium-gateway
+  - name: https-hermes
+    hostname: hermes.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: hermes-tls
+        namespace: cilium-gateway

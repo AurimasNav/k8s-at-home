@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ./deployment.yaml
+- ./rbac.yaml
+- ./service.yaml
+- ./httproute.yaml
+- ./configmap.yaml
+- ./pvc.yaml
+- ./externalsecret.yaml
+
+images:
+- name: nousresearch/hermes-agent
+  newTag: v2026.9.24
+- name: alpine/k8s
+  newTag: 1.36.1
+- name: quay.io/oauth2-proxy/oauth2-proxy
+  newTag: v7.15.4

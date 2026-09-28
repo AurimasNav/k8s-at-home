@@ -39,3 +39,4 @@ resources:
 - ./apps/otel-collector
 - ./apps/tempo
 - ./apps/loki
+- ./apps/hermes-agent

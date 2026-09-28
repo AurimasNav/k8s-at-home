@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-agent
+  labels:
+    app: hermes-agent
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  # two gateways must never share /opt/data
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hermes-agent
+  template:
+    metadata:
+      labels:
+        app: hermes-agent
+    spec:
+      serviceAccountName: hermes-agent
+      initContainers:
+      - name: kubectl
+        image: alpine/k8s:latest
+        command: ["sh", "-c", "cp \"$(command -v kubectl)\" /tools/"]
+        volumeMounts:
+        - name: tools
+          mountPath: /tools
+      containers:
+      - name: hermes-agent
+        image: nousresearch/hermes-agent:latest
+        args: ["gateway", "run"]
+        envFrom:
+        - configMapRef:
+            name: hermes-agent
+        - secretRef:
+            name: hermes-agent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            memory: 3Gi
+        volumeMounts:
+        - name: data
+          mountPath: /opt/data
+        - name: dshm
+          mountPath: /dev/shm
+        # on the image PATH and empty in debian
+        - name: tools
+          mountPath: /usr/local/sbin
+      - name: oauth2-proxy
+        image: quay.io/oauth2-proxy/oauth2-proxy:latest
+        ports:
+        - containerPort: 4180
+          protocol: TCP
+        envFrom:
+        - secretRef:
+            name: hermes-agent-oauth2-proxy
+        - configMapRef:
+            name: hermes-agent-oauth2-proxy
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        volumeMounts:
+        - name: emails
+          mountPath: /etc/oauth2-proxy
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: hermes-agent-data
+      - name: tools
+        emptyDir: {}
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
+      - name: emails
+        secret:
+          secretName: hermes-agent-oauth2-proxy
+          items:
+          - key: AUTHENTICATED_EMAILS
+            path: authenticated-emails
