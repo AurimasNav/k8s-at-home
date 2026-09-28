@@ -1,7 +1,7 @@
-# Smart-home / IoT decisions
+# Smart-home / IoT / home-network decisions
 
-Lightweight decision records (ADR-style) for smart-home / IoT choices in this
-homelab — the "why", not just the "how". Setup/how-to docs live one level up in
+Lightweight decision records (ADR-style) for smart-home, IoT and home-network
+choices in this homelab — the "why", not just the "how". Setup/how-to docs live one level up in
 [`docs/`](../..) (e.g. [Matter-over-Thread setup](../../matter-thread-setup.md)),
 and component-choice guidance in
 [Sensor selection](../sensor-selection.md).
@@ -28,3 +28,4 @@ Keep them short and self-contained. Supersede rather than rewrite: mark the old 
 | [0002](0002-sungrow-inverter-modbus-path.md) | Sungrow integration path (WiNet-S native Modbus TCP; iHomeManager unit 247 for meter + EV charger) | Deployed 2026-07-24, extended 2026-08-14 |
 | [0003](0003-bathroom-presence-radar-retrofit.md) | Bathroom presence + ambient-light retrofit (ESP32-C6 SuperMini + mmWave, mains-fed) | Proposed 2026-08-02 |
 | [0004](0004-whole-home-backup-not-automatic.md) | Whole-home backup: changeover was in the wrong position, not miswired | **Resolved 2026-08-18** |
+| [0005](0005-opnsense-firewall-hardware.md) | OPNsense firewall hardware (Intel N150 mini-PC, not an official Deciso appliance) | Proposed 2026-09-12 |
