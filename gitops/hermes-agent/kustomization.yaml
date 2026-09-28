@@ -16,5 +16,7 @@ images:
   newTag: v2026.9.24
 - name: alpine/k8s
   newTag: 1.36.1
+- name: ghcr.io/home-assistant/home-assistant
+  newTag: 2026.8.1
 - name: quay.io/oauth2-proxy/oauth2-proxy
   newTag: v7.15.4

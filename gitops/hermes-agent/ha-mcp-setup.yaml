@@ -3,32 +3,186 @@ kind: ConfigMap
 metadata:
   name: ha-mcp-setup
 data:
+  # entities exposed to Assist (and so to Hermes over MCP); everything else gets unexposed
+  exposed-entities.txt: |
+    # energy - Sungrow / iHomeManager (read-only sensors)
+    sensor.total_dc_power
+    sensor.load_power
+    sensor.meter_active_power
+    sensor.export_power
+    sensor.import_power
+    sensor.battery_level
+    sensor.battery_power
+    sensor.battery_state_of_health
+    sensor.battery_temperature
+    sensor.inverter_temperature
+    sensor.running_state
+    sensor.power_flow_status
+    sensor.sungrow_inverter_state
+    sensor.daily_pv_generation
+    sensor.daily_imported_energy
+    sensor.daily_exported_energy
+    sensor.daily_battery_charge
+    sensor.daily_battery_discharge
+    sensor.daily_consumed_energy
+    sensor.charger_status
+    sensor.charger_mode
+    sensor.charger_active_power
+    sensor.ev_charging_power_estimate
+    sensor.heat_pump_power_estimate
+    binary_sensor.off_grid
+    # prices and grid carbon
+    sensor.nord_pool_lt_current_price
+    sensor.nord_pool_lt_next_price
+    sensor.nord_pool_lt_lowest_price
+    sensor.nord_pool_lt_highest_price
+    binary_sensor.nord_pool_lt_tomorrow_price_available
+    sensor.electricity_maps_co2_intensity
+    sensor.electricity_maps_grid_fossil_fuel_percentage
+    # NIBE heat pump (sensors only, no setpoints)
+    sensor.bt1_outdoor_temperature_40004
+    sensor.bt2_supply_temp_s1_40008
+    sensor.bt6_hw_load_40014
+    sensor.bt7_hw_top_40013
+    sensor.compressor_state_ep14_43427
+    sensor.prio_43086
+    sensor.int_el_add_power_43084
+    sensor.alarm_45001
+    # Flexit ventilation (sensors only)
+    sensor.flexit_nordic_room_temperature
+    sensor.flexit_nordic_supply_air_temperature
+    sensor.flexit_nordic_extract_air_temperature
+    sensor.flexit_nordic_outside_air_temperature
+    sensor.flexit_nordic_heat_exchanger_efficiency
+    sensor.flexit_nordic_electric_heater_power
+    binary_sensor.flexit_nordic_air_filter_polluted
+    # indoor climate from the AC units (sensors only)
+    sensor.ac_bedroom_temperature
+    sensor.ac_bedroom_humidity
+    sensor.ac_gaming_temperature
+    sensor.ac_gaming_humidity
+    sensor.ac_living_room_temperature
+    sensor.ac_living_room_humidity
+    # presence
+    binary_sensor.entrance_hall_presence_presence
+    sensor.entrance_hall_presence_ambient_light
+    # mower and vacuum status (no start/stop)
+    sensor.garden_luba_mnwybj2y_activity_mode
+    sensor.garden_luba_mnwybj2y_battery
+    sensor.garden_luba_mnwybj2y_progress
+    sensor.garden_luba_mnwybj2y_time_left
+    sensor.garden_luba_mnwybj2y_last_error
+    binary_sensor.garden_luba_mnwybj2y_charging
+    sensor.saros_10r_status
+    sensor.saros_10r_battery
+    sensor.saros_10r_current_room
+    sensor.saros_10r_vacuum_error
+    # appliances
+    sensor.dishwasher
+    sensor.dishwasher_remaining_time
+    sensor.washing_machine
+    sensor.washing_machine_remaining_time
+    sensor.tumble_dryer
+    sensor.tumble_dryer_remaining_time
+    # car (read-only)
+    sensor.byd_atto_2_battery_level
+    sensor.byd_atto_2_range
+    binary_sensor.byd_atto_2_charging
+    binary_sensor.byd_atto_2_plug
+    # weather
+    weather.forecast_home
+    # lights (on/off/brightness)
+    light.aqara_smart_wall_switch_light_1
+    light.aqara_smart_wall_switch_light_2
+    light.entrance_hall_entrance_1
+    light.entrance_hall_entrance_2
+    light.entrance_hall_entrance_3
+    light.entrance_hall_entrance_3_2
+    light.entrance_hall_entrance_4
+    light.essentials_gu10
+    light.essentials_gu10_2
+    light.essentials_gu10_3
+    light.essentials_gu10_4
+    light.essentials_gu10_5
+    light.essentials_gu10_6
+    light.essentials_gu10_7
+    light.essentials_gu10_8
+    light.essentials_gu10_9
+    light.essentials_gu10_10
+    light.essentials_gu10_12
   setup.py: |
-    import json, os, sys, urllib.request
+    import asyncio, os, sys
+    import aiohttp
 
-    base = os.environ["HA_URL"].rstrip("/")
-    token = os.environ["HA_ADMIN_TOKEN"]
+    BASE = os.environ["HA_URL"].rstrip("/")
+    TOKEN = os.environ["HA_ADMIN_TOKEN"]
+    HEADERS = {"Authorization": f"Bearer {TOKEN}"}
 
-    def call(method, path, body=None):
-        req = urllib.request.Request(
-            base + path, method=method,
-            data=None if body is None else json.dumps(body).encode(),
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return json.load(resp)
+    def wanted():
+        with open("/scripts/exposed-entities.txt") as f:
+            return {l.strip() for l in f if l.strip() and not l.lstrip().startswith("#")}
 
-    entries = call("GET", "/api/config/config_entries/entry?domain=mcp_server")
-    if entries:
-        print("mcp_server already configured:", [(e["title"], e.get("disabled_by")) for e in entries])
-        sys.exit(0)
+    async def ensure_mcp_server(http):
+        async with http.get(f"{BASE}/api/config/config_entries/entry", params={"domain": "mcp_server"}) as r:
+            r.raise_for_status()
+            if entries := await r.json():
+                print("mcp_server already configured:", [(e["title"], e.get("disabled_by")) for e in entries])
+                return
+        async with http.post(f"{BASE}/api/config/config_entries/flow", json={"handler": "mcp_server", "show_advanced_options": False}) as r:
+            r.raise_for_status()
+            flow = await r.json()
+        if flow.get("type") == "form":
+            async with http.post(f"{BASE}/api/config/config_entries/flow/{flow['flow_id']}", json={"llm_hass_api": ["assist"]}) as r:
+                r.raise_for_status()
+                flow = await r.json()
+        if flow.get("type") != "create_entry":
+            sys.exit(f"unexpected flow result: {flow}")
+        print("mcp_server created:", flow.get("title"))
 
-    flow = call("POST", "/api/config/config_entries/flow", {"handler": "mcp_server", "show_advanced_options": False})
-    if flow.get("type") == "form":
-        flow = call("POST", f"/api/config/config_entries/flow/{flow['flow_id']}", {"llm_hass_api": ["assist"]})
-    if flow.get("type") != "create_entry":
-        print("unexpected flow result:", flow)
-        sys.exit(1)
-    print("mcp_server created:", flow.get("title"))
+    async def sync_exposure(http):
+        async with http.get(f"{BASE}/api/states") as r:
+            r.raise_for_status()
+            known = {s["entity_id"] for s in await r.json()}
+        want = wanted()
+        if missing := sorted(want - known):
+            print("WARNING: not found in HA, skipped:", missing)
+        want &= known
+
+        async with http.ws_connect(BASE.replace("http", "ws", 1) + "/api/websocket") as ws:
+            await ws.receive_json()
+            await ws.send_json({"type": "auth", "access_token": TOKEN})
+            if (auth := await ws.receive_json())["type"] != "auth_ok":
+                sys.exit(f"websocket auth failed: {auth}")
+            msg_id = 0
+
+            async def call(payload):
+                nonlocal msg_id
+                msg_id += 1
+                await ws.send_json({"id": msg_id, **payload})
+                while True:
+                    res = await ws.receive_json()
+                    if res.get("id") == msg_id:
+                        if not res.get("success"):
+                            sys.exit(f"{payload['type']} failed: {res.get('error')}")
+                        return res.get("result")
+
+            await call({"type": "homeassistant/expose_new_entities/set", "assistant": "conversation", "expose_new": False})
+            listed = await call({"type": "homeassistant/expose_entity/list"})
+            current = {e for e, a in listed["exposed_entities"].items() if a.get("conversation")}
+            if remove := sorted(current - want):
+                await call({"type": "homeassistant/expose_entity", "assistants": ["conversation"], "entity_ids": remove, "should_expose": False})
+            if add := sorted(want - current):
+                await call({"type": "homeassistant/expose_entity", "assistants": ["conversation"], "entity_ids": add, "should_expose": True})
+            print(f"exposure synced: {len(want)} exposed, +{len(add)} added, -{len(remove)} removed")
+            for e in remove:
+                print("  unexposed", e)
+
+    async def main():
+        async with aiohttp.ClientSession(headers=HEADERS, timeout=aiohttp.ClientTimeout(total=60)) as http:
+            await ensure_mcp_server(http)
+            await sync_exposure(http)
+
+    asyncio.run(main())
 ---
 apiVersion: batch/v1
 kind: Job
@@ -45,7 +199,8 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: ha-mcp-setup
-        image: python:3.13-alpine
+        # already on the node and ships aiohttp for the websocket API
+        image: ghcr.io/home-assistant/home-assistant:latest
         command: ["python3", "/scripts/setup.py"]
         env:
         - name: HA_URL
