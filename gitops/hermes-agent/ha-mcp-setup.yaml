@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-mcp-setup
+data:
+  setup.py: |
+    import json, os, sys, urllib.request
+
+    base = os.environ["HA_URL"].rstrip("/")
+    token = os.environ["HA_ADMIN_TOKEN"]
+
+    def call(method, path, body=None):
+        req = urllib.request.Request(
+            base + path, method=method,
+            data=None if body is None else json.dumps(body).encode(),
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.load(resp)
+
+    entries = call("GET", "/api/config/config_entries/entry?domain=mcp_server")
+    if entries:
+        print("mcp_server already configured:", [(e["title"], e.get("disabled_by")) for e in entries])
+        sys.exit(0)
+
+    flow = call("POST", "/api/config/config_entries/flow", {"handler": "mcp_server", "show_advanced_options": False})
+    if flow.get("type") == "form":
+        flow = call("POST", f"/api/config/config_entries/flow/{flow['flow_id']}", {"llm_hass_api": ["assist"]})
+    if flow.get("type") != "create_entry":
+        print("unexpected flow result:", flow)
+        sys.exit(1)
+    print("mcp_server created:", flow.get("title"))
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ha-mcp-setup
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      containers:
+      - name: ha-mcp-setup
+        image: python:3.13-alpine
+        command: ["python3", "/scripts/setup.py"]
+        env:
+        - name: HA_URL
+          valueFrom:
+            configMapKeyRef:
+              name: hermes-agent
+              key: HA_URL
+        envFrom:
+        - secretRef:
+            name: ha-mcp-setup
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+      volumes:
+      - name: scripts
+        configMap:
+          name: ha-mcp-setup

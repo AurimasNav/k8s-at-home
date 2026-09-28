@@ -9,6 +9,7 @@ resources:
 - ./configmap.yaml
 - ./pvc.yaml
 - ./externalsecret.yaml
+- ./ha-mcp-setup.yaml
 
 images:
 - name: nousresearch/hermes-agent

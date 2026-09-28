@@ -27,6 +27,17 @@ spec:
         volumeMounts:
         - name: tools
           mountPath: /tools
+      # placeholders stay literal in config.yaml; Hermes resolves them from env at connect time
+      - name: mcp-config
+        image: nousresearch/hermes-agent:latest
+        command: ["sh", "-c"]
+        args:
+        - >-
+          hermes config set mcp_servers.home_assistant.url '${HA_URL}/api/mcp' &&
+          hermes config set mcp_servers.home_assistant.headers.Authorization 'Bearer ${HA_TOKEN}'
+        volumeMounts:
+        - name: data
+          mountPath: /opt/data
       containers:
       - name: hermes-agent
         image: nousresearch/hermes-agent:latest
