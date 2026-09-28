@@ -33,6 +33,9 @@ configMapGenerator:
 - name: ha-backup-power-automations
   files:
   - automations/backup-power.yaml
+- name: ha-mower-automations
+  files:
+  - automations/mower.yaml
 # package, not an automations file: ships integration/utility_meter helpers
 - name: ha-ev-charger-package
   files:

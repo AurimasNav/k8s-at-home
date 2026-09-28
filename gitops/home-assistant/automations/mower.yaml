@@ -1,0 +1,69 @@
+# Paused away from the dock: stuck (1201) or other error mid-job, sent while it is still at the spot.
+- id: mower_paused_in_field
+  alias: Mower - paused away from dock
+  triggers:
+  - trigger: state
+    entity_id: lawn_mower.garden_luba_mnwybj2y
+    to: paused
+    for:
+      minutes: 5
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.garden_luba_mnwybj2y_charging
+    state: 'off'
+  actions:
+  - variables:
+      lat: "{{ state_attr('device_tracker.garden_luba_mnwybj2y_luba_mnwybj2y', 'latitude') }}"
+      lon: "{{ state_attr('device_tracker.garden_luba_mnwybj2y_luba_mnwybj2y', 'longitude') }}"
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Mower paused in the garden
+      message: >-
+        Paused in the garden at {{ states('sensor.garden_luba_mnwybj2y_progress') }}%
+        (error {{ states('sensor.garden_luba_mnwybj2y_last_error_code') }}:
+        {{ states('sensor.garden_luba_mnwybj2y_last_error') }}).
+        Battery {{ states('sensor.garden_luba_mnwybj2y_battery') }}%.
+        Location: https://maps.google.com/?q={{ lat }},{{ lon }}
+  mode: single
+
+# Docked but the job is still paused (e.g. low-battery return after being stuck): firmware skips schedules until resumed or cancelled.
+- id: mower_docked_task_paused
+  alias: Mower - docked with task still paused
+  triggers:
+  - trigger: state
+    entity_id: sensor.garden_luba_mnwybj2y_activity_mode
+    to: MODE_PAUSE
+    for:
+      minutes: 30
+  - trigger: state
+    entity_id: binary_sensor.garden_luba_mnwybj2y_charging
+    to: 'on'
+    for:
+      minutes: 30
+  conditions:
+  - condition: state
+    entity_id: sensor.garden_luba_mnwybj2y_activity_mode
+    state: MODE_PAUSE
+    for:
+      minutes: 30
+  - condition: state
+    entity_id: binary_sensor.garden_luba_mnwybj2y_charging
+    state: 'on'
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Mower schedule blocked
+      message: >-
+        Docked with its job still paused at {{ states('sensor.garden_luba_mnwybj2y_progress') }}%
+        (last error {{ states('sensor.garden_luba_mnwybj2y_last_error_code') }}:
+        {{ states('sensor.garden_luba_mnwybj2y_last_error') }}).
+        Schedules won't run until the task is resumed or cancelled in the app.
+  mode: single

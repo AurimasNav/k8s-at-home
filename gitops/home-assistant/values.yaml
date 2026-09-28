@@ -65,6 +65,7 @@ configuration:
     automation hikvision: !include automations_hikvision.yaml
     automation ev charger: !include automations_ev_charger.yaml
     automation backup power: !include automations_backup_power.yaml
+    automation mower: !include automations_mower.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
 
@@ -131,6 +132,9 @@ additionalVolumes:
   - name: backup-power-automations
     configMap:
       name: ha-backup-power-automations
+  - name: mower-automations
+    configMap:
+      name: ha-mower-automations
   - name: ev-charger-package
     configMap:
       name: ha-ev-charger-package
@@ -203,6 +207,9 @@ additionalMounts:
   - name: backup-power-automations
     mountPath: /config/automations_backup_power.yaml
     subPath: backup-power.yaml
+  - name: mower-automations
+    mountPath: /config/automations_mower.yaml
+    subPath: mower.yaml
   - name: ev-charger-package
     mountPath: /config/package_ev_charger.yaml
     subPath: ev_charger.yaml
