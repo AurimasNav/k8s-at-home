@@ -156,8 +156,9 @@ Regardless, before migrating anything:
 3. EEE already defaults off in the FreeBSD `igc` driver
 4. If it still misbehaves: disable checksum/TSO/LRO offload, set `dev.igc.N.fc=0` per port
 
-Do this *before* the migration. There is already one intermittent-network mystery in the house (the
-Flexit at `192.168.1.134`) and a flaky NIC underneath it would ruin that diagnosis.
+Do this *before* the migration: a flaky NIC looks exactly like a device dropping off the network. The
+Flexit dropouts turned out to be a DHCP address change (`.134` → `.139`, found 2026-09-28), and link
+flaps underneath would have made that much harder to pin down.
 
 ### Migrate flat first; VLANs are a separate, later decision
 
