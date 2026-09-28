@@ -91,6 +91,16 @@ data:
     binary_sensor.byd_atto_2_plug
     # weather
     weather.forecast_home
+    # shopping list
+    todo.shopping_list
+    # media players (playback and volume)
+    media_player.living_room
+    media_player.denon
+    media_player.denon_2
+    media_player.living_room_lg_oled83g51lw
+    media_player.lg_webos_tv_oled83g51lw
+    media_player.shield
+    media_player.shield_2
     # lights (on/off/brightness)
     light.aqara_smart_wall_switch_light_1
     light.aqara_smart_wall_switch_light_2
