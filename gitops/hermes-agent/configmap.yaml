@@ -7,6 +7,7 @@ data:
   HERMES_DASHBOARD: "1"
   # loopback only, reachable solely through the oauth2-proxy sidecar
   HERMES_DASHBOARD_HOST: "127.0.0.1"
+  TELEGRAM_REQUIRE_MENTION: "true"
 ---
 apiVersion: v1
 kind: ConfigMap
