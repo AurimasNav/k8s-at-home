@@ -14,12 +14,12 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pymammotion.data.model.hash_list import Plan
 from pymammotion.data.model.pool_state import PoolPlan
-from pymammotion.transport.base import TransportType
+from pymammotion.device.remote_drive import RemoteDrivePhase
 from pymammotion.utility.constant import WorkMode
 from pymammotion.utility.device_type import DeviceType
 
 from . import MammotionConfigEntry
-from .const import CONF_MOVEMENT_USE_WIFI, DOMAIN
+from .const import DOMAIN
 from .coordinator import (
     MammotionBaseUpdateCoordinator,
     MammotionReportUpdateCoordinator,
@@ -28,6 +28,8 @@ from .coordinator import (
 from .entity import (
     MammotionBaseEntity,
     MammotionBaseSpinoEntity,
+    async_add_when_supported,
+    invalidate_cached_name,
     supports_no_area_work,
 )
 
@@ -89,15 +91,27 @@ SPINO_BUTTON_SENSORS: tuple[MammotionSpinoButtonEntityDescription, ...] = (
 )
 
 
-def _nudge_available(coordinator: MammotionBaseUpdateCoordinator[Any]) -> bool:
-    """Return True when movement via BLE or Wi-Fi is possible."""
-    if coordinator.config_entry.options.get(CONF_MOVEMENT_USE_WIFI, False):
-        return True
-    handle = coordinator.manager.mower(coordinator.device_name)
-    if handle is None:
-        return False
-    ble = handle.get_transport(TransportType.BLE)
-    return ble is not None and ble.is_usable
+def _nudge_available(
+    command: str,
+) -> Callable[[MammotionBaseUpdateCoordinator[Any]], bool]:
+    """Return an ``available_fn`` for the nudge that sends *command*."""
+    return lambda coordinator: coordinator.can_move(command)
+
+
+BUTTON_REMOTE_DRIVE: tuple[MammotionButtonSensorEntityDescription, ...] = (
+    MammotionButtonSensorEntityDescription(
+        key="confirm_remote_drive",
+        press_fn=lambda coordinator: coordinator.async_confirm_remote_drive(),
+        available_fn=lambda coordinator: (
+            coordinator.remote_drive_phase is RemoteDrivePhase.SAFETY_NOTICE
+        ),
+    ),
+    MammotionButtonSensorEntityDescription(
+        key="acknowledge_remote_drive_fence",
+        press_fn=lambda coordinator: coordinator.async_acknowledge_remote_drive_fence(),
+        available_fn=lambda coordinator: coordinator.remote_drive_fence_paused,
+    ),
+)
 
 
 #: The two states the app's DropMowHandler accepts a map-free mow in.
@@ -125,6 +139,33 @@ BUTTON_DROPMOW: tuple[MammotionButtonSensorEntityDescription, ...] = (
 )
 
 
+#: The app's home start flow refuses "continue last job" below this charge.
+_CONTINUE_MIN_BATTERY = 30
+
+
+def _can_continue_last_job(coordinator: MammotionBaseUpdateCoordinator[Any]) -> bool:
+    """Whether the mower meets the app's local preconditions: standby, mapped, charged."""
+    data = coordinator.data
+    if data is None:
+        return False
+    locations = data.report_data.locations
+    return (
+        data.report_data.dev.sys_status == WorkMode.MODE_READY
+        and bool(locations)
+        and locations[0].bol_hash > 1
+        and data.report_data.dev.battery_val >= _CONTINUE_MIN_BATTERY
+    )
+
+
+BUTTON_CONTINUE_LAST_JOB: tuple[MammotionButtonSensorEntityDescription, ...] = (
+    MammotionButtonSensorEntityDescription(
+        key="continue_last_job",
+        press_fn=lambda coordinator: coordinator.async_continue_last_job(),
+        available_fn=_can_continue_last_job,
+    ),
+)
+
+
 BUTTON_SENSORS: tuple[MammotionButtonSensorEntityDescription, ...] = (
     MammotionButtonSensorEntityDescription(
         key="start_map_sync",
@@ -132,13 +173,13 @@ BUTTON_SENSORS: tuple[MammotionButtonSensorEntityDescription, ...] = (
         entity_category=EntityCategory.CONFIG,
     ),
     MammotionButtonSensorEntityDescription(
-        key="start_schedule_sync",
-        press_fn=lambda coordinator: coordinator.async_sync_schedule(),
+        key="start_task_sync",
+        press_fn=lambda coordinator: coordinator.async_sync_tasks(),
         entity_category=EntityCategory.CONFIG,
     ),
     MammotionButtonSensorEntityDescription(
         key="refresh_status",
-        press_fn=lambda coordinator: coordinator.async_ensure_fresh_state(),
+        press_fn=lambda coordinator: coordinator.async_refresh_status(),
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     MammotionButtonSensorEntityDescription(
@@ -152,35 +193,23 @@ BUTTON_SENSORS: tuple[MammotionButtonSensorEntityDescription, ...] = (
     ),
     MammotionButtonSensorEntityDescription(
         key="emergency_nudge_forward",
-        press_fn=lambda coordinator: coordinator.async_move_forward(
-            0.4,
-            coordinator.config_entry.options.get(CONF_MOVEMENT_USE_WIFI, False),
-        ),
-        available_fn=_nudge_available,
+        press_fn=lambda coordinator: coordinator.async_move_forward(0.4),
+        available_fn=_nudge_available("move_forward"),
     ),
     MammotionButtonSensorEntityDescription(
         key="emergency_nudge_left",
-        press_fn=lambda coordinator: coordinator.async_move_left(
-            0.4,
-            coordinator.config_entry.options.get(CONF_MOVEMENT_USE_WIFI, False),
-        ),
-        available_fn=_nudge_available,
+        press_fn=lambda coordinator: coordinator.async_move_left(0.4),
+        available_fn=_nudge_available("move_left"),
     ),
     MammotionButtonSensorEntityDescription(
         key="emergency_nudge_right",
-        press_fn=lambda coordinator: coordinator.async_move_right(
-            0.4,
-            coordinator.config_entry.options.get(CONF_MOVEMENT_USE_WIFI, False),
-        ),
-        available_fn=_nudge_available,
+        press_fn=lambda coordinator: coordinator.async_move_right(0.4),
+        available_fn=_nudge_available("move_right"),
     ),
     MammotionButtonSensorEntityDescription(
         key="emergency_nudge_back",
-        press_fn=lambda coordinator: coordinator.async_move_back(
-            0.4,
-            coordinator.config_entry.options.get(CONF_MOVEMENT_USE_WIFI, False),
-        ),
-        available_fn=_nudge_available,
+        press_fn=lambda coordinator: coordinator.async_move_back(0.4),
+        available_fn=_nudge_available("move_back"),
     ),
     MammotionButtonSensorEntityDescription(
         key="cancel_task",
@@ -215,6 +244,7 @@ async def async_setup_entry(
         task_entities_by_id: dict[str, MammotionTaskButtonSensorEntity] = {}
 
         coordinator = mower.reporting_coordinator
+        _async_migrate_task_sync_unique_id(hass, coordinator)
 
         update_tasks = partial(
             async_add_task_entities,
@@ -240,6 +270,25 @@ async def async_setup_entry(
                 )
                 for entity_description in BUTTON_DROPMOW
             )
+
+        if DeviceType.supports_continue_last_job(
+            mower.device.device_name, product_key=mower.device.product_key
+        ):
+            async_add_entities(
+                MammotionButtonSensorEntity(
+                    mower.reporting_coordinator, entity_description
+                )
+                for entity_description in BUTTON_CONTINUE_LAST_JOB
+            )
+
+        async_add_when_supported(
+            entry,
+            coordinator,
+            supported=coordinator.supports_remote_drive,
+            descriptions=BUTTON_REMOTE_DRIVE,
+            build=partial(MammotionButtonSensorEntity, coordinator),
+            async_add_entities=async_add_entities,
+        )
 
         if not DeviceType.is_luba1(mower.device.device_name):
             async_add_entities(
@@ -330,6 +379,12 @@ class MammotionTaskButtonSensorEntity(MammotionBaseEntity, ButtonEntity):
         plan = self._plan()
         if plan is not None:
             attributes["enabled"] = plan.is_enabled()
+            running = cast(
+                MammotionReportUpdateCoordinator, self.coordinator
+            ).running_plan
+            attributes["running"] = running is not None and running.plan_id == (
+                self.entity_description.plan_id
+            )
         return attributes
 
     def _plan(self) -> Plan | None:
@@ -346,8 +401,15 @@ class MammotionTaskButtonSensorEntity(MammotionBaseEntity, ButtonEntity):
             name=new_name,
             translation_placeholders={"name": new_name},
         )
-        if self.hass is not None:
-            self.async_write_ha_state()
+        # Entity.name is a cached_property cleared only by assigning _attr_name.
+        self._attr_name = new_name
+        if self.hass is None:
+            return
+        if self.registry_entry is not None:
+            er.async_get(self.hass).async_update_entity(
+                self.entity_id, original_name=new_name
+            )
+        self.async_write_ha_state()
 
     async def async_press(self) -> None:
         """Trigger a one-time task."""
@@ -431,7 +493,31 @@ def async_add_task_entities(
         async_add_entities(button_entities)
 
 
-def _task_unique_id(coordinator: MammotionBaseUpdateCoordinator[Any], task_id: str) -> str:
+@callback
+def _async_migrate_task_sync_unique_id(
+    hass: HomeAssistant, coordinator: MammotionReportUpdateCoordinator
+) -> None:
+    """Move the "sync schedules" button's registry entry to its "sync tasks" key.
+
+    The unique_id embeds the key, so renaming it would otherwise orphan the old
+    entity and create a new one with a different entity_id.
+    """
+    registry = er.async_get(hass)
+    old_id = f"{coordinator.unique_name}_start_schedule_sync"
+    new_id = f"{coordinator.unique_name}_start_task_sync"
+    if (
+        entity_id := registry.async_get_entity_id(BUTTON_DOMAIN, DOMAIN, old_id)
+    ) is None:
+        return
+    if registry.async_get_entity_id(BUTTON_DOMAIN, DOMAIN, new_id) is None:
+        registry.async_update_entity(entity_id, new_unique_id=new_id)
+    else:
+        registry.async_remove(entity_id)
+
+
+def _task_unique_id(
+    coordinator: MammotionBaseUpdateCoordinator[Any], task_id: str
+) -> str:
     """Registry unique_id for a task button, matching MammotionBaseEntity."""
     return f"{coordinator.unique_name}_{task_id}"
 
@@ -529,6 +615,7 @@ class MammotionSpinoTaskButtonEntity(MammotionBaseSpinoEntity, ButtonEntity):
             name=new_name,
             translation_placeholders={"name": new_name},
         )
+        invalidate_cached_name(self)
         if self.hass is not None:
             self.async_write_ha_state()
 

@@ -4,21 +4,21 @@
       "already_configured": "Das Gerät ist bereits eingerichtet.",
       "already_in_progress": "Der Einrichtungsprozess läuft bereits.",
       "no_devices_found": "Es wurden keine Geräte gefunden.",
-      "no_devices_found_in_account": "Es wurden keine Geräte in ihrem Mammotion-Konto gefunden.",
-      "bluetooth_and_account_mismatch": "Es wurde kein Bluetooth-Gerät in ihrem Mammotion-Konto gefunden.",
+      "no_devices_found_in_account": "Es wurden keine Geräte in Ihrem Mammotion-Konto gefunden.",
+      "bluetooth_and_account_mismatch": "Es wurde kein Bluetooth-Gerät in Ihrem Mammotion-Konto gefunden.",
       "no_longer_present": "Das Gerät ist nicht länger verfügbar.",
       "not_supported": "Das Gerät wird nicht unterstützt.",
       "reconfigure_successful": "Die Neueinrichtung war erfolgreich.",
       "merged_into_existing_account": "Dieses Konto enthält bereits einen Eintrag. Die Bluetooth-Geräte wurden darin zusammengeführt und dieser Eintrag wurde entfernt.",
       "api_limit_exceeded": "Das API-Anfragelimit wurde überschritten. Bitte versuchen Sie es später erneut.",
-      "account_in_use": "Ihr Mammotion-Konto ist bereits in einer anderen Sitzung aktiv. Melden Sie sich in der Mammotion-App ab und versuchen Sie es erneut.",
       "reauth_successful": "Die erneute Authentifizierung war erfolgreich.",
       "wrong_account": "Diese Anmeldedaten gehören zu einem anderen Mammotion-Konto. Melden Sie sich bitte erneut mit dem Konto an, mit dem dieser Eintrag eingerichtet wurde."
     },
     "error": {
       "login_failed": "Anmeldung fehlgeschlagen. Überprüfen Sie die E-Mail-Adresse und das Passwort Ihres Kontos und versuchen Sie es erneut.",
       "cannot_connect": "Es konnte keine Verbindung zur Mammotion-Cloud hergestellt werden. Überprüfen Sie Ihre Anmeldedaten sowie Netzwerkverbindung und versuchen Sie es erneut.",
-      "no_account_no_ble": "Keine Kontodaten eingegeben und kein Bluetooth-Gerät gefunden. Geben Sie Ihre Mammotion-Anmeldedaten ein oder richten Sie ein Bluetooth-Gerät ein."
+      "no_account_no_ble": "Es wurden keine Kontodaten eingegeben und kein Bluetooth-Gerät gefunden. Geben Sie Ihre Mammotion-Anmeldedaten ein oder richten Sie ein Bluetooth-Gerät ein.",
+      "credentials_required": "Geben Sie Ihre Mammotion-ID oder E-Mail-Adresse und das dazugehörige Kennwort ein"
     },
     "flow_title": "{name}",
     "step": {
@@ -28,7 +28,8 @@
       "reconfigure": {
         "data": {
           "account_name": "Mammotion-ID oder E-Mail-Adresse",
-          "password": "Mammotion-Kennwort"
+          "password": "Mammotion-Kennwort",
+          "remove_account": "Mammotion-Konto entfernen und nur Bluetooth verwenden"
         }
       },
       "user": {
@@ -63,12 +64,30 @@
           "movement_use_wifi": "Bewegungsbefehle über WLAN senden",
           "mow_path_fetch_enabled": "Mähpfad-Abruf aktivieren (Cloud)",
           "full_map_fetch_enabled": "Vollständigen Kartenabruf aktivieren (Cloud) — wenn aus, werden nur Bereichsnamen abgerufen",
-          "notify": "Dauerhafte Benachrichtigungen anzeigen für"
+          "notify": "Dauerhafte Benachrichtigungen anzeigen für:"
+        },
+        "data_description": {
+          "movement_use_wifi": "Sendet den bisherigen Bewegungsbefehl über WLAN, anstatt die Cloud-Fernsteuerung zu verwenden. Ohne diese Funktion (ab Firmware 1.30.31.19 auf LUBA 2, LUBA 2X, YUKA, LUBA mini und YUKA mini / ab 2.3.31.69 auf LUBA 3, LUBA mini 2 und YUKA mini 2 sowie auf neueren Modellen, für die der Mammotion-Server die Unterstützung von „Remote Drive“ meldet) funktionieren die Schub-Tasten und Bewegungsaktionen über die Cloud nur, solange „Cloud Remote Drive“ aktiviert und bestätigt ist. Aktivieren Sie diese Option, um den Legacy-Befehl auf jeder Firmware zu verwenden, beispielsweise um beide auf einem LUBA 3 zu vergleichen. Eine verbundene Bluetooth-Verbindung wird weiterhin vorrangig genutzt.",
+          "notify": "Selbsttest-Benachrichtigungen sind standardmäßig aktiviert, die anderen deaktiviert. Jede Benachrichtigung löst außerdem die Benachrichtigungs-Event-Entität des Mähroboters sowie ein „mammotion_event“-Bus-Ereignis aus, auf das Automationen stattdessen zurückgreifen können."
         }
       }
     }
   },
   "entity": {
+    "camera": {
+      "webrtc_camera": {
+        "name": "Linke Kamera"
+      },
+      "webrtc_camera_vision": {
+        "name": "Vision-Kamera"
+      },
+      "webrtc_camera_right": {
+        "name": "Rechte Kamera"
+      },
+      "webrtc_camera_rear": {
+        "name": "Hintere Kamera"
+      }
+    },
     "sensor": {
       "error_1_message": {
         "name": "Letzte Fehlermeldung"
@@ -86,7 +105,13 @@
         "name": "Signalqualität (RSSI) Bluetooth"
       },
       "camera_brightness": {
-        "name": "Kamerahelligkeit"
+        "name": "Kamerahelligkeit",
+        "state": {
+          "dark": "Dunkel",
+          "good": "Gut",
+          "intense": "Intensiv",
+          "unknown": "Unbekannt"
+        }
       },
       "wifi_rssi": {
         "name": "Signalqualität (RSSI) WLAN"
@@ -104,10 +129,10 @@
         "name": "Schnitthöhe"
       },
       "area": {
-        "name": "Bereich"
+        "name": "Aufgabenfläche"
       },
       "mowing_speed": {
-        "name": "Mähgeschwindigkeit"
+        "name": "Aktuelle Mähgeschwindigkeit"
       },
       "progress": {
         "name": "Aufgabenfortschritt"
@@ -158,6 +183,27 @@
           "SIGNAL_UNKNOWN": "Unbekannt"
         }
       },
+      "lidar_positioning_status": {
+        "name": "Status LiDAR-Positionsbestimmung",
+        "state": {
+          "good": "Gut",
+          "none": "Keine"
+        }
+      },
+      "fused_localization_status": {
+        "name": "Status kombinierte Positionsbestimmung",
+        "state": {
+          "unknown": "Unbekannt",
+          "no_pose": "Keine Position",
+          "rtk_fixed": "RTK fixiert",
+          "rtk_extended_vision": "RTK erweitert",
+          "vision_extended": "Visuell erweitert",
+          "vision_extended_failed": "Visuelle Erweiterung fehlgeschlagen"
+        }
+      },
+      "vision_survival": {
+        "name": "3D-Vision"
+      },
       "activity_mode": {
         "name": "Status",
         "state": {
@@ -165,7 +211,7 @@
           "MODE_ONLINE": "Online",
           "MODE_OFFLINE": "Offline",
           "MODE_DISABLE": "Deaktiviert",
-          "MODE_INITIALIZATION": "Initialisiere",
+          "MODE_INITIALIZATION": "Initialisiert",
           "MODE_READY": "Bereit",
           "MODE_WORKING": "Arbeitet",
           "MODE_RETURNING": "Fährt zur Ladestation",
@@ -182,7 +228,7 @@
           "MODE_ERASER_DRAW": "Erstellt Muster",
           "MODE_EDIT_BOUNDARY": "Bearbeitet Begrenzung",
           "MODE_LOCATION_ERROR": "Fehler bei Standortbestimmung",
-          "MODE_BOUNDARY_JUMP": "Begrennzung überschritten",
+          "MODE_BOUNDARY_JUMP": "Begrenzung überschritten",
           "MODE_CHARGING_PAUSE": "Laden pausiert",
           "MODE_POWER_OFF": "Ausschalten"
         }
@@ -212,7 +258,19 @@
           "WAITING": "Warten",
           "MOWING": "Mähen",
           "COMPLETE": "Abgeschlossen",
-          "ABORTED": "Abgebrochen"
+          "ABORTED": "Abgebrochen",
+          "UNKNOWN": "Unbekannt"
+        }
+      },
+      "task_area_status_short": {
+        "name": "Aufgabe {name}",
+        "state": {
+          "NOT_STARTED": "Nicht gestartet",
+          "WAITING": "Warten",
+          "MOWING": "Mähen",
+          "COMPLETE": "Abgeschlossen",
+          "ABORTED": "Abgebrochen",
+          "UNKNOWN": "Unbekannt"
         }
       },
       "maintenance_distance": {
@@ -238,10 +296,10 @@
         "name": "LoRa-Version"
       },
       "rtk_latitude": {
-        "name": "Breitengrad"
+        "name": "RTK Breitengrad"
       },
       "rtk_longitude": {
-        "name": "Längengrad"
+        "name": "RTK Längengrad"
       },
       "rtk_wifi_rssi": {
         "name": "Signalqualität (RSSI) WLAN"
@@ -290,7 +348,7 @@
         "state": {
           "UNKNOWN": "Unbekannt",
           "OFF": "Aus",
-          "AUTO": "Alles",
+          "AUTO": "Boden/Wand",
           "FLOOR": "Boden",
           "WALL": "Wand",
           "ECO": "Eco",
@@ -352,19 +410,88 @@
           "2": "Schwach",
           "3": "Keine"
         }
+      },
+      "self_check": {
+        "name": "Selbsttest",
+        "state": {
+          "normal": "OK",
+          "emergency_stop": "Not-Aus aktiviert",
+          "stop_button": "STOP-Taste gedrückt",
+          "safety_key_missing": "Sicherheitsschlüssel nicht eingesteckt",
+          "lifted": "Angehoben",
+          "tilted": "Geneigt",
+          "tipped_over": "Umgekippt",
+          "bumper_missing": "Stoßfänger nicht montiert",
+          "rain": "Regen erkannt",
+          "low_battery": "Akku schwach",
+          "non_working_hours": "Außerhalb der Arbeitszeit",
+          "rtk_station_moved": "RTK-Station verschoben",
+          "outside_task_area": "Außerhalb des Aufgabenbereichs",
+          "wheel_motor_error": "Fehler am Radnabenmotor",
+          "blade_motor_overheated": "Mähwerksmotor zu heiß",
+          "dock_moved": "Ladestation verschoben",
+          "no_task_area": "Kein Aufgabenbereich",
+          "night_protection": "Nachtschutz",
+          "rain_protection": "Regenschutz aktiv",
+          "rtk_not_ready": "RTK-Station nicht bereit",
+          "weak_satellite_signal": "Schwaches Satellitensignal",
+          "positioning_failure": "Fehler im Positionierungssystem",
+          "inavi_unavailable": "iNavi-Dienst nicht verfügbar",
+          "weak_rtk_signal": "Schwaches RTK-Signal",
+          "other": "Sonstiges"
+        }
+      },
+      "running_task": {
+        "name": "{name}",
+        "state": {
+          "mowing": "Mäht",
+          "paused": "Pausiert",
+          "returning": "Kehrt zur Ladestation zurück",
+          "charging_pause": "Lädt, Aufgabe wird danach fortgesetzt"
+        }
+      },
+      "running_task_unnamed": {
+        "name": "Aufgabe {n}",
+        "state": {
+          "mowing": "Mäht",
+          "paused": "Pausiert",
+          "returning": "Kehrt zur Ladestation zurück",
+          "charging_pause": "Lädt, Aufgabe wird danach fortgesetzt"
+        }
+      },
+      "remote_drive_state": {
+        "name": "Fernsteuerungsstatus",
+        "state": {
+          "idle": "Inaktiv",
+          "requesting_token": "Berechtigung wird angefordert",
+          "safety_notice": "Wartet auf Sicherheitsbestätigung",
+          "active": "Fährt",
+          "exiting": "Wird beendet"
+        },
+        "state_attributes": {
+          "last_event": {
+            "name": "Letztes Ereignis"
+          },
+          "last_event_detail": {
+            "name": "Details zum letzten Ereignis"
+          }
+        }
       }
     },
     "binary_sensor": {
       "spino_charging": {
         "name": "Lädt"
+      },
+      "rain_detected": {
+        "name": "Regen erkannt"
       }
     },
     "button": {
       "start_map_sync": {
         "name": "Synchronisiere Karte"
       },
-      "start_schedule_sync": {
-        "name": "Synchronisiere Zeitpläne"
+      "start_task_sync": {
+        "name": "Synchronisiere Aufgaben"
       },
       "resync_rtk_dock": {
         "name": "Synchronisiere RTK und Ladestation"
@@ -374,6 +501,9 @@
       },
       "start_dropmow": {
         "name": "DropMow starten"
+      },
+      "continue_last_job": {
+        "name": "Letzte Aufgabe fortsetzen"
       },
       "emergency_nudge_forward": {
         "name": "Notfall-Schub vorwärts"
@@ -410,11 +540,20 @@
       },
       "spino_refresh_status": {
         "name": "Status aktualisieren"
+      },
+      "confirm_remote_drive": {
+        "name": "Fernsteuerung bestätigen"
+      },
+      "acknowledge_remote_drive_fence": {
+        "name": "Grenzwarnung bestätigen"
       }
     },
     "switch": {
       "area": {
         "name": "Bereich {name}"
+      },
+      "area_plain": {
+        "name": "{name}"
       },
       "blade_status": {
         "name": "Mähwerk"
@@ -428,17 +567,20 @@
       "is_edge": {
         "name": "Kanten schneiden"
       },
-      "rain_tactics": {
-        "name": "Regenerkennung (beim Mähen)"
-      },
       "auto_change_direction": {
         "name": "Mährichtung automatisch umkehren"
       },
       "rain_detection": {
-        "name": "Regenerkennung (Mähroboter)"
+        "name": "Regenerkennung"
       },
       "smart_charge": {
         "name": "Intelligentes Laden"
+      },
+      "smart_recharge_level": {
+        "name": "Intelligenter Akkustand zum Laden"
+      },
+      "smart_resume_level": {
+        "name": "Intelligenter Akkustand zum Fortsetzen"
       },
       "side_led": {
         "name": "LED-Seitenlicht"
@@ -447,7 +589,7 @@
         "name": "Zuerst die Eingrenzung"
       },
       "schedule_updates": {
-        "name": "Automatische Aktualisierungen"
+        "name": "Daten automatisch aktualisieren"
       },
       "bluetooth_enabled": {
         "name": "Bluetooth"
@@ -465,13 +607,13 @@
         "name": "Sprache"
       },
       "manual_grass_collection": {
-        "name": "Manuelles Grasaufsammeln"
+        "name": "Manuelles Grasschnitt-Sammeln"
       },
       "manual_grass_dump": {
-        "name": "Manuelles Grasentleeren"
+        "name": "Manuelles Grasschnitt-Entleeren"
       },
       "spino_buzzer": {
-        "name": "Summer"
+        "name": "Signalton"
       },
       "spino_turbo_clean": {
         "name": "Turbo-Reinigung"
@@ -480,7 +622,10 @@
         "name": "Plattformreinigung"
       },
       "spino_waterline_parking": {
-        "name": "Wasserlinienparken"
+        "name": "Wasserlinien-Parken"
+      },
+      "remote_drive": {
+        "name": "Cloud-Fernsteuerung"
       }
     },
     "select": {
@@ -539,7 +684,7 @@
         }
       },
       "traversal_mode": {
-        "name": "Navigationmodus zur Ladestation",
+        "name": "Navigationsmodus zur Ladestation",
         "state": {
           "direct": "Direkt",
           "follow_perimeter": "Der Eingrenzung folgend"
@@ -557,7 +702,7 @@
         "state": {
           "off": "Aus",
           "stop_mowing": "Mähen stoppen",
-          "low_speed_mowing": "Langsamfahrt"
+          "low_speed_mowing": "Langsam fahren"
         }
       },
       "cutter_mode": {
@@ -580,7 +725,7 @@
         "state": {
           "UNKNOWN": "Unbekannt",
           "OFF": "Aus",
-          "AUTO": "Alles",
+          "AUTO": "Boden/Wand",
           "FLOOR": "Boden",
           "WALL": "Wand",
           "ECO": "Eco",
@@ -591,9 +736,9 @@
       "spino_wall_material": {
         "name": "Wandmaterial",
         "state": {
-          "GLASS": "Glas",
+          "GLASS": "Fiberglas",
           "CERAMICS": "Fliese",
-          "SAND_STONE": "Aggregat",
+          "SAND_STONE": "Kiesel/Stein/Beton",
           "VINYL": "Vinyl"
         }
       },
@@ -605,6 +750,34 @@
           "CURVE_SIMPLE": "Gewölbt (einfach)",
           "CURVE_COMPLEX": "Gewölbt (komplex)"
         }
+      },
+      "rain_protection_mode": {
+        "name": "Regenschutz",
+        "state": {
+          "off": "Aus",
+          "smart": "Intelligenter Modus",
+          "sensor": "Sensormodus"
+        }
+      },
+      "rain_protection_delay": {
+        "name": "Verzögerungszeit des Regenschutzes",
+        "state": {
+          "0": "Keine Verzögerung",
+          "1": "1 Std.",
+          "2": "2 Std.",
+          "3": "3 Std.",
+          "4": "4 Std.",
+          "5": "5 Std.",
+          "6": "6 Std.",
+          "7": "7 Std.",
+          "8": "8 Std.",
+          "9": "9 Std.",
+          "10": "10 Std.",
+          "11": "11 Std.",
+          "12": "12 Std.",
+          "24": "24 Std.",
+          "48": "48 Std."
+        }
       }
     },
     "number": {
@@ -613,6 +786,15 @@
       },
       "charge_limit": {
         "name": "Ladelimit"
+      },
+      "recharge_level": {
+        "name": "Zum Laden zurückkehren bei"
+      },
+      "resume_level": {
+        "name": "Mähen fortsetzen bei"
+      },
+      "ride_boundary_distance": {
+        "name": "Abstand der Eingrenzungsfahrt"
       },
       "start_progress": {
         "name": "Fortschritt beim Start"
@@ -656,7 +838,7 @@
             "state": {
               "device_notification_event": "Benachrichtigung",
               "device_information_event": "Information",
-              "device_warning_code_event": "Warncodes",
+              "device_warning_code_event": "Warncode",
               "device_warning_event": "Warnung",
               "device_biz_req_event": "Geschäftsanfrage",
               "device_log_progress_event": "Fortschritt des Protokoll-Uploads",
@@ -691,12 +873,6 @@
         "3": "Nur Eingrenzung"
       }
     },
-    "rain_tactics": {
-      "options": {
-        "0": "Aus",
-        "1": "Ein"
-      }
-    },
     "toward_mode": {
       "options": {
         "0": "Optimaler Winkel",
@@ -725,7 +901,8 @@
     "notify": {
       "options": {
         "warnings": "Warnungen und Fehlercodes",
-        "notifications": "Gerätebenachrichtigungen und Informationen"
+        "notifications": "Gerätebenachrichtigungen und Informationen",
+        "self_check": "Selbsttest: Warum kann der Mähroboter nicht starten?"
       }
     }
   },
@@ -784,11 +961,7 @@
         },
         "channel_width": {
           "name": "Schnittbahnenabstand",
-          "description": "Gibt an, welcher Abstand zwischen den einzelnen Schnittbahnen eingehalten ist. (in cm)."
-        },
-        "rain_tactics": {
-          "name": "Regenerkennung",
-          "description": "Stoppt das Mähen, wenn Regen erkannt wird."
+          "description": "Gibt an, welcher Abstand zwischen den einzelnen Schnittbahnen eingestellt ist. (in cm)"
         },
         "blade_height": {
           "name": "Schnitthöhe",
@@ -811,62 +984,66 @@
           "description": "Gibt an, wie viele Runden entlang der Eingrenzung des Mähbereichs durchgeführt werden."
         },
         "obstacle_laps": {
-          "name": "Rundenanzahl für No-Go-Zonen",
+          "name": "Umrundungsanzahl für No-Go-Zonen",
           "description": "Gibt an, wie viele Runden entlang der No-Go-Zonen durchgeführt werden."
         },
         "start_progress": {
           "name": "Fortschritt beim Start",
           "description": "Gibt an, welcher prozentuale Fortschritt beim Start einer Aufgabe angenommen wird."
         },
+        "auto_change_direction": {
+          "name": "Mährichtung automatisch umkehren",
+          "description": "Kehrt die Mährichtung zwischen den Durchläufen um: 0 = aus, 1 = ein. Wird nur bei Modellen und Firmware verwendet, die es unterstützen. Ohne Angabe gilt die Einstellung des Schalters."
+        },
+        "ride_boundary_distance": {
+          "name": "Abstand der Eingrenzungsfahrt",
+          "description": "Gibt an, wie weit der Mähroboter entlang der Eingrenzung nach außen fährt. (von 0 bis 1) Wird nur bei unterstützten Modellen und bei aktivierten Eingrenzungsrunden verwendet."
+        },
         "areas": {
-          "name": "Bereiche",
+          "name": "Bereichsauswahl",
           "description": "Gibt an, welche zu mähenden Bereiche ausgewählt werden können."
         },
         "plan_only": {
-          "name": "Nur Mähplan",
+          "name": "Nur planen",
           "description": "Erstellt einen Mähplan, ohne die Aufgabe zu starten."
         }
       }
     },
     "modify_running_job": {
-      "name": "Laufenden Auftrag ändern",
-      "description": "Ändert Einstellungen des gerade laufenden Auftrags, ohne ihn neu zu starten. Nur auf Luba 2 und neuer während eines laufenden Auftrags verfügbar.",
+      "name": "Laufenden Aufgabe ändern",
+      "description": "Ändert Einstellungen der gerade laufenden Aufgabe des Mähroboters, ohne diese neu zu starten. Nur auf Luba 2 und neuer verfügbar während eine laufenden Aufgabe ausgeführt wird.",
       "fields": {
         "blade_height": {
           "name": "Schnitthöhe",
-          "description": "Schnitthöhe"
+          "description": "Gibt an, welche Schnitthöhe eingestellt ist."
         },
         "speed": {
           "name": "Arbeitsgeschwindigkeit",
-          "description": "Arbeitsgeschwindigkeit"
+          "description": "Gibt an, welche Arbeitsgeschwindigkeit eingestellt ist."
         },
         "ultra_wave": {
           "name": "Hinderniserkennung",
-          "description": "Hinderniserkennung"
+          "description": "Gibt an, welcher Modus der Hinderniserkennung beim Mähen verwendet wird."
         },
         "channel_width": {
-          "name": "Bahnabstand",
-          "description": "Bahnabstand"
+          "name": "Schnittbahnenabstand",
+          "description": "Gibt an, welcher Abstand zwischen den einzelnen Schnittbahnen eingestellt ist. (in cm)"
         },
         "channel_mode": {
-          "name": "Routenmodus",
-          "description": "Routenmodus"
+          "name": "Schnittbahnenmodus",
+          "description": "Gibt an, welcher Modus für die Schnittbahnennavigation verwendet wird. (Zick-Zack, Schachbrett, Adaptives Zick-Zack oder nur Eingrenzung)"
         },
         "obstacle_laps": {
-          "name": "Runden in Sperrzone",
-          "description": "Runden in Sperrzone"
-        },
-        "rain_tactics": {
-          "name": "Regenstrategie",
-          "description": "Regenstrategie"
+          "name": "Umrundungsanzahl für No-Go-Zonen",
+          "description": "Gibt an, wie viele Runden entlang der No-Go-Zonen durchgeführt werden."
         },
         "auto_change_direction": {
-          "name": "Richtung automatisch wechseln",
-          "description": "Richtung automatisch wechseln"
+          "name": "Mährichtung automatisch umkehren",
+          "description": "Mährichtung automatisch umkehren — kehrt die Mährichtung zwischen den Durchläufen um, damit sich das Gras weniger niederlegt."
         },
         "start_progress": {
-          "name": "Fortschritt",
-          "description": "Fortschritt"
+          "name": "Fortschritt beim Start",
+          "description": "Gibt an, welcher prozentuale Fortschritt beim Start einer Aufgabe angenommen wird."
         }
       }
     },
@@ -909,12 +1086,12 @@
       }
     },
     "set_blade_height": {
-      "name": "Klingenhöhe festlegen",
-      "description": "Sendet eine Klingenhöhe direkt an den Schneidmotor des Mähers.",
+      "name": "Mähwerkshöhe festlegen",
+      "description": "Legt die Schnitthöhe des Mähwerk fest.",
       "fields": {
         "height": {
           "name": "Höhe",
-          "description": "Klingenhöhe in Millimetern."
+          "description": "Mähwerkshöhe in Millimeter"
         }
       }
     },
@@ -923,43 +1100,33 @@
       "description": "Setzt den Betriebsstundenzähler für die Klingen zurück."
     },
     "start_dump_point_setup": {
-      "name": "Einrichtung der Entleerpunkte starten",
-      "description": "Versetzt den Mäher in den Einrichtungsmodus für Entleerpunkte, damit Punkte aufgezeichnet werden können."
+      "name": "Einrichtung der Entleerungsstellen starten",
+      "description": "Versetzt den Mähroboter in den Einrichtungsmodus für die Entleerungsstelle des Grasschnitts, damit selbige aufgezeichnet werden können."
     },
     "add_dump_point": {
-      "name": "Entleerpunkt hinzufügen",
-      "description": "Zeichnet an der aktuellen Position des Mähers einen Entleerpunkt auf."
+      "name": "Entleerungsstelle hinzufügen",
+      "description": "Speichert eine Entleerungsstelle an der aktuellen Position des Mähroboters."
     },
     "undo_dump_point": {
-      "name": "Letzten Entleerpunkt rückgängig machen",
-      "description": "Verwirft den zuletzt aufgezeichneten Entleerpunkt."
+      "name": "Letzte Entleerungsstelle rückgängig machen",
+      "description": "Löscht die zuletzt aufgezeichnete Entleerungsstelle."
     },
     "finish_dump_point_setup": {
-      "name": "Einrichtung der Entleerpunkte abschließen",
-      "description": "Speichert die aufgezeichneten Entleerpunkte und verlässt den Einrichtungsmodus."
+      "name": "Einrichtung der Entleerungsstellen abschließen",
+      "description": "Speichert die aufgezeichneten Entleerungsstellen und verlässt den Einrichtungsmodus."
     },
     "finish_outside_dump_point": {
-      "name": "Entleerpunkt außerhalb des Bereichs abschließen",
-      "description": "Schließt die Einrichtung eines Entleerpunkts ab, der außerhalb des Mähbereichs aufgezeichnet wurde."
+      "name": "Entleerungsstelle außerhalb des Bereichs abschließen",
+      "description": "Schließt die Einrichtung eines Entleerungspunktes ab, der außerhalb des Mähbereichs festgelegt wurde."
     },
     "get_map_data": {
       "name": "Kartendaten abrufen",
-      "description": "Gibt die Karten-Rohdaten zur Verwendung mit der Mammotion-SVG-Karte zurück. (Bereiche, Bereichsnamen, SVG-Muster)",
-      "fields": {
-        "entity_id": {
-          "name": "Entität",
-          "description": "Eine beliebige Mammotion-Entität, die zum Gerät gehört."
-        }
-      }
+      "description": "Gibt die Karten-Rohdaten zur Verwendung mit der Mammotion-SVG-Karte zurück. (Bereiche, Bereichsnamen, SVG-Muster)"
     },
     "svg_add": {
       "name": "SVG-Kachel hinzufügen",
       "description": "Sendet eine neues SVG-Muster an die Karte des Gerätes. Gibt den geräteinternen Hash-Wert zurück.",
       "fields": {
-        "entity_id": {
-          "name": "Entität",
-          "description": "Eine beliebige Mammotion-Entität, die zum Gerät gehört."
-        },
         "area_hash": {
           "name": "Bereichs-Hash",
           "description": "Gibt den Hash-Wert des übergeordneten Mähbereichs an."
@@ -1002,10 +1169,6 @@
       "name": "SVG-Kachel aktualisieren",
       "description": "Ersetzt ein vorhandenes SVG-Muster auf der Karte des Gerätes. Verwende den von svg_add zurückgegebenen device_hash.",
       "fields": {
-        "entity_id": {
-          "name": "Entität",
-          "description": "Eine beliebige Mammotion-Entität, die zum Gerät gehört."
-        },
         "device_hash": {
           "name": "Geräte-Hash",
           "description": "Gibt den vom Gerät zugewiesener Hash-Wert an, als die Kachel erstmals hinzugefügt wurde."
@@ -1052,10 +1215,6 @@
       "name": "SVG-Kachel löschen",
       "description": "Entfernt eine SVG-Muster von der Karte des Gerätes anhand ihres geräteinternen Hash-Wertes.",
       "fields": {
-        "entity_id": {
-          "name": "Entität",
-          "description": "Eine beliebige Mammotion-Entität, die zum Gerät gehört."
-        },
         "device_hash": {
           "name": "Geräte-Hash",
           "description": "Gibt den vom Gerät zugewiesener Hash-Wert an, als die Kachel erstmals hinzugefügt wurde."
@@ -1102,7 +1261,7 @@
     },
     "edit_task": {
       "name": "Aufgabe bearbeiten",
-      "description": "Sie können beliebige Teilmengen der Felder eines Zeitplans bearbeiten. Nicht angegebene Felder behalten ihren gespeicherten Wert bei (Round-Trip vom Gerät). Felder, die ausschließlich für Mäh- oder Pollroboter gelten, werden jeweils einzeln beschrieben.",
+      "description": "Sie können beliebige Teilmengen der Felder eines Zeitplans bearbeiten. Nicht angegebene Felder behalten ihren gespeicherten Wert bei (Round-Trip vom Gerät). Felder, die ausschließlich für Mäh- oder Poolroboter gelten, werden jeweils einzeln beschrieben.",
       "fields": {
         "name": {
           "name": "Name",
@@ -1114,7 +1273,7 @@
         },
         "weeks": {
           "name": "Wochentage",
-          "description": "Eine Liste der Wochentage (0 = Sonntag … 6 = Samstag), an denen der Zeitplan gilt."
+          "description": "Gibt eine Liste der Wochentage (0 = Sonntag … 6 = Samstag) aus, an denen der Zeitplan gilt."
         },
         "start_time": {
           "name": "Startzeitpunkt",
@@ -1152,13 +1311,29 @@
           "name": "Kantenmodus",
           "description": "Nur Mähroboter: 0 = keine, 1 = einmal, 2 = zweimal"
         },
+        "ride_boundary_distance": {
+          "name": "Abstand der Eingrenzungsfahrt",
+          "description": "Gibt an, wie weit der Mähroboter entlang der Eingrenzung nach außen fährt. (von 0 bis 1) Wird nur bei unterstützten Modellen und bei aktivierten Eingrenzungsrunden verwendet."
+        },
+        "auto_change_direction": {
+          "name": "Mährichtung automatisch umkehren",
+          "description": "Mährichtung automatisch umkehren — kehrt die Mährichtung zwischen den Durchläufen um, damit sich das Gras weniger niederlegt: 0 = aus, 1 = ein. Nur bei Modellen und Firmware, die es unterstützen. Ohne Angabe bleibt die Einstellung des Zeitplans erhalten. (bei einem neuen Zeitplan aus)"
+        },
         "route_angle": {
           "name": "Mähpfadwinkel",
           "description": "Nur Mähroboter: Schnittmusterwinkel 0–179 Grad"
         },
+        "toward_mode": {
+          "name": "Schnittwinkelmodus",
+          "description": "Nur Mähroboter: wie der Mähpfadwinkel angewendet wird (0 = optimal, 1 = Norden, 2 = zufällig)."
+        },
+        "toward_included_angle": {
+          "name": "Kreuzungswinkel",
+          "description": "Nur Mähroboter: zweiter Winkel einer Schachbrettroute (in Grad)"
+        },
         "route_spacing": {
           "name": "Mähpfadabstand",
-          "description": "Nur Mähroboter: Abstand zwischen den Schnittbahnen in cm"
+          "description": "Nur Mähroboter: Abstand zwischen den Schnittbahnen (in cm)"
         },
         "zone_hashs": {
           "name": "Bereichshashes",
@@ -1234,9 +1409,25 @@
           "name": "Kantenmodus",
           "description": "Nur Mähroboter"
         },
+        "ride_boundary_distance": {
+          "name": "Abstand der Eingrenzungsfahrt",
+          "description": "Wie weit der Mähroboter entlang der Eingrenzung nach außen fährt. (von 0 bis 1) Wird nur bei unterstützten Modellen und bei aktivierten Eingrenzungsrunden verwendet."
+        },
+        "auto_change_direction": {
+          "name": "Mährichtung automatisch umkehren",
+          "description": "Mährichtung automatisch umkehren — kehrt die Mährichtung zwischen den Durchläufen um, damit sich das Gras weniger niederlegt: 0 = aus, 1 = ein. Nur bei Modellen und Firmware, die es unterstützen. Ohne Angabe bleibt die Einstellung des Zeitplans erhalten (bei einem neuen Zeitplan aus)."
+        },
         "route_angle": {
           "name": "Mähpfadwinkel",
           "description": "Nur Mähroboter"
+        },
+        "toward_mode": {
+          "name": "Schnittwinkelmodus",
+          "description": "Nur Mähroboter: wie der Mähpfadwinkel angewendet wird (0 = optimal, 1 = Norden, 2 = zufällig)."
+        },
+        "toward_included_angle": {
+          "name": "Kreuzungswinkel",
+          "description": "Nur Mähroboter: zweiter Winkel einer Schachbrettroute (in Grad)"
         },
         "route_spacing": {
           "name": "Mähpfadabstand",
@@ -1266,11 +1457,21 @@
     },
     "refresh_tasks": {
       "name": "Aufgaben aktualisieren",
-      "description": "Lade alle Zeitpläne erneut vom Zielgerät. Verwende diese Funktion nach einem „delete-all“-Befehl oder zur Wiederherstellung nach einem versäumten Update."
+      "description": "Lädt alle Zeitpläne erneut vom Zielgerät. Verwende diese Funktion nach einem „delete-all“-Befehl oder zur Wiederherstellung nach einem versäumten Update."
     },
     "get_tasks": {
       "name": "Aufgaben abrufen",
-      "description": "Gibt alle Zeitpläne zurück, die die Integration für das ausgewählte Gerät vorhält, einschließlich der Angabe, ob der jeweilige Zeitplan aktiviert ist. Damit lässt sich prüfen, ob eine Änderung angekommen ist; „Aufgaben aktualisieren“ lädt sie zuvor erneut vom Gerät."
+      "description": "Gibt alle Zeitpläne zurück, die die Integration für das Zielgerät vorhält, einschließlich der Angabe, ob die einzelnen Zeitpläne aktiviert sind. Verwenden Sie diese Funktion, um zu überprüfen, ob eine Änderung übernommen wurde. Mit „Aufgaben aktualisieren“ werden diese zunächst erneut vom Gerät abgerufen."
+    },
+    "get_task": {
+      "name": "Aufgabe abrufen",
+      "description": "Gibt einen der Zeitpläne des ausgewählten Mähroboters anhand seiner Aufgaben-ID zurück: die aktuellen Einstellungen unter den Feldnamen, die unter „Aufgabe bearbeiten“ akzeptiert werden, sowie die Angabe, ob die Aufgabe aktiviert ist und gerade ausgeführt wird. Verwenden Sie diese Funktion, um eine Aufgabe vor der Bearbeitung einzusehen.",
+      "fields": {
+        "task_id": {
+          "name": "Aufgaben-ID",
+          "description": "ID der Aufgabe, wie sie im Attribut „task_id“ der Aufgabenschaltfläche angegeben ist oder von „Aufgaben abrufen“ zurückgegeben wird."
+        }
+      }
     },
     "start_task": {
       "name": "Aufgabe starten",
@@ -1278,7 +1479,7 @@
     },
     "backup_map": {
       "name": "Karte sichern",
-      "description": "Lädt die Karte des Mähers in dein Mammotion-Cloudkonto hoch. Gibt die Sicherungs-ID zurück. Gib eine vorhandene Sicherungs-ID an, um diese Sicherung zu überschreiben, statt eine neue anzulegen.",
+      "description": "Lädt die Karte des Mähroboters in dein Mammotion-Cloud-Konto hoch. Gibt die Sicherungs-ID zurück. Geben Sie eine vorhandene Sicherungs-ID an, um diese Sicherung zu überschreiben, statt eine neue anzulegen.",
       "fields": {
         "name": {
           "name": "Name",
@@ -1292,17 +1493,33 @@
     },
     "restore_map": {
       "name": "Karte wiederherstellen",
-      "description": "Ersetzt die aktuelle Karte des Mähers durch eine Sicherung aus dem Mammotion-Konto, mit dem diese Integration angemeldet ist. Der Mäher startet nach der Wiederherstellung neu.",
+      "description": "Ersetzen Sie die aktuelle Karte des Mähroboters durch eine Sicherungskopie aus dem Mammotion-Konto, mit dem diese Integration angemeldet ist. Der Mähroboter startet neu, sobald die Wiederherstellung abgeschlossen ist.",
       "fields": {
         "backup_id": {
           "name": "Sicherungs-ID",
-          "description": "Wiederherzustellende Sicherung, wie von 'Kartensicherungen abrufen' zurückgegeben."
+          "description": "Vorhandene Sicherung, die wiederhergestellt werden soll. Wie von 'Kartensicherungen abrufen' zurückgegeben."
         }
       }
     },
     "get_map_backups": {
       "name": "Kartensicherungen abrufen",
-      "description": "Gibt die Kartensicherungen des Mammotion-Kontos zurück, mit dem diese Integration angemeldet ist. Sicherungen gehören zum Konto, daher erscheinen in der App unter einem anderen Konto erstellte Sicherungen nicht."
+      "description": "Gibt die Kartensicherungen des Mammotion-Kontos zurück, mit dem diese Integration angemeldet ist. Sicherungen werden pro Konto erstellt, daher werden solche, die in der App unter einem anderen Konto erstellt wurden, nicht aufgeführt."
+    },
+    "get_geojson": {
+      "name": "Karten-GeoJSON abrufen",
+      "description": "Gibt die Karte des Mähroboters (Bereiche, Hindernisse, Wege, Ladestation und RTK-Station) als GeoJSON-FeatureCollection für die Map-Karte zurück und sorgen dafür, dass der Mähroboter seine Position in den nächsten Minuten weiterhin meldet."
+    },
+    "get_mow_path_geojson": {
+      "name": "Mähpfad-GeoJSON abrufen",
+      "description": "Gibt den geplanten Mähpfad der aktuellen Aufgabe als GeoJSON-FeatureCollection zurück. Leer, bis der Mähpfad abgerufen wurde."
+    },
+    "get_mow_progress_geojson": {
+      "name": "Mähfortschritt-GeoJSON abrufen",
+      "description": "Gibt den bereits abgearbeiteten Teil des Mähpfads der aktuellen Aufgabe als GeoJSON-FeatureCollection zurück. Mähroboter, die eine dynamische Linie streamen, geben stattdessen diese Linie zurück. Während eine Aufgabe läuft und noch nichts angezeigt werden kann, ruft das Gerät zudem höchstens einmal pro Minute die Daten ab, auf denen diese Ebene basiert. Über Bluetooth hält sich eine dynamische Linie selbst auf dem neuesten Stand."
+    },
+    "fetch_mow_path": {
+      "name": "Mähpfad abrufen",
+      "description": "Ruft den Mähpfad der gerade laufenden Aufgabe des Mähroboters ab, sofern nicht bereits ein vollständiger Pfad im Cache vorhanden ist; in diesem Fall wird der Mähfortschritt daraus neu berechnet. Mähroboter, die eine dynamische Linie streamen, erhalten zudem ihre aktuellste Linie. Über die Cloud erfolgt dies nur, wenn in den Optionen die Option „Mähpfadabruf aktivieren (Cloud)“ aktiviert ist; über Bluetooth erfolgt dies immer. Gibt zurück, ob ein Abruf gestartet wurde."
     },
     "get_map_backup_progress": {
       "name": "Fortschritt der Kartensicherung abrufen",
@@ -1338,7 +1555,7 @@
       "fields": {
         "backup_id": {
           "name": "Sicherungs-ID",
-          "description": "Zu löschende Sicherung."
+          "description": "Zu löschende Sicherung"
         }
       }
     }
@@ -1347,53 +1564,239 @@
     "device_not_ready": {
       "message": "Das Gerät ist aktuell nicht bereit."
     },
+    "no_job_to_continue": {
+      "message": "Es gibt keine unterbrochene Aufgabe zum Fortsetzen."
+    },
     "pause_failed": {
-      "message": "Pausieren des Mähroboters fehlgeschlagen."
+      "message": "Das Pausieren des Mähroboters ist fehlgeschlagen."
     },
     "resume_failed": {
-      "message": "Fortsetzen des Mähroboters fehlgeschlagen."
+      "message": "Das Fortsetzen des Mähroboters ist fehlgeschlagen."
     },
     "start_failed": {
-      "message": "Starten des Mähroboters fehlgeschlagen."
+      "message": "Das Starten des Mähroboters ist fehlgeschlagen."
     },
     "dock_failed": {
-      "message": "Rückkehr des Mähroboters zur Ladestation fehlgeschlagen."
+      "message": "Die Rückkehr des Mähroboters zur Ladestation ist fehlgeschlagen."
     },
     "dock_cancel_failed": {
-      "message": "Stoppen der Rückkehr des Mähroboters zur Ladestation fehlgeschlagen."
+      "message": "Das Stoppen der Rückkehr des Mähroboters zur Ladestation ist fehlgeschlagen."
     },
     "command_failed": {
-      "message": "Senden eines Befehls zum Mähroboter fehlgeschlagen."
+      "message": "Das Senden eines Befehls zum Mähroboter ist fehlgeschlagen."
+    },
+    "command_unconfirmed": {
+      "message": "Der Mähroboter hat den Befehl nicht bestätigt. Der Befehl wurde möglicherweise trotzdem ausgeführt."
+    },
+    "account_in_use": {
+      "message": "Ihr Mammotion-Konto ist in einer anderen Sitzung (Mammotion-App) aktiv. Melden Sie sich in der App ab oder warten Sie und versuchen es später erneut."
     },
     "api_limit_exceeded": {
       "message": "Das API-Anfragelimit wurde überschritten."
-    },
-    "account_in_use": {
-      "message": "Ihr Mammotion-Konto ist bereits in einer anderen Sitzung aktiv. Melden Sie sich in der Mammotion-App ab und versuchen Sie es erneut."
     },
     "cloud_setup_failed": {
       "message": "Es konnte keine Verbindung zur Mammotion-Cloud hergestellt werden. Überprüfen Sie Ihre Netzwerkverbindung und laden Sie die Integration neu."
     },
     "task_not_found": {
-      "message": "Aufgabe {plan_id} wurde auf dem Gerät nicht gefunden. Aktualisiere den Zeitplan und versuche es erneut."
+      "message": "Die Aufgabe {plan_id} wurde auf dem Gerät nicht gefunden. Aktualisieren Sie den Zeitplan und versuchen es erneut."
+    },
+    "task_id_not_found": {
+      "message": "Die Aufgabe {task_id} für {entity_id} wurde nicht gefunden. Aktualisieren Sie die Aufgaben und versuchen es erneut."
     },
     "start_task_unsupported_on_spino": {
       "message": "Das Starten eines Zeitplans auf Abruf wird vom Spino-Poolreiniger nicht unterstützt — die Geräte-Firmware hat keinen 'jetzt ausführen'-Befehl für gespeicherte Pläne."
     },
     "grass_collection_unsupported": {
-      "message": "Dieser Mäher unterstützt keine Grasaufnahme."
+      "message": "Dieser Mähroboter unterstützt kein Grassammeln."
+    },
+    "no_running_job": {
+      "message": "{device_name} führt gerade keine Mähaufgabe aus, daher gibt es nichts zu ändern. Starten Sie zuerst eine Aufgabe."
+    },
+    "running_job_modify_unsupported": {
+      "message": "{device_name} unterstützt das Ändern einer laufenden Aufgabe nicht. Das können nur Luba 2 und neuer."
+    },
+    "auto_change_direction_unsupported": {
+      "message": "Die Mährichtung automatisch umkehren wird von {device_name} oder seiner Firmware nicht unterstützt."
     },
     "map_backup_cloud_unavailable": {
-      "message": "Kartensicherungen erfordern eine funktionierende Anmeldung bei der Mammotion-Cloud."
+      "message": "Die Kartensicherungen erfordern eine funktionierende Anmeldung bei der Mammotion-Cloud."
     },
     "map_backup_failed": {
       "message": "Die Mammotion-Cloud hat die Anfrage zur Kartensicherung abgelehnt: {reason}"
     },
     "map_backup_device_not_found": {
-      "message": "{device_name} ist in diesem Mammotion-Konto nicht für Kartensicherungen aufgeführt."
+      "message": "{device_name} ist in diesem Mammotion-Konto nicht für die Kartensicherungen aufgeführt."
     },
-    "map_backup_mower_not_found": {
-      "message": "{entity_id} ist kein Mammotion-Mäher."
+    "mower_not_found": {
+      "message": "{entity_id} ist kein Mammotion-Mähroboter."
+    },
+    "notification_unknown_code": {
+      "message": "Unbekannter Fehlercode {code}"
+    },
+    "notification_title_warnings": {
+      "message": "{device_name}: Warnungen"
+    },
+    "notification_title_notifications": {
+      "message": "{device_name}: Benachrichtigungen"
+    },
+    "notification_title_self_check": {
+      "message": "{device_name}: {state}"
+    },
+    "self_check_emergency_stop": {
+      "message": "Der Not-Aus ist aktiv. Deaktivieren Sie ihn am Mähroboter, bevor Sie erneut starten."
+    },
+    "self_check_stop_button": {
+      "message": "Die STOP-Taste am Mähroboter wurde gedrückt. Setzen Sie den Zustand am Mähroboter zurück, bevor Sie erneut starten."
+    },
+    "self_check_safety_key_missing": {
+      "message": "Der Sicherheitsschlüssel ist nicht eingesteckt. Stecken Sie ihn ein, um mit dem Mähen zu beginnen."
+    },
+    "self_check_lifted": {
+      "message": "Der Mähroboter wurde vom Boden angehoben. Stellen Sie ihn zurück auf den Rasen."
+    },
+    "self_check_tilted": {
+      "message": "Der Mähroboter ist geneigt. Stellen Sie ihn auf ebenen Boden."
+    },
+    "self_check_tipped_over": {
+      "message": "Der Mähroboter ist umgekippt. Stellen Sie ihn wieder auf."
+    },
+    "self_check_bumper_missing": {
+      "message": "Der Stoßfänger ist nicht montiert. Montieren Sie ihn vor dem Mähen."
+    },
+    "self_check_rain": {
+      "message": "Es wurde Regen erkannt und „Bei Regen nicht mähen“ ist aktiviert. Gemäht werden kann, sobald der Regen aufhört oder die Funktion deaktiviert wird."
+    },
+    "self_check_low_battery": {
+      "message": "Der Akku ist zu schwach zum Mähen. Laden Sie den Mähroboter auf."
+    },
+    "self_check_non_working_hours": {
+      "message": "Es ist innerhalb der Ruhezeit des Mähroboters."
+    },
+    "self_check_rtk_station_moved": {
+      "message": "Die RTK-Station wurde verschoben. Prüfen Sie die Position in der App."
+    },
+    "self_check_outside_task_area": {
+      "message": "Der Mähroboter ist außerhalb seines Aufgabenbereichs. Bringen Sie ihn zurück in einen kartierten Bereich."
+    },
+    "self_check_wheel_motor_error": {
+      "message": "Ein Radnabenmotor hat einen Fehler gemeldet."
+    },
+    "self_check_blade_motor_overheated": {
+      "message": "Der Mähwerksmotor ist zu heiß. Lassen Sie ihn abkühlen."
+    },
+    "self_check_dock_moved": {
+      "message": "Die Ladestation wurde verschoben. Prüfen Sie die Position in der App."
+    },
+    "self_check_no_task_area": {
+      "message": "Es wurde kein Aufgabenbereich gefunden. Erstellen Sie eine Karte in der App."
+    },
+    "self_check_night_protection": {
+      "message": "Der Nachtschutz ist aktiv, daher mäht der Mähroboter nachts nicht."
+    },
+    "self_check_rain_protection": {
+      "message": "Der Regenschutz verhindert den Start des Mähroboters. Er nutzt den Regensensor und Online-Wetterdaten, um zu beurteilen, ob sich die Bedingungen zum Mähen eignen, und berechnet, wann das Mähen fortgesetzt wird. Warten Sie ab oder änderen bzw. deaktivieren Sie den Regenschutz in den Mährobotereinstellungen der App."
+    },
+    "self_check_rtk_not_ready": {
+      "message": "Die RTK-Station ist noch nicht bereit."
+    },
+    "self_check_weak_satellite_signal": {
+      "message": "Das Satellitensignal des Mähroboters ist zu schwach für die Positionsbestimmung."
+    },
+    "self_check_positioning_failure": {
+      "message": "Das Positionierungssystem ist ausgefallen."
+    },
+    "self_check_inavi_unavailable": {
+      "message": "Der iNavi-Dienst ist nicht verfügbar."
+    },
+    "self_check_weak_rtk_signal": {
+      "message": "Das RTK-Signal ist schwach. Prüfe den Standort der Referenzstation."
+    },
+    "self_check_other": {
+      "message": "Der Mähroboter hat den unbekannten Selbsttest-Code {code} gemeldet."
+    },
+    "remote_drive_needs_cloud": {
+      "message": "Die Cloud-Fernsteuerung braucht eine funktionierende Cloud-Verbindung zum Mähroboter. Über Bluetooth können stattdessen die Schub-Tasten verwenden werden."
+    },
+    "remote_drive_start_failed": {
+      "message": "Die Cloud-Fernsteuerung konnte nicht gestartet werden: Der Mähroboter war über die Cloud nicht erreichbar."
+    },
+    "remote_drive_already_running": {
+      "message": "Die Cloud-Fernsteuerung läuft bereits. Vor einem Neustart zuerst ausschalten."
+    },
+    "remote_drive_not_awaiting_confirmation": {
+      "message": "Es gibt keinen Sicherheitshinweis zum Bestätigen. Zuerst die Cloud-Fernsteuerung einschalten."
+    },
+    "remote_drive_no_reverse": {
+      "message": "Mit der Cloud-Fernsteuerung kann der Mähroboter nicht rückwärts fahren. Stattdessen mit links oder rechts drehen oder Bluetooth verwenden."
+    },
+    "remote_drive_fence_paused": {
+      "message": "Der Mähroboter hat nahe der Grenze angehalten. Vor dem Weiterfahren „Grenzwarnung bestätigen“ drücken."
+    },
+    "remote_drive_safety_notice": {
+      "message": "Vor dem Fernsteuern sicherstellen, dass sich keine Personen oder Tiere im Arbeitsbereich befinden und den Mähroboter die ganze Zeit im Blick behalten. Innerhalb von 3 Minuten „Fernsteuerung bestätigen“ drücken, um zu starten. Die Sitzung endet kurz nach der letzten Eingabe von selbst."
+    },
+    "movement_unavailable": {
+      "message": "Der Mähroboter kann gerade nicht bewegt werden. In Bluetooth-Reichweite bringen oder die Cloud-Fernsteuerung einschalten und „Fernsteuerung bestätigen“ drücken."
+    },
+    "notification_title_remote_drive": {
+      "message": "{device_name}: Cloud-Fernsteuerung"
+    },
+    "remote_drive_token_unavailable": {
+      "message": "Der Mammotion-Server hat die Fernsteuerung nicht erlaubt (Code {detail}). Bitte versuchen Sie es ppäter erneut."
+    },
+    "remote_drive_occupied_by_other": {
+      "message": "Der Mähroboter wird bereits von einem anderen Konto gesteuert ({detail})."
+    },
+    "remote_drive_network_poor": {
+      "message": "Cloud-Fernsteuerung beendet: Die Netzwerkverbindung des Mähroboters ist zu schlecht."
+    },
+    "remote_drive_token_expired": {
+      "message": "Cloud-Fernsteuerung beendet: Die Fahrberechtigung ist abgelaufen."
+    },
+    "remote_drive_out_of_fence": {
+      "message": "Cloud-Fernsteuerung beendet: Der Mähroboter befindet sich außerhalb des erlaubten Bereichs."
+    },
+    "remote_drive_ble_preempt": {
+      "message": "Cloud-Fernsteuerung beendet: Der Mähroboter wird jetzt von {detail} über Bluetooth gesteuert."
+    },
+    "remote_drive_no_loc_mileage_exhausted": {
+      "message": "Cloud-Fernsteuerung beendet: Der Mähroboter ist so weit gefahren wie es ohne Positionsbestimmung erlaubt ist."
+    },
+    "remote_drive_env_not_ready": {
+      "message": "Cloud-Fernsteuerung beendet: Der Mähroboter ist nicht bereit gesteuert zu werden (Code {detail})."
+    },
+    "remote_drive_send_failed": {
+      "message": "Cloud-Fernsteuerung beendet: Ein Befehl konnte nicht gesendet werden ({detail})."
+    },
+    "remote_drive_approach_fence": {
+      "message": "Der Mähroboter hat dicht an der Grenze angehalten. „Grenzwarnung bestätigen“ drücken, um weiterzufahren."
+    },
+    "remote_drive_safety_notice_timeout": {
+      "message": "Cloud-Fernsteuerung beendet: Der Sicherheitshinweis wurde nicht innerhalb von 3 Minuten bestätigt."
+    },
+    "remote_drive_video_unavailable": {
+      "message": "Cloud-Fernsteuerung beendet: Das Kamerabild ist ausgefallen."
+    },
+    "battery_settings_unread": {
+      "message": "Die Akkueinstellungen wurden noch nicht vom Mähroboter gelesen. Eine Änderung würde jetzt das Nebenzeit-Ladefenster zurücksetzen, daher wurde nichts gesendet. Bitte versuchen Sie es erneut, sobald der Mähroboter verbunden ist."
+    }
+  },
+  "issues": {
+    "account_in_use": {
+      "title": "Das Mammotion-Konto wird in einer anderen Sitzung verwendet.",
+      "description": "Ihr Mammotion-Konto {account} ist bereits in einer anderen Sitzung aktiv, daher ist die Cloud-Verbindung pausiert. Melden Sie sich in der Mammotion-App ab. Die Integration verbindet sich automatisch innerhalb weniger Minuten erneut."
+    },
+    "cloud_login_retrying": {
+      "title": "Die Mammotion-Cloud ist nicht verfügbar.",
+      "description": "Home Assistant konnte sich für {account} nicht bei der Mammotion-Cloud anmelden ({error}). Über Bluetooth verbundene Geräte funktionieren weiter. Die Anmeldung wird alle 15 Minuten mit der gespeicherten Sitzung erneut versucht. (bis zu 5 mal)"
+    },
+    "cloud_login_failed": {
+      "title": "Die Mammotion-Cloud ist nicht verbunden.",
+      "description": "Home Assistant konnte sich für {account} nicht bei der Mammotion-Cloud anmelden ({error}) und versucht es nicht mehr. Über Bluetooth verbundene Geräte funktionieren weiter. Laden Sie die Mammotion-Integration neu, sobald der Mammotion-Dienst wieder erreichbar ist."
+    },
+    "deprecated_rain_tactics": {
+      "title": "Entfernte Option in einer Mammotion-Aktion verwendet",
+      "description": "Eine Automatisierung oder ein Skript ruft `{service}` mit `{field}` auf. Diese Option wurde entfernt: Sie hat den Mäher nie erreicht, daher wird sie ignoriert und der Auftrag startet wie gewohnt. Verwende stattdessen den Schalter Regenerkennung des Mähers und entferne `{field}` aus dem Aktionsaufruf, um diese Meldung zu schließen."
     }
   }
 }

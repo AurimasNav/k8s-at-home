@@ -11,14 +11,14 @@
       "reconfigure_successful": "Re-configure successful",
       "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
       "api_limit_exceeded": "API rate limit has been exceeded. Please try again later.",
-      "account_in_use": "Your Mammotion account is already in use in another session. Sign out of the Mammotion app and try again.",
       "reauth_successful": "Re-authentication was successful",
       "wrong_account": "These credentials belong to a different Mammotion account. Re-authenticate with the account this entry was set up with."
     },
     "error": {
       "login_failed": "Login failed. Check your account email and password, then try again.",
       "cannot_connect": "Unable to connect to the Mammotion cloud. Check your credentials and network, then try again.",
-      "no_account_no_ble": "No account details entered and no Bluetooth device found. Enter your Mammotion account credentials, or set up a Bluetooth device."
+      "no_account_no_ble": "No account details entered and no Bluetooth device found. Enter your Mammotion account credentials, or set up a Bluetooth device.",
+      "credentials_required": "Enter both your Mammotion account and its password."
     },
     "flow_title": "{name}",
     "step": {
@@ -28,7 +28,8 @@
       "reconfigure": {
         "data": {
           "account_name": "Mammotion email or account number",
-          "password": "Mammotion account password"
+          "password": "Mammotion account password",
+          "remove_account": "Remove the account and use Bluetooth only"
         }
       },
       "user": {
@@ -66,12 +67,27 @@
           "notify": "Show persistent notifications for"
         },
         "data_description": {
-          "notify": "Off by default. Every notification also fires the mower's notification event entity and a mammotion_event bus event, which automations can use instead."
+          "movement_use_wifi": "Sends the legacy movement command over Wi-Fi instead of using Cloud remote drive. Without it, from firmware 1.30.31.19 on LUBA 2, LUBA 2X, YUKA, LUBA mini and YUKA mini, from 2.3.31.69 on LUBA 3, LUBA mini 2 and YUKA mini 2, and on newer models the Mammotion server reports remote-drive support for, the nudge buttons and move actions work over the cloud only while Cloud remote drive is on and confirmed. Turn this on to use the legacy command on any firmware, for example to compare both on a LUBA 3; a connected Bluetooth link is still used first.",
+          "notify": "Self-check notifications are on by default; the others are off. Every notification also fires the mower's notification event entity and a mammotion_event bus event, which automations can use instead."
         }
       }
     }
   },
   "entity": {
+    "camera": {
+      "webrtc_camera": {
+        "name": "Left vision camera"
+      },
+      "webrtc_camera_vision": {
+        "name": "Vision camera"
+      },
+      "webrtc_camera_right": {
+        "name": "Right vision camera"
+      },
+      "webrtc_camera_rear": {
+        "name": "Rear camera"
+      }
+    },
     "sensor": {
       "error_1_message": {
         "name": "Last error"
@@ -89,7 +105,13 @@
         "name": "BLE RSSI"
       },
       "camera_brightness": {
-        "name": "Camera Brightness"
+        "name": "Camera Brightness",
+        "state": {
+          "dark": "Dark",
+          "good": "Good",
+          "intense": "Intense",
+          "unknown": "Unknown"
+        }
       },
       "wifi_rssi": {
         "name": "WiFi RSSI"
@@ -161,6 +183,27 @@
           "SIGNAL_UNKNOWN": "Unknown"
         }
       },
+      "lidar_positioning_status": {
+        "name": "LiDAR positioning status",
+        "state": {
+          "good": "Good",
+          "none": "None"
+        }
+      },
+      "fused_localization_status": {
+        "name": "Fused localisation status",
+        "state": {
+          "unknown": "Unknown",
+          "no_pose": "No position",
+          "rtk_fixed": "RTK fixed",
+          "rtk_extended_vision": "RTK extended",
+          "vision_extended": "Vision extended",
+          "vision_extended_failed": "Vision extension failed"
+        }
+      },
+      "vision_survival": {
+        "name": "3D vision"
+      },
       "activity_mode": {
         "name": "Activity mode",
         "state": {
@@ -215,7 +258,19 @@
           "WAITING": "Waiting",
           "MOWING": "Mowing",
           "COMPLETE": "Complete",
-          "ABORTED": "Aborted"
+          "ABORTED": "Aborted",
+          "UNKNOWN": "Unknown"
+        }
+      },
+      "task_area_status_short": {
+        "name": "Task {name}",
+        "state": {
+          "NOT_STARTED": "Not started",
+          "WAITING": "Waiting",
+          "MOWING": "Mowing",
+          "COMPLETE": "Complete",
+          "ABORTED": "Aborted",
+          "UNKNOWN": "Unknown"
         }
       },
       "maintenance_distance": {
@@ -241,10 +296,10 @@
         "name": "LoRa version"
       },
       "rtk_latitude": {
-        "name": "RTK latitude"
+        "name": "Latitude"
       },
       "rtk_longitude": {
-        "name": "RTK longitude"
+        "name": "Longitude"
       },
       "rtk_wifi_rssi": {
         "name": "Wi-Fi RSSI"
@@ -355,19 +410,88 @@
           "2": "Weak",
           "3": "None"
         }
+      },
+      "self_check": {
+        "name": "Self-check",
+        "state": {
+          "normal": "OK",
+          "emergency_stop": "Emergency stop activated",
+          "stop_button": "STOP button pressed",
+          "safety_key_missing": "Safety key not inserted",
+          "lifted": "Lifted",
+          "tilted": "Tilted",
+          "tipped_over": "Tipped over",
+          "bumper_missing": "Side bumper not installed",
+          "rain": "Rain detected",
+          "low_battery": "Low battery",
+          "non_working_hours": "Non-working hours",
+          "rtk_station_moved": "RTK reference station moved",
+          "outside_task_area": "Outside the task area",
+          "wheel_motor_error": "Wheel hub motor error",
+          "blade_motor_overheated": "Blade motor too hot",
+          "dock_moved": "Charging station moved",
+          "no_task_area": "No task area",
+          "night_protection": "Night protection",
+          "rain_protection": "Rain protection active",
+          "rtk_not_ready": "RTK reference station not ready",
+          "weak_satellite_signal": "Weak satellite signal",
+          "positioning_failure": "Positioning system failure",
+          "inavi_unavailable": "iNavi service unavailable",
+          "weak_rtk_signal": "Weak RTK signal",
+          "other": "Other"
+        }
+      },
+      "running_task": {
+        "name": "{name}",
+        "state": {
+          "mowing": "Mowing",
+          "paused": "Paused",
+          "returning": "Returning",
+          "charging_pause": "Charging, will resume"
+        }
+      },
+      "running_task_unnamed": {
+        "name": "Task {n}",
+        "state": {
+          "mowing": "Mowing",
+          "paused": "Paused",
+          "returning": "Returning",
+          "charging_pause": "Charging, will resume"
+        }
+      },
+      "remote_drive_state": {
+        "name": "Remote drive state",
+        "state": {
+          "idle": "Idle",
+          "requesting_token": "Requesting permission",
+          "safety_notice": "Awaiting safety confirmation",
+          "active": "Driving",
+          "exiting": "Ending"
+        },
+        "state_attributes": {
+          "last_event": {
+            "name": "Last event"
+          },
+          "last_event_detail": {
+            "name": "Last event detail"
+          }
+        }
       }
     },
     "binary_sensor": {
       "spino_charging": {
         "name": "Charging"
+      },
+      "rain_detected": {
+        "name": "Rain detected"
       }
     },
     "button": {
       "start_map_sync": {
         "name": "Sync maps"
       },
-      "start_schedule_sync": {
-        "name": "Synchronize schedules"
+      "start_task_sync": {
+        "name": "Synchronize tasks"
       },
       "resync_rtk_dock": {
         "name": "Sync RTK and dock"
@@ -377,6 +501,9 @@
       },
       "start_dropmow": {
         "name": "Start DropMow"
+      },
+      "continue_last_job": {
+        "name": "Continue last job"
       },
       "emergency_nudge_forward": {
         "name": "Emergency nudge forward"
@@ -413,11 +540,20 @@
       },
       "spino_refresh_status": {
         "name": "Refresh status"
+      },
+      "confirm_remote_drive": {
+        "name": "Confirm remote drive"
+      },
+      "acknowledge_remote_drive_fence": {
+        "name": "Acknowledge boundary warning"
       }
     },
     "switch": {
       "area": {
         "name": "Area {name}"
+      },
+      "area_plain": {
+        "name": "{name}"
       },
       "blade_status": {
         "name": "Blades on/off"
@@ -431,9 +567,6 @@
       "is_edge": {
         "name": "Edge cutting"
       },
-      "rain_tactics": {
-        "name": "Rain detection (during mow) on/off"
-      },
       "auto_change_direction": {
         "name": "Auto-reverse mowing direction"
       },
@@ -442,6 +575,12 @@
       },
       "smart_charge": {
         "name": "Smart charging"
+      },
+      "smart_recharge_level": {
+        "name": "Smart return-to-charge level"
+      },
+      "smart_resume_level": {
+        "name": "Smart resume level"
       },
       "side_led": {
         "name": "Side LED on/off"
@@ -484,6 +623,9 @@
       },
       "spino_waterline_parking": {
         "name": "Waterline parking"
+      },
+      "remote_drive": {
+        "name": "Cloud remote drive"
       }
     },
     "select": {
@@ -608,6 +750,34 @@
           "CURVE_SIMPLE": "Curved (simple)",
           "CURVE_COMPLEX": "Curved (complex)"
         }
+      },
+      "rain_protection_mode": {
+        "name": "Rain protection",
+        "state": {
+          "off": "Off",
+          "smart": "Smart Mode",
+          "sensor": "Sensor Mode"
+        }
+      },
+      "rain_protection_delay": {
+        "name": "Rain protection delay",
+        "state": {
+          "0": "No delay",
+          "1": "1 h",
+          "2": "2 h",
+          "3": "3 h",
+          "4": "4 h",
+          "5": "5 h",
+          "6": "6 h",
+          "7": "7 h",
+          "8": "8 h",
+          "9": "9 h",
+          "10": "10 h",
+          "11": "11 h",
+          "12": "12 h",
+          "24": "24 h",
+          "48": "48 h"
+        }
       }
     },
     "number": {
@@ -616,6 +786,15 @@
       },
       "charge_limit": {
         "name": "Charge limit"
+      },
+      "recharge_level": {
+        "name": "Return to charge at"
+      },
+      "resume_level": {
+        "name": "Resume mowing at"
+      },
+      "ride_boundary_distance": {
+        "name": "Edge coverage"
       },
       "start_progress": {
         "name": "Start progress"
@@ -649,7 +828,7 @@
       }
     },
     "device_tracker": {
-      "name": "Device Tracking"
+      "name": "Device tracking"
     },
     "event": {
       "notification": {
@@ -694,12 +873,6 @@
         "3": "Perimeter only"
       }
     },
-    "rain_tactics": {
-      "options": {
-        "0": "Off",
-        "1": "On"
-      }
-    },
     "toward_mode": {
       "options": {
         "0": "Optimal",
@@ -728,7 +901,8 @@
     "notify": {
       "options": {
         "warnings": "Warnings and error codes",
-        "notifications": "Device notifications and information"
+        "notifications": "Device notifications and information",
+        "self_check": "Self-check: why the mower can't start"
       }
     }
   },
@@ -789,10 +963,6 @@
           "name": "Path width",
           "description": "Width of the mowing path (in cm)."
         },
-        "rain_tactics": {
-          "name": "Rain detection",
-          "description": "Rain detection."
-        },
         "blade_height": {
           "name": "Blade height",
           "description": "Height of the blade."
@@ -820,6 +990,14 @@
         "start_progress": {
           "name": "Start progress",
           "description": "Starting progress percentage."
+        },
+        "auto_change_direction": {
+          "name": "Auto-reverse mowing direction",
+          "description": "Flip the mowing direction between runs: 0 = off, 1 = on. Only used on models and firmware that support it. Leave it out to keep the switch's setting."
+        },
+        "ride_boundary_distance": {
+          "name": "Edge coverage",
+          "description": "How far out the mower drives during the perimeter laps, from 0 (inside edge) to 1 (on the edge). Only used on models that support it and when perimeter laps are on."
         },
         "areas": {
           "name": "Area selection",
@@ -859,13 +1037,9 @@
           "name": "No-go zone laps",
           "description": "No-go zone laps"
         },
-        "rain_tactics": {
-          "name": "Rain tactics",
-          "description": "Rain tactics"
-        },
         "auto_change_direction": {
-          "name": "Auto change direction",
-          "description": "Auto change direction"
+          "name": "Auto-reverse mowing direction",
+          "description": "Auto-reverse mowing direction — flips the mowing direction between runs to reduce matting."
         },
         "start_progress": {
           "name": "Progress",
@@ -947,22 +1121,12 @@
     },
     "get_map_data": {
       "name": "Get map data",
-      "description": "Returns the raw map data (areas, SVG tiles, area names) for use with the SVG map card.",
-      "fields": {
-        "entity_id": {
-          "name": "Entity",
-          "description": "Any Mammotion entity belonging to the device."
-        }
-      }
+      "description": "Returns the raw map data (areas, SVG tiles, area names) for use with the SVG map card."
     },
     "svg_add": {
       "name": "Add SVG tile",
       "description": "Send a new SVG tile to the device map. Returns the device-assigned hash.",
       "fields": {
-        "entity_id": {
-          "name": "Entity",
-          "description": "Any Mammotion entity belonging to the device."
-        },
         "area_hash": {
           "name": "Area hash",
           "description": "Hash of the parent mowing area."
@@ -1005,10 +1169,6 @@
       "name": "Update SVG tile",
       "description": "Replace an existing SVG tile on the device map. Use the device_hash returned by svg_add.",
       "fields": {
-        "entity_id": {
-          "name": "Entity",
-          "description": "Any Mammotion entity belonging to the device."
-        },
         "device_hash": {
           "name": "Device hash",
           "description": "Hash assigned by the device when the tile was first added."
@@ -1055,10 +1215,6 @@
       "name": "Delete SVG tile",
       "description": "Remove an SVG tile from the device map by its device-assigned hash.",
       "fields": {
-        "entity_id": {
-          "name": "Entity",
-          "description": "Any Mammotion entity belonging to the device."
-        },
         "device_hash": {
           "name": "Device hash",
           "description": "Hash assigned by the device when the tile was added."
@@ -1155,9 +1311,25 @@
           "name": "Edge mode",
           "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
         },
+        "ride_boundary_distance": {
+          "name": "Edge coverage",
+          "description": "How far out the mower drives during the perimeter laps, from 0 (inside edge) to 1 (on the edge). Only used on models that support it and when perimeter laps are on."
+        },
+        "auto_change_direction": {
+          "name": "Auto-reverse mowing direction",
+          "description": "Auto-reverse mowing direction — flips the mowing direction between runs to reduce matting: 0 = off, 1 = on. Only on models and firmware that support it. Leave it out to keep the schedule's setting (off for a new schedule)."
+        },
         "route_angle": {
           "name": "Route angle",
           "description": "Mower-only: mowing pattern angle 0–179 degrees."
+        },
+        "toward_mode": {
+          "name": "Cutting angle mode",
+          "description": "Mower-only: how the route angle is applied (0 = optimal, 1 = north, 2 = random)."
+        },
+        "toward_included_angle": {
+          "name": "Crossing angle",
+          "description": "Mower-only: second angle of a chessboard route, in degrees."
         },
         "route_spacing": {
           "name": "Route spacing",
@@ -1237,9 +1409,25 @@
           "name": "Edge mode",
           "description": "Mower-only."
         },
+        "ride_boundary_distance": {
+          "name": "Edge coverage",
+          "description": "How far out the mower drives during the perimeter laps, from 0 (inside edge) to 1 (on the edge). Only used on models that support it and when perimeter laps are on."
+        },
+        "auto_change_direction": {
+          "name": "Auto-reverse mowing direction",
+          "description": "Auto-reverse mowing direction — flips the mowing direction between runs to reduce matting: 0 = off, 1 = on. Only on models and firmware that support it. Leave it out to keep the schedule's setting (off for a new schedule)."
+        },
         "route_angle": {
           "name": "Route angle",
           "description": "Mower-only."
+        },
+        "toward_mode": {
+          "name": "Cutting angle mode",
+          "description": "Mower-only: how the route angle is applied (0 = optimal, 1 = north, 2 = random)."
+        },
+        "toward_included_angle": {
+          "name": "Crossing angle",
+          "description": "Mower-only: second angle of a chessboard route, in degrees."
         },
         "route_spacing": {
           "name": "Route spacing",
@@ -1275,6 +1463,16 @@
       "name": "Get tasks",
       "description": "Return every schedule the integration holds for the targeted device, including whether each one is enabled. Use it to confirm a change landed; 'Refresh tasks' re-fetches them from the device first."
     },
+    "get_task": {
+      "name": "Get task",
+      "description": "Return one of the targeted mower's schedules by its task ID: its current settings under the field names 'Edit task' accepts, plus whether it is enabled and running. Use it to read a task before editing it.",
+      "fields": {
+        "task_id": {
+          "name": "Task ID",
+          "description": "ID of the task, as shown in the task button's task_id attribute or returned by 'Get tasks'."
+        }
+      }
+    },
     "start_task": {
       "name": "Start task",
       "description": "Run a stored schedule immediately (also known as 'start schedule'). Mower-only — the Spino pool cleaner has no equivalent command, so targeting a Spino task entity raises an error."
@@ -1306,6 +1504,22 @@
     "get_map_backups": {
       "name": "Get map backups",
       "description": "Return the map backups stored on the Mammotion account this integration is signed in with. Backups are per account, so ones made in the app under a different account are not listed."
+    },
+    "get_geojson": {
+      "name": "Get map GeoJSON",
+      "description": "Return the mower's map (areas, obstacles, paths, dock and RTK station) as a GeoJSON FeatureCollection for the map card, and keep the mower reporting its position for the next few minutes."
+    },
+    "get_mow_path_geojson": {
+      "name": "Get mow path GeoJSON",
+      "description": "Return the planned mow path of the current job as a GeoJSON FeatureCollection. Empty until the cover path has been fetched."
+    },
+    "get_mow_progress_geojson": {
+      "name": "Get mow progress GeoJSON",
+      "description": "Return the part of the current job's mow path already covered, as a GeoJSON FeatureCollection; mowers that stream a dynamics line return that line instead. While a job is running and nothing can be shown yet, it also fetches what this layer is drawn from, at most once a minute. Over Bluetooth a dynamics line keeps itself up to date."
+    },
+    "fetch_mow_path": {
+      "name": "Fetch mow path",
+      "description": "Fetch the cover path of the job the mower is running, unless a complete one is already cached, then rebuild the mow progress from it. Mowers that stream a dynamics line also get their latest line. Over the cloud this only happens with 'Enable mow path fetching (cloud)' switched on in the options; over Bluetooth it always does. Returns whether a fetch was started."
     },
     "get_map_backup_progress": {
       "name": "Get map backup progress",
@@ -1350,6 +1564,9 @@
     "device_not_ready": {
       "message": "Device is not ready."
     },
+    "no_job_to_continue": {
+      "message": "There is no interrupted job to continue."
+    },
     "pause_failed": {
       "message": "Failed to pause the mower."
     },
@@ -1368,11 +1585,14 @@
     "command_failed": {
       "message": "Failed to send command to the mower."
     },
-    "api_limit_exceeded": {
-      "message": "API rate limit has been exceeded."
+    "command_unconfirmed": {
+      "message": "The mower did not confirm the command. It may still have been carried out."
     },
     "account_in_use": {
-      "message": "Your Mammotion account is already active in another session. Sign out of the Mammotion app and try again."
+      "message": "Your Mammotion account is active in another session (the Mammotion app). Sign out of the app, or wait, and try again."
+    },
+    "api_limit_exceeded": {
+      "message": "API rate limit has been exceeded."
     },
     "cloud_setup_failed": {
       "message": "Unable to connect to the Mammotion cloud. Check your network and try reloading the integration."
@@ -1380,11 +1600,23 @@
     "task_not_found": {
       "message": "Task {plan_id} could not be found on the device. Refresh the schedule and try again."
     },
+    "task_id_not_found": {
+      "message": "Task {task_id} could not be found for {entity_id}. Refresh the tasks and try again."
+    },
     "start_task_unsupported_on_spino": {
       "message": "Starting a schedule on demand is not supported on the Spino pool cleaner — the device firmware has no execute-now command for stored plans."
     },
     "grass_collection_unsupported": {
       "message": "This mower does not support grass collection."
+    },
+    "no_running_job": {
+      "message": "{device_name} is not running a mowing job, so there is nothing to change. Start a job first."
+    },
+    "running_job_modify_unsupported": {
+      "message": "{device_name} does not support changing a job while it is running. Only Luba 2 and newer can."
+    },
+    "auto_change_direction_unsupported": {
+      "message": "Auto-reverse mowing direction is not supported by {device_name} or its firmware."
     },
     "map_backup_cloud_unavailable": {
       "message": "Map backups need a working Mammotion cloud login."
@@ -1395,8 +1627,176 @@
     "map_backup_device_not_found": {
       "message": "{device_name} is not listed for map backups on this Mammotion account."
     },
-    "map_backup_mower_not_found": {
+    "mower_not_found": {
       "message": "{entity_id} is not a Mammotion mower."
+    },
+    "notification_unknown_code": {
+      "message": "Unknown error code {code}"
+    },
+    "notification_title_warnings": {
+      "message": "{device_name}: warnings"
+    },
+    "notification_title_notifications": {
+      "message": "{device_name}: notifications"
+    },
+    "notification_title_self_check": {
+      "message": "{device_name}: {state}"
+    },
+    "self_check_emergency_stop": {
+      "message": "The emergency stop is active. Release it on the mower before starting again."
+    },
+    "self_check_stop_button": {
+      "message": "The STOP button on the mower was pressed. Clear it on the mower before starting again."
+    },
+    "self_check_safety_key_missing": {
+      "message": "The safety key is not inserted. Insert it to start mowing."
+    },
+    "self_check_lifted": {
+      "message": "The mower has been lifted off the ground. Put it back down on the lawn."
+    },
+    "self_check_tilted": {
+      "message": "The mower is tilted. Move it onto level ground."
+    },
+    "self_check_tipped_over": {
+      "message": "The mower has tipped over. Turn it back upright."
+    },
+    "self_check_bumper_missing": {
+      "message": "The side bumper is not installed. Fit it before mowing."
+    },
+    "self_check_rain": {
+      "message": "Rain was detected and 'No mowing on rainy days' is on. Mowing can start once the rain stops, or turn the feature off."
+    },
+    "self_check_low_battery": {
+      "message": "The battery is too low to mow. Let the mower charge."
+    },
+    "self_check_non_working_hours": {
+      "message": "It is outside the mower's working hours."
+    },
+    "self_check_rtk_station_moved": {
+      "message": "The RTK reference station has been moved. Check its position in the app."
+    },
+    "self_check_outside_task_area": {
+      "message": "The mower is outside its task area. Move it back into a mapped area."
+    },
+    "self_check_wheel_motor_error": {
+      "message": "A wheel hub motor has reported an error."
+    },
+    "self_check_blade_motor_overheated": {
+      "message": "The cutting blade motor is too hot. Let it cool down."
+    },
+    "self_check_dock_moved": {
+      "message": "The charging station has been moved. Check its position in the app."
+    },
+    "self_check_no_task_area": {
+      "message": "No task area was found. Create a map in the app."
+    },
+    "self_check_night_protection": {
+      "message": "Night protection is on, so the mower will not mow at night."
+    },
+    "self_check_rain_protection": {
+      "message": "Rain protection is stopping the mower from starting. It uses the rain sensor and online weather data to judge whether conditions suit mowing and works out when to resume. Wait for it, or change or turn off rain protection in the mower's settings in the app."
+    },
+    "self_check_rtk_not_ready": {
+      "message": "The RTK reference station is not ready yet."
+    },
+    "self_check_weak_satellite_signal": {
+      "message": "The mower's satellite signal is too weak to position it."
+    },
+    "self_check_positioning_failure": {
+      "message": "The positioning system has failed."
+    },
+    "self_check_inavi_unavailable": {
+      "message": "The iNavi service is not available."
+    },
+    "self_check_weak_rtk_signal": {
+      "message": "The RTK signal is weak. Check where the reference station is placed."
+    },
+    "self_check_other": {
+      "message": "The mower reported self-check code {code}, which is not recognised."
+    },
+    "remote_drive_needs_cloud": {
+      "message": "Cloud remote drive needs a working cloud connection to the mower. Over Bluetooth, use the nudge buttons instead."
+    },
+    "remote_drive_start_failed": {
+      "message": "Remote drive could not be started: the mower could not be reached through the cloud."
+    },
+    "remote_drive_already_running": {
+      "message": "Cloud remote drive is already running. Turn it off before starting it again."
+    },
+    "remote_drive_not_awaiting_confirmation": {
+      "message": "There is no remote drive safety notice to confirm. Turn on Cloud remote drive first."
+    },
+    "remote_drive_no_reverse": {
+      "message": "Cloud remote drive cannot reverse the mower. Turn it with left or right instead, or use Bluetooth."
+    },
+    "remote_drive_fence_paused": {
+      "message": "The mower stopped near the boundary. Press Acknowledge boundary warning before driving on."
+    },
+    "remote_drive_safety_notice": {
+      "message": "Before driving the mower remotely, make sure there are no people or animals in the work area, and keep the mower in sight the whole time. Press Confirm remote drive within 3 minutes to start. The session ends by itself shortly after you stop giving input."
+    },
+    "movement_unavailable": {
+      "message": "The mower cannot be moved right now. Bring it within Bluetooth range, or turn on Cloud remote drive and press Confirm remote drive."
+    },
+    "notification_title_remote_drive": {
+      "message": "{device_name}: Cloud remote drive"
+    },
+    "remote_drive_token_unavailable": {
+      "message": "The Mammotion server did not allow remote drive (code {detail}). Try again later."
+    },
+    "remote_drive_occupied_by_other": {
+      "message": "The mower is already being driven by another account ({detail})."
+    },
+    "remote_drive_network_poor": {
+      "message": "Remote drive ended: the mower's network connection is too poor."
+    },
+    "remote_drive_token_expired": {
+      "message": "Remote drive ended: the permission to drive expired."
+    },
+    "remote_drive_out_of_fence": {
+      "message": "Remote drive ended: the mower is outside the allowed area."
+    },
+    "remote_drive_ble_preempt": {
+      "message": "Remote drive ended: the mower is now controlled over Bluetooth by {detail}."
+    },
+    "remote_drive_no_loc_mileage_exhausted": {
+      "message": "Remote drive ended: the mower has driven as far as it may without a position fix."
+    },
+    "remote_drive_env_not_ready": {
+      "message": "Remote drive ended: the mower is not ready to be driven (code {detail})."
+    },
+    "remote_drive_send_failed": {
+      "message": "Remote drive ended: a command could not be sent ({detail})."
+    },
+    "remote_drive_approach_fence": {
+      "message": "The mower stopped close to the boundary. Press Acknowledge boundary warning to keep driving."
+    },
+    "remote_drive_safety_notice_timeout": {
+      "message": "Remote drive ended: the safety notice was not confirmed within 3 minutes."
+    },
+    "remote_drive_video_unavailable": {
+      "message": "Remote drive ended: the camera video stopped."
+    },
+    "battery_settings_unread": {
+      "message": "The battery settings have not been read from the mower yet. Changing them now would reset its off-peak charging window, so nothing was sent. Try again once the mower is connected."
+    }
+  },
+  "issues": {
+    "account_in_use": {
+      "title": "Mammotion account in use by another session",
+      "description": "Your Mammotion account {account} is already active in another session, so the cloud connection is paused. Sign out of the Mammotion app; the integration reconnects automatically within a few minutes."
+    },
+    "cloud_login_retrying": {
+      "title": "Mammotion cloud unavailable",
+      "description": "Home Assistant could not sign in to the Mammotion cloud for {account} ({error}). Devices connected over Bluetooth keep working. The sign-in is retried every 15 minutes, up to 5 times, using the saved session."
+    },
+    "cloud_login_failed": {
+      "title": "Mammotion cloud not connected",
+      "description": "Home Assistant could not sign in to the Mammotion cloud for {account} ({error}) and has stopped retrying. Devices connected over Bluetooth keep working. Reload the Mammotion integration once the Mammotion service is reachable again."
+    },
+    "deprecated_rain_tactics": {
+      "title": "Retired option used in a Mammotion action",
+      "description": "An automation or script calls `{service}` with `{field}`. This option has been removed: it never reached the mower, so it is ignored and the job starts as usual. Use the mower's Rain detection switch instead, and remove `{field}` from the action call to dismiss this message."
     }
   }
 }

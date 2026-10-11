@@ -4,26 +4,31 @@ import logging
 from datetime import timedelta
 from typing import Final
 
+from aiohttp import ClientError
 from bleak.exc import BleakError
 from bleak_retry_connector import BleakNotFoundError
-from pymammotion.aliyun.exceptions import CheckSessionException
+from pymammotion.aliyun.exceptions import (
+    DeviceUnboundException,
+    FailedRequestException,
+)
 from pymammotion.http.model.http import UnauthorizedExceptionError
 from pymammotion.transport import AuthError
-from pymammotion.transport.base import (
-    LoginFailedError,
-    NoTransportAvailableError,
-)
-from pymammotion.utility.constant import WorkMode
+from pymammotion.transport.base import TransportError
 
 DOMAIN: Final = "mammotion"
 EVENT_MAMMOTION: Final = f"{DOMAIN}_event"
+#: Every cloud remote-drive session event, for automations.
+EVENT_REMOTE_DRIVE: Final = f"{DOMAIN}_remote_drive"
 
 CONF_NOTIFY: Final = "notify"
 NOTIFY_WARNINGS: Final = "warnings"
 NOTIFY_NOTIFICATIONS: Final = "notifications"
-NOTIFY_CATEGORIES: Final = (NOTIFY_WARNINGS, NOTIFY_NOTIFICATIONS)
-#: Off by default; entries created before 0.6.8 are migrated to ``[NOTIFY_WARNINGS]``.
-DEFAULT_NOTIFY: Final[list[str]] = []
+#: Raised while the mower's self-check blocks it from starting, dismissed on normal.
+NOTIFY_SELF_CHECK: Final = "self_check"
+NOTIFY_CATEGORIES: Final = (NOTIFY_WARNINGS, NOTIFY_NOTIFICATIONS, NOTIFY_SELF_CHECK)
+#: Only self-check is on by default.  Entries created before 0.6.8 are migrated to
+#: ``[NOTIFY_WARNINGS]``, and every saved list gains ``NOTIFY_SELF_CHECK`` (minor 4).
+DEFAULT_NOTIFY: Final[list[str]] = [NOTIFY_SELF_CHECK]
 #: Which persistent-notification category each thing/event identifier belongs to.
 NOTIFY_CATEGORY_BY_EVENT: Final = {
     "device_warning_code_event": NOTIFY_WARNINGS,
@@ -31,6 +36,39 @@ NOTIFY_CATEGORY_BY_EVENT: Final = {
     "device_notification_event": NOTIFY_NOTIFICATIONS,
     "device_information_event": NOTIFY_NOTIFICATIONS,
 }
+
+#: ``rpt_dev_status.self_check_status`` — the one condition stopping the mower
+#: from starting, as the app's ``BlockErrorBeanChangeUtils`` titles each code.
+SELF_CHECK_STATES: Final[dict[int, str]] = {
+    0: "normal",
+    10: "normal",
+    11: "emergency_stop",
+    12: "stop_button",
+    13: "safety_key_missing",
+    14: "lifted",
+    15: "tilted",
+    16: "tipped_over",
+    17: "bumper_missing",
+    20: "rain",
+    21: "low_battery",
+    23: "non_working_hours",
+    24: "rtk_station_moved",
+    25: "outside_task_area",
+    26: "wheel_motor_error",
+    27: "blade_motor_overheated",
+    29: "dock_moved",
+    30: "no_task_area",
+    31: "night_protection",
+    34: "rain_protection",
+    40: "rtk_not_ready",
+    41: "weak_satellite_signal",
+    42: "positioning_failure",
+    43: "inavi_unavailable",
+    99: "weak_rtk_signal",
+}
+SELF_CHECK_NORMAL: Final = "normal"
+#: A code the app has no card for either ("unknown error, update your app").
+SELF_CHECK_OTHER: Final = "other"
 
 DEVICE_SUPPORT = ("Luba", "Yuka")
 # Pool cleaners, kept apart from DEVICE_SUPPORT because that tuple also answers
@@ -46,19 +84,20 @@ DEFAULT_RETRY_COUNT = 3
 CONF_RETRY_COUNT = "retry_count"
 LOGGER: Final = logging.getLogger(__package__)
 
+#: What a command send can fail with besides the cases the coordinator names;
+#: ``TransportError`` covers ``NoTransportAvailableError`` and the rest.
 COMMAND_EXCEPTIONS = (
     BleakNotFoundError,
     BleakError,
-    NoTransportAvailableError,
+    TransportError,
     TimeoutError,
+    ClientError,
+    DeviceUnboundException,
+    FailedRequestException,
 )
 
-EXPIRED_CREDENTIAL_EXCEPTIONS = (
-    CheckSessionException,
-    AuthError,
-    UnauthorizedExceptionError,
-    LoginFailedError,
-)
+# AuthError already covers LoginFailedError, ReLoginRequiredError and SessionExpiredError.
+EXPIRED_CREDENTIAL_EXCEPTIONS = (AuthError, UnauthorizedExceptionError)
 
 CONF_HAS_CLOUD_ACCOUNT: Final = "has_cloud_account"
 CONF_STAY_CONNECTED_BLUETOOTH: Final = "stay_connected_bluetooth"
@@ -97,16 +136,7 @@ CREDENTIAL_CACHE_KEYS: Final = (
     CONF_DEVICE_DATA,
     CONF_MAMMOTION_DATA,
     CONF_MAMMOTION_MQTT,
+    CONF_MAMMOTION_DEVICE_LIST,
+    CONF_MAMMOTION_DEVICE_RECORDS,
     CONF_MAMMOTION_JWT_INFO,
-)
-
-NO_REQUEST_MODES = (
-    WorkMode.MODE_JOB_DRAW,
-    WorkMode.MODE_OBSTACLE_DRAW,
-    WorkMode.MODE_CHANNEL_DRAW,
-    WorkMode.MODE_ERASER_DRAW,
-    WorkMode.MODE_UPDATING,
-    WorkMode.MODE_EDIT_BOUNDARY,
-    WorkMode.MODE_LOCK,
-    WorkMode.MODE_MANUAL_MOWING,
 )

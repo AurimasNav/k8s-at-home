@@ -9,26 +9,27 @@
       "no_longer_present": "Echipamentul nu mai este prezent",
       "not_supported": "Dispozitivul nu este suportat",
       "reconfigure_successful": "Reconfigurare reușită",
-      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
+      "merged_into_existing_account": "Acest cont are deja o intrare; dispozitivele Bluetooth au fost îmbinate în ea, iar această intrare a fost eliminată.",
       "api_limit_exceeded": "Limita de solicitări API a fost depășită. Vă rugăm să încercați din nou mai târziu.",
-      "account_in_use": "Contul dvs. Mammotion este deja activ într-o altă sesiune. Deconectați-vă din aplicația Mammotion și încercați din nou.",
       "reauth_successful": "Reautentificarea a reușit",
       "wrong_account": "Aceste date de autentificare aparțin altui cont Mammotion. Reautentificați-vă cu contul cu care a fost configurată această intrare."
     },
     "error": {
       "login_failed": "Autentificare eșuată. Verificați adresa de e-mail și parola contului, apoi încercați din nou.",
       "cannot_connect": "Nu se poate conecta la cloud-ul Mammotion. Verificați datele de autentificare și rețeaua, apoi încercați din nou.",
-      "no_account_no_ble": "Nu au fost introduse datele contului și nu a fost găsit niciun dispozitiv Bluetooth. Introduceți datele de autentificare ale contului Mammotion sau configurați un dispozitiv Bluetooth."
+      "no_account_no_ble": "Nu au fost introduse datele contului și nu a fost găsit niciun dispozitiv Bluetooth. Introduceți datele de autentificare ale contului Mammotion sau configurați un dispozitiv Bluetooth.",
+      "credentials_required": "Introduceți atât contul Mammotion, cât și parola acestuia."
     },
     "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Configurație{name}"
+        "description": "Configurare {name}"
       },
       "reconfigure": {
         "data": {
           "account_name": "Email sau număr de cont Mammotion",
-          "password": "Parola contului Mammotion"
+          "password": "Parola contului Mammotion",
+          "remove_account": "Elimină contul și folosește doar Bluetooth"
         }
       },
       "user": {
@@ -64,11 +65,29 @@
           "mow_path_fetch_enabled": "Activați descărcarea traseului de tuns (cloud)",
           "full_map_fetch_enabled": "Activați descărcarea completă a hărții (cloud) — când este oprit, se descarcă doar numele zonelor",
           "notify": "Afișează notificări persistente pentru"
+        },
+        "data_description": {
+          "movement_use_wifi": "Trimite vechea comandă de mișcare prin Wi-Fi în loc să folosească conducerea de la distanță prin cloud. Fără această opțiune, începând cu firmware-ul 1.30.31.19 pe LUBA 2, LUBA 2X, YUKA, LUBA mini și YUKA mini, cu 2.3.31.69 pe LUBA 3, LUBA mini 2 și YUKA mini 2 și pe modelele mai noi pentru care serverul Mammotion raportează suport, butoanele de deplasare și acțiunile de mișcare funcționează prin cloud doar cât timp Conducere de la distanță prin cloud este pornită și confirmată. Activați pentru a folosi vechea comandă cu orice firmware, de exemplu pentru a le compara pe un LUBA 3; o conexiune Bluetooth activă are în continuare prioritate.",
+          "notify": "Notificările de autotest sunt activate implicit, celelalte sunt dezactivate. Fiecare notificare declanșează și entitatea de eveniment de notificare a mașinii și un eveniment mammotion_event pe magistrală, pe care automatizările le pot folosi în schimb."
         }
       }
     }
   },
   "entity": {
+    "camera": {
+      "webrtc_camera": {
+        "name": "Camera stângă"
+      },
+      "webrtc_camera_vision": {
+        "name": "Cameră de viziune"
+      },
+      "webrtc_camera_right": {
+        "name": "Camera dreaptă"
+      },
+      "webrtc_camera_rear": {
+        "name": "Camera din spate"
+      }
+    },
     "sensor": {
       "error_1_message": {
         "name": "Ultima eroare"
@@ -86,7 +105,13 @@
         "name": "BLE RSSI"
       },
       "camera_brightness": {
-        "name": "Luminozitatea camerei"
+        "name": "Luminozitatea camerei",
+        "state": {
+          "dark": "Întunecată",
+          "good": "Bună",
+          "intense": "Intensă",
+          "unknown": "Necunoscută"
+        }
       },
       "wifi_rssi": {
         "name": "Wi-Fi RSSI"
@@ -122,10 +147,10 @@
         "name": "Timpul rămas"
       },
       "l1_satellites": {
-        "name": "L1 signal quality"
+        "name": "Calitatea semnalului L1"
       },
       "l2_satellites": {
-        "name": "L2 signal quality"
+        "name": "Calitatea semnalului L2"
       },
       "positioning_mode": {
         "name": "Poziția RTK"
@@ -157,6 +182,27 @@
           "SIGNAL_BAD": "Slab",
           "SIGNAL_UNKNOWN": "Necunoscut"
         }
+      },
+      "lidar_positioning_status": {
+        "name": "Stare poziționare LiDAR",
+        "state": {
+          "good": "Bun",
+          "none": "Niciunul"
+        }
+      },
+      "fused_localization_status": {
+        "name": "Stare localizare fuzionată",
+        "state": {
+          "unknown": "Necunoscut",
+          "no_pose": "Nicio poziție",
+          "rtk_fixed": "RTK fix",
+          "rtk_extended_vision": "RTK extins",
+          "vision_extended": "Extindere vizuală",
+          "vision_extended_failed": "Extindere vizuală eșuată"
+        }
+      },
+      "vision_survival": {
+        "name": "Vedere 3D"
       },
       "activity_mode": {
         "name": "Tipul de activitate",
@@ -212,7 +258,19 @@
           "WAITING": "În așteptare",
           "MOWING": "Cosire",
           "COMPLETE": "Finalizat",
-          "ABORTED": "Abandonat"
+          "ABORTED": "Abandonat",
+          "UNKNOWN": "Necunoscut"
+        }
+      },
+      "task_area_status_short": {
+        "name": "Sarcina {name}",
+        "state": {
+          "NOT_STARTED": "Neînceput",
+          "WAITING": "În așteptare",
+          "MOWING": "Cosire",
+          "COMPLETE": "Finalizat",
+          "ABORTED": "Abandonat",
+          "UNKNOWN": "Necunoscut"
         }
       },
       "maintenance_distance": {
@@ -321,19 +379,19 @@
         }
       },
       "co_view_l1": {
-        "name": "L1 satellites (co-viewing)"
+        "name": "Sateliți L1 (vizibili în comun)"
       },
       "co_view_l2": {
-        "name": "L2 satellites (co-viewing)"
+        "name": "Sateliți L2 (vizibili în comun)"
       },
       "pos_level": {
-        "name": "Position level"
+        "name": "Nivel de poziționare"
       },
       "rtk_signal": {
-        "name": "RTK signal quality"
+        "name": "Calitatea semnalului RTK"
       },
       "device_signal": {
-        "name": "Device signal quality",
+        "name": "Calitatea semnalului dispozitivului",
         "state": {
           "0": "Bun",
           "1": "Bun",
@@ -342,29 +400,98 @@
         }
       },
       "age": {
-        "name": "RTK correction age"
+        "name": "Vechimea corecției RTK"
       },
       "base_link_status": {
-        "name": "Base link status",
+        "name": "Starea legăturii cu baza",
         "state": {
           "0": "Bun",
           "1": "Slab",
           "2": "Slab",
           "3": "Niciunul"
         }
+      },
+      "self_check": {
+        "name": "Autotest",
+        "state": {
+          "normal": "OK",
+          "emergency_stop": "Oprire de urgență activată",
+          "stop_button": "Butonul STOP apăsat",
+          "safety_key_missing": "Cheia de siguranță nu este introdusă",
+          "lifted": "Ridicat",
+          "tilted": "Înclinat",
+          "tipped_over": "Răsturnat",
+          "bumper_missing": "Bara de protecție laterală nu este montată",
+          "rain": "Ploaie detectată",
+          "low_battery": "Baterie descărcată",
+          "non_working_hours": "În afara programului de lucru",
+          "rtk_station_moved": "Stația de referință RTK a fost mutată",
+          "outside_task_area": "În afara zonei de lucru",
+          "wheel_motor_error": "Eroare motor butuc roată",
+          "blade_motor_overheated": "Motorul lamei este prea fierbinte",
+          "dock_moved": "Stația de încărcare a fost mutată",
+          "no_task_area": "Nicio zonă de lucru",
+          "night_protection": "Protecție pe timp de noapte",
+          "rain_protection": "Protecția împotriva ploii este activă",
+          "rtk_not_ready": "Stația de referință RTK nu este pregătită",
+          "weak_satellite_signal": "Semnal satelit slab",
+          "positioning_failure": "Defecțiune a sistemului de poziționare",
+          "inavi_unavailable": "Serviciul iNavi indisponibil",
+          "weak_rtk_signal": "Semnal RTK slab",
+          "other": "Altele"
+        }
+      },
+      "running_task": {
+        "name": "{name}",
+        "state": {
+          "mowing": "Tunde",
+          "paused": "În pauză",
+          "returning": "Se întoarce",
+          "charging_pause": "Se încarcă, apoi continuă"
+        }
+      },
+      "running_task_unnamed": {
+        "name": "Sarcina {n}",
+        "state": {
+          "mowing": "Tunde",
+          "paused": "În pauză",
+          "returning": "Se întoarce",
+          "charging_pause": "Se încarcă, apoi continuă"
+        }
+      },
+      "remote_drive_state": {
+        "name": "Stare conducere de la distanță",
+        "state": {
+          "idle": "Inactivă",
+          "requesting_token": "Se solicită permisiunea",
+          "safety_notice": "Se așteaptă confirmarea de siguranță",
+          "active": "În conducere",
+          "exiting": "Se încheie"
+        },
+        "state_attributes": {
+          "last_event": {
+            "name": "Ultimul eveniment"
+          },
+          "last_event_detail": {
+            "name": "Detaliile ultimului eveniment"
+          }
+        }
       }
     },
     "binary_sensor": {
       "spino_charging": {
         "name": "Se încarcă"
+      },
+      "rain_detected": {
+        "name": "Ploaie detectată"
       }
     },
     "button": {
       "start_map_sync": {
         "name": "Sincronizați harta"
       },
-      "start_schedule_sync": {
-        "name": "Sincronizați programele"
+      "start_task_sync": {
+        "name": "Sincronizați sarcinile"
       },
       "resync_rtk_dock": {
         "name": "Sincronizați RTK și docul"
@@ -374,6 +501,9 @@
       },
       "start_dropmow": {
         "name": "Pornește DropMow"
+      },
+      "continue_last_job": {
+        "name": "Continuă ultima sarcină"
       },
       "emergency_nudge_forward": {
         "name": "Un impuls de urgență înainte"
@@ -410,11 +540,20 @@
       },
       "spino_refresh_status": {
         "name": "Reîmprospătează starea"
+      },
+      "confirm_remote_drive": {
+        "name": "Confirmă conducerea de la distanță"
+      },
+      "acknowledge_remote_drive_fence": {
+        "name": "Confirmă avertizarea de limită"
       }
     },
     "switch": {
       "area": {
         "name": "Suprafață {name}"
+      },
+      "area_plain": {
+        "name": "{name}"
       },
       "blade_status": {
         "name": "Lame pornite/oprite"
@@ -428,9 +567,6 @@
       "is_edge": {
         "name": "Taie marginile"
       },
-      "rain_tactics": {
-        "name": "Detectare ploaie (tuns) Pornit/Oprit"
-      },
       "auto_change_direction": {
         "name": "Inversare automată a direcției de tuns"
       },
@@ -439,6 +575,12 @@
       },
       "smart_charge": {
         "name": "Încărcare inteligentă"
+      },
+      "smart_recharge_level": {
+        "name": "Nivel inteligent de revenire la încărcare"
+      },
+      "smart_resume_level": {
+        "name": "Nivel inteligent de reluare"
       },
       "side_led": {
         "name": "LED lateral Pornit/Oprit"
@@ -471,7 +613,7 @@
         "name": "Golire manuală a ierbii"
       },
       "spino_buzzer": {
-        "name": "Buzzer"
+        "name": "Avertizor sonor"
       },
       "spino_turbo_clean": {
         "name": "Curățare turbo"
@@ -481,6 +623,9 @@
       },
       "spino_waterline_parking": {
         "name": "Parcare la linia apei"
+      },
+      "remote_drive": {
+        "name": "Conducere de la distanță prin cloud"
       }
     },
     "select": {
@@ -605,6 +750,34 @@
           "CURVE_SIMPLE": "Curbat (simplu)",
           "CURVE_COMPLEX": "Curbat (complex)"
         }
+      },
+      "rain_protection_mode": {
+        "name": "Protecție împotriva ploii",
+        "state": {
+          "off": "Oprită",
+          "smart": "Mod inteligent",
+          "sensor": "Mod senzor"
+        }
+      },
+      "rain_protection_delay": {
+        "name": "Întârzierea protecției împotriva ploii",
+        "state": {
+          "0": "Fără întârziere",
+          "1": "1 oră",
+          "2": "2 ore",
+          "3": "3 ore",
+          "4": "4 ore",
+          "5": "5 ore",
+          "6": "6 ore",
+          "7": "7 ore",
+          "8": "8 ore",
+          "9": "9 ore",
+          "10": "10 ore",
+          "11": "11 ore",
+          "12": "12 ore",
+          "24": "24 de ore",
+          "48": "48 de ore"
+        }
       }
     },
     "number": {
@@ -613,6 +786,15 @@
       },
       "charge_limit": {
         "name": "Limită de încărcare"
+      },
+      "recharge_level": {
+        "name": "Revenire la încărcare la"
+      },
+      "resume_level": {
+        "name": "Reluare tuns la"
+      },
+      "ride_boundary_distance": {
+        "name": "Acoperire margini"
       },
       "start_progress": {
         "name": "Progresul la start"
@@ -691,12 +873,6 @@
         "3": "Fără grilă"
       }
     },
-    "rain_tactics": {
-      "options": {
-        "0": "Oprit",
-        "1": "Pornit"
-      }
-    },
     "toward_mode": {
       "options": {
         "0": "Unghi relativ",
@@ -725,7 +901,8 @@
     "notify": {
       "options": {
         "warnings": "Avertizări și coduri de eroare",
-        "notifications": "Notificări și informații despre dispozitiv"
+        "notifications": "Notificări și informații despre dispozitiv",
+        "self_check": "Autotest: de ce mașina de tuns nu poate porni"
       }
     }
   },
@@ -786,10 +963,6 @@
           "name": "Lățimea căii",
           "description": "Lățimea căii de cosit (în cm)."
         },
-        "rain_tactics": {
-          "name": "Detectarea ploii",
-          "description": "Detectarea ploii."
-        },
         "blade_height": {
           "name": "Înălțime lamă",
           "description": "Înălţimea lamei."
@@ -817,6 +990,14 @@
         "start_progress": {
           "name": "Progres Start",
           "description": "Progres de inceput procent."
+        },
+        "auto_change_direction": {
+          "name": "Inversare automată a direcției de tuns",
+          "description": "Inversează direcția de tuns între rulări: 0 = oprit, 1 = pornit. Folosit doar pe modelele și firmware-ul care îl acceptă. Dacă este omis, se aplică setarea comutatorului."
+        },
+        "ride_boundary_distance": {
+          "name": "Acoperire margini",
+          "description": "Cât de mult se deplasează spre exterior mașina de tuns în timpul turelor de perimetru, de la 0 (margine interioară) la 1 (pe margine). Folosit doar pe modelele care îl acceptă și când turele de perimetru sunt activate."
         },
         "areas": {
           "name": "Selecția zonei",
@@ -856,13 +1037,9 @@
           "name": "Ture zonă interzisă",
           "description": "Ture zonă interzisă"
         },
-        "rain_tactics": {
-          "name": "Tactică ploaie",
-          "description": "Tactică ploaie"
-        },
         "auto_change_direction": {
-          "name": "Schimbare automată a direcției",
-          "description": "Schimbare automată a direcției"
+          "name": "Inversare automată a direcției de tuns",
+          "description": "Inversare automată a direcției de tuns — inversează direcția de tuns între rulări pentru a reduce culcarea ierbii."
         },
         "start_progress": {
           "name": "Progres",
@@ -944,22 +1121,12 @@
     },
     "get_map_data": {
       "name": "Obțineți datele hărții",
-      "description": "Returnează datele brute ale hărții (zone, plăci SVG, nume de zone) pentru utilizare cu cardul de hartă SVG.",
-      "fields": {
-        "entity_id": {
-          "name": "Entitate",
-          "description": "Orice entitate Mammotion aparținând dispozitivului."
-        }
-      }
+      "description": "Returnează datele brute ale hărții (zone, plăci SVG, nume de zone) pentru utilizare cu cardul de hartă SVG."
     },
     "svg_add": {
       "name": "Adăugați placă SVG",
       "description": "Trimite o nouă placă SVG pe harta dispozitivului. Returnează hash-ul atribuit de dispozitiv.",
       "fields": {
-        "entity_id": {
-          "name": "Entitate",
-          "description": "Orice entitate Mammotion aparținând dispozitivului."
-        },
         "area_hash": {
           "name": "Hash zonă",
           "description": "Hash-ul zonei de cosit principale."
@@ -1002,10 +1169,6 @@
       "name": "Actualizați placă SVG",
       "description": "Înlocuiește o placă SVG existentă pe harta dispozitivului. Utilizați device_hash returnat de svg_add.",
       "fields": {
-        "entity_id": {
-          "name": "Entitate",
-          "description": "Orice entitate Mammotion aparținând dispozitivului."
-        },
         "device_hash": {
           "name": "Hash dispozitiv",
           "description": "Hash atribuit de dispozitiv când placa a fost adăugată prima dată."
@@ -1052,10 +1215,6 @@
       "name": "Ștergeți placă SVG",
       "description": "Elimină o placă SVG din harta dispozitivului prin hash-ul atribuit de dispozitiv.",
       "fields": {
-        "entity_id": {
-          "name": "Entitate",
-          "description": "Orice entitate Mammotion aparținând dispozitivului."
-        },
         "device_hash": {
           "name": "Hash dispozitiv",
           "description": "Hash atribuit de dispozitiv când placa a fost adăugată."
@@ -1072,7 +1231,7 @@
       "fields": {
         "name": {
           "name": "Nume nou",
-          "description": "New display name for the task."
+          "description": "Noul nume afișat al sarcinii."
         }
       }
     },
@@ -1082,7 +1241,7 @@
       "fields": {
         "enabled": {
           "name": "Activat",
-          "description": "True to enable the schedule, false to disable it."
+          "description": "Pornit activează programul, oprit îl dezactivează."
         }
       }
     },
@@ -1096,7 +1255,7 @@
       "fields": {
         "name": {
           "name": "Nume nou",
-          "description": "Override the auto-generated 'Copy-N' name."
+          "description": "Înlocuiește numele 'Copy-N' generat automat."
         }
       }
     },
@@ -1105,80 +1264,96 @@
       "description": "Modifică un subset al câmpurilor programului.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name."
+          "name": "Nume",
+          "description": "Nume afișat."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule is active."
+          "name": "Activat",
+          "description": "Dacă programul este activ."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday) the schedule runs on."
+          "name": "Zilele săptămânii",
+          "description": "Lista numerelor zilelor săptămânii (0 = duminică … 6 = sâmbătă) în care rulează programul."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower only)."
+          "name": "Ora de început",
+          "description": "HH:MM (doar mașina de tuns)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower only)."
+          "name": "Ora de sfârșit",
+          "description": "HH:MM (doar mașina de tuns)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Data de început",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Data de sfârșit",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Tip de declanșare",
+          "description": "0 = săptămânal, 1 = interval în zile, 2 = dată, 3 = o singură dată."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days when trigger_type is 1 (DAY)."
+          "name": "Interval în zile",
+          "description": "Interval în zile când trigger_type este 1 (DAY)."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Înălțimea de tăiere",
+          "description": "Înălțimea lamei în milimetri (doar mașina de tuns)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower: driving speed (float). Spino: fixed32 speed value (int)."
+          "name": "Viteză",
+          "description": "Mașina de tuns: viteza de deplasare (float). Spino: valoare de viteză fixed32 (int)."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
+          "name": "Mod margine",
+          "description": "Doar mașina de tuns: 0 = deloc, 1 = o dată, 2 = de două ori."
+        },
+        "ride_boundary_distance": {
+          "name": "Acoperire margini",
+          "description": "Cât de mult se deplasează spre exterior mașina de tuns în timpul turelor de perimetru, de la 0 (margine interioară) la 1 (pe margine). Folosit doar pe modelele care îl acceptă și când turele de perimetru sunt activate."
+        },
+        "auto_change_direction": {
+          "name": "Inversare automată a direcției de tuns",
+          "description": "Inversare automată a direcției de tuns — inversează direcția de tuns între rulări pentru a reduce culcarea ierbii: 0 = oprit, 1 = pornit. Doar pe modelele și firmware-ul care o acceptă. Dacă este omis, se păstrează setarea programului (oprit pentru un program nou)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only: mowing pattern angle 0–179 degrees."
+          "name": "Unghiul traseului",
+          "description": "Doar mașina de tuns: unghiul modelului de tundere 0–179 grade."
+        },
+        "toward_mode": {
+          "name": "Mod unghi tăiat",
+          "description": "Doar mașina de tuns: cum se aplică unghiul traseului (0 = optim, 1 = nord, 2 = aleatoriu)."
+        },
+        "toward_included_angle": {
+          "name": "Unghiul de trecere",
+          "description": "Doar mașina de tuns: al doilea unghi al unui traseu în tablă de șah, în grade."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only: spacing between mow lines in cm."
+          "name": "Distanța dintre trasee",
+          "description": "Doar mașina de tuns: distanța dintre liniile de tundere în cm."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes (fixed64) covered by this schedule."
+          "name": "Hash-uri de zone",
+          "description": "Doar mașina de tuns: lista hash-urilor zonelor (fixed64) acoperite de acest program."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only: 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
+          "name": "Mod de lucru",
+          "description": "Doar Spino: 0 = reîncărcare, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values for multi-stage cleaning."
+          "name": "Submoduri",
+          "description": "Doar Spino: lista valorilor APP_WORK pentru curățarea în mai multe etape."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only: suction power (fixed32 int)."
+          "name": "Putere de funcționare",
+          "description": "Doar Spino: putere de aspirare (fixed32 int)."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix timestamp (seconds) for the start of the cleaning session."
+          "name": "Marcaj de timp de început",
+          "description": "Doar Spino: marcaj de timp unix (secunde) pentru începutul sesiunii de curățare."
         }
       }
     },
@@ -1187,80 +1362,96 @@
       "description": "Creează un program nou pe dispozitiv.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name for the new schedule."
+          "name": "Nume",
+          "description": "Numele afișat al noului program."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule starts enabled."
+          "name": "Activat",
+          "description": "Dacă programul pornește activat."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday)."
+          "name": "Zilele săptămânii",
+          "description": "Lista numerelor zilelor săptămânii (0 = duminică … 6 = sâmbătă)."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower)."
+          "name": "Ora de început",
+          "description": "HH:MM (mașina de tuns)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower)."
+          "name": "Ora de sfârșit",
+          "description": "HH:MM (mașina de tuns)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Data de început",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Data de sfârșit",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Tip de declanșare",
+          "description": "0 = săptămânal, 1 = interval în zile, 2 = dată, 3 = o singură dată."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days for trigger_type = 1."
+          "name": "Interval în zile",
+          "description": "Interval în zile pentru trigger_type = 1."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Înălțimea de tăiere",
+          "description": "Înălțimea lamei în milimetri (doar mașina de tuns)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower or Spino speed."
+          "name": "Viteză",
+          "description": "Viteza mașinii de tuns sau a Spino."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only."
+          "name": "Mod margine",
+          "description": "Doar mașina de tuns."
+        },
+        "ride_boundary_distance": {
+          "name": "Acoperire margini",
+          "description": "Cât de mult se deplasează spre exterior mașina de tuns în timpul turelor de perimetru, de la 0 (margine interioară) la 1 (pe margine). Folosit doar pe modelele care îl acceptă și când turele de perimetru sunt activate."
+        },
+        "auto_change_direction": {
+          "name": "Inversare automată a direcției de tuns",
+          "description": "Inversare automată a direcției de tuns — inversează direcția de tuns între rulări pentru a reduce culcarea ierbii: 0 = oprit, 1 = pornit. Doar pe modelele și firmware-ul care o acceptă. Dacă este omis, se păstrează setarea programului (oprit pentru un program nou)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only."
+          "name": "Unghiul traseului",
+          "description": "Doar mașina de tuns."
+        },
+        "toward_mode": {
+          "name": "Mod unghi tăiat",
+          "description": "Doar mașina de tuns: cum se aplică unghiul traseului (0 = optim, 1 = nord, 2 = aleatoriu)."
+        },
+        "toward_included_angle": {
+          "name": "Unghiul de trecere",
+          "description": "Doar mașina de tuns: al doilea unghi al unui traseu în tablă de șah, în grade."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only."
+          "name": "Distanța dintre trasee",
+          "description": "Doar mașina de tuns."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes covered."
+          "name": "Hash-uri de zone",
+          "description": "Doar mașina de tuns: lista hash-urilor zonelor acoperite."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only cleaning mode."
+          "name": "Mod de lucru",
+          "description": "Mod de curățare (doar Spino)."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values."
+          "name": "Submoduri",
+          "description": "Doar Spino: lista valorilor APP_WORK."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only."
+          "name": "Putere de funcționare",
+          "description": "Doar Spino."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix start time."
+          "name": "Marcaj de timp de început",
+          "description": "Doar Spino: ora de început în format unix."
         }
       }
     },
@@ -1271,6 +1462,16 @@
     "get_tasks": {
       "name": "Obține sarcinile",
       "description": "Returnează toate programările pe care integrarea le deține pentru dispozitivul vizat, inclusiv dacă fiecare este activată. Folosiți-o pentru a confirma că o modificare a fost aplicată; „Reîmprospătează sarcinile” le preia mai întâi din nou de pe dispozitiv."
+    },
+    "get_task": {
+      "name": "Obține sarcina",
+      "description": "Returnează una dintre programările mașinii de tuns vizate după ID-ul sarcinii: setările curente cu numele de câmpuri acceptate de „Editează sarcina”, precum și dacă este activată și în desfășurare. Folosiți-o pentru a citi o sarcină înainte de a o edita.",
+      "fields": {
+        "task_id": {
+          "name": "ID sarcină",
+          "description": "ID-ul sarcinii, așa cum apare în atributul task_id al butonului sarcinii sau cum este returnat de „Obține sarcinile”."
+        }
+      }
     },
     "start_task": {
       "name": "Pornește sarcina",
@@ -1303,6 +1504,22 @@
     "get_map_backups": {
       "name": "Obține copiile de rezervă ale hărților",
       "description": "Returnează copiile de rezervă ale hărților din contul Mammotion cu care este conectată această integrare. Copiile aparțin contului, așa că cele create în aplicație cu alt cont nu sunt afișate."
+    },
+    "get_geojson": {
+      "name": "Obține GeoJSON-ul hărții",
+      "description": "Returnează harta mașinii de tuns (zone, obstacole, trasee, stația de încărcare și stația RTK) ca GeoJSON FeatureCollection pentru cardul hărții și face ca mașina să își raporteze poziția în următoarele minute."
+    },
+    "get_mow_path_geojson": {
+      "name": "Obține GeoJSON-ul traseului de tuns",
+      "description": "Returnează traseul de tuns planificat al sarcinii curente ca GeoJSON FeatureCollection. Gol până când traseul este descărcat."
+    },
+    "get_mow_progress_geojson": {
+      "name": "Obține GeoJSON-ul progresului",
+      "description": "Returnează partea deja tunsă a traseului sarcinii curente ca GeoJSON FeatureCollection; mașinile care transmit o linie dinamică returnează în schimb acea linie. Când o sarcină rulează și încă nu se poate afișa nimic, descarcă și datele acestui strat, cel mult o dată pe minut. Prin Bluetooth, o linie dinamică se actualizează singură."
+    },
+    "fetch_mow_path": {
+      "name": "Descarcă traseul de tuns",
+      "description": "Descarcă traseul de tuns al sarcinii pe care o execută mașina, dacă nu există deja unul complet în cache, apoi reconstruiește progresul tunsului. Mașinile cu linie dinamică își descarcă și linia cea mai recentă. Prin cloud se întâmplă doar cu 'Activați descărcarea traseului de tuns (cloud)' activat în opțiuni; prin Bluetooth întotdeauna. Returnează dacă descărcarea a început."
     },
     "get_map_backup_progress": {
       "name": "Obține progresul copiei de rezervă",
@@ -1347,6 +1564,9 @@
     "device_not_ready": {
       "message": "Dispozitivul nu este pregătit."
     },
+    "no_job_to_continue": {
+      "message": "Nu există nicio sarcină întreruptă de continuat."
+    },
     "pause_failed": {
       "message": "Nu s-a reușit punerea în pauză a mașinii de tuns iarba."
     },
@@ -1365,11 +1585,14 @@
     "command_failed": {
       "message": "Nu s-a reușit trimiterea comenzii către mașina de tuns iarba."
     },
-    "api_limit_exceeded": {
-      "message": "Limita de solicitări API a fost depăşită."
+    "command_unconfirmed": {
+      "message": "Mașina de tuns iarba nu a confirmat comanda. Este posibil să fi fost totuși executată."
     },
     "account_in_use": {
-      "message": "Contul dvs. Mammotion este deja activ într-o altă sesiune. Deconectați-vă din aplicația Mammotion și încercați din nou."
+      "message": "Contul dvs. Mammotion este activ într-o altă sesiune (aplicația Mammotion). Deconectați-vă din aplicație sau așteptați și încercați din nou."
+    },
+    "api_limit_exceeded": {
+      "message": "Limita de solicitări API a fost depășită."
     },
     "cloud_setup_failed": {
       "message": "Nu se poate conecta la cloud-ul Mammotion. Verificați rețeaua și încercați să reîncărcați integrarea."
@@ -1377,11 +1600,23 @@
     "task_not_found": {
       "message": "Sarcina {plan_id} nu a fost găsită pe dispozitiv. Reîmprospătează programul și încearcă din nou."
     },
+    "task_id_not_found": {
+      "message": "Sarcina {task_id} nu a fost găsită pentru {entity_id}. Reîmprospătează sarcinile și încearcă din nou."
+    },
     "start_task_unsupported_on_spino": {
       "message": "Pornirea unui program la cerere nu este acceptată pe robotul de piscină Spino — firmware-ul nu oferă o comandă de execuție imediată pentru programele stocate."
     },
     "grass_collection_unsupported": {
       "message": "Această mașină de tuns nu acceptă colectarea ierbii."
+    },
+    "no_running_job": {
+      "message": "{device_name} nu execută nicio sarcină de tundere, deci nu este nimic de modificat. Porniți mai întâi o sarcină."
+    },
+    "running_job_modify_unsupported": {
+      "message": "{device_name} nu permite modificarea unei sarcini în curs. Doar Luba 2 și modelele mai noi permit acest lucru."
+    },
+    "auto_change_direction_unsupported": {
+      "message": "Inversarea automată a direcției de tuns nu este acceptată de {device_name} sau de firmware-ul său."
     },
     "map_backup_cloud_unavailable": {
       "message": "Copiile de rezervă ale hărților necesită o autentificare funcțională în cloudul Mammotion."
@@ -1392,8 +1627,176 @@
     "map_backup_device_not_found": {
       "message": "{device_name} nu este listat pentru copii de rezervă ale hărților în acest cont Mammotion."
     },
-    "map_backup_mower_not_found": {
+    "mower_not_found": {
       "message": "{entity_id} nu este o mașină de tuns Mammotion."
+    },
+    "notification_unknown_code": {
+      "message": "Cod de eroare necunoscut {code}"
+    },
+    "notification_title_warnings": {
+      "message": "{device_name}: avertismente"
+    },
+    "notification_title_notifications": {
+      "message": "{device_name}: notificări"
+    },
+    "notification_title_self_check": {
+      "message": "{device_name}: {state}"
+    },
+    "self_check_emergency_stop": {
+      "message": "Oprirea de urgență este activă. Eliberați-o pe mașină înainte de a porni din nou."
+    },
+    "self_check_stop_button": {
+      "message": "Butonul STOP al mașinii a fost apăsat. Resetați-l pe mașină înainte de a porni din nou."
+    },
+    "self_check_safety_key_missing": {
+      "message": "Cheia de siguranță nu este introdusă. Introduceți-o pentru a începe tunsul."
+    },
+    "self_check_lifted": {
+      "message": "Mașina a fost ridicată de pe sol. Puneți-o înapoi pe gazon."
+    },
+    "self_check_tilted": {
+      "message": "Mașina este înclinată. Mutați-o pe teren plan."
+    },
+    "self_check_tipped_over": {
+      "message": "Mașina s-a răsturnat. Readuceți-o pe roți."
+    },
+    "self_check_bumper_missing": {
+      "message": "Bara de protecție laterală nu este montată. Montați-o înainte de tuns."
+    },
+    "self_check_rain": {
+      "message": "S-a detectat ploaie și „Fără tuns în zilele ploioase” este activat. Tunsul poate începe după ce se oprește ploaia sau dezactivați funcția."
+    },
+    "self_check_low_battery": {
+      "message": "Bateria este prea descărcată pentru tuns. Lăsați mașina să se încarce."
+    },
+    "self_check_non_working_hours": {
+      "message": "Este în afara programului de lucru al mașinii."
+    },
+    "self_check_rtk_station_moved": {
+      "message": "Stația de referință RTK a fost mutată. Verificați-i poziția în aplicație."
+    },
+    "self_check_outside_task_area": {
+      "message": "Mașina este în afara zonei de lucru. Mutați-o înapoi într-o zonă cartografiată."
+    },
+    "self_check_wheel_motor_error": {
+      "message": "Un motor de butuc al roții a raportat o eroare."
+    },
+    "self_check_blade_motor_overheated": {
+      "message": "Motorul lamei este prea fierbinte. Lăsați-l să se răcească."
+    },
+    "self_check_dock_moved": {
+      "message": "Stația de încărcare a fost mutată. Verificați-i poziția în aplicație."
+    },
+    "self_check_no_task_area": {
+      "message": "Nu a fost găsită nicio zonă de lucru. Creați o hartă în aplicație."
+    },
+    "self_check_night_protection": {
+      "message": "Protecția pe timp de noapte este activată, deci mașina nu tunde noaptea."
+    },
+    "self_check_rain_protection": {
+      "message": "Protecția împotriva ploii împiedică pornirea mașinii de tuns. Folosește senzorul de ploaie și datele meteo online pentru a stabili dacă condițiile sunt potrivite pentru tuns și calculează când să reia tunsul. Așteptați sau modificați ori dezactivați protecția împotriva ploii din setările mașinii de tuns din aplicație."
+    },
+    "self_check_rtk_not_ready": {
+      "message": "Stația de referință RTK nu este încă pregătită."
+    },
+    "self_check_weak_satellite_signal": {
+      "message": "Semnalul satelit al mașinii este prea slab pentru a o poziționa."
+    },
+    "self_check_positioning_failure": {
+      "message": "Sistemul de poziționare s-a defectat."
+    },
+    "self_check_inavi_unavailable": {
+      "message": "Serviciul iNavi nu este disponibil."
+    },
+    "self_check_weak_rtk_signal": {
+      "message": "Semnalul RTK este slab. Verificați unde este amplasată stația de referință."
+    },
+    "self_check_other": {
+      "message": "Mașina a raportat codul de autotest necunoscut {code}."
+    },
+    "remote_drive_needs_cloud": {
+      "message": "Conducerea de la distanță prin cloud necesită o conexiune cloud funcțională cu mașina de tuns. Prin Bluetooth folosiți în schimb butoanele de deplasare."
+    },
+    "remote_drive_start_failed": {
+      "message": "Conducerea de la distanță nu a putut fi pornită: mașina de tuns nu a putut fi contactată prin cloud."
+    },
+    "remote_drive_already_running": {
+      "message": "Conducerea de la distanță prin cloud rulează deja. Opriți-o înainte de a o porni din nou."
+    },
+    "remote_drive_not_awaiting_confirmation": {
+      "message": "Nu există niciun avertisment de siguranță de confirmat. Porniți mai întâi conducerea de la distanță prin cloud."
+    },
+    "remote_drive_no_reverse": {
+      "message": "Conducerea de la distanță prin cloud nu poate deplasa mașina de tuns înapoi. Virați la stânga sau la dreapta sau folosiți Bluetooth."
+    },
+    "remote_drive_fence_paused": {
+      "message": "Mașina de tuns s-a oprit lângă limită. Apăsați „Confirmă avertizarea de limită” înainte de a continua."
+    },
+    "remote_drive_safety_notice": {
+      "message": "Înainte de a conduce mașina de tuns de la distanță, asigurați-vă că nu există oameni sau animale în zona de lucru și păstrați mașina în raza vizuală tot timpul. Apăsați „Confirmă conducerea de la distanță” în 3 minute pentru a începe. Sesiunea se încheie singură la scurt timp după ultima comandă."
+    },
+    "movement_unavailable": {
+      "message": "Mașina de tuns nu poate fi deplasată acum. Apropiați-vă în raza Bluetooth sau porniți conducerea de la distanță prin cloud și apăsați „Confirmă conducerea de la distanță”."
+    },
+    "notification_title_remote_drive": {
+      "message": "{device_name}: conducere de la distanță prin cloud"
+    },
+    "remote_drive_token_unavailable": {
+      "message": "Serverul Mammotion nu a permis conducerea de la distanță (cod {detail}). Încercați din nou mai târziu."
+    },
+    "remote_drive_occupied_by_other": {
+      "message": "Mașina de tuns este deja condusă de alt cont ({detail})."
+    },
+    "remote_drive_network_poor": {
+      "message": "Conducerea de la distanță s-a încheiat: conexiunea de rețea a mașinii de tuns este prea slabă."
+    },
+    "remote_drive_token_expired": {
+      "message": "Conducerea de la distanță s-a încheiat: permisiunea de conducere a expirat."
+    },
+    "remote_drive_out_of_fence": {
+      "message": "Conducerea de la distanță s-a încheiat: mașina de tuns este în afara zonei permise."
+    },
+    "remote_drive_ble_preempt": {
+      "message": "Conducerea de la distanță s-a încheiat: mașina de tuns este acum controlată prin Bluetooth de {detail}."
+    },
+    "remote_drive_no_loc_mileage_exhausted": {
+      "message": "Conducerea de la distanță s-a încheiat: mașina de tuns a parcurs distanța maximă permisă fără poziționare."
+    },
+    "remote_drive_env_not_ready": {
+      "message": "Conducerea de la distanță s-a încheiat: mașina de tuns nu este pregătită pentru a fi condusă (cod {detail})."
+    },
+    "remote_drive_send_failed": {
+      "message": "Conducerea de la distanță s-a încheiat: o comandă nu a putut fi trimisă ({detail})."
+    },
+    "remote_drive_approach_fence": {
+      "message": "Mașina de tuns s-a oprit foarte aproape de limită. Apăsați „Confirmă avertizarea de limită” pentru a continua."
+    },
+    "remote_drive_safety_notice_timeout": {
+      "message": "Conducerea de la distanță s-a încheiat: avertismentul de siguranță nu a fost confirmat în 3 minute."
+    },
+    "remote_drive_video_unavailable": {
+      "message": "Conducerea de la distanță s-a încheiat: imaginea camerei s-a oprit."
+    },
+    "battery_settings_unread": {
+      "message": "Setările bateriei nu au fost încă citite de pe mașina de tuns. Modificarea lor acum ar reseta intervalul de încărcare în afara orelor de vârf, așa că nu s-a trimis nimic. Încercați din nou după ce mașina de tuns este conectată."
+    }
+  },
+  "issues": {
+    "account_in_use": {
+      "title": "Contul Mammotion este folosit de o altă sesiune",
+      "description": "Contul dvs. Mammotion {account} este deja activ într-o altă sesiune, așa că conexiunea cloud este suspendată. Deconectați-vă din aplicația Mammotion; integrarea se va reconecta automat în câteva minute."
+    },
+    "cloud_login_retrying": {
+      "title": "Cloud Mammotion indisponibil",
+      "description": "Home Assistant nu s-a putut conecta la cloud-ul Mammotion pentru {account} ({error}). Dispozitivele conectate prin Bluetooth continuă să funcționeze. Conectarea este reîncercată la fiecare 15 minute, de cel mult 5 ori, folosind sesiunea salvată."
+    },
+    "cloud_login_failed": {
+      "title": "Cloud Mammotion neconectat",
+      "description": "Home Assistant nu s-a putut conecta la cloud-ul Mammotion pentru {account} ({error}) și a încetat să mai încerce. Dispozitivele conectate prin Bluetooth continuă să funcționeze. Reîncărcați integrarea Mammotion după ce serviciul Mammotion este din nou accesibil."
+    },
+    "deprecated_rain_tactics": {
+      "title": "Opțiune retrasă folosită într-o acțiune Mammotion",
+      "description": "O automatizare sau un script apelează `{service}` cu `{field}`. Această opțiune a fost eliminată: nu a ajuns niciodată la mașina de tuns, așa că este ignorată, iar sarcina pornește normal. Folosiți în schimb comutatorul Detectare ploaie al mașinii de tuns și eliminați `{field}` din apelul acțiunii pentru a închide acest mesaj."
     }
   }
 }

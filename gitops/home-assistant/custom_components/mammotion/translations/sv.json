@@ -5,30 +5,31 @@
       "already_in_progress": "Konfigurationsflödet pågår redan",
       "no_devices_found": "Inga enheter funna",
       "no_devices_found_in_account": "Inga enheter funna på ditt konto",
-      "bluetooth_and_account_mismatch": "Ingen Bluetooth-enheten funnen på ditt konto",
+      "bluetooth_and_account_mismatch": "Bluetooth-enheten hittades inte på ditt konto",
       "no_longer_present": "Enheten finns inte längre",
       "not_supported": "Enheten stöds inte",
       "reconfigure_successful": "Omkonfigurering lyckades",
-      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
+      "merged_into_existing_account": "Det här kontot har redan en post; Bluetooth-enheterna slogs ihop med den och den här posten togs bort.",
       "api_limit_exceeded": "API-anropsgränsen har överskridits. Försök igen senare.",
-      "account_in_use": "Ditt Mammotion-konto är redan aktivt i en annan session. Logga ut från Mammotion-appen och försök igen.",
       "reauth_successful": "Omautentiseringen lyckades",
       "wrong_account": "De här uppgifterna tillhör ett annat Mammotion-konto. Autentisera på nytt med kontot som posten skapades med."
     },
     "error": {
       "login_failed": "Inloggningen misslyckades. Kontrollera kontots e-postadress och lösenord och försök igen.",
       "cannot_connect": "Det går inte att ansluta till Mammotion-molnet. Kontrollera dina inloggningsuppgifter och nätverket och försök igen.",
-      "no_account_no_ble": "Inga kontouppgifter angavs och ingen Bluetooth-enhet hittades. Ange dina Mammotion-kontouppgifter eller konfigurera en Bluetooth-enhet."
+      "no_account_no_ble": "Inga kontouppgifter angavs och ingen Bluetooth-enhet hittades. Ange dina Mammotion-kontouppgifter eller konfigurera en Bluetooth-enhet.",
+      "credentials_required": "Ange både ditt Mammotion-konto och dess lösenord."
     },
     "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Konfiguration {name}"
+        "description": "Konfigurera {name}"
       },
       "reconfigure": {
         "data": {
           "account_name": "E-post eller kontonummer för Mammotion",
-          "password": "Lösenord för Mammotion-konto"
+          "password": "Lösenord för Mammotion-konto",
+          "remove_account": "Ta bort kontot och använd endast Bluetooth"
         }
       },
       "user": {
@@ -64,11 +65,29 @@
           "mow_path_fetch_enabled": "Aktivera hämtning av klippväg (moln)",
           "full_map_fetch_enabled": "Aktivera fullständig karthämtning (moln) — när av hämtas endast områdesnamn",
           "notify": "Visa beständiga aviseringar för"
+        },
+        "data_description": {
+          "movement_use_wifi": "Skickar det gamla rörelsekommandot via Wi-Fi i stället för att använda fjärrkörning via moln. Utan detta fungerar knuffknapparna och rörelseåtgärderna via molnet från firmware 1.30.31.19 på LUBA 2, LUBA 2X, YUKA, LUBA mini och YUKA mini, från 2.3.31.69 på LUBA 3, LUBA mini 2 och YUKA mini 2 och på nyare modeller som Mammotion-servern rapporterar stöd för, bara medan Fjärrkörning via moln är på och bekräftad. Slå på för att använda det gamla kommandot med all firmware, till exempel för att jämföra båda på en LUBA 3; en ansluten Bluetooth-länk används fortfarande först.",
+          "notify": "Självtestaviseringar är på som standard, de andra är av. Varje avisering utlöser också gräsklipparens aviseringshändelseentitet och en mammotion_event-händelse på bussen, som automatiseringar kan använda i stället."
         }
       }
     }
   },
   "entity": {
+    "camera": {
+      "webrtc_camera": {
+        "name": "Vänster kamera"
+      },
+      "webrtc_camera_vision": {
+        "name": "Visionskamera"
+      },
+      "webrtc_camera_right": {
+        "name": "Höger kamera"
+      },
+      "webrtc_camera_rear": {
+        "name": "Bakre kamera"
+      }
+    },
     "sensor": {
       "error_1_message": {
         "name": "Senaste fel"
@@ -86,7 +105,13 @@
         "name": "BLE RSSI"
       },
       "camera_brightness": {
-        "name": "Kamera ljusstyrka"
+        "name": "Kamerans ljusstyrka",
+        "state": {
+          "dark": "Mörk",
+          "good": "Bra",
+          "intense": "Intensiv",
+          "unknown": "Okänd"
+        }
       },
       "wifi_rssi": {
         "name": "Wi-Fi RSSI"
@@ -122,16 +147,16 @@
         "name": "Tid kvar"
       },
       "l1_satellites": {
-        "name": "L1 signal quality"
+        "name": "L1-signalkvalitet"
       },
       "l2_satellites": {
-        "name": "L2 signal quality"
+        "name": "L2-signalkvalitet"
       },
       "positioning_mode": {
-        "name": "RTK position"
+        "name": "RTK-position"
       },
       "position_type": {
-        "name": "Typ av enhet",
+        "name": "Positionstyp",
         "state": {
           "AREA_BORDER_ON": "Vid perimeter",
           "AREA_INSIDE": "Inuti område",
@@ -158,12 +183,33 @@
           "SIGNAL_UNKNOWN": "Okänd"
         }
       },
+      "lidar_positioning_status": {
+        "name": "LiDAR-positioneringsstatus",
+        "state": {
+          "good": "Bra",
+          "none": "Ingen"
+        }
+      },
+      "fused_localization_status": {
+        "name": "Status för sammanslagen lokalisering",
+        "state": {
+          "unknown": "Okänd",
+          "no_pose": "Ingen position",
+          "rtk_fixed": "RTK fixerad",
+          "rtk_extended_vision": "RTK utökad",
+          "vision_extended": "Visuellt utökad",
+          "vision_extended_failed": "Visuell utökning misslyckades"
+        }
+      },
+      "vision_survival": {
+        "name": "3D-vision"
+      },
       "activity_mode": {
         "name": "Aktivitetsläge",
         "state": {
           "MODE_NOT_ACTIVE": "Inte aktiv",
-          "MODE_ONLINE": "Online",
-          "MODE_OFFLINE": "Offline",
+          "MODE_ONLINE": "Uppkopplad",
+          "MODE_OFFLINE": "Nedkopplad",
           "MODE_DISABLE": "Inaktiverad",
           "MODE_INITIALIZATION": "Initialiserar",
           "MODE_READY": "Redo",
@@ -212,7 +258,19 @@
           "WAITING": "Väntar",
           "MOWING": "Klipper",
           "COMPLETE": "Slutfört",
-          "ABORTED": "Avbrutet"
+          "ABORTED": "Avbrutet",
+          "UNKNOWN": "Okänd"
+        }
+      },
+      "task_area_status_short": {
+        "name": "Uppgift {name}",
+        "state": {
+          "NOT_STARTED": "Inte startat",
+          "WAITING": "Väntar",
+          "MOWING": "Klipper",
+          "COMPLETE": "Slutfört",
+          "ABORTED": "Avbrutet",
+          "UNKNOWN": "Okänd"
         }
       },
       "maintenance_distance": {
@@ -321,19 +379,19 @@
         }
       },
       "co_view_l1": {
-        "name": "L1 satellites (co-viewing)"
+        "name": "L1-satelliter (gemensamt synliga)"
       },
       "co_view_l2": {
-        "name": "L2 satellites (co-viewing)"
+        "name": "L2-satelliter (gemensamt synliga)"
       },
       "pos_level": {
-        "name": "Position level"
+        "name": "Positionsnivå"
       },
       "rtk_signal": {
-        "name": "RTK signal quality"
+        "name": "RTK-signalkvalitet"
       },
       "device_signal": {
-        "name": "Device signal quality",
+        "name": "Enhetens signalkvalitet",
         "state": {
           "0": "Bra",
           "1": "Bra",
@@ -342,29 +400,98 @@
         }
       },
       "age": {
-        "name": "RTK correction age"
+        "name": "Ålder på RTK-korrigering"
       },
       "base_link_status": {
-        "name": "Base link status",
+        "name": "Status för basanslutning",
         "state": {
           "0": "Bra",
           "1": "Svag",
           "2": "Svag",
           "3": "Ingen"
         }
+      },
+      "self_check": {
+        "name": "Självtest",
+        "state": {
+          "normal": "OK",
+          "emergency_stop": "Nödstopp aktiverat",
+          "stop_button": "STOPP-knappen nedtryckt",
+          "safety_key_missing": "Säkerhetsnyckeln är inte isatt",
+          "lifted": "Lyft",
+          "tilted": "Lutad",
+          "tipped_over": "Vält",
+          "bumper_missing": "Sidostötfångaren är inte monterad",
+          "rain": "Regn upptäckt",
+          "low_battery": "Lågt batteri",
+          "non_working_hours": "Utanför arbetstid",
+          "rtk_station_moved": "RTK-referensstationen har flyttats",
+          "outside_task_area": "Utanför uppgiftsområdet",
+          "wheel_motor_error": "Fel på navmotorn",
+          "blade_motor_overheated": "Knivmotorn är för varm",
+          "dock_moved": "Laddstationen har flyttats",
+          "no_task_area": "Inget uppgiftsområde",
+          "night_protection": "Nattskydd",
+          "rain_protection": "Regnskydd aktivt",
+          "rtk_not_ready": "RTK-referensstationen är inte redo",
+          "weak_satellite_signal": "Svag satellitsignal",
+          "positioning_failure": "Fel i positioneringssystemet",
+          "inavi_unavailable": "iNavi-tjänsten är inte tillgänglig",
+          "weak_rtk_signal": "Svag RTK-signal",
+          "other": "Övrigt"
+        }
+      },
+      "running_task": {
+        "name": "{name}",
+        "state": {
+          "mowing": "Klipper",
+          "paused": "Pausad",
+          "returning": "Återvänder",
+          "charging_pause": "Laddar, fortsätter sedan"
+        }
+      },
+      "running_task_unnamed": {
+        "name": "Uppgift {n}",
+        "state": {
+          "mowing": "Klipper",
+          "paused": "Pausad",
+          "returning": "Återvänder",
+          "charging_pause": "Laddar, fortsätter sedan"
+        }
+      },
+      "remote_drive_state": {
+        "name": "Status för fjärrkörning",
+        "state": {
+          "idle": "Inaktiv",
+          "requesting_token": "Begär behörighet",
+          "safety_notice": "Väntar på säkerhetsbekräftelse",
+          "active": "Kör",
+          "exiting": "Avslutas"
+        },
+        "state_attributes": {
+          "last_event": {
+            "name": "Senaste händelse"
+          },
+          "last_event_detail": {
+            "name": "Detaljer om senaste händelse"
+          }
+        }
       }
     },
     "binary_sensor": {
       "spino_charging": {
         "name": "Laddar"
+      },
+      "rain_detected": {
+        "name": "Regn upptäckt"
       }
     },
     "button": {
       "start_map_sync": {
         "name": "Synkronisera kartor"
       },
-      "start_schedule_sync": {
-        "name": "Synkronisera scheman"
+      "start_task_sync": {
+        "name": "Synkronisera uppgifter"
       },
       "resync_rtk_dock": {
         "name": "Synkronisera RTK och laddstationen"
@@ -374,6 +501,9 @@
       },
       "start_dropmow": {
         "name": "Starta DropMow"
+      },
+      "continue_last_job": {
+        "name": "Fortsätt senaste uppdrag"
       },
       "emergency_nudge_forward": {
         "name": "Ett steg framåt"
@@ -410,11 +540,20 @@
       },
       "spino_refresh_status": {
         "name": "Uppdatera status"
+      },
+      "confirm_remote_drive": {
+        "name": "Bekräfta fjärrkörning"
+      },
+      "acknowledge_remote_drive_fence": {
+        "name": "Bekräfta gränsvarning"
       }
     },
     "switch": {
       "area": {
         "name": "Område {name}"
+      },
+      "area_plain": {
+        "name": "{name}"
       },
       "blade_status": {
         "name": "Knivar på/av"
@@ -428,9 +567,6 @@
       "is_edge": {
         "name": "Kantklippning"
       },
-      "rain_tactics": {
-        "name": "Regndetektering (under klippning) på/av"
-      },
       "auto_change_direction": {
         "name": "Automatisk växling av klippriktning"
       },
@@ -439,6 +575,12 @@
       },
       "smart_charge": {
         "name": "Smart laddning"
+      },
+      "smart_recharge_level": {
+        "name": "Smart nivå för återvändande till laddning"
+      },
+      "smart_resume_level": {
+        "name": "Smart återupptagningsnivå"
       },
       "side_led": {
         "name": "Sido-LED på/av"
@@ -453,7 +595,7 @@
         "name": "Bluetooth"
       },
       "cloud_enabled": {
-        "name": "Cloud"
+        "name": "Molnet"
       },
       "manual_light": {
         "name": "Manuellt ljus på/av"
@@ -477,19 +619,22 @@
         "name": "Turbo-rengöring"
       },
       "spino_platform_cleaning": {
-        "name": "Plattformrengöring"
+        "name": "Plattformsrengöring"
       },
       "spino_waterline_parking": {
         "name": "Parkering vid vattenlinjen"
+      },
+      "remote_drive": {
+        "name": "Fjärrkörning via moln"
       }
     },
     "select": {
       "channel_mode": {
-        "name": "Val klipp mönster",
+        "name": "Klippmönster",
         "state": {
-          "single_grid": "Sicksack mönster",
-          "double_grid": "Schack mönster",
-          "segment_grid": "Adaptivt sicksack mönster",
+          "single_grid": "Sicksackmönster",
+          "double_grid": "Schackmönster",
+          "segment_grid": "Adaptivt sicksackmönster",
           "no_grid": "Enbart kantklippning"
         }
       },
@@ -548,7 +693,7 @@
       "turning_mode": {
         "name": "Vändningsläge",
         "state": {
-          "multipoint": "Flerpunkt sväng",
+          "multipoint": "Flerpunktssväng",
           "zero_turn": "Runt egen axel"
         }
       },
@@ -561,9 +706,9 @@
         }
       },
       "cutter_mode": {
-        "name": "Klipphastighet",
+        "name": "Knivhastighet",
         "state": {
-          "normal": "Medium",
+          "normal": "Medel",
           "slow": "Långsam",
           "fast": "Snabb"
         }
@@ -605,6 +750,34 @@
           "CURVE_SIMPLE": "Böjd (enkel)",
           "CURVE_COMPLEX": "Böjd (komplex)"
         }
+      },
+      "rain_protection_mode": {
+        "name": "Regnskydd",
+        "state": {
+          "off": "Av",
+          "smart": "Smart läge",
+          "sensor": "Sensorläge"
+        }
+      },
+      "rain_protection_delay": {
+        "name": "Fördröjningstid för regnskydd",
+        "state": {
+          "0": "Ingen fördröjning",
+          "1": "1 tim",
+          "2": "2 tim",
+          "3": "3 tim",
+          "4": "4 tim",
+          "5": "5 tim",
+          "6": "6 tim",
+          "7": "7 tim",
+          "8": "8 tim",
+          "9": "9 tim",
+          "10": "10 tim",
+          "11": "11 tim",
+          "12": "12 tim",
+          "24": "24 tim",
+          "48": "48 tim"
+        }
       }
     },
     "number": {
@@ -614,8 +787,17 @@
       "charge_limit": {
         "name": "Laddningsgräns"
       },
+      "recharge_level": {
+        "name": "Återvänd för laddning vid"
+      },
+      "resume_level": {
+        "name": "Återuppta klippning vid"
+      },
+      "ride_boundary_distance": {
+        "name": "Kanttäckning"
+      },
       "start_progress": {
-        "name": "Starta klippning"
+        "name": "Startförlopp"
       },
       "blade_height": {
         "name": "Bladens höjd"
@@ -624,10 +806,10 @@
         "name": "Arbetshastighet"
       },
       "cutting_angle": {
-        "name": "Klipp vinkel"
+        "name": "Klippvinkel"
       },
       "path_spacing": {
-        "name": "Avstånd till kant"
+        "name": "Banavstånd"
       },
       "dumping_interval": {
         "name": "Tömningsfrekvens"
@@ -687,14 +869,8 @@
       "options": {
         "0": "Sicksackklippning",
         "1": "Schackmönstrad klippning",
-        "2": "Adaptiv sicksack klippning",
+        "2": "Adaptiv sicksackklippning",
         "3": "Endast kantklippning"
-      }
-    },
-    "rain_tactics": {
-      "options": {
-        "0": "Av",
-        "1": "På"
       }
     },
     "toward_mode": {
@@ -725,7 +901,8 @@
     "notify": {
       "options": {
         "warnings": "Varningar och felkoder",
-        "notifications": "Enhetsaviseringar och information"
+        "notifications": "Enhetsaviseringar och information",
+        "self_check": "Självtest: varför gräsklipparen inte kan starta"
       }
     }
   },
@@ -786,10 +963,6 @@
           "name": "Spårbredd",
           "description": "Bredd på klippspåret (i cm)."
         },
-        "rain_tactics": {
-          "name": "Regndetektering",
-          "description": "Regndetektering."
-        },
         "blade_height": {
           "name": "Bladens höjd",
           "description": "Höjd på bladet."
@@ -815,8 +988,16 @@
           "description": "Antal varv runt förbjudna zoner."
         },
         "start_progress": {
-          "name": "Starta uppgift",
-          "description": "Start procent uppgift."
+          "name": "Startförlopp",
+          "description": "Startförlopp i procent."
+        },
+        "auto_change_direction": {
+          "name": "Automatisk växling av klippriktning",
+          "description": "Växlar klippriktning mellan körningar: 0 = av, 1 = på. Används bara på modeller och firmware som stöder det. Utelämnas fältet gäller brytarens inställning."
+        },
+        "ride_boundary_distance": {
+          "name": "Kanttäckning",
+          "description": "Hur långt ut gräsklipparen kör under kantklippningsvarven, från 0 (innerkant) till 1 (på kanten). Används bara på modeller som stöder det och när kantklippningsvarv är på."
         },
         "areas": {
           "name": "Val av område",
@@ -856,13 +1037,9 @@
           "name": "Varv i förbjuden zon",
           "description": "Varv i förbjuden zon"
         },
-        "rain_tactics": {
-          "name": "Regnstrategi",
-          "description": "Regnstrategi"
-        },
         "auto_change_direction": {
-          "name": "Automatiskt riktningsbyte",
-          "description": "Automatiskt riktningsbyte"
+          "name": "Automatisk växling av klippriktning",
+          "description": "Automatisk växling av klippriktning — växlar klippriktningen mellan körningar så att gräset trycks ned mindre."
         },
         "start_progress": {
           "name": "Förlopp",
@@ -944,25 +1121,15 @@
     },
     "get_map_data": {
       "name": "Hämta kartdata",
-      "description": "Returnerar rå kartdata (områden, SVG-brickor, områdesnamn) för användning med SVG-kartkortet.",
-      "fields": {
-        "entity_id": {
-          "name": "Enhet",
-          "description": "Vilken som helst Mammotion-enhet som tillhör enheten."
-        }
-      }
+      "description": "Returnerar rå kartdata (områden, SVG-brickor, områdesnamn) för användning med SVG-kartkortet."
     },
     "svg_add": {
       "name": "Lägg till SVG-bricka",
       "description": "Skickar en ny SVG-bricka till enhetens karta. Returnerar den enhetstilldelade hashen.",
       "fields": {
-        "entity_id": {
-          "name": "Enhet",
-          "description": "Vilken som helst Mammotion-enhet som tillhör enheten."
-        },
         "area_hash": {
           "name": "Områdeshash",
-          "description": "Hash för det överordnade klipområdet."
+          "description": "Hash för det överordnade klippområdet."
         },
         "svg_data": {
           "name": "SVG-data",
@@ -1002,17 +1169,13 @@
       "name": "Uppdatera SVG-bricka",
       "description": "Ersätter en befintlig SVG-bricka på enhetens karta. Använd device_hash returnerad av svg_add.",
       "fields": {
-        "entity_id": {
-          "name": "Enhet",
-          "description": "Vilken som helst Mammotion-enhet som tillhör enheten."
-        },
         "device_hash": {
           "name": "Enhetshash",
           "description": "Hash tilldelad av enheten när brickan lades till första gången."
         },
         "area_hash": {
           "name": "Områdeshash",
-          "description": "Hash för det överordnade klipområdet."
+          "description": "Hash för det överordnade klippområdet."
         },
         "svg_data": {
           "name": "SVG-data",
@@ -1052,17 +1215,13 @@
       "name": "Ta bort SVG-bricka",
       "description": "Tar bort en SVG-bricka från enhetens karta via dess enhetstilldelade hash.",
       "fields": {
-        "entity_id": {
-          "name": "Enhet",
-          "description": "Vilken som helst Mammotion-enhet som tillhör enheten."
-        },
         "device_hash": {
           "name": "Enhetshash",
           "description": "Hash tilldelad av enheten när brickan lades till."
         },
         "area_hash": {
           "name": "Områdeshash",
-          "description": "Hash för det överordnade klipområdet."
+          "description": "Hash för det överordnade klippområdet."
         }
       }
     },
@@ -1072,7 +1231,7 @@
       "fields": {
         "name": {
           "name": "Nytt namn",
-          "description": "New display name for the task."
+          "description": "Nytt visningsnamn för uppgiften."
         }
       }
     },
@@ -1082,7 +1241,7 @@
       "fields": {
         "enabled": {
           "name": "Aktiverad",
-          "description": "True to enable the schedule, false to disable it."
+          "description": "På aktiverar schemat, av inaktiverar det."
         }
       }
     },
@@ -1096,7 +1255,7 @@
       "fields": {
         "name": {
           "name": "Nytt namn",
-          "description": "Override the auto-generated 'Copy-N' name."
+          "description": "Ersätter det automatiskt genererade namnet 'Copy-N'."
         }
       }
     },
@@ -1105,80 +1264,96 @@
       "description": "Ändrar en delmängd av schemats fält.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name."
+          "name": "Namn",
+          "description": "Visningsnamn."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule is active."
+          "name": "Aktiverat",
+          "description": "Om schemat är aktivt."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday) the schedule runs on."
+          "name": "Veckodagar",
+          "description": "Lista med veckodagsnummer (0 = söndag … 6 = lördag) som schemat körs på."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower only)."
+          "name": "Starttid",
+          "description": "HH:MM (endast klippare)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower only)."
+          "name": "Sluttid",
+          "description": "HH:MM (endast klippare)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Startdatum",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Slutdatum",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Utlösartyp",
+          "description": "0 = varje vecka, 1 = dagsintervall, 2 = datum, 3 = kör en gång."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days when trigger_type is 1 (DAY)."
+          "name": "Dagsintervall",
+          "description": "Intervall i dagar när trigger_type är 1 (DAY)."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Klipphöjd",
+          "description": "Knivhöjd i millimeter (endast klippare)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower: driving speed (float). Spino: fixed32 speed value (int)."
+          "name": "Hastighet",
+          "description": "Klippare: körhastighet (float). Spino: fixed32-hastighetsvärde (int)."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
+          "name": "Kantläge",
+          "description": "Endast klippare: 0 = inga, 1 = en gång, 2 = två gånger."
+        },
+        "ride_boundary_distance": {
+          "name": "Kanttäckning",
+          "description": "Hur långt ut gräsklipparen kör under kantklippningsvarven, från 0 (innerkant) till 1 (på kanten). Används bara på modeller som stöder det och när kantklippningsvarv är på."
+        },
+        "auto_change_direction": {
+          "name": "Automatisk växling av klippriktning",
+          "description": "Automatisk växling av klippriktning — växlar klippriktningen mellan körningar så att gräset trycks ned mindre: 0 = av, 1 = på. Bara på modeller och firmware som stöder det. Utelämnas fältet behålls schemats inställning (av för ett nytt schema)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only: mowing pattern angle 0–179 degrees."
+          "name": "Ruttvinkel",
+          "description": "Endast klippare: klippmönstrets vinkel 0–179 grader."
+        },
+        "toward_mode": {
+          "name": "Klippvinkelläge",
+          "description": "Endast gräsklippare: hur ruttvinkeln tillämpas (0 = optimal, 1 = norr, 2 = slumpmässig)."
+        },
+        "toward_included_angle": {
+          "name": "Korsningsvinkel",
+          "description": "Endast gräsklippare: andra vinkeln i en schackbrädesrutt, i grader."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only: spacing between mow lines in cm."
+          "name": "Ruttavstånd",
+          "description": "Endast klippare: avstånd mellan klipplinjer i cm."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes (fixed64) covered by this schedule."
+          "name": "Zonhashar",
+          "description": "Endast klippare: lista med områdeshashar (fixed64) som schemat täcker."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only: 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
+          "name": "Arbetsläge",
+          "description": "Endast Spino: 0 = laddning, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values for multi-stage cleaning."
+          "name": "Underlägen",
+          "description": "Endast Spino: lista med APP_WORK-värden för rengöring i flera steg."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only: suction power (fixed32 int)."
+          "name": "Driftseffekt",
+          "description": "Endast Spino: sugeffekt (fixed32 int)."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix timestamp (seconds) for the start of the cleaning session."
+          "name": "Starttidsstämpel",
+          "description": "Endast Spino: unix-tidsstämpel (sekunder) för rengöringens start."
         }
       }
     },
@@ -1187,80 +1362,96 @@
       "description": "Skapar ett helt nytt schema på enheten.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name for the new schedule."
+          "name": "Namn",
+          "description": "Visningsnamn för det nya schemat."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule starts enabled."
+          "name": "Aktiverat",
+          "description": "Om schemat startar aktiverat."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday)."
+          "name": "Veckodagar",
+          "description": "Lista med veckodagsnummer (0 = söndag … 6 = lördag)."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower)."
+          "name": "Starttid",
+          "description": "HH:MM (klippare)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower)."
+          "name": "Sluttid",
+          "description": "HH:MM (klippare)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Startdatum",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Slutdatum",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Utlösartyp",
+          "description": "0 = varje vecka, 1 = dagsintervall, 2 = datum, 3 = kör en gång."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days for trigger_type = 1."
+          "name": "Dagsintervall",
+          "description": "Intervall i dagar för trigger_type = 1."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Klipphöjd",
+          "description": "Knivhöjd i millimeter (endast klippare)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower or Spino speed."
+          "name": "Hastighet",
+          "description": "Hastighet för klippare eller Spino."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only."
+          "name": "Kantläge",
+          "description": "Endast klippare."
+        },
+        "ride_boundary_distance": {
+          "name": "Kanttäckning",
+          "description": "Hur långt ut gräsklipparen kör under kantklippningsvarven, från 0 (innerkant) till 1 (på kanten). Används bara på modeller som stöder det och när kantklippningsvarv är på."
+        },
+        "auto_change_direction": {
+          "name": "Automatisk växling av klippriktning",
+          "description": "Automatisk växling av klippriktning — växlar klippriktningen mellan körningar så att gräset trycks ned mindre: 0 = av, 1 = på. Bara på modeller och firmware som stöder det. Utelämnas fältet behålls schemats inställning (av för ett nytt schema)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only."
+          "name": "Ruttvinkel",
+          "description": "Endast klippare."
+        },
+        "toward_mode": {
+          "name": "Klippvinkelläge",
+          "description": "Endast gräsklippare: hur ruttvinkeln tillämpas (0 = optimal, 1 = norr, 2 = slumpmässig)."
+        },
+        "toward_included_angle": {
+          "name": "Korsningsvinkel",
+          "description": "Endast gräsklippare: andra vinkeln i en schackbrädesrutt, i grader."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only."
+          "name": "Ruttavstånd",
+          "description": "Endast klippare."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes covered."
+          "name": "Zonhashar",
+          "description": "Endast klippare: lista med täckta områdeshashar."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only cleaning mode."
+          "name": "Arbetsläge",
+          "description": "Rengöringsläge (endast Spino)."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values."
+          "name": "Underlägen",
+          "description": "Endast Spino: lista med APP_WORK-värden."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only."
+          "name": "Driftseffekt",
+          "description": "Endast Spino."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix start time."
+          "name": "Starttidsstämpel",
+          "description": "Endast Spino: starttid som unix-tid."
         }
       }
     },
@@ -1271,6 +1462,16 @@
     "get_tasks": {
       "name": "Hämta uppgifter",
       "description": "Returnerar alla scheman som integrationen har för den valda enheten, inklusive om respektive schema är aktiverat. Använd den för att bekräfta att en ändring gick igenom; ”Uppdatera uppgifter” hämtar dem först på nytt från enheten."
+    },
+    "get_task": {
+      "name": "Hämta uppgift",
+      "description": "Returnerar ett av den valda gräsklipparens scheman utifrån uppgifts-ID: dess nuvarande inställningar under de fältnamn som ”Redigera uppgift” accepterar, samt om det är aktiverat och körs. Använd den för att läsa en uppgift innan du redigerar den.",
+      "fields": {
+        "task_id": {
+          "name": "Uppgifts-ID",
+          "description": "Uppgiftens ID, som det visas i uppgiftsknappens attribut task_id eller returneras av ”Hämta uppgifter”."
+        }
+      }
     },
     "start_task": {
       "name": "Starta uppgift",
@@ -1303,6 +1504,22 @@
     "get_map_backups": {
       "name": "Hämta kartsäkerhetskopior",
       "description": "Returnerar kartsäkerhetskopiorna på det Mammotion-konto som den här integrationen är inloggad med. Säkerhetskopior hör till kontot, så de som gjorts i appen med ett annat konto visas inte."
+    },
+    "get_geojson": {
+      "name": "Hämta kart-GeoJSON",
+      "description": "Returnerar gräsklipparens karta (områden, hinder, vägar, laddstation och RTK-station) som en GeoJSON FeatureCollection för kartkortet och låter gräsklipparen rapportera sin position under de närmaste minuterna."
+    },
+    "get_mow_path_geojson": {
+      "name": "Hämta klippvägs-GeoJSON",
+      "description": "Returnerar den planerade klippvägen för det aktuella jobbet som en GeoJSON FeatureCollection. Tom tills vägen har hämtats."
+    },
+    "get_mow_progress_geojson": {
+      "name": "Hämta klippförlopps-GeoJSON",
+      "description": "Returnerar den redan klippta delen av det aktuella jobbets klippväg som en GeoJSON FeatureCollection; gräsklippare som skickar en dynamisk linje returnerar den i stället. När ett jobb pågår och inget kan visas än hämtar den även det lagret ritas från, högst en gång i minuten. Via Bluetooth håller en dynamisk linje sig själv uppdaterad."
+    },
+    "fetch_mow_path": {
+      "name": "Hämta klippväg",
+      "description": "Hämtar klippvägen för jobbet som gräsklipparen kör, om inte en komplett väg redan finns sparad, och räknar sedan om klippförloppet utifrån den. Gräsklippare med en dynamisk linje hämtar också sin senaste linje. Via molnet sker det bara när 'Aktivera hämtning av klippväg (moln)' är påslaget i alternativen; via Bluetooth alltid. Returnerar om en hämtning startades."
     },
     "get_map_backup_progress": {
       "name": "Hämta förlopp för kartsäkerhetskopia",
@@ -1345,7 +1562,10 @@
   },
   "exceptions": {
     "device_not_ready": {
-      "message": "Enheten är inte färdig."
+      "message": "Enheten är inte redo."
+    },
+    "no_job_to_continue": {
+      "message": "Det finns inget avbrutet uppdrag att fortsätta."
     },
     "pause_failed": {
       "message": "Det gick inte att pausa gräsklipparen."
@@ -1360,16 +1580,19 @@
       "message": "Det gick inte att skicka gräsklipparen till laddstationen."
     },
     "dock_cancel_failed": {
-      "message": "Det gick inte att stoppa gräsklipparen återvänder till laddstationen."
+      "message": "Det gick inte att avbryta gräsklipparens återfärd till laddstationen."
     },
     "command_failed": {
       "message": "Det gick inte att skicka kommandot till gräsklipparen."
     },
-    "api_limit_exceeded": {
-      "message": "API-anropsgränsen har överskridits."
+    "command_unconfirmed": {
+      "message": "Gräsklipparen bekräftade inte kommandot. Det kan ändå ha utförts."
     },
     "account_in_use": {
-      "message": "Ditt Mammotion-konto är redan aktivt i en annan session. Logga ut från Mammotion-appen och försök igen."
+      "message": "Ditt Mammotion-konto är aktivt i en annan session (Mammotion-appen). Logga ut ur appen, eller vänta, och försök igen."
+    },
+    "api_limit_exceeded": {
+      "message": "API-anropsgränsen har överskridits."
     },
     "cloud_setup_failed": {
       "message": "Det går inte att ansluta till Mammotion-molnet. Kontrollera nätverket och försök att läsa in integrationen på nytt."
@@ -1377,11 +1600,23 @@
     "task_not_found": {
       "message": "Uppgiften {plan_id} kunde inte hittas på enheten. Uppdatera schemat och försök igen."
     },
+    "task_id_not_found": {
+      "message": "Uppgiften {task_id} kunde inte hittas för {entity_id}. Uppdatera uppgifterna och försök igen."
+    },
     "start_task_unsupported_on_spino": {
       "message": "Att starta ett schema på begäran stöds inte på Spino-poolroboten — enhetens firmware har inget 'kör nu'-kommando för sparade scheman."
     },
     "grass_collection_unsupported": {
       "message": "Den här klipparen har inte stöd för gräsuppsamling."
+    },
+    "no_running_job": {
+      "message": "{device_name} utför inget klippuppdrag, så det finns inget att ändra. Starta ett uppdrag först."
+    },
+    "running_job_modify_unsupported": {
+      "message": "{device_name} har inte stöd för att ändra ett pågående uppdrag. Endast Luba 2 och nyare kan det."
+    },
+    "auto_change_direction_unsupported": {
+      "message": "Automatisk växling av klippriktning stöds inte av {device_name} eller dess firmware."
     },
     "map_backup_cloud_unavailable": {
       "message": "Kartsäkerhetskopior kräver en fungerande inloggning i Mammotion-molnet."
@@ -1392,8 +1627,176 @@
     "map_backup_device_not_found": {
       "message": "{device_name} finns inte med för kartsäkerhetskopior på det här Mammotion-kontot."
     },
-    "map_backup_mower_not_found": {
+    "mower_not_found": {
       "message": "{entity_id} är inte en Mammotion-gräsklippare."
+    },
+    "notification_unknown_code": {
+      "message": "Okänd felkod {code}"
+    },
+    "notification_title_warnings": {
+      "message": "{device_name}: varningar"
+    },
+    "notification_title_notifications": {
+      "message": "{device_name}: aviseringar"
+    },
+    "notification_title_self_check": {
+      "message": "{device_name}: {state}"
+    },
+    "self_check_emergency_stop": {
+      "message": "Nödstoppet är aktiverat. Frigör det på gräsklipparen innan du startar igen."
+    },
+    "self_check_stop_button": {
+      "message": "STOPP-knappen på gräsklipparen har tryckts in. Återställ den på gräsklipparen innan du startar igen."
+    },
+    "self_check_safety_key_missing": {
+      "message": "Säkerhetsnyckeln är inte isatt. Sätt i den för att börja klippa."
+    },
+    "self_check_lifted": {
+      "message": "Gräsklipparen har lyfts från marken. Ställ tillbaka den på gräsmattan."
+    },
+    "self_check_tilted": {
+      "message": "Gräsklipparen lutar. Flytta den till plan mark."
+    },
+    "self_check_tipped_over": {
+      "message": "Gräsklipparen har vält. Ställ upp den på hjulen igen."
+    },
+    "self_check_bumper_missing": {
+      "message": "Sidostötfångaren är inte monterad. Montera den innan du klipper."
+    },
+    "self_check_rain": {
+      "message": "Regn har upptäckts och ”Ingen klippning under regniga dagar” är på. Klippningen kan starta när regnet slutar, eller stäng av funktionen."
+    },
+    "self_check_low_battery": {
+      "message": "Batteriet är för svagt för att klippa. Låt gräsklipparen ladda."
+    },
+    "self_check_non_working_hours": {
+      "message": "Det är utanför gräsklipparens arbetstid."
+    },
+    "self_check_rtk_station_moved": {
+      "message": "RTK-referensstationen har flyttats. Kontrollera dess position i appen."
+    },
+    "self_check_outside_task_area": {
+      "message": "Gräsklipparen är utanför sitt uppgiftsområde. Flytta tillbaka den till ett kartlagt område."
+    },
+    "self_check_wheel_motor_error": {
+      "message": "En navmotor har rapporterat ett fel."
+    },
+    "self_check_blade_motor_overheated": {
+      "message": "Knivmotorn är för varm. Låt den svalna."
+    },
+    "self_check_dock_moved": {
+      "message": "Laddstationen har flyttats. Kontrollera dess position i appen."
+    },
+    "self_check_no_task_area": {
+      "message": "Inget uppgiftsområde hittades. Skapa en karta i appen."
+    },
+    "self_check_night_protection": {
+      "message": "Nattskydd är på, så gräsklipparen klipper inte på natten."
+    },
+    "self_check_rain_protection": {
+      "message": "Regnskyddet hindrar klipparen från att starta. Det använder regnsensorn och väderdata online för att bedöma om förhållandena passar för klippning och beräknar när klippningen ska återupptas. Vänta, eller ändra eller stäng av regnskyddet i klipparens inställningar i appen."
+    },
+    "self_check_rtk_not_ready": {
+      "message": "RTK-referensstationen är inte redo än."
+    },
+    "self_check_weak_satellite_signal": {
+      "message": "Gräsklipparens satellitsignal är för svag för att positionera den."
+    },
+    "self_check_positioning_failure": {
+      "message": "Positioneringssystemet har slutat fungera."
+    },
+    "self_check_inavi_unavailable": {
+      "message": "iNavi-tjänsten är inte tillgänglig."
+    },
+    "self_check_weak_rtk_signal": {
+      "message": "RTK-signalen är svag. Kontrollera var referensstationen står."
+    },
+    "self_check_other": {
+      "message": "Gräsklipparen rapporterade en okänd självtestkod {code}."
+    },
+    "remote_drive_needs_cloud": {
+      "message": "Fjärrkörning via moln kräver en fungerande molnanslutning till gräsklipparen. Använd knuffknapparna via Bluetooth i stället."
+    },
+    "remote_drive_start_failed": {
+      "message": "Fjärrkörningen kunde inte startas: gräsklipparen gick inte att nå via molnet."
+    },
+    "remote_drive_already_running": {
+      "message": "Fjärrkörning via moln är redan igång. Stäng av den innan du startar igen."
+    },
+    "remote_drive_not_awaiting_confirmation": {
+      "message": "Det finns inget säkerhetsmeddelande att bekräfta. Slå först på fjärrkörning via moln."
+    },
+    "remote_drive_no_reverse": {
+      "message": "Fjärrkörning via moln kan inte backa gräsklipparen. Sväng med vänster eller höger i stället, eller använd Bluetooth."
+    },
+    "remote_drive_fence_paused": {
+      "message": "Gräsklipparen stannade vid gränsen. Tryck på \"Bekräfta gränsvarning\" innan du kör vidare."
+    },
+    "remote_drive_safety_notice": {
+      "message": "Innan du fjärrkör gräsklipparen, se till att inga människor eller djur finns i arbetsområdet och ha den inom synhåll hela tiden. Tryck på \"Bekräfta fjärrkörning\" inom 3 minuter för att börja. Sessionen avslutas av sig själv strax efter att du slutat ge kommandon."
+    },
+    "movement_unavailable": {
+      "message": "Gräsklipparen kan inte flyttas just nu. Kom inom Bluetooth-räckvidd, eller slå på fjärrkörning via moln och tryck på \"Bekräfta fjärrkörning\"."
+    },
+    "notification_title_remote_drive": {
+      "message": "{device_name}: fjärrkörning via moln"
+    },
+    "remote_drive_token_unavailable": {
+      "message": "Mammotion-servern tillät inte fjärrkörning (kod {detail}). Försök igen senare."
+    },
+    "remote_drive_occupied_by_other": {
+      "message": "Gräsklipparen körs redan av ett annat konto ({detail})."
+    },
+    "remote_drive_network_poor": {
+      "message": "Fjärrkörningen avslutades: gräsklipparens nätverksanslutning är för dålig."
+    },
+    "remote_drive_token_expired": {
+      "message": "Fjärrkörningen avslutades: behörigheten att köra har gått ut."
+    },
+    "remote_drive_out_of_fence": {
+      "message": "Fjärrkörningen avslutades: gräsklipparen är utanför det tillåtna området."
+    },
+    "remote_drive_ble_preempt": {
+      "message": "Fjärrkörningen avslutades: gräsklipparen styrs nu via Bluetooth av {detail}."
+    },
+    "remote_drive_no_loc_mileage_exhausted": {
+      "message": "Fjärrkörningen avslutades: gräsklipparen har kört så långt den får utan positionsbestämning."
+    },
+    "remote_drive_env_not_ready": {
+      "message": "Fjärrkörningen avslutades: gräsklipparen är inte redo att köras (kod {detail})."
+    },
+    "remote_drive_send_failed": {
+      "message": "Fjärrkörningen avslutades: ett kommando kunde inte skickas ({detail})."
+    },
+    "remote_drive_approach_fence": {
+      "message": "Gräsklipparen stannade nära gränsen. Tryck på \"Bekräfta gränsvarning\" för att köra vidare."
+    },
+    "remote_drive_safety_notice_timeout": {
+      "message": "Fjärrkörningen avslutades: säkerhetsmeddelandet bekräftades inte inom 3 minuter."
+    },
+    "remote_drive_video_unavailable": {
+      "message": "Fjärrkörningen avslutades: kamerans video stannade."
+    },
+    "battery_settings_unread": {
+      "message": "Batteriinställningarna har ännu inte lästs från gräsklipparen. En ändring nu skulle återställa laddningsfönstret för lågpristid, så inget skickades. Försök igen när gräsklipparen är ansluten."
+    }
+  },
+  "issues": {
+    "account_in_use": {
+      "title": "Mammotion-kontot används av en annan session",
+      "description": "Ditt Mammotion-konto {account} är redan aktivt i en annan session, så molnanslutningen är pausad. Logga ut från Mammotion-appen; integrationen återansluter automatiskt inom några minuter."
+    },
+    "cloud_login_retrying": {
+      "title": "Mammotion-molnet är inte tillgängligt",
+      "description": "Home Assistant kunde inte logga in i Mammotion-molnet för {account} ({error}). Enheter anslutna via Bluetooth fortsätter att fungera. Inloggningen görs om var 15:e minut, upp till 5 gånger, med den sparade sessionen."
+    },
+    "cloud_login_failed": {
+      "title": "Mammotion-molnet är inte anslutet",
+      "description": "Home Assistant kunde inte logga in i Mammotion-molnet för {account} ({error}) och har slutat försöka. Enheter anslutna via Bluetooth fortsätter att fungera. Ladda om Mammotion-integrationen när Mammotion-tjänsten är nåbar igen."
+    },
+    "deprecated_rain_tactics": {
+      "title": "Borttaget alternativ används i en Mammotion-åtgärd",
+      "description": "En automatisering eller ett skript anropar `{service}` med `{field}`. Det här alternativet har tagits bort: det nådde aldrig gräsklipparen, så det ignoreras och jobbet startar som vanligt. Använd i stället gräsklipparens brytare för regndetektering och ta bort `{field}` från åtgärdsanropet för att stänga det här meddelandet."
     }
   }
 }

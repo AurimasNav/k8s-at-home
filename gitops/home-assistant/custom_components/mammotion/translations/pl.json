@@ -9,16 +9,16 @@
       "no_longer_present": "Urządzenie nie jest już dostępne",
       "not_supported": "Urządzenie nie jest obsługiwane",
       "reconfigure_successful": "Ponowna konfiguracja zakończona powodzeniem",
-      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
+      "merged_into_existing_account": "To konto ma już wpis; urządzenia Bluetooth zostały do niego scalone, a ten wpis został usunięty.",
       "api_limit_exceeded": "Przekroczono limit API. Spróbuj ponownie później.",
-      "account_in_use": "Twoje konto Mammotion jest już aktywne w innej sesji. Wyloguj się z aplikacji Mammotion i spróbuj ponownie.",
       "reauth_successful": "Ponowne uwierzytelnienie powiodło się",
       "wrong_account": "Te dane logowania należą do innego konta Mammotion. Uwierzytelnij się ponownie kontem, którym skonfigurowano ten wpis."
     },
     "error": {
       "login_failed": "Logowanie nie powiodło się. Sprawdź adres e-mail i hasło konta, a następnie spróbuj ponownie.",
       "cannot_connect": "Nie można połączyć się z chmurą Mammotion. Sprawdź dane logowania i sieć, a następnie spróbuj ponownie.",
-      "no_account_no_ble": "Nie wprowadzono danych konta i nie znaleziono urządzenia Bluetooth. Wprowadź dane logowania do konta Mammotion lub skonfiguruj urządzenie Bluetooth."
+      "no_account_no_ble": "Nie wprowadzono danych konta i nie znaleziono urządzenia Bluetooth. Wprowadź dane logowania do konta Mammotion lub skonfiguruj urządzenie Bluetooth.",
+      "credentials_required": "Wprowadź zarówno konto Mammotion, jak i jego hasło."
     },
     "flow_title": "{name}",
     "step": {
@@ -28,7 +28,8 @@
       "reconfigure": {
         "data": {
           "account_name": "E-mail lub numer konta Mammotion",
-          "password": "Hasło do konta Mammotion"
+          "password": "Hasło do konta Mammotion",
+          "remove_account": "Usuń konto i używaj tylko Bluetooth"
         }
       },
       "user": {
@@ -64,11 +65,29 @@
           "mow_path_fetch_enabled": "Włącz pobieranie ścieżki koszenia (chmura)",
           "full_map_fetch_enabled": "Włącz pełne pobieranie mapy (chmura) — gdy wyłączone, pobierane są tylko nazwy obszarów",
           "notify": "Pokazuj trwałe powiadomienia dla"
+        },
+        "data_description": {
+          "movement_use_wifi": "Wysyła dotychczasowe polecenie ruchu przez Wi-Fi zamiast korzystać ze zdalnego sterowania przez chmurę. Bez tej opcji przyciski przesuwania i akcje ruchu działają przez chmurę od oprogramowania 1.30.31.19 w LUBA 2, LUBA 2X, YUKA, LUBA mini i YUKA mini, od 2.3.31.69 w LUBA 3, LUBA mini 2 i YUKA mini 2 oraz w nowszych modelach, dla których serwer Mammotion zgłasza obsługę, tylko gdy Zdalne sterowanie przez chmurę jest włączone i potwierdzone. Włącz, aby używać dotychczasowego polecenia z dowolnym oprogramowaniem, np. by porównać oba sposoby na LUBA 3; połączone Bluetooth nadal ma pierwszeństwo.",
+          "notify": "Powiadomienia autotestu są domyślnie włączone, pozostałe wyłączone. Każde powiadomienie wyzwala też encję zdarzeń powiadomień kosiarki i zdarzenie mammotion_event na magistrali, których automatyzacje mogą użyć zamiast tego."
         }
       }
     }
   },
   "entity": {
+    "camera": {
+      "webrtc_camera": {
+        "name": "Lewa kamera"
+      },
+      "webrtc_camera_vision": {
+        "name": "Kamera wizyjna"
+      },
+      "webrtc_camera_right": {
+        "name": "Prawa kamera"
+      },
+      "webrtc_camera_rear": {
+        "name": "Tylna kamera"
+      }
+    },
     "sensor": {
       "error_1_message": {
         "name": "Ostatni błąd"
@@ -86,7 +105,13 @@
         "name": "BLE RSSI"
       },
       "camera_brightness": {
-        "name": "Jasność kamery"
+        "name": "Jasność kamery",
+        "state": {
+          "dark": "Ciemna",
+          "good": "Dobra",
+          "intense": "Intensywna",
+          "unknown": "Nieznana"
+        }
       },
       "wifi_rssi": {
         "name": "Wi-Fi RSSI"
@@ -122,10 +147,10 @@
         "name": "Pozostały czas"
       },
       "l1_satellites": {
-        "name": "L1 signal quality"
+        "name": "Jakość sygnału L1"
       },
       "l2_satellites": {
-        "name": "L2 signal quality"
+        "name": "Jakość sygnału L2"
       },
       "positioning_mode": {
         "name": "Pozycjonowanie RTK"
@@ -157,6 +182,27 @@
           "SIGNAL_BAD": "Zły",
           "SIGNAL_UNKNOWN": "Nieznany"
         }
+      },
+      "lidar_positioning_status": {
+        "name": "Status pozycjonowania LiDAR",
+        "state": {
+          "good": "Dobry",
+          "none": "Brak"
+        }
+      },
+      "fused_localization_status": {
+        "name": "Status lokalizacji fuzyjnej",
+        "state": {
+          "unknown": "Nieznany",
+          "no_pose": "Brak pozycji",
+          "rtk_fixed": "RTK stały",
+          "rtk_extended_vision": "RTK rozszerzony",
+          "vision_extended": "Rozszerzenie wizyjne",
+          "vision_extended_failed": "Rozszerzenie wizyjne nieudane"
+        }
+      },
+      "vision_survival": {
+        "name": "Wizja 3D"
       },
       "activity_mode": {
         "name": "Stan pracy",
@@ -212,7 +258,19 @@
           "WAITING": "Oczekiwanie",
           "MOWING": "Koszenie",
           "COMPLETE": "Ukończono",
-          "ABORTED": "Przerwano"
+          "ABORTED": "Przerwano",
+          "UNKNOWN": "Nieznany"
+        }
+      },
+      "task_area_status_short": {
+        "name": "Zadanie {name}",
+        "state": {
+          "NOT_STARTED": "Nie rozpoczęto",
+          "WAITING": "Oczekiwanie",
+          "MOWING": "Koszenie",
+          "COMPLETE": "Ukończono",
+          "ABORTED": "Przerwano",
+          "UNKNOWN": "Nieznany"
         }
       },
       "maintenance_distance": {
@@ -321,19 +379,19 @@
         }
       },
       "co_view_l1": {
-        "name": "L1 satellites (co-viewing)"
+        "name": "Satelity L1 (wspólnie widoczne)"
       },
       "co_view_l2": {
-        "name": "L2 satellites (co-viewing)"
+        "name": "Satelity L2 (wspólnie widoczne)"
       },
       "pos_level": {
-        "name": "Position level"
+        "name": "Poziom pozycjonowania"
       },
       "rtk_signal": {
-        "name": "RTK signal quality"
+        "name": "Jakość sygnału RTK"
       },
       "device_signal": {
-        "name": "Device signal quality",
+        "name": "Jakość sygnału urządzenia",
         "state": {
           "0": "Dobry",
           "1": "Dobry",
@@ -342,29 +400,98 @@
         }
       },
       "age": {
-        "name": "RTK correction age"
+        "name": "Wiek poprawki RTK"
       },
       "base_link_status": {
-        "name": "Base link status",
+        "name": "Stan połączenia ze stacją bazową",
         "state": {
           "0": "Dobry",
           "1": "Słaby",
           "2": "Słaby",
           "3": "Brak"
         }
+      },
+      "self_check": {
+        "name": "Autotest",
+        "state": {
+          "normal": "OK",
+          "emergency_stop": "Aktywowano zatrzymanie awaryjne",
+          "stop_button": "Naciśnięto przycisk STOP",
+          "safety_key_missing": "Klucz bezpieczeństwa nie jest włożony",
+          "lifted": "Podniesiona",
+          "tilted": "Przechylona",
+          "tipped_over": "Przewrócona",
+          "bumper_missing": "Boczny zderzak nie jest zamontowany",
+          "rain": "Wykryto deszcz",
+          "low_battery": "Niski poziom baterii",
+          "non_working_hours": "Poza godzinami pracy",
+          "rtk_station_moved": "Stacja referencyjna RTK przesunięta",
+          "outside_task_area": "Poza obszarem zadania",
+          "wheel_motor_error": "Błąd silnika piasty koła",
+          "blade_motor_overheated": "Silnik noża zbyt gorący",
+          "dock_moved": "Stacja ładująca przesunięta",
+          "no_task_area": "Brak obszaru zadania",
+          "night_protection": "Ochrona nocna",
+          "rain_protection": "Ochrona przed deszczem aktywna",
+          "rtk_not_ready": "Stacja referencyjna RTK nie jest gotowa",
+          "weak_satellite_signal": "Słaby sygnał satelitarny",
+          "positioning_failure": "Awaria systemu pozycjonowania",
+          "inavi_unavailable": "Usługa iNavi niedostępna",
+          "weak_rtk_signal": "Słaby sygnał RTK",
+          "other": "Inne"
+        }
+      },
+      "running_task": {
+        "name": "{name}",
+        "state": {
+          "mowing": "Koszenie",
+          "paused": "Wstrzymane",
+          "returning": "Powrót",
+          "charging_pause": "Ładowanie, potem wznowi"
+        }
+      },
+      "running_task_unnamed": {
+        "name": "Zadanie {n}",
+        "state": {
+          "mowing": "Koszenie",
+          "paused": "Wstrzymane",
+          "returning": "Powrót",
+          "charging_pause": "Ładowanie, potem wznowi"
+        }
+      },
+      "remote_drive_state": {
+        "name": "Stan zdalnego sterowania",
+        "state": {
+          "idle": "Bezczynne",
+          "requesting_token": "Żądanie uprawnienia",
+          "safety_notice": "Oczekiwanie na potwierdzenie bezpieczeństwa",
+          "active": "Jazda",
+          "exiting": "Kończenie"
+        },
+        "state_attributes": {
+          "last_event": {
+            "name": "Ostatnie zdarzenie"
+          },
+          "last_event_detail": {
+            "name": "Szczegóły ostatniego zdarzenia"
+          }
+        }
       }
     },
     "binary_sensor": {
       "spino_charging": {
         "name": "Ładowanie"
+      },
+      "rain_detected": {
+        "name": "Wykryto deszcz"
       }
     },
     "button": {
       "start_map_sync": {
         "name": "Synchronizuj mapy"
       },
-      "start_schedule_sync": {
-        "name": "Synchronizuj harmonogramy"
+      "start_task_sync": {
+        "name": "Synchronizuj zadania"
       },
       "resync_rtk_dock": {
         "name": "Zsynchronizuj RTK i stację ładującą"
@@ -374,6 +501,9 @@
       },
       "start_dropmow": {
         "name": "Uruchom DropMow"
+      },
+      "continue_last_job": {
+        "name": "Wznów ostatnie zadanie"
       },
       "emergency_nudge_forward": {
         "name": "Awaryjne ruszenie do przodu"
@@ -385,7 +515,7 @@
         "name": "Awaryjne ruszenie w prawo"
       },
       "emergency_nudge_back": {
-        "name": "Awaryjne ruszenie do tył"
+        "name": "Awaryjne ruszenie do tyłu"
       },
       "cancel_task": {
         "name": "Anuluj bieżące zadanie"
@@ -410,11 +540,20 @@
       },
       "spino_refresh_status": {
         "name": "Odśwież stan"
+      },
+      "confirm_remote_drive": {
+        "name": "Potwierdź zdalne sterowanie"
+      },
+      "acknowledge_remote_drive_fence": {
+        "name": "Potwierdź ostrzeżenie o granicy"
       }
     },
     "switch": {
       "area": {
         "name": "Obszar {name}"
+      },
+      "area_plain": {
+        "name": "{name}"
       },
       "blade_status": {
         "name": "Ostrza wł/wył"
@@ -428,9 +567,6 @@
       "is_edge": {
         "name": "Cięcie krawędzi"
       },
-      "rain_tactics": {
-        "name": "Wykrywanie deszczu (podczas koszenia) wł/wył"
-      },
       "auto_change_direction": {
         "name": "Automatyczna zmiana kierunku koszenia"
       },
@@ -439,6 +575,12 @@
       },
       "smart_charge": {
         "name": "Inteligentne ładowanie"
+      },
+      "smart_recharge_level": {
+        "name": "Inteligentny poziom powrotu do ładowania"
+      },
+      "smart_resume_level": {
+        "name": "Inteligentny poziom wznowienia"
       },
       "side_led": {
         "name": "Boczna dioda LED wł/wył"
@@ -481,6 +623,9 @@
       },
       "spino_waterline_parking": {
         "name": "Parkowanie przy linii wodnej"
+      },
+      "remote_drive": {
+        "name": "Zdalne sterowanie przez chmurę"
       }
     },
     "select": {
@@ -514,7 +659,7 @@
         }
       },
       "border_mode": {
-        "name": "Kolejność wykonania ścieżki",
+        "name": "Kolejność koszenia",
         "state": {
           "border_first": "Najpierw obwód",
           "grid_first": "Najpierw siatka"
@@ -605,6 +750,34 @@
           "CURVE_SIMPLE": "Zaokrąglone (proste)",
           "CURVE_COMPLEX": "Zaokrąglone (złożone)"
         }
+      },
+      "rain_protection_mode": {
+        "name": "Ochrona przed deszczem",
+        "state": {
+          "off": "Wyłączona",
+          "smart": "Tryb inteligentny",
+          "sensor": "Tryb czujnika"
+        }
+      },
+      "rain_protection_delay": {
+        "name": "Czas opóźnienia ochrony przed deszczem",
+        "state": {
+          "0": "Bez opóźnienia",
+          "1": "1 godz.",
+          "2": "2 godz.",
+          "3": "3 godz.",
+          "4": "4 godz.",
+          "5": "5 godz.",
+          "6": "6 godz.",
+          "7": "7 godz.",
+          "8": "8 godz.",
+          "9": "9 godz.",
+          "10": "10 godz.",
+          "11": "11 godz.",
+          "12": "12 godz.",
+          "24": "24 godz.",
+          "48": "48 godz."
+        }
       }
     },
     "number": {
@@ -613,6 +786,15 @@
       },
       "charge_limit": {
         "name": "Limit ładowania"
+      },
+      "recharge_level": {
+        "name": "Powrót do ładowania przy"
+      },
+      "resume_level": {
+        "name": "Wznowienie koszenia przy"
+      },
+      "ride_boundary_distance": {
+        "name": "Pokrycie krawędzi"
       },
       "start_progress": {
         "name": "Rozpocznij koszenie przy x% postępie"
@@ -691,12 +873,6 @@
         "3": "Brak siatki"
       }
     },
-    "rain_tactics": {
-      "options": {
-        "0": "Wyłączone",
-        "1": "Włączone"
-      }
-    },
     "toward_mode": {
       "options": {
         "0": "Kąt względny",
@@ -725,7 +901,8 @@
     "notify": {
       "options": {
         "warnings": "Ostrzeżenia i kody błędów",
-        "notifications": "Powiadomienia i informacje urządzenia"
+        "notifications": "Powiadomienia i informacje urządzenia",
+        "self_check": "Autotest: dlaczego kosiarka nie może ruszyć"
       }
     }
   },
@@ -786,10 +963,6 @@
           "name": "Szerokość ścieżki",
           "description": "Szerokość toru kotwiczenia (w cm)."
         },
-        "rain_tactics": {
-          "name": "Wykrywanie deszczu",
-          "description": "Wykrywanie deszczu."
-        },
         "blade_height": {
           "name": "Wysokość Ostrza",
           "description": "Wysokość ostrza."
@@ -817,6 +990,14 @@
         "start_progress": {
           "name": "Rozpocznij postęp",
           "description": "Początkowy procent postępu."
+        },
+        "auto_change_direction": {
+          "name": "Automatyczna zmiana kierunku koszenia",
+          "description": "Odwraca kierunek koszenia między przejazdami: 0 = wyłączone, 1 = włączone. Używane tylko w modelach i oprogramowaniu, które to obsługują. Jeśli pominięte, obowiązuje ustawienie przełącznika."
+        },
+        "ride_boundary_distance": {
+          "name": "Pokrycie krawędzi",
+          "description": "Jak daleko kosiarka wysuwa się na zewnątrz podczas koszenia obwodu, od 0 (wewnątrz krawędzi) do 1 (na krawędzi). Używane tylko w modelach, które to obsługują, i przy włączonym koszeniu obwodu."
         },
         "areas": {
           "name": "Wybór obszaru",
@@ -856,13 +1037,9 @@
           "name": "Okrążenia strefy zakazanej",
           "description": "Okrążenia strefy zakazanej"
         },
-        "rain_tactics": {
-          "name": "Taktyka deszczowa",
-          "description": "Taktyka deszczowa"
-        },
         "auto_change_direction": {
-          "name": "Automatyczna zmiana kierunku",
-          "description": "Automatyczna zmiana kierunku"
+          "name": "Automatyczna zmiana kierunku koszenia",
+          "description": "Automatyczna zmiana kierunku koszenia — odwraca kierunek koszenia między przejazdami, aby trawa mniej się kładła."
         },
         "start_progress": {
           "name": "Postęp",
@@ -944,22 +1121,12 @@
     },
     "get_map_data": {
       "name": "Pobierz dane mapy",
-      "description": "Zwraca surowe dane mapy (obszary, kafelki SVG, nazwy obszarów) do użytku z kartą mapy SVG.",
-      "fields": {
-        "entity_id": {
-          "name": "Encja",
-          "description": "Dowolna encja Mammotion należąca do urządzenia."
-        }
-      }
+      "description": "Zwraca surowe dane mapy (obszary, kafelki SVG, nazwy obszarów) do użytku z kartą mapy SVG."
     },
     "svg_add": {
       "name": "Dodaj kafelek SVG",
       "description": "Wysyła nowy kafelek SVG do mapy urządzenia. Zwraca hash przydzielony przez urządzenie.",
       "fields": {
-        "entity_id": {
-          "name": "Encja",
-          "description": "Dowolna encja Mammotion należąca do urządzenia."
-        },
         "area_hash": {
           "name": "Hash obszaru",
           "description": "Hash nadrzędnego obszaru koszenia."
@@ -1002,10 +1169,6 @@
       "name": "Aktualizuj kafelek SVG",
       "description": "Zastępuje istniejący kafelek SVG na mapie urządzenia. Użyj device_hash zwróconego przez svg_add.",
       "fields": {
-        "entity_id": {
-          "name": "Encja",
-          "description": "Dowolna encja Mammotion należąca do urządzenia."
-        },
         "device_hash": {
           "name": "Hash urządzenia",
           "description": "Hash przydzielony przez urządzenie podczas pierwszego dodania kafelka."
@@ -1052,10 +1215,6 @@
       "name": "Usuń kafelek SVG",
       "description": "Usuwa kafelek SVG z mapy urządzenia na podstawie jego hasha przydzielonego przez urządzenie.",
       "fields": {
-        "entity_id": {
-          "name": "Encja",
-          "description": "Dowolna encja Mammotion należąca do urządzenia."
-        },
         "device_hash": {
           "name": "Hash urządzenia",
           "description": "Hash przydzielony przez urządzenie podczas dodawania kafelka."
@@ -1072,7 +1231,7 @@
       "fields": {
         "name": {
           "name": "Nowa nazwa",
-          "description": "New display name for the task."
+          "description": "Nowa wyświetlana nazwa zadania."
         }
       }
     },
@@ -1082,7 +1241,7 @@
       "fields": {
         "enabled": {
           "name": "Włączone",
-          "description": "True to enable the schedule, false to disable it."
+          "description": "Włączone aktywuje plan, wyłączone go dezaktywuje."
         }
       }
     },
@@ -1096,7 +1255,7 @@
       "fields": {
         "name": {
           "name": "Nowa nazwa",
-          "description": "Override the auto-generated 'Copy-N' name."
+          "description": "Zastępuje automatycznie wygenerowaną nazwę 'Copy-N'."
         }
       }
     },
@@ -1105,80 +1264,96 @@
       "description": "Modyfikuje wybrane pola planu.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name."
+          "name": "Nazwa",
+          "description": "Wyświetlana nazwa."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule is active."
+          "name": "Włączony",
+          "description": "Czy plan jest aktywny."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday) the schedule runs on."
+          "name": "Dni tygodnia",
+          "description": "Lista numerów dni tygodnia (0 = niedziela … 6 = sobota), w które działa plan."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower only)."
+          "name": "Godzina rozpoczęcia",
+          "description": "HH:MM (tylko kosiarka)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower only)."
+          "name": "Godzina zakończenia",
+          "description": "HH:MM (tylko kosiarka)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Data rozpoczęcia",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Data zakończenia",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Typ wyzwalacza",
+          "description": "0 = co tydzień, 1 = co ile dni, 2 = data, 3 = jednorazowo."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days when trigger_type is 1 (DAY)."
+          "name": "Odstęp w dniach",
+          "description": "Odstęp w dniach, gdy trigger_type wynosi 1 (DAY)."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Wysokość koszenia",
+          "description": "Wysokość ostrza w milimetrach (tylko kosiarka)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower: driving speed (float). Spino: fixed32 speed value (int)."
+          "name": "Prędkość",
+          "description": "Kosiarka: prędkość jazdy (float). Spino: wartość prędkości fixed32 (int)."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
+          "name": "Tryb krawędzi",
+          "description": "Tylko kosiarka: 0 = brak, 1 = raz, 2 = dwa razy."
+        },
+        "ride_boundary_distance": {
+          "name": "Pokrycie krawędzi",
+          "description": "Jak daleko kosiarka wysuwa się na zewnątrz podczas koszenia obwodu, od 0 (wewnątrz krawędzi) do 1 (na krawędzi). Używane tylko w modelach, które to obsługują, i przy włączonym koszeniu obwodu."
+        },
+        "auto_change_direction": {
+          "name": "Automatyczna zmiana kierunku koszenia",
+          "description": "Automatyczna zmiana kierunku koszenia — odwraca kierunek koszenia między przejazdami, aby trawa mniej się kładła: 0 = wyłączone, 1 = włączone. Tylko w modelach i oprogramowaniu, które to obsługują. Jeśli pominięte, ustawienie harmonogramu pozostaje bez zmian (wyłączone dla nowego harmonogramu)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only: mowing pattern angle 0–179 degrees."
+          "name": "Kąt trasy",
+          "description": "Tylko kosiarka: kąt wzoru koszenia 0–179 stopni."
+        },
+        "toward_mode": {
+          "name": "Tryb cięcia kąta",
+          "description": "Tylko kosiarka: sposób zastosowania kąta trasy (0 = optymalny, 1 = północ, 2 = losowy)."
+        },
+        "toward_included_angle": {
+          "name": "Kąt skrzyżowania",
+          "description": "Tylko kosiarka: drugi kąt trasy w szachownicę, w stopniach."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only: spacing between mow lines in cm."
+          "name": "Odstęp tras",
+          "description": "Tylko kosiarka: odstęp między liniami koszenia w cm."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes (fixed64) covered by this schedule."
+          "name": "Hashe stref",
+          "description": "Tylko kosiarka: lista hashy obszarów (fixed64) objętych tym planem."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only: 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
+          "name": "Tryb pracy",
+          "description": "Tylko Spino: 0 = ładowanie, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values for multi-stage cleaning."
+          "name": "Tryby podrzędne",
+          "description": "Tylko Spino: lista wartości APP_WORK dla czyszczenia wieloetapowego."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only: suction power (fixed32 int)."
+          "name": "Moc robocza",
+          "description": "Tylko Spino: moc ssania (fixed32 int)."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix timestamp (seconds) for the start of the cleaning session."
+          "name": "Znacznik czasu rozpoczęcia",
+          "description": "Tylko Spino: znacznik czasu unix (sekundy) rozpoczęcia sesji czyszczenia."
         }
       }
     },
@@ -1187,80 +1362,96 @@
       "description": "Tworzy nowy plan na urządzeniu.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name for the new schedule."
+          "name": "Nazwa",
+          "description": "Wyświetlana nazwa nowego planu."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule starts enabled."
+          "name": "Włączony",
+          "description": "Czy plan startuje jako włączony."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday)."
+          "name": "Dni tygodnia",
+          "description": "Lista numerów dni tygodnia (0 = niedziela … 6 = sobota)."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower)."
+          "name": "Godzina rozpoczęcia",
+          "description": "HH:MM (kosiarka)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower)."
+          "name": "Godzina zakończenia",
+          "description": "HH:MM (kosiarka)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Data rozpoczęcia",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Data zakończenia",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Typ wyzwalacza",
+          "description": "0 = co tydzień, 1 = co ile dni, 2 = data, 3 = jednorazowo."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days for trigger_type = 1."
+          "name": "Odstęp w dniach",
+          "description": "Odstęp w dniach dla trigger_type = 1."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Wysokość koszenia",
+          "description": "Wysokość ostrza w milimetrach (tylko kosiarka)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower or Spino speed."
+          "name": "Prędkość",
+          "description": "Prędkość kosiarki lub Spino."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only."
+          "name": "Tryb krawędzi",
+          "description": "Tylko kosiarka."
+        },
+        "ride_boundary_distance": {
+          "name": "Pokrycie krawędzi",
+          "description": "Jak daleko kosiarka wysuwa się na zewnątrz podczas koszenia obwodu, od 0 (wewnątrz krawędzi) do 1 (na krawędzi). Używane tylko w modelach, które to obsługują, i przy włączonym koszeniu obwodu."
+        },
+        "auto_change_direction": {
+          "name": "Automatyczna zmiana kierunku koszenia",
+          "description": "Automatyczna zmiana kierunku koszenia — odwraca kierunek koszenia między przejazdami, aby trawa mniej się kładła: 0 = wyłączone, 1 = włączone. Tylko w modelach i oprogramowaniu, które to obsługują. Jeśli pominięte, ustawienie harmonogramu pozostaje bez zmian (wyłączone dla nowego harmonogramu)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only."
+          "name": "Kąt trasy",
+          "description": "Tylko kosiarka."
+        },
+        "toward_mode": {
+          "name": "Tryb cięcia kąta",
+          "description": "Tylko kosiarka: sposób zastosowania kąta trasy (0 = optymalny, 1 = północ, 2 = losowy)."
+        },
+        "toward_included_angle": {
+          "name": "Kąt skrzyżowania",
+          "description": "Tylko kosiarka: drugi kąt trasy w szachownicę, w stopniach."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only."
+          "name": "Odstęp tras",
+          "description": "Tylko kosiarka."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes covered."
+          "name": "Hashe stref",
+          "description": "Tylko kosiarka: lista objętych hashy obszarów."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only cleaning mode."
+          "name": "Tryb pracy",
+          "description": "Tryb czyszczenia (tylko Spino)."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values."
+          "name": "Tryby podrzędne",
+          "description": "Tylko Spino: lista wartości APP_WORK."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only."
+          "name": "Moc robocza",
+          "description": "Tylko Spino."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix start time."
+          "name": "Znacznik czasu rozpoczęcia",
+          "description": "Tylko Spino: czas rozpoczęcia w formacie unix."
         }
       }
     },
@@ -1271,6 +1462,16 @@
     "get_tasks": {
       "name": "Pobierz zadania",
       "description": "Zwraca wszystkie harmonogramy przechowywane przez integrację dla wybranego urządzenia, w tym informację, czy każdy z nich jest włączony. Służy do potwierdzenia, że zmiana została zastosowana; „Odśwież zadania” najpierw pobiera je ponownie z urządzenia."
+    },
+    "get_task": {
+      "name": "Pobierz zadanie",
+      "description": "Zwraca jeden z harmonogramów wybranej kosiarki na podstawie identyfikatora zadania: jego bieżące ustawienia pod nazwami pól akceptowanymi przez „Edytuj zadanie” oraz informację, czy jest włączony i czy właśnie działa. Służy do odczytania zadania przed jego edycją.",
+      "fields": {
+        "task_id": {
+          "name": "Identyfikator zadania",
+          "description": "Identyfikator zadania widoczny w atrybucie task_id przycisku zadania lub zwracany przez „Pobierz zadania”."
+        }
+      }
     },
     "start_task": {
       "name": "Uruchom zadanie",
@@ -1303,6 +1504,22 @@
     "get_map_backups": {
       "name": "Pobierz kopie map",
       "description": "Zwraca kopie map zapisane na koncie Mammotion, na które zalogowana jest ta integracja. Kopie należą do konta, więc kopie utworzone w aplikacji na innym koncie nie są wyświetlane."
+    },
+    "get_geojson": {
+      "name": "Pobierz GeoJSON mapy",
+      "description": "Zwraca mapę kosiarki (obszary, przeszkody, ścieżki, stację ładowania i stację RTK) jako GeoJSON FeatureCollection dla karty mapy i przez kilka następnych minut kosiarka zgłasza swoją pozycję."
+    },
+    "get_mow_path_geojson": {
+      "name": "Pobierz GeoJSON ścieżki koszenia",
+      "description": "Zwraca zaplanowaną ścieżkę koszenia bieżącego zadania jako GeoJSON FeatureCollection. Pusta, dopóki ścieżka nie zostanie pobrana."
+    },
+    "get_mow_progress_geojson": {
+      "name": "Pobierz GeoJSON postępu koszenia",
+      "description": "Zwraca już skoszoną część ścieżki bieżącego zadania jako GeoJSON FeatureCollection; kosiarki przesyłające linię dynamiczną zwracają zamiast tego tę linię. Gdy zadanie trwa, a nie ma jeszcze czego pokazać, pobiera też dane tej warstwy, najwyżej raz na minutę. Przez Bluetooth linia dynamiczna aktualizuje się sama."
+    },
+    "fetch_mow_path": {
+      "name": "Pobierz ścieżkę koszenia",
+      "description": "Pobiera ścieżkę koszenia bieżącego zadania kosiarki, chyba że pełna ścieżka jest już zapisana, i na jej podstawie odtwarza postęp koszenia. Kosiarki z linią dynamiczną pobierają też swoją najnowszą linię. Przez chmurę dzieje się to tylko przy włączonej opcji 'Włącz pobieranie ścieżki koszenia (chmura)'; przez Bluetooth zawsze. Zwraca, czy pobieranie zostało rozpoczęte."
     },
     "get_map_backup_progress": {
       "name": "Pobierz postęp kopii mapy",
@@ -1347,6 +1564,9 @@
     "device_not_ready": {
       "message": "Urządzenie obecnie nie jest gotowe."
     },
+    "no_job_to_continue": {
+      "message": "Brak przerwanego zadania do wznowienia."
+    },
     "pause_failed": {
       "message": "Wstrzymanie kosiarki nie powiodło się."
     },
@@ -1365,11 +1585,14 @@
     "command_failed": {
       "message": "Nie udało się wysłać polecenia do kosiarki."
     },
-    "api_limit_exceeded": {
-      "message": "Przekroczono limit API."
+    "command_unconfirmed": {
+      "message": "Kosiarka nie potwierdziła polecenia. Mogło ono jednak zostać wykonane."
     },
     "account_in_use": {
-      "message": "Twoje konto Mammotion jest już aktywne w innej sesji. Wyloguj się z aplikacji Mammotion i spróbuj ponownie."
+      "message": "Twoje konto Mammotion jest aktywne w innej sesji (aplikacja Mammotion). Wyloguj się z aplikacji lub poczekaj i spróbuj ponownie."
+    },
+    "api_limit_exceeded": {
+      "message": "Przekroczono limit API."
     },
     "cloud_setup_failed": {
       "message": "Nie można połączyć się z chmurą Mammotion. Sprawdź sieć i spróbuj ponownie załadować integrację."
@@ -1377,11 +1600,23 @@
     "task_not_found": {
       "message": "Nie znaleziono zadania {plan_id} na urządzeniu. Odśwież plan i spróbuj ponownie."
     },
+    "task_id_not_found": {
+      "message": "Nie znaleziono zadania {task_id} dla {entity_id}. Odśwież zadania i spróbuj ponownie."
+    },
     "start_task_unsupported_on_spino": {
       "message": "Uruchomienie planu na żądanie nie jest obsługiwane na robocie basenowym Spino — firmware urządzenia nie ma polecenia natychmiastowego uruchomienia zapisanego planu."
     },
     "grass_collection_unsupported": {
       "message": "Ta kosiarka nie obsługuje zbierania trawy."
+    },
+    "no_running_job": {
+      "message": "{device_name} nie wykonuje obecnie zadania koszenia, więc nie ma czego zmieniać. Najpierw uruchom zadanie."
+    },
+    "running_job_modify_unsupported": {
+      "message": "{device_name} nie obsługuje zmiany trwającego zadania. Potrafią to tylko Luba 2 i nowsze."
+    },
+    "auto_change_direction_unsupported": {
+      "message": "Automatyczna zmiana kierunku koszenia nie jest obsługiwana przez {device_name} lub jego oprogramowanie."
     },
     "map_backup_cloud_unavailable": {
       "message": "Kopie map wymagają działającego logowania do chmury Mammotion."
@@ -1392,8 +1627,176 @@
     "map_backup_device_not_found": {
       "message": "{device_name} nie jest dostępne do tworzenia kopii map na tym koncie Mammotion."
     },
-    "map_backup_mower_not_found": {
+    "mower_not_found": {
       "message": "{entity_id} nie jest kosiarką Mammotion."
+    },
+    "notification_unknown_code": {
+      "message": "Nieznany kod błędu {code}"
+    },
+    "notification_title_warnings": {
+      "message": "{device_name}: ostrzeżenia"
+    },
+    "notification_title_notifications": {
+      "message": "{device_name}: powiadomienia"
+    },
+    "notification_title_self_check": {
+      "message": "{device_name}: {state}"
+    },
+    "self_check_emergency_stop": {
+      "message": "Zatrzymanie awaryjne jest aktywne. Zwolnij je na kosiarce przed ponownym uruchomieniem."
+    },
+    "self_check_stop_button": {
+      "message": "Naciśnięto przycisk STOP na kosiarce. Zresetuj go na kosiarce przed ponownym uruchomieniem."
+    },
+    "self_check_safety_key_missing": {
+      "message": "Klucz bezpieczeństwa nie jest włożony. Włóż go, aby rozpocząć koszenie."
+    },
+    "self_check_lifted": {
+      "message": "Kosiarka została podniesiona z ziemi. Postaw ją z powrotem na trawniku."
+    },
+    "self_check_tilted": {
+      "message": "Kosiarka jest przechylona. Przenieś ją na równe podłoże."
+    },
+    "self_check_tipped_over": {
+      "message": "Kosiarka się przewróciła. Postaw ją z powrotem na kołach."
+    },
+    "self_check_bumper_missing": {
+      "message": "Boczny zderzak nie jest zamontowany. Zamontuj go przed koszeniem."
+    },
+    "self_check_rain": {
+      "message": "Wykryto deszcz, a funkcja „Bez koszenia w deszczowe dni” jest włączona. Koszenie może się rozpocząć, gdy przestanie padać, lub wyłącz tę funkcję."
+    },
+    "self_check_low_battery": {
+      "message": "Bateria jest zbyt słaba do koszenia. Pozwól kosiarce się naładować."
+    },
+    "self_check_non_working_hours": {
+      "message": "Jest poza godzinami pracy kosiarki."
+    },
+    "self_check_rtk_station_moved": {
+      "message": "Stacja referencyjna RTK została przesunięta. Sprawdź jej położenie w aplikacji."
+    },
+    "self_check_outside_task_area": {
+      "message": "Kosiarka jest poza swoim obszarem zadania. Przenieś ją z powrotem do zmapowanego obszaru."
+    },
+    "self_check_wheel_motor_error": {
+      "message": "Silnik piasty koła zgłosił błąd."
+    },
+    "self_check_blade_motor_overheated": {
+      "message": "Silnik noża jest zbyt gorący. Pozwól mu ostygnąć."
+    },
+    "self_check_dock_moved": {
+      "message": "Stacja ładująca została przesunięta. Sprawdź jej położenie w aplikacji."
+    },
+    "self_check_no_task_area": {
+      "message": "Nie znaleziono obszaru zadania. Utwórz mapę w aplikacji."
+    },
+    "self_check_night_protection": {
+      "message": "Ochrona nocna jest włączona, więc kosiarka nie kosi w nocy."
+    },
+    "self_check_rain_protection": {
+      "message": "Ochrona przed deszczem nie pozwala kosiarce wystartować. Na podstawie czujnika deszczu i internetowych danych pogodowych ocenia, czy warunki są odpowiednie do koszenia, i oblicza, kiedy je wznowić. Zaczekaj albo zmień lub wyłącz ochronę przed deszczem w ustawieniach kosiarki w aplikacji."
+    },
+    "self_check_rtk_not_ready": {
+      "message": "Stacja referencyjna RTK nie jest jeszcze gotowa."
+    },
+    "self_check_weak_satellite_signal": {
+      "message": "Sygnał satelitarny kosiarki jest zbyt słaby, aby ustalić jej położenie."
+    },
+    "self_check_positioning_failure": {
+      "message": "System pozycjonowania uległ awarii."
+    },
+    "self_check_inavi_unavailable": {
+      "message": "Usługa iNavi jest niedostępna."
+    },
+    "self_check_weak_rtk_signal": {
+      "message": "Sygnał RTK jest słaby. Sprawdź, gdzie stoi stacja referencyjna."
+    },
+    "self_check_other": {
+      "message": "Kosiarka zgłosiła nieznany kod autotestu {code}."
+    },
+    "remote_drive_needs_cloud": {
+      "message": "Zdalne sterowanie przez chmurę wymaga działającego połączenia kosiarki z chmurą. Przez Bluetooth użyj zamiast tego przycisków przesuwania."
+    },
+    "remote_drive_start_failed": {
+      "message": "Nie udało się uruchomić zdalnego sterowania: kosiarka jest nieosiągalna przez chmurę."
+    },
+    "remote_drive_already_running": {
+      "message": "Zdalne sterowanie przez chmurę już działa. Wyłącz je przed ponownym uruchomieniem."
+    },
+    "remote_drive_not_awaiting_confirmation": {
+      "message": "Nie ma komunikatu bezpieczeństwa do potwierdzenia. Najpierw włącz zdalne sterowanie przez chmurę."
+    },
+    "remote_drive_no_reverse": {
+      "message": "Zdalne sterowanie przez chmurę nie pozwala na jazdę do tyłu. Skręć w lewo lub w prawo albo użyj Bluetooth."
+    },
+    "remote_drive_fence_paused": {
+      "message": "Kosiarka zatrzymała się przy granicy. Przed dalszą jazdą naciśnij „Potwierdź ostrzeżenie o granicy”."
+    },
+    "remote_drive_safety_notice": {
+      "message": "Przed zdalnym sterowaniem kosiarką upewnij się, że w obszarze roboczym nie ma ludzi ani zwierząt, i przez cały czas miej kosiarkę w zasięgu wzroku. Aby rozpocząć, naciśnij „Potwierdź zdalne sterowanie” w ciągu 3 minut. Sesja kończy się sama wkrótce po tym, jak przestaniesz wydawać polecenia."
+    },
+    "movement_unavailable": {
+      "message": "Kosiarki nie można teraz przesunąć. Podejdź w zasięg Bluetooth albo włącz zdalne sterowanie przez chmurę i naciśnij „Potwierdź zdalne sterowanie”."
+    },
+    "notification_title_remote_drive": {
+      "message": "{device_name}: zdalne sterowanie przez chmurę"
+    },
+    "remote_drive_token_unavailable": {
+      "message": "Serwer Mammotion nie zezwolił na zdalne sterowanie (kod {detail}). Spróbuj ponownie później."
+    },
+    "remote_drive_occupied_by_other": {
+      "message": "Kosiarką steruje już inne konto ({detail})."
+    },
+    "remote_drive_network_poor": {
+      "message": "Zdalne sterowanie zakończone: połączenie sieciowe kosiarki jest zbyt słabe."
+    },
+    "remote_drive_token_expired": {
+      "message": "Zdalne sterowanie zakończone: uprawnienie do jazdy wygasło."
+    },
+    "remote_drive_out_of_fence": {
+      "message": "Zdalne sterowanie zakończone: kosiarka jest poza dozwolonym obszarem."
+    },
+    "remote_drive_ble_preempt": {
+      "message": "Zdalne sterowanie zakończone: kosiarką steruje teraz przez Bluetooth {detail}."
+    },
+    "remote_drive_no_loc_mileage_exhausted": {
+      "message": "Zdalne sterowanie zakończone: kosiarka przejechała maksymalny dystans dozwolony bez ustalenia pozycji."
+    },
+    "remote_drive_env_not_ready": {
+      "message": "Zdalne sterowanie zakończone: kosiarka nie jest gotowa do sterowania (kod {detail})."
+    },
+    "remote_drive_send_failed": {
+      "message": "Zdalne sterowanie zakończone: nie udało się wysłać polecenia ({detail})."
+    },
+    "remote_drive_approach_fence": {
+      "message": "Kosiarka zatrzymała się tuż przy granicy. Naciśnij „Potwierdź ostrzeżenie o granicy”, aby jechać dalej."
+    },
+    "remote_drive_safety_notice_timeout": {
+      "message": "Zdalne sterowanie zakończone: komunikat bezpieczeństwa nie został potwierdzony w ciągu 3 minut."
+    },
+    "remote_drive_video_unavailable": {
+      "message": "Zdalne sterowanie zakończone: obraz z kamery został przerwany."
+    },
+    "battery_settings_unread": {
+      "message": "Ustawienia baterii nie zostały jeszcze odczytane z kosiarki. Zmiana teraz zresetowałaby okno ładowania poza szczytem, więc nic nie wysłano. Spróbuj ponownie, gdy kosiarka będzie połączona."
+    }
+  },
+  "issues": {
+    "account_in_use": {
+      "title": "Konto Mammotion jest używane w innej sesji",
+      "description": "Twoje konto Mammotion {account} jest już aktywne w innej sesji, więc połączenie z chmurą jest wstrzymane. Wyloguj się z aplikacji Mammotion; integracja automatycznie połączy się ponownie w ciągu kilku minut."
+    },
+    "cloud_login_retrying": {
+      "title": "Chmura Mammotion niedostępna",
+      "description": "Home Assistant nie mógł zalogować się do chmury Mammotion dla konta {account} ({error}). Urządzenia połączone przez Bluetooth nadal działają. Logowanie jest ponawiane co 15 minut, maksymalnie 5 razy, przy użyciu zapisanej sesji."
+    },
+    "cloud_login_failed": {
+      "title": "Chmura Mammotion nie jest połączona",
+      "description": "Home Assistant nie mógł zalogować się do chmury Mammotion dla konta {account} ({error}) i przestał ponawiać próby. Urządzenia połączone przez Bluetooth nadal działają. Załaduj ponownie integrację Mammotion, gdy usługa Mammotion będzie znów dostępna."
+    },
+    "deprecated_rain_tactics": {
+      "title": "Użyto wycofanej opcji w akcji Mammotion",
+      "description": "Automatyzacja lub skrypt wywołuje `{service}` z `{field}`. Ta opcja została usunięta: nigdy nie docierała do kosiarki, więc jest ignorowana, a zadanie uruchamia się normalnie. Zamiast niej użyj przełącznika Wykrywanie deszczu kosiarki i usuń `{field}` z wywołania akcji, aby zamknąć ten komunikat."
     }
   }
 }
