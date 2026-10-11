@@ -8,20 +8,23 @@ from typing import TYPE_CHECKING, Any, cast
 import voluptuous as vol
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.util import dt as dt_util
-from pymammotion.data.model.hash_list import CommDataCouple, Plan
+from pymammotion.data.model.hash_list import CommDataCouple, Plan, SvgFrameList
 from pymammotion.data.model.pool_state import PoolPlan
 from pymammotion.http.model.map_backup import BACKUP_STATE_DONE, BackupMapItem
 from pymammotion.utility.device_type import DeviceType
 
 from .const import DOMAIN, LOGGER
 from .coordinator import MammotionReportUpdateCoordinator, MammotionSpinoCoordinator
+from .entity import device_firmware_version
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from . import MammotionConfigEntry
 from .geojson_utils import apply_geojson_offset
 from .models import MammotionMowerData
@@ -29,6 +32,7 @@ from .models import MammotionMowerData
 SERVICE_GET_GEOJSON = "get_geojson"
 SERVICE_GET_MOW_PATH_GEOJSON = "get_mow_path_geojson"
 SERVICE_GET_MOW_PROGRESS_GEOJSON = "get_mow_progress_geojson"
+SERVICE_FETCH_MOW_PATH = "fetch_mow_path"
 SERVICE_GET_MAP_DATA = "get_map_data"
 SERVICE_SVG_ADD = "svg_add"
 SERVICE_SVG_UPDATE = "svg_update"
@@ -50,6 +54,7 @@ SERVICE_REFRESH_TASKS = "refresh_tasks"
 # this returns what the integration now holds, so a script can confirm a
 # ``set_task_enabled`` actually landed (issue #890).
 SERVICE_GET_TASKS = "get_tasks"
+SERVICE_GET_TASK = "get_task"
 # "start task" === "start schedule" — runs a stored mower schedule now.
 # Backed by ``NavPlanTaskExecute(sub_cmd=1, id=plan_id)`` on the wire (see
 # APK ``MACommandHelper.singleSchedule`` / docs/tasks_and_schedules.md § 1.6).
@@ -67,9 +72,9 @@ SERVICE_CANCEL_MAP_BACKUP = "cancel_map_backup"
 SERVICE_DELETE_MAP_BACKUP = "delete_map_backup"
 
 # Optional schedule fields shared by both device kinds.  The HA service
-# layer normalises them into the per-kind Plan / PoolPlan dataclass.
+# layer normalises them into the per-kind Plan / PoolPlan dataclass.  No
+# defaults: an edit must leave whatever the caller omits as stored.
 _SCHEDULE_FIELDS = {
-    vol.Optional("enabled", default=True): cv.boolean,
     vol.Optional("weeks"): vol.All(
         cv.ensure_list, [vol.All(vol.Coerce(int), vol.Range(min=0, max=6))]
     ),
@@ -86,7 +91,18 @@ _MOWER_ONLY_FIELDS = {
     vol.Optional("knife_height"): vol.All(vol.Coerce(int), vol.Range(min=20, max=100)),
     vol.Optional("speed"): vol.Coerce(float),
     vol.Optional("edge_mode"): vol.All(vol.Coerce(int), vol.Range(min=0, max=2)),
+    vol.Optional("ride_boundary_distance"): vol.All(
+        vol.Coerce(float), vol.Range(min=0, max=1)
+    ),
+    # None is what get_task reports for a plan the device sent no setting for.
+    vol.Optional("auto_change_direction"): vol.Any(
+        None, vol.All(vol.Coerce(int), vol.In([0, 1]))
+    ),
     vol.Optional("route_angle"): vol.All(vol.Coerce(int), vol.Range(min=0, max=179)),
+    vol.Optional("toward_mode"): vol.All(vol.Coerce(int), vol.In([0, 1, 2])),
+    vol.Optional("toward_included_angle"): vol.All(
+        vol.Coerce(int), vol.Range(min=-180, max=180)
+    ),
     vol.Optional("route_spacing"): vol.All(vol.Coerce(int), vol.Range(min=0)),
     vol.Optional("zone_hashs"): vol.All(cv.ensure_list, [vol.Coerce(int)]),
 }
@@ -127,6 +143,7 @@ CREATE_TASK_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): _single_entity_id,
         vol.Required("name"): cv.string,
+        vol.Optional("enabled", default=True): cv.boolean,
         **_SCHEDULE_FIELDS,
         **_MOWER_ONLY_FIELDS,
         **_SPINO_ONLY_FIELDS,
@@ -138,6 +155,7 @@ EDIT_TASK_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): _single_entity_id,
         vol.Optional("name"): cv.string,
+        vol.Optional("enabled"): cv.boolean,
         **_SCHEDULE_FIELDS,
         **_MOWER_ONLY_FIELDS,
         **_SPINO_ONLY_FIELDS,
@@ -176,18 +194,21 @@ GET_TASKS_SCHEMA = vol.Schema(
     {vol.Required(ATTR_ENTITY_ID): _single_entity_id}, extra=vol.ALLOW_EXTRA
 )
 
-MAP_BACKUP_TARGET_SCHEMA = vol.Schema(
+# One mower, given as a UI target (a list) or a plain entity_id string (YAML, the map card).
+MOWER_TARGET_SCHEMA = vol.Schema(
     {vol.Required(ATTR_ENTITY_ID): _single_entity_id}, extra=vol.ALLOW_EXTRA
 )
 
-BACKUP_MAP_SCHEMA = MAP_BACKUP_TARGET_SCHEMA.extend(
+GET_TASK_SCHEMA = MOWER_TARGET_SCHEMA.extend({vol.Required("task_id"): cv.string})
+
+BACKUP_MAP_SCHEMA = MOWER_TARGET_SCHEMA.extend(
     {
         vol.Required("name"): vol.All(cv.string, vol.Length(min=1, max=64)),
         vol.Optional("backup_id"): cv.string,
     }
 )
 
-MAP_BACKUP_ID_SCHEMA = MAP_BACKUP_TARGET_SCHEMA.extend(
+MAP_BACKUP_ID_SCHEMA = MOWER_TARGET_SCHEMA.extend(
     {vol.Required("backup_id"): cv.string}
 )
 
@@ -195,48 +216,51 @@ MAP_BACKUP_JOB_SCHEMA = MAP_BACKUP_ID_SCHEMA.extend(
     {vol.Optional("restore", default=False): cv.boolean}
 )
 
-GEOJSON_SCHEMA = vol.Schema(
-    {vol.Required(ATTR_ENTITY_ID): cv.entity_id}, extra=vol.ALLOW_EXTRA
+#: svg_update fields an omitted value takes from the stored tile.
+_SVG_TILE_FIELDS = (
+    "svg_file_name",
+    "scale",
+    "rotate",
+    "base_width_m",
+    "base_height_m",
+    "x_move",
+    "y_move",
 )
 
-_SVG_COMMON_FIELDS = {
-    vol.Optional("svg_file_name", default="pattern.svg"): str,
-    vol.Optional("scale", default=1.0): vol.Coerce(float),
-    vol.Optional("rotate", default=0.0): vol.Coerce(float),
-    vol.Optional("base_width_m", default=2.5): vol.Coerce(float),
-    vol.Optional("base_height_m", default=2.5): vol.Coerce(float),
-    vol.Optional("x_move"): vol.Coerce(float),
-    vol.Optional("y_move"): vol.Coerce(float),
-}
-
-SVG_ADD_SCHEMA = vol.Schema(
+SVG_ADD_SCHEMA = MOWER_TARGET_SCHEMA.extend(
     {
-        vol.Required(ATTR_ENTITY_ID): cv.entity_id,
         vol.Required("area_hash"): vol.Coerce(int),
         vol.Required("svg_data"): str,
-        **_SVG_COMMON_FIELDS,
+        vol.Optional("svg_file_name", default="pattern.svg"): str,
+        vol.Optional("scale", default=1.0): vol.Coerce(float),
+        vol.Optional("rotate", default=0.0): vol.Coerce(float),
+        vol.Optional("base_width_m", default=2.5): vol.Coerce(float),
+        vol.Optional("base_height_m", default=2.5): vol.Coerce(float),
+        vol.Optional("x_move"): vol.Coerce(float),
+        vol.Optional("y_move"): vol.Coerce(float),
     },
-    extra=vol.ALLOW_EXTRA,
 )
 
-SVG_UPDATE_SCHEMA = vol.Schema(
+SVG_UPDATE_SCHEMA = MOWER_TARGET_SCHEMA.extend(
     {
-        vol.Required(ATTR_ENTITY_ID): cv.entity_id,
         vol.Required("device_hash"): vol.Coerce(int),
         vol.Required("area_hash"): vol.Coerce(int),
         vol.Required("svg_data"): str,
-        **_SVG_COMMON_FIELDS,
+        vol.Optional("svg_file_name"): str,
+        vol.Optional("scale"): vol.Coerce(float),
+        vol.Optional("rotate"): vol.Coerce(float),
+        vol.Optional("base_width_m"): vol.Coerce(float),
+        vol.Optional("base_height_m"): vol.Coerce(float),
+        vol.Optional("x_move"): vol.Coerce(float),
+        vol.Optional("y_move"): vol.Coerce(float),
     },
-    extra=vol.ALLOW_EXTRA,
 )
 
-SVG_DELETE_SCHEMA = vol.Schema(
+SVG_DELETE_SCHEMA = MOWER_TARGET_SCHEMA.extend(
     {
-        vol.Required(ATTR_ENTITY_ID): cv.entity_id,
         vol.Required("device_hash"): vol.Coerce(int),
         vol.Required("area_hash"): vol.Coerce(int),
     },
-    extra=vol.ALLOW_EXTRA,
 )
 
 
@@ -261,6 +285,17 @@ def _stringify_large_ints(obj: Any) -> Any:
     ):
         return str(obj)
     return obj
+
+
+def _stored_svg_fields(tile: SvgFrameList | None) -> dict[str, Any]:
+    """Return the transform a stored SVG tile holds, keyed by svg_update's field names."""
+    if tile is None or not tile.data:
+        return {}
+    stored = tile.data[0].svg_message
+    fields = {key: getattr(stored, key) for key in _SVG_TILE_FIELDS}
+    if not stored.svg_file_name:
+        del fields["svg_file_name"]
+    return fields
 
 
 def _get_mower_by_entity_id(
@@ -394,30 +429,46 @@ def _map_backup_info(backup: BackupMapItem) -> dict[str, Any]:
     }
 
 
-def _map_backup_coordinator(
+def _mower_coordinator(
     hass: HomeAssistant, entity_id: str
 ) -> MammotionReportUpdateCoordinator:
-    """Return the reporting coordinator of the mower a backup service targets."""
+    """Return the reporting coordinator of the mower a service targets."""
     mower = _get_mower_by_entity_id(hass, entity_id)
     if mower is None:
         raise HomeAssistantError(
             translation_domain=DOMAIN,
-            translation_key="map_backup_mower_not_found",
+            translation_key="mower_not_found",
             translation_placeholders={"entity_id": entity_id},
         )
     return mower.reporting_coordinator
 
 
-def _mower_task_info(plan: Plan) -> dict[str, Any]:
-    """Describe a mower schedule for the get_tasks response.
+def _task_button_entity_id(
+    hass: HomeAssistant,
+    coordinator: MammotionReportUpdateCoordinator | MammotionSpinoCoordinator,
+    task_id: str,
+) -> str | None:
+    """Return the entity_id of a task's button, the target edit_task takes."""
+    return er.async_get(hass).async_get_entity_id(
+        "button", DOMAIN, f"{coordinator.unique_name}_{task_id}"
+    )
 
-    ``task_id`` matches the task button's attribute of the same name, so a
-    script can line a response row up with the entity it came from.
+
+def _mower_task_info(
+    hass: HomeAssistant, coordinator: MammotionReportUpdateCoordinator, plan: Plan
+) -> dict[str, Any]:
+    """Describe a mower schedule for the get_task / get_tasks responses.
+
+    ``task_id`` matches the task button's attribute of the same name, and the
+    settings use edit_task's field names, so a row can be fed back into it.
     """
+    running = coordinator.running_plan
     return {
         "task_id": plan.plan_id,
+        "entity_id": _task_button_entity_id(hass, coordinator, plan.plan_id),
         "name": plan.task_name,
         "enabled": plan.is_enabled(),
+        "running": running is not None and running.plan_id == plan.plan_id,
         "start_time": plan.start_time,
         "end_time": plan.end_time,
         "weeks": list(plan.weeks),
@@ -428,19 +479,31 @@ def _mower_task_info(plan: Plan) -> dict[str, Any]:
         "knife_height": plan.knife_height,
         "speed": plan.speed,
         "edge_mode": plan.edge_mode,
+        "ride_boundary_distance": plan.ride_boundary_distance,
+        "auto_change_direction": plan.auto_change_direction,
         "route_angle": plan.route_angle,
+        "toward_mode": plan.toward_mode,
+        "toward_included_angle": plan.toward_included_angle,
         "route_spacing": plan.route_spacing,
         "zone_hashs": list(plan.zone_hashs),
     }
 
 
-def _spino_task_info(plan: PoolPlan) -> dict[str, Any]:
-    """Describe a Spino schedule for the get_tasks response."""
+def _spino_task_info(
+    hass: HomeAssistant, coordinator: MammotionSpinoCoordinator, plan: PoolPlan
+) -> dict[str, Any]:
+    """Describe a Spino schedule for the get_tasks response.
+
+    ``start_time`` predates the edit_task-compatible ``starttime`` and is kept
+    for existing scripts.
+    """
     return {
         "task_id": str(plan.jobid),
+        "entity_id": _task_button_entity_id(hass, coordinator, str(plan.jobid)),
         "name": plan.jobname,
         "enabled": plan.enabled,
         "start_time": plan.starttime,
+        "starttime": plan.starttime,
         "weeks": list(plan.weeks),
         "start_date": plan.startdate,
         "end_date": plan.enddate,
@@ -484,13 +547,39 @@ def _build_mower_plan(data: dict[str, Any], base: Plan | None = None) -> Plan:
         "knife_height",
         "speed",
         "edge_mode",
+        "ride_boundary_distance",
         "route_angle",
+        "toward_mode",
+        "toward_included_angle",
         "route_spacing",
         "zone_hashs",
     ):
         if key in data:
             plan = dataclasses.replace(plan, **{key: data[key]})
+    if (auto_change := data.get("auto_change_direction")) is not None:
+        plan = dataclasses.replace(plan, auto_change_direction=bool(auto_change))
     return plan
+
+
+def _check_auto_change_direction(
+    coordinator: MammotionReportUpdateCoordinator, data: Mapping[str, Any]
+) -> None:
+    """Refuse to switch auto-reverse on where the mower does not offer it.
+
+    pymammotion sends a schedule's setting with no model gate.
+    """
+    if not data.get("auto_change_direction"):
+        return
+    if not DeviceType.supports_auto_change_direction(
+        coordinator.device_name,
+        device_firmware_version(coordinator.data),
+        coordinator.device.product_key,
+    ):
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="auto_change_direction_unsupported",
+            translation_placeholders={"device_name": coordinator.device_name},
+        )
 
 
 def _build_spino_plan(data: dict[str, Any], base: PoolPlan | None = None) -> PoolPlan:
@@ -522,11 +611,7 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
     """Register Mammotion services."""
 
     async def handle_get_geojson(call: ServiceCall) -> dict[str, Any]:
-        mower = _get_mower_by_entity_id(hass, call.data[ATTR_ENTITY_ID])
-        if mower is None:
-            LOGGER.error("Could not find entity %s", call.data[ATTR_ENTITY_ID])
-            return {}
-        coordinator = mower.reporting_coordinator
+        coordinator = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
         if coordinator.is_online():
             await coordinator.async_start_report_stream(duration_ms=300_000)
         return apply_geojson_offset(
@@ -536,11 +621,7 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
         )
 
     async def handle_get_mow_path_geojson(call: ServiceCall) -> dict[str, Any]:
-        mower = _get_mower_by_entity_id(hass, call.data[ATTR_ENTITY_ID])
-        if mower is None:
-            LOGGER.error("Could not find entity %s", call.data[ATTR_ENTITY_ID])
-            return {}
-        coordinator = mower.reporting_coordinator
+        coordinator = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
         return apply_geojson_offset(
             coordinator.data.map.generated_mow_path_geojson,
             coordinator.map_offset_lat,
@@ -548,51 +629,52 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
         )
 
     async def handle_get_mow_progress_geojson(call: ServiceCall) -> dict[str, Any]:
-        mower = _get_mower_by_entity_id(hass, call.data[ATTR_ENTITY_ID])
-        if mower is None:
-            LOGGER.error("Could not find entity %s", call.data[ATTR_ENTITY_ID])
-            return {}
-        coordinator = mower.reporting_coordinator
-        device_type = DeviceType.value_of_str(coordinator.device_name)
-        firmware = coordinator.data.device_firmwares.main_controller
-        if device_type.is_support_dynamics_line(firmware):
+        coordinator = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        if coordinator.supports_dynamics_line:
             geojson = coordinator.data.map.generated_dynamics_line_geojson
         else:
             geojson = coordinator.data.map.generated_mow_progress_geojson
+        coordinator.async_request_mow_progress()
         return apply_geojson_offset(
             geojson, coordinator.map_offset_lat, coordinator.map_offset_lon
         )
+
+    async def handle_fetch_mow_path(call: ServiceCall) -> dict[str, Any]:
+        """Fetch the running job's cover path unless a complete one is cached."""
+        coordinator = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        return {"fetch_started": await coordinator.async_check_and_get_mow_path()}
 
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_GEOJSON,
         handle_get_geojson,
-        schema=GEOJSON_SCHEMA,
+        schema=MOWER_TARGET_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_MOW_PATH_GEOJSON,
         handle_get_mow_path_geojson,
-        schema=GEOJSON_SCHEMA,
+        schema=MOWER_TARGET_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_MOW_PROGRESS_GEOJSON,
         handle_get_mow_progress_geojson,
-        schema=GEOJSON_SCHEMA,
+        schema=MOWER_TARGET_SCHEMA,
         supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_FETCH_MOW_PATH,
+        handle_fetch_mow_path,
+        schema=MOWER_TARGET_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
     )
 
     async def handle_get_map_data(call: ServiceCall) -> dict[str, Any]:
-        from pymammotion.data.model.device import MowingDevice  # noqa: PLC0415
-
-        mower = _get_mower_by_entity_id(hass, call.data[ATTR_ENTITY_ID])
-        if mower is None:
-            LOGGER.error("Could not find entity %s", call.data[ATTR_ENTITY_ID])
-            return {}
-        device_data = cast(MowingDevice, mower.reporting_coordinator.data)
+        device_data = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID]).data
         map_dict = dataclasses.asdict(device_data.map)
         return cast(
             dict[str, Any],
@@ -606,15 +688,10 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
         )
 
     async def handle_svg_add(call: ServiceCall) -> dict[str, Any]:
-        from pymammotion.data.model.device import MowingDevice  # noqa: PLC0415
         from pymammotion.utility.svg import build_svg_for_area  # noqa: PLC0415
 
-        mower = _get_mower_by_entity_id(hass, call.data[ATTR_ENTITY_ID])
-        if mower is None:
-            LOGGER.error("Could not find entity %s", call.data[ATTR_ENTITY_ID])
-            return {}
-        coordinator = mower.reporting_coordinator
-        device_data = cast(MowingDevice, coordinator.data)
+        coordinator = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        device_data = coordinator.data
         area_hash: int = call.data["area_hash"]
         frame_list = device_data.map.area.get(area_hash)
         boundary: list[CommDataCouple] = []
@@ -641,15 +718,10 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
         return {"device_hash": str(result)}
 
     async def handle_svg_update(call: ServiceCall) -> dict[str, Any]:
-        from pymammotion.data.model.device import MowingDevice  # noqa: PLC0415
         from pymammotion.utility.svg import build_svg_update  # noqa: PLC0415
 
-        mower = _get_mower_by_entity_id(hass, call.data[ATTR_ENTITY_ID])
-        if mower is None:
-            LOGGER.error("Could not find entity %s", call.data[ATTR_ENTITY_ID])
-            return {}
-        coordinator = mower.reporting_coordinator
-        device_data = cast(MowingDevice, coordinator.data)
+        coordinator = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        device_data = coordinator.data
         area_hash: int = call.data["area_hash"]
         frame_list = device_data.map.area.get(area_hash)
         boundary: list[CommDataCouple] = []
@@ -658,43 +730,42 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
                 frame_list.data, key=lambda f: getattr(f, "current_frame", 0)
             ):
                 boundary.extend(getattr(frame, "data_couple", []))
+        fields = _stored_svg_fields(device_data.map.svg.get(call.data["device_hash"]))
+        fields.update(
+            {key: call.data[key] for key in _SVG_TILE_FIELDS if key in call.data}
+        )
+        x_move = fields.pop("x_move", None)
+        y_move = fields.pop("y_move", None)
         msg = build_svg_update(
             device_hash=call.data["device_hash"],
             area_hash=area_hash,
             boundary=boundary,
             svg_file_data=call.data["svg_data"],
-            svg_file_name=call.data["svg_file_name"],
-            scale=call.data["scale"],
-            rotate=call.data["rotate"],
-            base_width_m=call.data["base_width_m"],
-            base_height_m=call.data["base_height_m"],
+            **fields,
         )
-        if "x_move" in call.data:
-            msg.svg_message.x_move = call.data["x_move"]
-        if "y_move" in call.data:
-            msg.svg_message.y_move = call.data["y_move"]
+        if x_move is not None:
+            msg.svg_message.x_move = x_move
+        if y_move is not None:
+            msg.svg_message.y_move = y_move
         result = await coordinator.send_svg_command(msg)
         return {"device_hash": str(result)}
 
     async def handle_svg_delete(call: ServiceCall) -> dict[str, Any]:
         from pymammotion.utility.svg import build_svg_delete  # noqa: PLC0415
 
-        mower = _get_mower_by_entity_id(hass, call.data[ATTR_ENTITY_ID])
-        if mower is None:
-            LOGGER.error("Could not find entity %s", call.data[ATTR_ENTITY_ID])
-            return {}
+        coordinator = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
         msg = build_svg_delete(
             device_hash=call.data["device_hash"],
             area_hash=call.data["area_hash"],
         )
-        await mower.reporting_coordinator.send_svg_command(msg)
+        await coordinator.send_svg_command(msg)
         return {}
 
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_MAP_DATA,
         handle_get_map_data,
-        schema=GEOJSON_SCHEMA,
+        schema=MOWER_TARGET_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
@@ -772,6 +843,7 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
     async def handle_edit_task(call: ServiceCall) -> None:
         entity_id = call.data[ATTR_ENTITY_ID]
         if (mower := _resolve_mower_task(hass, entity_id)) is not None:
+            _check_auto_change_direction(mower[0], call.data)
             base = mower[0].data.map.plan[mower[1]]
             await mower[0].async_edit_mower_task(
                 _build_mower_plan(dict(call.data), base)
@@ -793,9 +865,9 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
             return  # pragma: no cover — unreachable after raise above
         coord, kind = resolved
         if kind == "mower":
-            await cast(MammotionReportUpdateCoordinator, coord).async_create_mower_task(
-                _build_mower_plan(dict(call.data))
-            )
+            mower = cast(MammotionReportUpdateCoordinator, coord)
+            _check_auto_change_direction(mower, call.data)
+            await mower.async_create_mower_task(_build_mower_plan(dict(call.data)))
         else:
             await cast(MammotionSpinoCoordinator, coord).async_create_spino_task(
                 _build_spino_plan(dict(call.data))
@@ -824,12 +896,34 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
             return {}
         coord, kind = resolved
         if kind == "mower":
-            plans = cast(MammotionReportUpdateCoordinator, coord).data.map.plan
-            tasks = [_mower_task_info(plan) for plan in plans.values()]
+            mower = cast(MammotionReportUpdateCoordinator, coord)
+            tasks = [
+                _mower_task_info(hass, mower, plan)
+                for plan in mower.data.map.plan.values()
+            ]
         else:
-            pool_plans = cast(MammotionSpinoCoordinator, coord).data.plans
-            tasks = [_spino_task_info(plan) for plan in pool_plans.values()]
+            spino = cast(MammotionSpinoCoordinator, coord)
+            tasks = [
+                _spino_task_info(hass, spino, plan)
+                for plan in spino.data.plans.values()
+            ]
         return cast(dict[str, Any], _stringify_large_ints({"tasks": tasks}))
+
+    async def handle_get_task(call: ServiceCall) -> dict[str, Any]:
+        """Return one of a mower's schedules, in the shape edit_task accepts."""
+        entity_id = call.data[ATTR_ENTITY_ID]
+        task_id = call.data["task_id"]
+        coordinator = _mower_coordinator(hass, entity_id)
+        if (plan := coordinator.data.map.plan.get(task_id)) is None:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="task_id_not_found",
+                translation_placeholders={"task_id": task_id, "entity_id": entity_id},
+            )
+        return cast(
+            dict[str, Any],
+            _stringify_large_ints(_mower_task_info(hass, coordinator, plan)),
+        )
 
     async def handle_start_task(call: ServiceCall) -> None:
         """Run a stored mower schedule immediately ("start task" / "start schedule").
@@ -851,27 +945,15 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
             )
         _raise_task_not_found(entity_id)
 
-    hass.services.async_register(
-        DOMAIN, SERVICE_RENAME_TASK, handle_rename_task, schema=RENAME_TASK_SCHEMA
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_SET_TASK_ENABLED,
-        handle_set_task_enabled,
-        schema=SET_TASK_ENABLED_SCHEMA,
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_DELETE_TASK, handle_delete_task, schema=DELETE_TASK_SCHEMA
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_COPY_TASK, handle_copy_task, schema=COPY_TASK_SCHEMA
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_EDIT_TASK, handle_edit_task, schema=EDIT_TASK_SCHEMA
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_CREATE_TASK, handle_create_task, schema=CREATE_TASK_SCHEMA
-    )
+    for service, handler, schema in (
+        (SERVICE_RENAME_TASK, handle_rename_task, RENAME_TASK_SCHEMA),
+        (SERVICE_SET_TASK_ENABLED, handle_set_task_enabled, SET_TASK_ENABLED_SCHEMA),
+        (SERVICE_DELETE_TASK, handle_delete_task, DELETE_TASK_SCHEMA),
+        (SERVICE_COPY_TASK, handle_copy_task, COPY_TASK_SCHEMA),
+        (SERVICE_EDIT_TASK, handle_edit_task, EDIT_TASK_SCHEMA),
+        (SERVICE_CREATE_TASK, handle_create_task, CREATE_TASK_SCHEMA),
+    ):
+        async_register_admin_service(hass, DOMAIN, service, handler, schema=schema)
     hass.services.async_register(
         DOMAIN, SERVICE_REFRESH_TASKS, handle_refresh_tasks, schema=REFRESH_TASKS_SCHEMA
     )
@@ -885,10 +967,17 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
         schema=GET_TASKS_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_TASK,
+        handle_get_task,
+        schema=GET_TASK_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
 
     async def handle_backup_map(call: ServiceCall) -> dict[str, Any]:
         """Upload the mower's map to the cloud, as a new backup or over an old one."""
-        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        coord = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
         backup = await coord.async_backup_map(
             call.data["name"], call.data.get("backup_id")
         )
@@ -896,18 +985,18 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
 
     async def handle_restore_map(call: ServiceCall) -> None:
         """Replace the mower's map with a stored backup."""
-        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        coord = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
         await coord.async_restore_map(call.data["backup_id"])
 
     async def handle_get_map_backups(call: ServiceCall) -> dict[str, Any]:
         """Return every map backup on the targeted mower's account."""
-        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        coord = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
         backups = await coord.async_list_map_backups()
         return {"backups": [_map_backup_info(backup) for backup in backups]}
 
     async def handle_get_map_backup_progress(call: ServiceCall) -> dict[str, Any]:
         """Return how far a backup or restore job has got."""
-        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        coord = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
         progress = await coord.async_get_map_backup_progress(
             call.data["backup_id"], call.data["restore"]
         )
@@ -919,14 +1008,14 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
 
     async def handle_cancel_map_backup(call: ServiceCall) -> None:
         """Cancel a running backup or restore job."""
-        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        coord = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
         await coord.async_cancel_map_backup(
             call.data["backup_id"], call.data["restore"]
         )
 
     async def handle_delete_map_backup(call: ServiceCall) -> None:
         """Delete a stored map backup."""
-        coord = _map_backup_coordinator(hass, call.data[ATTR_ENTITY_ID])
+        coord = _mower_coordinator(hass, call.data[ATTR_ENTITY_ID])
         await coord.async_delete_map_backup(call.data["backup_id"])
 
     async_register_admin_service(
@@ -962,7 +1051,7 @@ def async_setup_services(hass: HomeAssistant) -> None:  # noqa: C901
         DOMAIN,
         SERVICE_GET_MAP_BACKUPS,
         handle_get_map_backups,
-        schema=MAP_BACKUP_TARGET_SCHEMA,
+        schema=MOWER_TARGET_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(

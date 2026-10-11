@@ -9,16 +9,16 @@
       "no_longer_present": "L'appareil n'est plus présent",
       "not_supported": "Appareil non pris en charge",
       "reconfigure_successful": "Reconfiguration réussie",
-      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
+      "merged_into_existing_account": "Ce compte possède déjà une entrée ; les appareils Bluetooth y ont été fusionnés et cette entrée a été supprimée.",
       "api_limit_exceeded": "La limite de débit de l'API a été dépassée. Veuillez réessayer plus tard.",
-      "account_in_use": "Votre compte Mammotion est déjà actif dans une autre session. Déconnectez-vous de l'application Mammotion et réessayez.",
       "reauth_successful": "La ré-authentification a réussi",
       "wrong_account": "Ces identifiants appartiennent à un autre compte Mammotion. Ré-authentifiez-vous avec le compte utilisé lors de la configuration de cette entrée."
     },
     "error": {
       "login_failed": "Échec de la connexion. Vérifiez l'adresse e-mail et le mot de passe de votre compte, puis réessayez.",
       "cannot_connect": "Impossible de se connecter au cloud Mammotion. Vérifiez vos identifiants et votre réseau, puis réessayez.",
-      "no_account_no_ble": "Aucune information de compte saisie et aucun appareil Bluetooth trouvé. Saisissez les identifiants de votre compte Mammotion ou configurez un appareil Bluetooth."
+      "no_account_no_ble": "Aucune information de compte saisie et aucun appareil Bluetooth trouvé. Saisissez les identifiants de votre compte Mammotion ou configurez un appareil Bluetooth.",
+      "credentials_required": "Saisissez à la fois votre compte Mammotion et son mot de passe."
     },
     "flow_title": "{name}",
     "step": {
@@ -28,7 +28,8 @@
       "reconfigure": {
         "data": {
           "account_name": "E-mail ou numéro de compte Mammotion",
-          "password": "Mot de passe du compte Mammotion"
+          "password": "Mot de passe du compte Mammotion",
+          "remove_account": "Supprimer le compte et utiliser uniquement le Bluetooth"
         }
       },
       "user": {
@@ -64,11 +65,29 @@
           "mow_path_fetch_enabled": "Activer la récupération du chemin de tonte (cloud)",
           "full_map_fetch_enabled": "Activer la récupération complète de la carte (cloud) — désactivé, seuls les noms de zones sont récupérés",
           "notify": "Afficher des notifications persistantes pour"
+        },
+        "data_description": {
+          "movement_use_wifi": "Envoie l'ancienne commande de mouvement par Wi-Fi au lieu d'utiliser la conduite à distance par le cloud. Sans cette option, à partir du firmware 1.30.31.19 sur LUBA 2, LUBA 2X, YUKA, LUBA mini et YUKA mini, à partir du 2.3.31.69 sur LUBA 3, LUBA mini 2 et YUKA mini 2, et sur les modèles plus récents pour lesquels le serveur Mammotion indique la prise en charge, les boutons de déplacement et les actions de mouvement ne passent par le cloud que lorsque « Conduite à distance par le cloud » est activée et confirmée. Activez cette option pour utiliser l'ancienne commande avec n'importe quel firmware, par exemple pour comparer les deux sur un LUBA 3 ; une liaison Bluetooth connectée reste prioritaire.",
+          "notify": "Les notifications d'autotest sont activées par défaut, les autres sont désactivées. Chaque notification déclenche aussi l'entité d'événement de notification de la tondeuse et un événement mammotion_event sur le bus, que les automatisations peuvent utiliser à la place."
         }
       }
     }
   },
   "entity": {
+    "camera": {
+      "webrtc_camera": {
+        "name": "Caméra gauche"
+      },
+      "webrtc_camera_vision": {
+        "name": "Caméra de vision"
+      },
+      "webrtc_camera_right": {
+        "name": "Caméra droite"
+      },
+      "webrtc_camera_rear": {
+        "name": "Caméra arrière"
+      }
+    },
     "sensor": {
       "error_1_message": {
         "name": "Dernière erreur"
@@ -86,7 +105,13 @@
         "name": "Qualité du signal Bluetooth"
       },
       "camera_brightness": {
-        "name": "Luminosité de la caméra"
+        "name": "Luminosité de la caméra",
+        "state": {
+          "dark": "Sombre",
+          "good": "Bonne",
+          "intense": "Forte",
+          "unknown": "Inconnue"
+        }
       },
       "wifi_rssi": {
         "name": "Qualité du signal Wi-Fi"
@@ -98,7 +123,7 @@
         "name": "Connexion"
       },
       "gps_stars": {
-        "name": "Satellites (Robot)"
+        "name": "Satellites (robot)"
       },
       "blade_height": {
         "name": "Hauteur des lames"
@@ -122,10 +147,10 @@
         "name": "Temps restant"
       },
       "l1_satellites": {
-        "name": "L1 signal quality"
+        "name": "Qualité du signal L1"
       },
       "l2_satellites": {
-        "name": "L2 signal quality"
+        "name": "Qualité du signal L2"
       },
       "positioning_mode": {
         "name": "Position RTK"
@@ -157,6 +182,27 @@
           "SIGNAL_BAD": "Mauvais",
           "SIGNAL_UNKNOWN": "Inconnu"
         }
+      },
+      "lidar_positioning_status": {
+        "name": "État du positionnement LiDAR",
+        "state": {
+          "good": "Bon",
+          "none": "Aucun"
+        }
+      },
+      "fused_localization_status": {
+        "name": "État de la localisation fusionnée",
+        "state": {
+          "unknown": "Inconnu",
+          "no_pose": "Aucune position",
+          "rtk_fixed": "RTK fixe",
+          "rtk_extended_vision": "RTK étendu",
+          "vision_extended": "Extension visuelle",
+          "vision_extended_failed": "Échec de l'extension visuelle"
+        }
+      },
+      "vision_survival": {
+        "name": "Vision 3D"
       },
       "activity_mode": {
         "name": "Mode activité",
@@ -212,7 +258,19 @@
           "WAITING": "En attente",
           "MOWING": "En cours de tonte",
           "COMPLETE": "Terminé",
-          "ABORTED": "Abandonné"
+          "ABORTED": "Abandonné",
+          "UNKNOWN": "Inconnu"
+        }
+      },
+      "task_area_status_short": {
+        "name": "Tâche {name}",
+        "state": {
+          "NOT_STARTED": "Non démarré",
+          "WAITING": "En attente",
+          "MOWING": "En cours de tonte",
+          "COMPLETE": "Terminé",
+          "ABORTED": "Abandonné",
+          "UNKNOWN": "Inconnu"
         }
       },
       "maintenance_distance": {
@@ -321,19 +379,19 @@
         }
       },
       "co_view_l1": {
-        "name": "L1 satellites (co-viewing)"
+        "name": "Satellites L1 (visibilité commune)"
       },
       "co_view_l2": {
-        "name": "L2 satellites (co-viewing)"
+        "name": "Satellites L2 (visibilité commune)"
       },
       "pos_level": {
-        "name": "Position level"
+        "name": "Niveau de positionnement"
       },
       "rtk_signal": {
-        "name": "RTK signal quality"
+        "name": "Qualité du signal RTK"
       },
       "device_signal": {
-        "name": "Device signal quality",
+        "name": "Qualité du signal de l'appareil",
         "state": {
           "0": "Bon",
           "1": "Bon",
@@ -342,29 +400,98 @@
         }
       },
       "age": {
-        "name": "RTK correction age"
+        "name": "Âge de la correction RTK"
       },
       "base_link_status": {
-        "name": "Base link status",
+        "name": "État de la liaison avec la base",
         "state": {
           "0": "Bon",
           "1": "Faible",
           "2": "Faible",
           "3": "Aucun"
         }
+      },
+      "self_check": {
+        "name": "Autotest",
+        "state": {
+          "normal": "OK",
+          "emergency_stop": "Arrêt d'urgence activé",
+          "stop_button": "Bouton STOP enfoncé",
+          "safety_key_missing": "Clé de sécurité non insérée",
+          "lifted": "Soulevé",
+          "tilted": "Incliné",
+          "tipped_over": "Renversé",
+          "bumper_missing": "Pare-chocs latéral non installé",
+          "rain": "Pluie détectée",
+          "low_battery": "Batterie faible",
+          "non_working_hours": "Hors des heures de travail",
+          "rtk_station_moved": "Station de référence RTK déplacée",
+          "outside_task_area": "Hors de la zone de tâche",
+          "wheel_motor_error": "Erreur du moteur de moyeu de roue",
+          "blade_motor_overheated": "Moteur de lame trop chaud",
+          "dock_moved": "Station de charge déplacée",
+          "no_task_area": "Aucune zone de tâche",
+          "night_protection": "Protection nocturne",
+          "rain_protection": "Protection contre la pluie activée",
+          "rtk_not_ready": "Station de référence RTK non prête",
+          "weak_satellite_signal": "Signal satellite faible",
+          "positioning_failure": "Défaillance du système de positionnement",
+          "inavi_unavailable": "Service iNavi indisponible",
+          "weak_rtk_signal": "Signal RTK faible",
+          "other": "Autre"
+        }
+      },
+      "running_task": {
+        "name": "{name}",
+        "state": {
+          "mowing": "Tonte",
+          "paused": "En pause",
+          "returning": "Retour",
+          "charging_pause": "En charge, reprendra ensuite"
+        }
+      },
+      "running_task_unnamed": {
+        "name": "Tâche {n}",
+        "state": {
+          "mowing": "Tonte",
+          "paused": "En pause",
+          "returning": "Retour",
+          "charging_pause": "En charge, reprendra ensuite"
+        }
+      },
+      "remote_drive_state": {
+        "name": "État de la conduite à distance",
+        "state": {
+          "idle": "Inactive",
+          "requesting_token": "Demande d'autorisation",
+          "safety_notice": "En attente de la confirmation de sécurité",
+          "active": "En conduite",
+          "exiting": "Arrêt en cours"
+        },
+        "state_attributes": {
+          "last_event": {
+            "name": "Dernier événement"
+          },
+          "last_event_detail": {
+            "name": "Détail du dernier événement"
+          }
+        }
       }
     },
     "binary_sensor": {
       "spino_charging": {
         "name": "En charge"
+      },
+      "rain_detected": {
+        "name": "Pluie détectée"
       }
     },
     "button": {
       "start_map_sync": {
         "name": "Synchroniser les cartes"
       },
-      "start_schedule_sync": {
-        "name": "Synchroniser les plannings"
+      "start_task_sync": {
+        "name": "Synchroniser les tâches"
       },
       "resync_rtk_dock": {
         "name": "Synchroniser RTK et base"
@@ -374,6 +501,9 @@
       },
       "start_dropmow": {
         "name": "Démarrer DropMow"
+      },
+      "continue_last_job": {
+        "name": "Reprendre la dernière tâche"
       },
       "emergency_nudge_forward": {
         "name": "Mouvement d'urgence en avant"
@@ -410,11 +540,20 @@
       },
       "spino_refresh_status": {
         "name": "Actualiser le statut"
+      },
+      "confirm_remote_drive": {
+        "name": "Confirmer la conduite à distance"
+      },
+      "acknowledge_remote_drive_fence": {
+        "name": "Acquitter l'alerte de limite"
       }
     },
     "switch": {
       "area": {
         "name": "Zone {name}"
+      },
+      "area_plain": {
+        "name": "{name}"
       },
       "blade_status": {
         "name": "Activation des lames"
@@ -428,9 +567,6 @@
       "is_edge": {
         "name": "Coupe des bordures"
       },
-      "rain_tactics": {
-        "name": "Détection de pluie (Durant la tonte) Activer/ Désactiver"
-      },
       "auto_change_direction": {
         "name": "Inversion automatique du sens de tonte"
       },
@@ -439,6 +575,12 @@
       },
       "smart_charge": {
         "name": "Charge intelligente"
+      },
+      "smart_recharge_level": {
+        "name": "Niveau de retour à la charge intelligent"
+      },
+      "smart_resume_level": {
+        "name": "Niveau de reprise intelligent"
       },
       "side_led": {
         "name": "LED latérales"
@@ -481,6 +623,9 @@
       },
       "spino_waterline_parking": {
         "name": "Stationnement à la ligne d'eau"
+      },
+      "remote_drive": {
+        "name": "Conduite à distance par le cloud"
       }
     },
     "select": {
@@ -605,6 +750,34 @@
           "CURVE_SIMPLE": "Incurvé (simple)",
           "CURVE_COMPLEX": "Incurvé (complexe)"
         }
+      },
+      "rain_protection_mode": {
+        "name": "Protection contre la pluie",
+        "state": {
+          "off": "Désactivé",
+          "smart": "Mode intelligent",
+          "sensor": "Mode capteur"
+        }
+      },
+      "rain_protection_delay": {
+        "name": "Temporisation de la protection contre la pluie",
+        "state": {
+          "0": "Aucun délai",
+          "1": "1 heure",
+          "2": "2 heures",
+          "3": "3 heures",
+          "4": "4 heures",
+          "5": "5 heures",
+          "6": "6 heures",
+          "7": "7 heures",
+          "8": "8 heures",
+          "9": "9 heures",
+          "10": "10 heures",
+          "11": "11 heures",
+          "12": "12 heures",
+          "24": "24 heures",
+          "48": "48 heures"
+        }
       }
     },
     "number": {
@@ -613,6 +786,15 @@
       },
       "charge_limit": {
         "name": "Limite de charge"
+      },
+      "recharge_level": {
+        "name": "Retour à la charge à"
+      },
+      "resume_level": {
+        "name": "Reprise de la tonte à"
+      },
+      "ride_boundary_distance": {
+        "name": "Couverture des bordures"
       },
       "start_progress": {
         "name": "Départ de la progression"
@@ -691,12 +873,6 @@
         "3": "Périmètre uniquement"
       }
     },
-    "rain_tactics": {
-      "options": {
-        "0": "Désactivé",
-        "1": "Activé"
-      }
-    },
     "toward_mode": {
       "options": {
         "0": "Angle relatif",
@@ -725,7 +901,8 @@
     "notify": {
       "options": {
         "warnings": "Avertissements et codes d'erreur",
-        "notifications": "Notifications et informations de l'appareil"
+        "notifications": "Notifications et informations de l'appareil",
+        "self_check": "Autotest : pourquoi la tondeuse ne peut pas démarrer"
       }
     }
   },
@@ -786,10 +963,6 @@
           "name": "Espacement des trajectoires",
           "description": "Espacement des trajectoires (en cm)."
         },
-        "rain_tactics": {
-          "name": "Détection de la pluie",
-          "description": "Détection de la pluie."
-        },
         "blade_height": {
           "name": "Hauteur de coupe",
           "description": "Hauteur de coupe."
@@ -817,6 +990,14 @@
         "start_progress": {
           "name": "Démarrer à un pourcentage de progression",
           "description": "Démarrer à un pourcentage de progression."
+        },
+        "auto_change_direction": {
+          "name": "Inversion automatique du sens de tonte",
+          "description": "Inverse le sens de tonte d'un passage à l'autre : 0 = désactivé, 1 = activé. Utilisé uniquement sur les modèles et firmwares compatibles. S'il est omis, le réglage de l'interrupteur s'applique."
+        },
+        "ride_boundary_distance": {
+          "name": "Couverture des bordures",
+          "description": "Jusqu'où la tondeuse se décale vers l'extérieur pendant les tours de périmètre, de 0 (bord intérieur) à 1 (sur le bord). Utilisé uniquement sur les modèles compatibles et lorsque les tours de périmètre sont activés."
         },
         "areas": {
           "name": "Zones",
@@ -856,13 +1037,9 @@
           "name": "Tours en zone interdite",
           "description": "Tours en zone interdite"
         },
-        "rain_tactics": {
-          "name": "Stratégie pluie",
-          "description": "Stratégie pluie"
-        },
         "auto_change_direction": {
-          "name": "Changement de sens automatique",
-          "description": "Changement de sens automatique"
+          "name": "Inversion automatique du sens de tonte",
+          "description": "Inversion automatique du sens de tonte — inverse le sens de tonte d'un passage à l'autre pour limiter le couchage de l'herbe."
         },
         "start_progress": {
           "name": "Progression",
@@ -944,22 +1121,12 @@
     },
     "get_map_data": {
       "name": "Obtenir les données de la carte",
-      "description": "Retourne les données brutes de la carte (zones, tuiles SVG, noms de zones) pour utilisation avec la carte SVG.",
-      "fields": {
-        "entity_id": {
-          "name": "Entité",
-          "description": "Toute entité Mammotion appartenant à l'appareil."
-        }
-      }
+      "description": "Retourne les données brutes de la carte (zones, tuiles SVG, noms de zones) pour utilisation avec la carte SVG."
     },
     "svg_add": {
       "name": "Ajouter une tuile SVG",
       "description": "Envoie une nouvelle tuile SVG à la carte de l'appareil. Retourne le hash attribué par l'appareil.",
       "fields": {
-        "entity_id": {
-          "name": "Entité",
-          "description": "Toute entité Mammotion appartenant à l'appareil."
-        },
         "area_hash": {
           "name": "Hash de zone",
           "description": "Hash de la zone de tonte parente."
@@ -1002,10 +1169,6 @@
       "name": "Mettre à jour une tuile SVG",
       "description": "Remplace une tuile SVG existante sur la carte de l'appareil. Utilisez le device_hash retourné par svg_add.",
       "fields": {
-        "entity_id": {
-          "name": "Entité",
-          "description": "Toute entité Mammotion appartenant à l'appareil."
-        },
         "device_hash": {
           "name": "Hash de l'appareil",
           "description": "Hash attribué par l'appareil lors du premier ajout de la tuile."
@@ -1052,10 +1215,6 @@
       "name": "Supprimer une tuile SVG",
       "description": "Supprime une tuile SVG de la carte de l'appareil par son hash attribué par l'appareil.",
       "fields": {
-        "entity_id": {
-          "name": "Entité",
-          "description": "Toute entité Mammotion appartenant à l'appareil."
-        },
         "device_hash": {
           "name": "Hash de l'appareil",
           "description": "Hash attribué par l'appareil lors de l'ajout de la tuile."
@@ -1072,7 +1231,7 @@
       "fields": {
         "name": {
           "name": "Nouveau nom",
-          "description": "New display name for the task."
+          "description": "Nouveau nom d'affichage de la tâche."
         }
       }
     },
@@ -1082,7 +1241,7 @@
       "fields": {
         "enabled": {
           "name": "Activé",
-          "description": "True to enable the schedule, false to disable it."
+          "description": "Activé pour activer le programme, désactivé pour le désactiver."
         }
       }
     },
@@ -1096,7 +1255,7 @@
       "fields": {
         "name": {
           "name": "Nouveau nom",
-          "description": "Override the auto-generated 'Copy-N' name."
+          "description": "Remplace le nom 'Copy-N' généré automatiquement."
         }
       }
     },
@@ -1105,80 +1264,96 @@
       "description": "Modifie un sous-ensemble de champs du programme.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name."
+          "name": "Nom",
+          "description": "Nom d'affichage."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule is active."
+          "name": "Activé",
+          "description": "Indique si le programme est actif."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday) the schedule runs on."
+          "name": "Jours de la semaine",
+          "description": "Liste des jours de la semaine en entiers (0 = dimanche … 6 = samedi) où le programme s'exécute."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower only)."
+          "name": "Heure de début",
+          "description": "HH:MM (tondeuse uniquement)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower only)."
+          "name": "Heure de fin",
+          "description": "HH:MM (tondeuse uniquement)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Date de début",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Date de fin",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Type de déclenchement",
+          "description": "0 = hebdomadaire, 1 = intervalle en jours, 2 = date, 3 = une seule fois."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days when trigger_type is 1 (DAY)."
+          "name": "Intervalle en jours",
+          "description": "Intervalle en jours lorsque trigger_type vaut 1 (DAY)."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Hauteur de coupe",
+          "description": "Hauteur de coupe en millimètres (tondeuse uniquement)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower: driving speed (float). Spino: fixed32 speed value (int)."
+          "name": "Vitesse",
+          "description": "Tondeuse : vitesse de déplacement (float). Spino : valeur de vitesse fixed32 (int)."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
+          "name": "Mode bordure",
+          "description": "Tondeuse uniquement : 0 = aucun, 1 = une fois, 2 = deux fois."
+        },
+        "ride_boundary_distance": {
+          "name": "Couverture des bordures",
+          "description": "Jusqu'où la tondeuse se décale vers l'extérieur pendant les tours de périmètre, de 0 (bord intérieur) à 1 (sur le bord). Utilisé uniquement sur les modèles compatibles et lorsque les tours de périmètre sont activés."
+        },
+        "auto_change_direction": {
+          "name": "Inversion automatique du sens de tonte",
+          "description": "Inversion automatique du sens de tonte — inverse le sens de tonte d'un passage à l'autre pour limiter le couchage de l'herbe : 0 = désactivé, 1 = activé. Uniquement sur les modèles et firmwares compatibles. S'il est omis, le réglage du programme est conservé (désactivé pour un nouveau programme)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only: mowing pattern angle 0–179 degrees."
+          "name": "Angle de trajectoire",
+          "description": "Tondeuse uniquement : angle du motif de tonte de 0 à 179 degrés."
+        },
+        "toward_mode": {
+          "name": "Mode de direction",
+          "description": "Tondeuse uniquement : application de l'angle de parcours (0 = optimal, 1 = nord, 2 = aléatoire)."
+        },
+        "toward_included_angle": {
+          "name": "Angle par rapport à la grille",
+          "description": "Tondeuse uniquement : second angle d'un parcours en damier, en degrés."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only: spacing between mow lines in cm."
+          "name": "Espacement des trajectoires",
+          "description": "Tondeuse uniquement : espacement entre les lignes de tonte en cm."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes (fixed64) covered by this schedule."
+          "name": "Hachages de zones",
+          "description": "Tondeuse uniquement : liste des hachages de zones (fixed64) couvertes par ce programme."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only: 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
+          "name": "Mode de travail",
+          "description": "Spino uniquement : 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values for multi-stage cleaning."
+          "name": "Sous-modes",
+          "description": "Spino uniquement : liste de valeurs APP_WORK pour un nettoyage en plusieurs étapes."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only: suction power (fixed32 int)."
+          "name": "Puissance de fonctionnement",
+          "description": "Spino uniquement : puissance d'aspiration (fixed32 int)."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix timestamp (seconds) for the start of the cleaning session."
+          "name": "Horodatage de début",
+          "description": "Spino uniquement : horodatage unix (secondes) du début de la session de nettoyage."
         }
       }
     },
@@ -1187,80 +1362,96 @@
       "description": "Crée un nouveau programme sur l'appareil.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name for the new schedule."
+          "name": "Nom",
+          "description": "Nom d'affichage du nouveau programme."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule starts enabled."
+          "name": "Activé",
+          "description": "Indique si le programme démarre activé."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday)."
+          "name": "Jours de la semaine",
+          "description": "Liste des jours de la semaine en entiers (0 = dimanche … 6 = samedi)."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower)."
+          "name": "Heure de début",
+          "description": "HH:MM (tondeuse)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower)."
+          "name": "Heure de fin",
+          "description": "HH:MM (tondeuse)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Date de début",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Date de fin",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Type de déclenchement",
+          "description": "0 = hebdomadaire, 1 = intervalle en jours, 2 = date, 3 = une seule fois."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days for trigger_type = 1."
+          "name": "Intervalle en jours",
+          "description": "Intervalle en jours pour trigger_type = 1."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Hauteur de coupe",
+          "description": "Hauteur de coupe en millimètres (tondeuse uniquement)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower or Spino speed."
+          "name": "Vitesse",
+          "description": "Vitesse de la tondeuse ou du Spino."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only."
+          "name": "Mode bordure",
+          "description": "Tondeuse uniquement."
+        },
+        "ride_boundary_distance": {
+          "name": "Couverture des bordures",
+          "description": "Jusqu'où la tondeuse se décale vers l'extérieur pendant les tours de périmètre, de 0 (bord intérieur) à 1 (sur le bord). Utilisé uniquement sur les modèles compatibles et lorsque les tours de périmètre sont activés."
+        },
+        "auto_change_direction": {
+          "name": "Inversion automatique du sens de tonte",
+          "description": "Inversion automatique du sens de tonte — inverse le sens de tonte d'un passage à l'autre pour limiter le couchage de l'herbe : 0 = désactivé, 1 = activé. Uniquement sur les modèles et firmwares compatibles. S'il est omis, le réglage du programme est conservé (désactivé pour un nouveau programme)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only."
+          "name": "Angle de trajectoire",
+          "description": "Tondeuse uniquement."
+        },
+        "toward_mode": {
+          "name": "Mode de direction",
+          "description": "Tondeuse uniquement : application de l'angle de parcours (0 = optimal, 1 = nord, 2 = aléatoire)."
+        },
+        "toward_included_angle": {
+          "name": "Angle par rapport à la grille",
+          "description": "Tondeuse uniquement : second angle d'un parcours en damier, en degrés."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only."
+          "name": "Espacement des trajectoires",
+          "description": "Tondeuse uniquement."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes covered."
+          "name": "Hachages de zones",
+          "description": "Tondeuse uniquement : liste des hachages de zones couvertes."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only cleaning mode."
+          "name": "Mode de travail",
+          "description": "Mode de nettoyage (Spino uniquement)."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values."
+          "name": "Sous-modes",
+          "description": "Spino uniquement : liste de valeurs APP_WORK."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only."
+          "name": "Puissance de fonctionnement",
+          "description": "Spino uniquement."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix start time."
+          "name": "Horodatage de début",
+          "description": "Spino uniquement : heure de début au format unix."
         }
       }
     },
@@ -1271,6 +1462,16 @@
     "get_tasks": {
       "name": "Obtenir les tâches",
       "description": "Renvoie tous les programmes que l'intégration détient pour l'appareil ciblé, en indiquant si chacun est activé. À utiliser pour vérifier qu'une modification a bien été appliquée ; « Actualiser les tâches » les récupère d'abord depuis l'appareil."
+    },
+    "get_task": {
+      "name": "Obtenir la tâche",
+      "description": "Renvoie l'un des programmes de la tondeuse ciblée à partir de son identifiant de tâche : ses paramètres actuels sous les noms de champs acceptés par « Modifier la tâche », ainsi que son état activé et en cours d'exécution. À utiliser pour lire une tâche avant de la modifier.",
+      "fields": {
+        "task_id": {
+          "name": "Identifiant de la tâche",
+          "description": "Identifiant de la tâche, tel qu'indiqué dans l'attribut task_id du bouton de la tâche ou renvoyé par « Obtenir les tâches »."
+        }
+      }
     },
     "start_task": {
       "name": "Démarrer la tâche",
@@ -1303,6 +1504,22 @@
     "get_map_backups": {
       "name": "Obtenir les sauvegardes de carte",
       "description": "Renvoie les sauvegardes de carte du compte Mammotion avec lequel cette intégration est connectée. Les sauvegardes sont propres à chaque compte : celles créées dans l'application avec un autre compte n'apparaissent pas."
+    },
+    "get_geojson": {
+      "name": "Obtenir le GeoJSON de la carte",
+      "description": "Renvoie la carte de la tondeuse (zones, obstacles, chemins, station de charge et station RTK) sous forme de FeatureCollection GeoJSON pour la carte, et fait remonter la position de la tondeuse pendant les minutes suivantes."
+    },
+    "get_mow_path_geojson": {
+      "name": "Obtenir le GeoJSON du chemin de tonte",
+      "description": "Renvoie le chemin de tonte prévu de la tâche en cours sous forme de FeatureCollection GeoJSON. Vide tant que le chemin n'a pas été récupéré."
+    },
+    "get_mow_progress_geojson": {
+      "name": "Obtenir le GeoJSON de la progression",
+      "description": "Renvoie la partie du chemin de tonte de la tâche en cours déjà tondue, sous forme de FeatureCollection GeoJSON ; les tondeuses qui diffusent une ligne dynamique renvoient cette ligne à la place. Pendant une tâche, tant que rien ne peut être affiché, récupère aussi les données de cette couche, au plus une fois par minute. Via Bluetooth, une ligne dynamique se met à jour d'elle-même."
+    },
+    "fetch_mow_path": {
+      "name": "Récupérer le chemin de tonte",
+      "description": "Récupère le chemin de tonte de la tâche en cours, sauf si un chemin complet est déjà en cache, puis recalcule la progression de tonte. Les tondeuses à ligne dynamique récupèrent aussi leur dernière ligne. Via le cloud, cela n'a lieu que si 'Activer la récupération du chemin de tonte (cloud)' est activé dans les options ; via Bluetooth, toujours. Indique si une récupération a été lancée."
     },
     "get_map_backup_progress": {
       "name": "Obtenir la progression de la sauvegarde",
@@ -1347,6 +1564,9 @@
     "device_not_ready": {
       "message": "L'appareil n'est pas prêt."
     },
+    "no_job_to_continue": {
+      "message": "Aucune tâche interrompue à reprendre."
+    },
     "pause_failed": {
       "message": "Impossible de mettre la tondeuse en pause."
     },
@@ -1365,11 +1585,14 @@
     "command_failed": {
       "message": "Impossible d'envoyer la commande au robot."
     },
-    "api_limit_exceeded": {
-      "message": "La limite de débit de l'API a été dépassée."
+    "command_unconfirmed": {
+      "message": "Le robot n'a pas confirmé la commande. Elle a peut-être quand même été exécutée."
     },
     "account_in_use": {
-      "message": "Votre compte Mammotion est déjà actif dans une autre session. Déconnectez-vous de l'application Mammotion et réessayez."
+      "message": "Votre compte Mammotion est actif dans une autre session (l'application Mammotion). Déconnectez-vous de l'application, ou patientez, puis réessayez."
+    },
+    "api_limit_exceeded": {
+      "message": "La limite de débit de l'API a été dépassée."
     },
     "cloud_setup_failed": {
       "message": "Impossible de se connecter au cloud Mammotion. Vérifiez votre réseau et essayez de recharger l'intégration."
@@ -1377,11 +1600,23 @@
     "task_not_found": {
       "message": "La tâche {plan_id} est introuvable sur l'appareil. Actualisez le programme puis réessayez."
     },
+    "task_id_not_found": {
+      "message": "La tâche {task_id} est introuvable pour {entity_id}. Actualisez les tâches puis réessayez."
+    },
     "start_task_unsupported_on_spino": {
       "message": "Démarrer un programme à la demande n'est pas pris en charge sur le robot de piscine Spino — le firmware ne propose aucune commande d'exécution immédiate pour les programmes enregistrés."
     },
     "grass_collection_unsupported": {
       "message": "Cette tondeuse ne prend pas en charge le ramassage de l'herbe."
+    },
+    "no_running_job": {
+      "message": "{device_name} n'exécute aucune tâche de tonte, il n'y a donc rien à modifier. Lancez d'abord une tâche."
+    },
+    "running_job_modify_unsupported": {
+      "message": "{device_name} ne permet pas de modifier une tâche en cours. Seuls Luba 2 et les modèles plus récents le permettent."
+    },
+    "auto_change_direction_unsupported": {
+      "message": "L'inversion automatique du sens de tonte n'est pas prise en charge par {device_name} ou son firmware."
     },
     "map_backup_cloud_unavailable": {
       "message": "Les sauvegardes de carte nécessitent une connexion fonctionnelle au cloud Mammotion."
@@ -1392,8 +1627,176 @@
     "map_backup_device_not_found": {
       "message": "{device_name} ne figure pas parmi les appareils à sauvegarder sur ce compte Mammotion."
     },
-    "map_backup_mower_not_found": {
+    "mower_not_found": {
       "message": "{entity_id} n'est pas une tondeuse Mammotion."
+    },
+    "notification_unknown_code": {
+      "message": "Code d'erreur inconnu {code}"
+    },
+    "notification_title_warnings": {
+      "message": "{device_name} : avertissements"
+    },
+    "notification_title_notifications": {
+      "message": "{device_name} : notifications"
+    },
+    "notification_title_self_check": {
+      "message": "{device_name} : {state}"
+    },
+    "self_check_emergency_stop": {
+      "message": "L'arrêt d'urgence est activé. Libérez-le sur la tondeuse avant de redémarrer."
+    },
+    "self_check_stop_button": {
+      "message": "Le bouton STOP de la tondeuse a été enfoncé. Réinitialisez-le sur la tondeuse avant de redémarrer."
+    },
+    "self_check_safety_key_missing": {
+      "message": "La clé de sécurité n'est pas insérée. Insérez-la pour commencer la tonte."
+    },
+    "self_check_lifted": {
+      "message": "La tondeuse a été soulevée du sol. Reposez-la sur la pelouse."
+    },
+    "self_check_tilted": {
+      "message": "La tondeuse est inclinée. Placez-la sur un sol plat."
+    },
+    "self_check_tipped_over": {
+      "message": "La tondeuse s'est renversée. Remettez-la sur ses roues."
+    },
+    "self_check_bumper_missing": {
+      "message": "Le pare-chocs latéral n'est pas installé. Montez-le avant de tondre."
+    },
+    "self_check_rain": {
+      "message": "De la pluie a été détectée et « Pas de tonte par temps de pluie » est activé. La tonte pourra démarrer quand la pluie cessera, ou désactivez la fonction."
+    },
+    "self_check_low_battery": {
+      "message": "La batterie est trop faible pour tondre. Laissez la tondeuse se recharger."
+    },
+    "self_check_non_working_hours": {
+      "message": "C'est en dehors des heures de travail de la tondeuse."
+    },
+    "self_check_rtk_station_moved": {
+      "message": "La station de référence RTK a été déplacée. Vérifiez sa position dans l'application."
+    },
+    "self_check_outside_task_area": {
+      "message": "La tondeuse est hors de sa zone de tâche. Ramenez-la dans une zone cartographiée."
+    },
+    "self_check_wheel_motor_error": {
+      "message": "Un moteur de moyeu de roue a signalé une erreur."
+    },
+    "self_check_blade_motor_overheated": {
+      "message": "Le moteur de lame est trop chaud. Laissez-le refroidir."
+    },
+    "self_check_dock_moved": {
+      "message": "La station de charge a été déplacée. Vérifiez sa position dans l'application."
+    },
+    "self_check_no_task_area": {
+      "message": "Aucune zone de tâche n'a été trouvée. Créez une carte dans l'application."
+    },
+    "self_check_night_protection": {
+      "message": "La protection nocturne est activée, la tondeuse ne tond donc pas la nuit."
+    },
+    "self_check_rain_protection": {
+      "message": "La protection contre la pluie empêche la tondeuse de démarrer. Elle utilise le capteur de pluie et les données météo en ligne pour juger si les conditions sont propices à la tonte, et calcule quand la reprendre. Patientez, ou modifiez ou désactivez la protection contre la pluie dans les réglages de la tondeuse dans l’application."
+    },
+    "self_check_rtk_not_ready": {
+      "message": "La station de référence RTK n'est pas encore prête."
+    },
+    "self_check_weak_satellite_signal": {
+      "message": "Le signal satellite de la tondeuse est trop faible pour la localiser."
+    },
+    "self_check_positioning_failure": {
+      "message": "Le système de positionnement est défaillant."
+    },
+    "self_check_inavi_unavailable": {
+      "message": "Le service iNavi n'est pas disponible."
+    },
+    "self_check_weak_rtk_signal": {
+      "message": "Le signal RTK est faible. Vérifiez l'emplacement de la station de référence."
+    },
+    "self_check_other": {
+      "message": "La tondeuse a signalé le code d'autotest inconnu {code}."
+    },
+    "remote_drive_needs_cloud": {
+      "message": "La conduite à distance par le cloud nécessite une connexion cloud active avec la tondeuse. En Bluetooth, utilisez plutôt les boutons de déplacement."
+    },
+    "remote_drive_start_failed": {
+      "message": "Impossible de démarrer la conduite à distance : la tondeuse est injoignable via le cloud."
+    },
+    "remote_drive_already_running": {
+      "message": "La conduite à distance par le cloud est déjà en cours. Désactivez-la avant de la relancer."
+    },
+    "remote_drive_not_awaiting_confirmation": {
+      "message": "Aucun avertissement de sécurité à confirmer. Activez d'abord la conduite à distance par le cloud."
+    },
+    "remote_drive_no_reverse": {
+      "message": "La conduite à distance par le cloud ne permet pas de reculer. Tournez à gauche ou à droite, ou utilisez le Bluetooth."
+    },
+    "remote_drive_fence_paused": {
+      "message": "La tondeuse s'est arrêtée près de la limite. Appuyez sur « Acquitter l'alerte de limite » avant de continuer."
+    },
+    "remote_drive_safety_notice": {
+      "message": "Avant de conduire la tondeuse à distance, assurez-vous qu'aucune personne ni aucun animal ne se trouve dans la zone de travail et gardez la tondeuse en vue en permanence. Appuyez sur « Confirmer la conduite à distance » dans les 3 minutes pour commencer. La session se termine d'elle-même peu après votre dernière commande."
+    },
+    "movement_unavailable": {
+      "message": "La tondeuse ne peut pas être déplacée pour le moment. Rapprochez-vous à portée Bluetooth, ou activez la conduite à distance par le cloud et appuyez sur « Confirmer la conduite à distance »."
+    },
+    "notification_title_remote_drive": {
+      "message": "{device_name} : conduite à distance par le cloud"
+    },
+    "remote_drive_token_unavailable": {
+      "message": "Le serveur Mammotion n'a pas autorisé la conduite à distance (code {detail}). Réessayez plus tard."
+    },
+    "remote_drive_occupied_by_other": {
+      "message": "La tondeuse est déjà conduite par un autre compte ({detail})."
+    },
+    "remote_drive_network_poor": {
+      "message": "Conduite à distance terminée : la connexion réseau de la tondeuse est trop faible."
+    },
+    "remote_drive_token_expired": {
+      "message": "Conduite à distance terminée : l'autorisation de conduite a expiré."
+    },
+    "remote_drive_out_of_fence": {
+      "message": "Conduite à distance terminée : la tondeuse est hors de la zone autorisée."
+    },
+    "remote_drive_ble_preempt": {
+      "message": "Conduite à distance terminée : la tondeuse est désormais pilotée en Bluetooth par {detail}."
+    },
+    "remote_drive_no_loc_mileage_exhausted": {
+      "message": "Conduite à distance terminée : la tondeuse a parcouru la distance maximale autorisée sans positionnement."
+    },
+    "remote_drive_env_not_ready": {
+      "message": "Conduite à distance terminée : la tondeuse n'est pas prête à être conduite (code {detail})."
+    },
+    "remote_drive_send_failed": {
+      "message": "Conduite à distance terminée : une commande n'a pas pu être envoyée ({detail})."
+    },
+    "remote_drive_approach_fence": {
+      "message": "La tondeuse s'est arrêtée tout près de la limite. Appuyez sur « Acquitter l'alerte de limite » pour continuer."
+    },
+    "remote_drive_safety_notice_timeout": {
+      "message": "Conduite à distance terminée : l'avertissement de sécurité n'a pas été confirmé dans les 3 minutes."
+    },
+    "remote_drive_video_unavailable": {
+      "message": "Conduite à distance terminée : la vidéo de la caméra s'est interrompue."
+    },
+    "battery_settings_unread": {
+      "message": "Les réglages de la batterie n'ont pas encore été lus depuis la tondeuse. Les modifier maintenant réinitialiserait la plage de charge en heures creuses ; rien n'a donc été envoyé. Réessayez une fois la tondeuse connectée."
+    }
+  },
+  "issues": {
+    "account_in_use": {
+      "title": "Compte Mammotion utilisé par une autre session",
+      "description": "Votre compte Mammotion {account} est déjà actif dans une autre session, la connexion cloud est donc suspendue. Déconnectez-vous de l'application Mammotion ; l'intégration se reconnectera automatiquement d'ici quelques minutes."
+    },
+    "cloud_login_retrying": {
+      "title": "Cloud Mammotion indisponible",
+      "description": "Home Assistant n'a pas pu se connecter au cloud Mammotion pour {account} ({error}). Les appareils connectés en Bluetooth continuent de fonctionner. La connexion est retentée toutes les 15 minutes, jusqu'à 5 fois, avec la session enregistrée."
+    },
+    "cloud_login_failed": {
+      "title": "Cloud Mammotion non connecté",
+      "description": "Home Assistant n'a pas pu se connecter au cloud Mammotion pour {account} ({error}) et a cessé de réessayer. Les appareils connectés en Bluetooth continuent de fonctionner. Rechargez l'intégration Mammotion une fois le service Mammotion de nouveau accessible."
+    },
+    "deprecated_rain_tactics": {
+      "title": "Option retirée utilisée dans une action Mammotion",
+      "description": "Une automatisation ou un script appelle `{service}` avec `{field}`. Cette option a été supprimée : elle n'atteignait jamais la tondeuse, elle est donc ignorée et la tâche démarre normalement. Utilisez plutôt l'interrupteur Détection de pluie de la tondeuse, puis retirez `{field}` de l'appel d'action pour faire disparaître ce message."
     }
   }
 }

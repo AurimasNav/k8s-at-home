@@ -9,16 +9,16 @@
       "no_longer_present": "Zařízení již není k dispozici",
       "not_supported": "Zařízení není podporováno",
       "reconfigure_successful": "Rekonfigurace úspěšná",
-      "merged_into_existing_account": "This account already has an entry; the Bluetooth devices were merged into it and this entry was removed.",
+      "merged_into_existing_account": "Tento účet již má položku; zařízení Bluetooth do ní byla sloučena a tato položka byla odstraněna.",
       "api_limit_exceeded": "Byl překročen limit požadavků API. Zkuste to prosím znovu později.",
-      "account_in_use": "Váš účet Mammotion je již aktivní v jiné relaci. Odhlaste se z aplikace Mammotion a zkuste to znovu.",
       "reauth_successful": "Opětovné ověření bylo úspěšné",
       "wrong_account": "Tyto přihlašovací údaje patří k jinému účtu Mammotion. Ověřte se znovu účtem, se kterým byla tato položka nastavena."
     },
     "error": {
       "login_failed": "Přihlášení se nezdařilo. Zkontrolujte e-mail a heslo svého účtu a zkuste to znovu.",
       "cannot_connect": "Nelze se připojit ke cloudu Mammotion. Zkontrolujte přihlašovací údaje a síť a zkuste to znovu.",
-      "no_account_no_ble": "Nebyly zadány údaje účtu a nebylo nalezeno žádné zařízení Bluetooth. Zadejte přihlašovací údaje k účtu Mammotion nebo nastavte zařízení Bluetooth."
+      "no_account_no_ble": "Nebyly zadány údaje účtu a nebylo nalezeno žádné zařízení Bluetooth. Zadejte přihlašovací údaje k účtu Mammotion nebo nastavte zařízení Bluetooth.",
+      "credentials_required": "Zadejte účet Mammotion i jeho heslo."
     },
     "flow_title": "{name}",
     "step": {
@@ -28,7 +28,8 @@
       "reconfigure": {
         "data": {
           "account_name": "Mammotion e-mail nebo číslo účtu",
-          "password": "Mammotion heslo k účtu"
+          "password": "Mammotion heslo k účtu",
+          "remove_account": "Odebrat účet a používat pouze Bluetooth"
         }
       },
       "user": {
@@ -64,11 +65,29 @@
           "mow_path_fetch_enabled": "Povolit načítání cesty sekání (cloud)",
           "full_map_fetch_enabled": "Povolit úplné načítání mapy (cloud) — pokud vypnuto, načítají se pouze názvy oblastí",
           "notify": "Zobrazovat trvalá oznámení pro"
+        },
+        "data_description": {
+          "movement_use_wifi": "Posílá původní příkaz pohybu přes Wi-Fi místo dálkového řízení přes cloud. Bez této volby fungují tlačítka posunu a akce pohybu přes cloud od firmwaru 1.30.31.19 u modelů LUBA 2, LUBA 2X, YUKA, LUBA mini a YUKA mini, od 2.3.31.69 u modelů LUBA 3, LUBA mini 2 a YUKA mini 2 a u novějších modelů, pro které server Mammotion hlásí podporu, jen dokud je Dálkové řízení přes cloud zapnuté a potvrzené. Zapněte ji, chcete-li původní příkaz používat s libovolným firmwarem, například pro porovnání obou na LUBA 3; připojené Bluetooth má stále přednost.",
+          "notify": "Oznámení autotestu jsou ve výchozím stavu zapnutá, ostatní vypnutá. Každé oznámení také spustí entitu událostí oznámení sekačky a událost mammotion_event na sběrnici, které mohou místo toho využít automatizace."
         }
       }
     }
   },
   "entity": {
+    "camera": {
+      "webrtc_camera": {
+        "name": "Levá kamera"
+      },
+      "webrtc_camera_vision": {
+        "name": "Vizuální kamera"
+      },
+      "webrtc_camera_right": {
+        "name": "Pravá kamera"
+      },
+      "webrtc_camera_rear": {
+        "name": "Zadní kamera"
+      }
+    },
     "sensor": {
       "error_1_message": {
         "name": "Poslední chyba"
@@ -86,7 +105,13 @@
         "name": "BLE RSSI"
       },
       "camera_brightness": {
-        "name": "Jas kamery"
+        "name": "Jas kamery",
+        "state": {
+          "dark": "Tmavý",
+          "good": "Dobrý",
+          "intense": "Intenzivní",
+          "unknown": "Neznámý"
+        }
       },
       "wifi_rssi": {
         "name": "WiFi RSSI"
@@ -122,10 +147,10 @@
         "name": "Zbývající čas"
       },
       "l1_satellites": {
-        "name": "L1 signal quality"
+        "name": "Kvalita signálu L1"
       },
       "l2_satellites": {
-        "name": "L2 signal quality"
+        "name": "Kvalita signálu L2"
       },
       "positioning_mode": {
         "name": "Poloha RTK"
@@ -157,6 +182,27 @@
           "SIGNAL_BAD": "Špatný",
           "SIGNAL_UNKNOWN": "Neznámý"
         }
+      },
+      "lidar_positioning_status": {
+        "name": "Stav polohování LiDAR",
+        "state": {
+          "good": "Dobrý",
+          "none": "Žádný"
+        }
+      },
+      "fused_localization_status": {
+        "name": "Stav fúzní lokalizace",
+        "state": {
+          "unknown": "Neznámý",
+          "no_pose": "Bez polohy",
+          "rtk_fixed": "RTK fixní",
+          "rtk_extended_vision": "RTK rozšířené",
+          "vision_extended": "Vizuální rozšíření",
+          "vision_extended_failed": "Vizuální rozšíření selhalo"
+        }
+      },
+      "vision_survival": {
+        "name": "3D vidění"
       },
       "activity_mode": {
         "name": "Režim činnosti",
@@ -212,7 +258,19 @@
           "WAITING": "Čeká se",
           "MOWING": "Sečení",
           "COMPLETE": "Dokončeno",
-          "ABORTED": "Přerušeno"
+          "ABORTED": "Přerušeno",
+          "UNKNOWN": "Neznámý"
+        }
+      },
+      "task_area_status_short": {
+        "name": "Úloha {name}",
+        "state": {
+          "NOT_STARTED": "Nezahájeno",
+          "WAITING": "Čeká se",
+          "MOWING": "Sečení",
+          "COMPLETE": "Dokončeno",
+          "ABORTED": "Přerušeno",
+          "UNKNOWN": "Neznámý"
         }
       },
       "maintenance_distance": {
@@ -255,7 +313,7 @@
           "RTK_OVER_DATALINK": "Antena přes DataLink",
           "RTK_OVER_INTERNET": "Antena přes internet",
           "INAVI_NET_RTK": "iNavi NetRTK",
-          "INAVI_RTK_BOX": "iNavi RTK Box",
+          "INAVI_RTK_BOX": "iNavi RTK hranice",
           "UNKNOWN": "Neznámé"
         }
       },
@@ -321,19 +379,19 @@
         }
       },
       "co_view_l1": {
-        "name": "L1 satellites (co-viewing)"
+        "name": "Satelity L1 (společně viditelné)"
       },
       "co_view_l2": {
-        "name": "L2 satellites (co-viewing)"
+        "name": "Satelity L2 (společně viditelné)"
       },
       "pos_level": {
-        "name": "Position level"
+        "name": "Úroveň polohy"
       },
       "rtk_signal": {
-        "name": "RTK signal quality"
+        "name": "Kvalita signálu RTK"
       },
       "device_signal": {
-        "name": "Device signal quality",
+        "name": "Kvalita signálu zařízení",
         "state": {
           "0": "Dobrý",
           "1": "Dobrý",
@@ -342,29 +400,98 @@
         }
       },
       "age": {
-        "name": "RTK correction age"
+        "name": "Stáří korekce RTK"
       },
       "base_link_status": {
-        "name": "Base link status",
+        "name": "Stav spojení se základnou",
         "state": {
           "0": "Dobrý",
           "1": "Slabý",
           "2": "Slabý",
           "3": "Žádný"
         }
+      },
+      "self_check": {
+        "name": "Autotest",
+        "state": {
+          "normal": "OK",
+          "emergency_stop": "Aktivováno nouzové zastavení",
+          "stop_button": "Stisknuto tlačítko STOP",
+          "safety_key_missing": "Bezpečnostní klíč není vložen",
+          "lifted": "Zvednuto",
+          "tilted": "Nakloněno",
+          "tipped_over": "Převráceno",
+          "bumper_missing": "Boční nárazník není nainstalován",
+          "rain": "Zjištěn déšť",
+          "low_battery": "Slabá baterie",
+          "non_working_hours": "Mimo pracovní dobu",
+          "rtk_station_moved": "RTK referenční stanice přesunuta",
+          "outside_task_area": "Mimo oblast úlohy",
+          "wheel_motor_error": "Chyba motoru kola",
+          "blade_motor_overheated": "Motor nože je příliš horký",
+          "dock_moved": "Nabíjecí stanice přesunuta",
+          "no_task_area": "Žádná oblast úlohy",
+          "night_protection": "Noční ochrana",
+          "rain_protection": "Ochrana proti dešti aktivní",
+          "rtk_not_ready": "RTK referenční stanice není připravena",
+          "weak_satellite_signal": "Slabý satelitní signál",
+          "positioning_failure": "Porucha polohovacího systému",
+          "inavi_unavailable": "Služba iNavi není dostupná",
+          "weak_rtk_signal": "Slabý signál RTK",
+          "other": "Jiné"
+        }
+      },
+      "running_task": {
+        "name": "{name}",
+        "state": {
+          "mowing": "Sečení",
+          "paused": "Pozastaveno",
+          "returning": "Návrat",
+          "charging_pause": "Nabíjení, bude pokračovat"
+        }
+      },
+      "running_task_unnamed": {
+        "name": "Úloha {n}",
+        "state": {
+          "mowing": "Sečení",
+          "paused": "Pozastaveno",
+          "returning": "Návrat",
+          "charging_pause": "Nabíjení, bude pokračovat"
+        }
+      },
+      "remote_drive_state": {
+        "name": "Stav dálkového řízení",
+        "state": {
+          "idle": "Nečinné",
+          "requesting_token": "Žádost o oprávnění",
+          "safety_notice": "Čeká na bezpečnostní potvrzení",
+          "active": "Řízení",
+          "exiting": "Ukončování"
+        },
+        "state_attributes": {
+          "last_event": {
+            "name": "Poslední událost"
+          },
+          "last_event_detail": {
+            "name": "Podrobnosti poslední události"
+          }
+        }
       }
     },
     "binary_sensor": {
       "spino_charging": {
         "name": "Nabíjení"
+      },
+      "rain_detected": {
+        "name": "Zjištěn déšť"
       }
     },
     "button": {
       "start_map_sync": {
         "name": "Synchronizace mapy"
       },
-      "start_schedule_sync": {
-        "name": "Synchronizovat plány"
+      "start_task_sync": {
+        "name": "Synchronizovat úlohy"
       },
       "resync_rtk_dock": {
         "name": "Synchronizovat RTK a dok"
@@ -374,6 +501,9 @@
       },
       "start_dropmow": {
         "name": "Spustit DropMow"
+      },
+      "continue_last_job": {
+        "name": "Pokračovat v poslední úloze"
       },
       "emergency_nudge_forward": {
         "name": "Nouzové postrčení vpřed"
@@ -410,11 +540,20 @@
       },
       "spino_refresh_status": {
         "name": "Obnovit stav"
+      },
+      "confirm_remote_drive": {
+        "name": "Potvrdit dálkové řízení"
+      },
+      "acknowledge_remote_drive_fence": {
+        "name": "Potvrdit varování u hranice"
       }
     },
     "switch": {
       "area": {
         "name": "Oblast {name}"
+      },
+      "area_plain": {
+        "name": "{name}"
       },
       "blade_status": {
         "name": "Zapnutí/Vypnutí nožů"
@@ -428,9 +567,6 @@
       "is_edge": {
         "name": "Řezání okrajů"
       },
-      "rain_tactics": {
-        "name": "Detekce deště (během sečení) Zap/Vyp"
-      },
       "auto_change_direction": {
         "name": "Automatické střídání směru sečení"
       },
@@ -439,6 +575,12 @@
       },
       "smart_charge": {
         "name": "Chytré nabíjení"
+      },
+      "smart_recharge_level": {
+        "name": "Chytrá úroveň návratu k nabíjení"
+      },
+      "smart_resume_level": {
+        "name": "Chytrá úroveň pokračování"
       },
       "side_led": {
         "name": "Boční světla"
@@ -481,6 +623,9 @@
       },
       "spino_waterline_parking": {
         "name": "Parkování u hladiny"
+      },
+      "remote_drive": {
+        "name": "Dálkové řízení přes cloud"
       }
     },
     "select": {
@@ -504,7 +649,7 @@
         }
       },
       "obstacle_laps": {
-        "name": "Počet sečení obvodů no-go zón",
+        "name": "Počet okruhů kolem zakázaných zón",
         "state": {
           "none": "Žádný",
           "one": "Jednou",
@@ -605,6 +750,34 @@
           "CURVE_SIMPLE": "Zaoblené (jednoduché)",
           "CURVE_COMPLEX": "Zaoblené (složité)"
         }
+      },
+      "rain_protection_mode": {
+        "name": "Ochrana proti dešti",
+        "state": {
+          "off": "Vypnuto",
+          "smart": "Inteligentní režim",
+          "sensor": "Režim senzoru"
+        }
+      },
+      "rain_protection_delay": {
+        "name": "Doba zpoždění ochrany proti dešti",
+        "state": {
+          "0": "Bez zpoždění",
+          "1": "1 hod.",
+          "2": "2 hod.",
+          "3": "3 hod.",
+          "4": "4 hod.",
+          "5": "5 hod.",
+          "6": "6 hod.",
+          "7": "7 hod.",
+          "8": "8 hod.",
+          "9": "9 hod.",
+          "10": "10 hod.",
+          "11": "11 hod.",
+          "12": "12 hod.",
+          "24": "24 hod.",
+          "48": "48 hod."
+        }
       }
     },
     "number": {
@@ -613,6 +786,15 @@
       },
       "charge_limit": {
         "name": "Limit nabíjení"
+      },
+      "recharge_level": {
+        "name": "Návrat k nabíjení při"
+      },
+      "resume_level": {
+        "name": "Pokračovat v sekání při"
+      },
+      "ride_boundary_distance": {
+        "name": "Pokrytí okrajů"
       },
       "start_progress": {
         "name": "Pokrok při zahájení"
@@ -691,12 +873,6 @@
         "3": "Pouze obvod"
       }
     },
-    "rain_tactics": {
-      "options": {
-        "0": "Vypnuto",
-        "1": "Zapnuto"
-      }
-    },
     "toward_mode": {
       "options": {
         "0": "Relativní úhel",
@@ -725,7 +901,8 @@
     "notify": {
       "options": {
         "warnings": "Varování a chybové kódy",
-        "notifications": "Oznámení a informace zařízení"
+        "notifications": "Oznámení a informace zařízení",
+        "self_check": "Autotest: proč sekačka nemůže začít"
       }
     }
   },
@@ -786,10 +963,6 @@
           "name": "Šířka dráhy",
           "description": "Šířka dráhy sečení (v cm)."
         },
-        "rain_tactics": {
-          "name": "Detekce deště",
-          "description": "Detekce deště."
-        },
         "blade_height": {
           "name": "Výška nožů",
           "description": "Výška nožů."
@@ -817,6 +990,14 @@
         "start_progress": {
           "name": "Pokrok při zahájení",
           "description": "Procento při zahájení"
+        },
+        "auto_change_direction": {
+          "name": "Automatické střídání směru sečení",
+          "description": "Střídá směr sečení mezi běhy: 0 = vypnuto, 1 = zapnuto. Použije se jen u modelů a firmwaru, které to podporují. Pokud pole vynecháte, platí nastavení přepínače."
+        },
+        "ride_boundary_distance": {
+          "name": "Pokrytí okrajů",
+          "description": "Jak daleko se sekačka při sečení obvodu posouvá ven, od 0 (vnitřní okraj) do 1 (na okraji). Použije se jen u modelů, které to podporují, a při zapnutém sečení obvodu."
         },
         "areas": {
           "name": "Výběr oblasti",
@@ -856,13 +1037,9 @@
           "name": "Okruhy zakázané zóny",
           "description": "Okruhy zakázané zóny"
         },
-        "rain_tactics": {
-          "name": "Taktika za deště",
-          "description": "Taktika za deště"
-        },
         "auto_change_direction": {
-          "name": "Automatická změna směru",
-          "description": "Automatická změna směru"
+          "name": "Automatické střídání směru sečení",
+          "description": "Automatické střídání směru sečení — mezi běhy obrací směr sečení, aby se omezilo poléhání trávy."
         },
         "start_progress": {
           "name": "Průběh",
@@ -944,28 +1121,18 @@
     },
     "get_map_data": {
       "name": "Získat data mapy",
-      "description": "Vrací surová data mapy (oblasti, SVG dlaždice, názvy oblastí) pro použití s kartou SVG mapy.",
-      "fields": {
-        "entity_id": {
-          "name": "Entita",
-          "description": "Jakákoli Mammotion entita patřící k zařízení."
-        }
-      }
+      "description": "Vrací surová data mapy (oblasti, SVG dlaždice, názvy oblastí) pro použití s kartou SVG mapy."
     },
     "svg_add": {
       "name": "Přidat SVG dlaždici",
       "description": "Odešle novou SVG dlaždici na mapu zařízení. Vrací hash přiřazený zařízením.",
       "fields": {
-        "entity_id": {
-          "name": "Entita",
-          "description": "Jakákoli Mammotion entita patřící k zařízení."
-        },
         "area_hash": {
           "name": "Hash oblasti",
           "description": "Hash nadřazené sekací oblasti."
         },
         "svg_data": {
-          "name": "SVG data",
+          "name": "Data SVG",
           "description": "Surové SVG značkování pro zobrazení na mapě."
         },
         "svg_file_name": {
@@ -1002,10 +1169,6 @@
       "name": "Aktualizovat SVG dlaždici",
       "description": "Nahradí existující SVG dlaždici na mapě zařízení. Použijte device_hash vrácený funkcí svg_add.",
       "fields": {
-        "entity_id": {
-          "name": "Entita",
-          "description": "Jakákoli Mammotion entita patřící k zařízení."
-        },
         "device_hash": {
           "name": "Hash zařízení",
           "description": "Hash přiřazený zařízením při prvním přidání dlaždice."
@@ -1015,7 +1178,7 @@
           "description": "Hash nadřazené sekací oblasti."
         },
         "svg_data": {
-          "name": "SVG data",
+          "name": "Data SVG",
           "description": "Aktualizované SVG značkování."
         },
         "svg_file_name": {
@@ -1052,10 +1215,6 @@
       "name": "Smazat SVG dlaždici",
       "description": "Odstraní SVG dlaždici z mapy zařízení pomocí jejího hashe přiřazeného zařízením.",
       "fields": {
-        "entity_id": {
-          "name": "Entita",
-          "description": "Jakákoli Mammotion entita patřící k zařízení."
-        },
         "device_hash": {
           "name": "Hash zařízení",
           "description": "Hash přiřazený zařízením při přidání dlaždice."
@@ -1072,7 +1231,7 @@
       "fields": {
         "name": {
           "name": "Nový název",
-          "description": "New display name for the task."
+          "description": "Nový zobrazovaný název úlohy."
         }
       }
     },
@@ -1082,7 +1241,7 @@
       "fields": {
         "enabled": {
           "name": "Povoleno",
-          "description": "True to enable the schedule, false to disable it."
+          "description": "Zapnuto plán povolí, vypnuto jej zakáže."
         }
       }
     },
@@ -1096,7 +1255,7 @@
       "fields": {
         "name": {
           "name": "Nový název",
-          "description": "Override the auto-generated 'Copy-N' name."
+          "description": "Přepíše automaticky vytvořený název 'Copy-N'."
         }
       }
     },
@@ -1105,80 +1264,96 @@
       "description": "Upraví podmnožinu polí plánu.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name."
+          "name": "Název",
+          "description": "Zobrazovaný název."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule is active."
+          "name": "Povoleno",
+          "description": "Zda je plán aktivní."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday) the schedule runs on."
+          "name": "Dny v týdnu",
+          "description": "Seznam čísel dnů v týdnu (0 = neděle … 6 = sobota), kdy plán běží."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower only)."
+          "name": "Čas zahájení",
+          "description": "HH:MM (pouze sekačka)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower only)."
+          "name": "Čas ukončení",
+          "description": "HH:MM (pouze sekačka)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Datum zahájení",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Datum ukončení",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Typ spouštění",
+          "description": "0 = týdně, 1 = interval ve dnech, 2 = datum, 3 = jednorázově."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days when trigger_type is 1 (DAY)."
+          "name": "Interval ve dnech",
+          "description": "Interval ve dnech, když je trigger_type 1 (DAY)."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Výška sečení",
+          "description": "Výška nožů v milimetrech (pouze sekačka)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower: driving speed (float). Spino: fixed32 speed value (int)."
+          "name": "Rychlost",
+          "description": "Sekačka: rychlost jízdy (float). Spino: hodnota rychlosti fixed32 (int)."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only: 0 = none, 1 = once, 2 = twice."
+          "name": "Režim okrajů",
+          "description": "Pouze sekačka: 0 = žádné, 1 = jednou, 2 = dvakrát."
+        },
+        "ride_boundary_distance": {
+          "name": "Pokrytí okrajů",
+          "description": "Jak daleko se sekačka při sečení obvodu posouvá ven, od 0 (vnitřní okraj) do 1 (na okraji). Použije se jen u modelů, které to podporují, a při zapnutém sečení obvodu."
+        },
+        "auto_change_direction": {
+          "name": "Automatické střídání směru sečení",
+          "description": "Automatické střídání směru sečení — mezi běhy obrací směr sečení, aby se omezilo poléhání trávy: 0 = vypnuto, 1 = zapnuto. Jen u modelů a firmwaru, které to podporují. Pokud pole vynecháte, zůstane nastavení plánu beze změny (u nového plánu vypnuto)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only: mowing pattern angle 0–179 degrees."
+          "name": "Úhel trasy",
+          "description": "Pouze sekačka: úhel vzoru sečení 0–179 stupňů."
+        },
+        "toward_mode": {
+          "name": "Režim sečení",
+          "description": "Pouze sekačka: jak se použije úhel trasy (0 = optimální, 1 = sever, 2 = náhodný)."
+        },
+        "toward_included_angle": {
+          "name": "Úhel křížení",
+          "description": "Pouze sekačka: druhý úhel šachovnicové trasy ve stupních."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only: spacing between mow lines in cm."
+          "name": "Rozestup tras",
+          "description": "Pouze sekačka: rozestup mezi drahami sečení v cm."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes (fixed64) covered by this schedule."
+          "name": "Hashe zón",
+          "description": "Pouze sekačka: seznam hashů oblastí (fixed64), které plán pokrývá."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only: 0 = recharge, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
+          "name": "Pracovní režim",
+          "description": "Pouze Spino: 0 = nabíjení, 1 = AUTO, 2 = FLOOR, 3 = WALL, 4 = ECO, 5 = LINE, 6 = CUSTOM."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values for multi-stage cleaning."
+          "name": "Dílčí režimy",
+          "description": "Pouze Spino: seznam hodnot APP_WORK pro vícefázové čištění."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only: suction power (fixed32 int)."
+          "name": "Provozní výkon",
+          "description": "Pouze Spino: sací výkon (fixed32 int)."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix timestamp (seconds) for the start of the cleaning session."
+          "name": "Časové razítko zahájení",
+          "description": "Pouze Spino: unixové časové razítko (sekundy) začátku čištění."
         }
       }
     },
@@ -1187,80 +1362,96 @@
       "description": "Vytvoří nový plán na zařízení.",
       "fields": {
         "name": {
-          "name": "Name",
-          "description": "Display name for the new schedule."
+          "name": "Název",
+          "description": "Zobrazovaný název nového plánu."
         },
         "enabled": {
-          "name": "Enabled",
-          "description": "Whether the schedule starts enabled."
+          "name": "Povoleno",
+          "description": "Zda bude plán po vytvoření povolen."
         },
         "weeks": {
-          "name": "Weekdays",
-          "description": "List of weekday integers (0 = Sunday … 6 = Saturday)."
+          "name": "Dny v týdnu",
+          "description": "Seznam čísel dnů v týdnu (0 = neděle … 6 = sobota)."
         },
         "start_time": {
-          "name": "Start time",
-          "description": "HH:MM (mower)."
+          "name": "Čas zahájení",
+          "description": "HH:MM (sekačka)."
         },
         "end_time": {
-          "name": "End time",
-          "description": "HH:MM (mower)."
+          "name": "Čas ukončení",
+          "description": "HH:MM (sekačka)."
         },
         "start_date": {
-          "name": "Start date",
+          "name": "Datum zahájení",
           "description": "YYYY-MM-DD."
         },
         "end_date": {
-          "name": "End date",
+          "name": "Datum ukončení",
           "description": "YYYY-MM-DD."
         },
         "trigger_type": {
-          "name": "Trigger type",
-          "description": "0 = weekly, 1 = day interval, 2 = date, 3 = run once."
+          "name": "Typ spouštění",
+          "description": "0 = týdně, 1 = interval ve dnech, 2 = datum, 3 = jednorázově."
         },
         "day": {
-          "name": "Day interval",
-          "description": "Interval in days for trigger_type = 1."
+          "name": "Interval ve dnech",
+          "description": "Interval ve dnech pro trigger_type = 1."
         },
         "knife_height": {
-          "name": "Cut height",
-          "description": "Mower-only blade height in millimetres."
+          "name": "Výška sečení",
+          "description": "Výška nožů v milimetrech (pouze sekačka)."
         },
         "speed": {
-          "name": "Speed",
-          "description": "Mower or Spino speed."
+          "name": "Rychlost",
+          "description": "Rychlost sekačky nebo Spino."
         },
         "edge_mode": {
-          "name": "Edge mode",
-          "description": "Mower-only."
+          "name": "Režim okrajů",
+          "description": "Pouze sekačka."
+        },
+        "ride_boundary_distance": {
+          "name": "Pokrytí okrajů",
+          "description": "Jak daleko se sekačka při sečení obvodu posouvá ven, od 0 (vnitřní okraj) do 1 (na okraji). Použije se jen u modelů, které to podporují, a při zapnutém sečení obvodu."
+        },
+        "auto_change_direction": {
+          "name": "Automatické střídání směru sečení",
+          "description": "Automatické střídání směru sečení — mezi běhy obrací směr sečení, aby se omezilo poléhání trávy: 0 = vypnuto, 1 = zapnuto. Jen u modelů a firmwaru, které to podporují. Pokud pole vynecháte, zůstane nastavení plánu beze změny (u nového plánu vypnuto)."
         },
         "route_angle": {
-          "name": "Route angle",
-          "description": "Mower-only."
+          "name": "Úhel trasy",
+          "description": "Pouze sekačka."
+        },
+        "toward_mode": {
+          "name": "Režim sečení",
+          "description": "Pouze sekačka: jak se použije úhel trasy (0 = optimální, 1 = sever, 2 = náhodný)."
+        },
+        "toward_included_angle": {
+          "name": "Úhel křížení",
+          "description": "Pouze sekačka: druhý úhel šachovnicové trasy ve stupních."
         },
         "route_spacing": {
-          "name": "Route spacing",
-          "description": "Mower-only."
+          "name": "Rozestup tras",
+          "description": "Pouze sekačka."
         },
         "zone_hashs": {
-          "name": "Zone hashes",
-          "description": "Mower-only: list of area hashes covered."
+          "name": "Hashe zón",
+          "description": "Pouze sekačka: seznam pokrytých hashů oblastí."
         },
         "work_mode": {
-          "name": "Work mode",
-          "description": "Spino-only cleaning mode."
+          "name": "Pracovní režim",
+          "description": "Režim čištění (pouze Spino)."
         },
         "sub_mode": {
-          "name": "Sub-modes",
-          "description": "Spino-only: list of APP_WORK values."
+          "name": "Dílčí režimy",
+          "description": "Pouze Spino: seznam hodnot APP_WORK."
         },
         "operating_power": {
-          "name": "Operating power",
-          "description": "Spino-only."
+          "name": "Provozní výkon",
+          "description": "Pouze Spino."
         },
         "starttime": {
-          "name": "Start timestamp",
-          "description": "Spino-only: unix start time."
+          "name": "Časové razítko zahájení",
+          "description": "Pouze Spino: čas zahájení v unixovém formátu."
         }
       }
     },
@@ -1271,6 +1462,16 @@
     "get_tasks": {
       "name": "Získat úlohy",
       "description": "Vrátí všechny plány, které integrace pro cílové zařízení uchovává, včetně toho, zda je každý z nich povolen. Slouží k ověření, že se změna projevila; „Obnovit úlohy“ je nejprve znovu načte ze zařízení."
+    },
+    "get_task": {
+      "name": "Získat úlohu",
+      "description": "Vrátí jeden z plánů cílové sekačky podle ID úlohy: jeho aktuální nastavení pod názvy polí, které přijímá „Upravit úlohu“, a také zda je povolen a právě běží. Slouží k načtení úlohy před její úpravou.",
+      "fields": {
+        "task_id": {
+          "name": "ID úlohy",
+          "description": "ID úlohy, jak je uvedeno v atributu task_id tlačítka úlohy nebo jak ho vrací „Získat úlohy“."
+        }
+      }
     },
     "start_task": {
       "name": "Spustit úlohu",
@@ -1303,6 +1504,22 @@
     "get_map_backups": {
       "name": "Získat zálohy map",
       "description": "Vrátí zálohy map uložené v účtu Mammotion, ke kterému je tato integrace přihlášena. Zálohy patří k účtu, takže zálohy vytvořené v aplikaci pod jiným účtem se nezobrazí."
+    },
+    "get_geojson": {
+      "name": "Získat GeoJSON mapy",
+      "description": "Vrátí mapu sekačky (oblasti, překážky, cesty, stanici a RTK základnu) jako GeoJSON FeatureCollection pro kartu mapy a na několik minut nechá sekačku hlásit polohu."
+    },
+    "get_mow_path_geojson": {
+      "name": "Získat GeoJSON trasy sekání",
+      "description": "Vrátí plánovanou trasu sekání aktuální úlohy jako GeoJSON FeatureCollection. Je prázdná, dokud trasa není načtena."
+    },
+    "get_mow_progress_geojson": {
+      "name": "Získat GeoJSON průběhu sekání",
+      "description": "Vrátí již posekanou část trasy aktuální úlohy jako GeoJSON FeatureCollection; sekačky, které posílají dynamickou čáru, vrací místo toho tu. Když úloha běží a zatím není co zobrazit, také načte data, ze kterých se tato vrstva kreslí, nejvýše jednou za minutu. Přes Bluetooth se dynamická čára aktualizuje sama."
+    },
+    "fetch_mow_path": {
+      "name": "Načíst cestu sekání",
+      "description": "Načte trasu úlohy, kterou sekačka právě provádí, pokud už není kompletně uložena, a z ní obnoví průběh sekání. Sekačky s dynamickou čárou načtou také svou aktuální čáru. Přes cloud se to stane jen se zapnutou volbou 'Povolit načítání cesty sekání (cloud)'; přes Bluetooth vždy. Vrací, zda bylo načítání spuštěno."
     },
     "get_map_backup_progress": {
       "name": "Získat průběh zálohy mapy",
@@ -1347,6 +1564,9 @@
     "device_not_ready": {
       "message": "Sekačka není připravena."
     },
+    "no_job_to_continue": {
+      "message": "Není žádná přerušená úloha, ve které by bylo možné pokračovat."
+    },
     "pause_failed": {
       "message": "Sekačku se nepodařilo zastavit."
     },
@@ -1365,11 +1585,14 @@
     "command_failed": {
       "message": "Nepodařilo se odeslat příkaz sekačce."
     },
-    "api_limit_exceeded": {
-      "message": "Byl překročen limit požadavků API."
+    "command_unconfirmed": {
+      "message": "Sekačka příkaz nepotvrdila. Mohl být přesto proveden."
     },
     "account_in_use": {
-      "message": "Váš účet Mammotion je již aktivní v jiné relaci. Odhlaste se z aplikace Mammotion a zkuste to znovu."
+      "message": "Váš účet Mammotion je aktivní v jiné relaci (aplikace Mammotion). Odhlaste se z aplikace nebo počkejte a zkuste to znovu."
+    },
+    "api_limit_exceeded": {
+      "message": "Byl překročen limit požadavků API."
     },
     "cloud_setup_failed": {
       "message": "Nelze se připojit ke cloudu Mammotion. Zkontrolujte síť a zkuste integraci znovu načíst."
@@ -1377,11 +1600,23 @@
     "task_not_found": {
       "message": "Úloha {plan_id} nebyla v zařízení nalezena. Obnovte plán a zkuste to znovu."
     },
+    "task_id_not_found": {
+      "message": "Úloha {task_id} nebyla pro {entity_id} nalezena. Obnovte úlohy a zkuste to znovu."
+    },
     "start_task_unsupported_on_spino": {
       "message": "Spuštění plánu na vyžádání není u bazénového čističe Spino podporováno — firmware nemá příkaz pro okamžité spuštění uloženého plánu."
     },
     "grass_collection_unsupported": {
       "message": "Tato sekačka nepodporuje sběr trávy."
+    },
+    "no_running_job": {
+      "message": "{device_name} právě neprovádí žádnou úlohu sekání, takže není co měnit. Nejprve spusťte úlohu."
+    },
+    "running_job_modify_unsupported": {
+      "message": "{device_name} nepodporuje změnu probíhající úlohy. Umí to pouze Luba 2 a novější."
+    },
+    "auto_change_direction_unsupported": {
+      "message": "Automatické střídání směru sečení není podporováno zařízením {device_name} nebo jeho firmwarem."
     },
     "map_backup_cloud_unavailable": {
       "message": "Zálohy map vyžadují funkční přihlášení ke cloudu Mammotion."
@@ -1392,8 +1627,176 @@
     "map_backup_device_not_found": {
       "message": "{device_name} není v tomto účtu Mammotion uvedeno pro zálohy map."
     },
-    "map_backup_mower_not_found": {
+    "mower_not_found": {
       "message": "{entity_id} není sekačka Mammotion."
+    },
+    "notification_unknown_code": {
+      "message": "Neznámý chybový kód {code}"
+    },
+    "notification_title_warnings": {
+      "message": "{device_name}: varování"
+    },
+    "notification_title_notifications": {
+      "message": "{device_name}: oznámení"
+    },
+    "notification_title_self_check": {
+      "message": "{device_name}: {state}"
+    },
+    "self_check_emergency_stop": {
+      "message": "Je aktivní nouzové zastavení. Před dalším spuštěním jej na sekačce uvolněte."
+    },
+    "self_check_stop_button": {
+      "message": "Na sekačce bylo stisknuto tlačítko STOP. Před dalším spuštěním jej na sekačce zrušte."
+    },
+    "self_check_safety_key_missing": {
+      "message": "Bezpečnostní klíč není vložen. Vložte jej, abyste mohli začít sekat."
+    },
+    "self_check_lifted": {
+      "message": "Sekačka byla zvednuta ze země. Položte ji zpět na trávník."
+    },
+    "self_check_tilted": {
+      "message": "Sekačka je nakloněná. Přesuňte ji na rovný povrch."
+    },
+    "self_check_tipped_over": {
+      "message": "Sekačka se převrátila. Postavte ji zpět."
+    },
+    "self_check_bumper_missing": {
+      "message": "Boční nárazník není nainstalován. Před sečením jej nasaďte."
+    },
+    "self_check_rain": {
+      "message": "Byl zjištěn déšť a je zapnuto „Nesekat v dešti“. Sečení může začít, až přestane pršet, nebo funkci vypněte."
+    },
+    "self_check_low_battery": {
+      "message": "Baterie je příliš slabá na sečení. Nechte sekačku nabít."
+    },
+    "self_check_non_working_hours": {
+      "message": "Je mimo pracovní dobu sekačky."
+    },
+    "self_check_rtk_station_moved": {
+      "message": "RTK referenční stanice byla přesunuta. Zkontrolujte její polohu v aplikaci."
+    },
+    "self_check_outside_task_area": {
+      "message": "Sekačka je mimo oblast úlohy. Přesuňte ji zpět do zmapované oblasti."
+    },
+    "self_check_wheel_motor_error": {
+      "message": "Motor náboje kola hlásí chybu."
+    },
+    "self_check_blade_motor_overheated": {
+      "message": "Motor nože je příliš horký. Nechte jej vychladnout."
+    },
+    "self_check_dock_moved": {
+      "message": "Nabíjecí stanice byla přesunuta. Zkontrolujte její polohu v aplikaci."
+    },
+    "self_check_no_task_area": {
+      "message": "Nebyla nalezena žádná oblast úlohy. Vytvořte mapu v aplikaci."
+    },
+    "self_check_night_protection": {
+      "message": "Je zapnutá noční ochrana, sekačka v noci nesečí."
+    },
+    "self_check_rain_protection": {
+      "message": "Ochrana proti dešti brání spuštění sekačky. Pomocí dešťového senzoru a online údajů o počasí posuzuje, zda jsou podmínky vhodné pro sečení, a určí, kdy sečení obnovit. Počkejte, nebo ochranu proti dešti změňte či vypněte v nastavení sekačky v aplikaci."
+    },
+    "self_check_rtk_not_ready": {
+      "message": "RTK referenční stanice ještě není připravena."
+    },
+    "self_check_weak_satellite_signal": {
+      "message": "Satelitní signál sekačky je příliš slabý pro určení polohy."
+    },
+    "self_check_positioning_failure": {
+      "message": "Polohovací systém selhal."
+    },
+    "self_check_inavi_unavailable": {
+      "message": "Služba iNavi není dostupná."
+    },
+    "self_check_weak_rtk_signal": {
+      "message": "Signál RTK je slabý. Zkontrolujte umístění referenční stanice."
+    },
+    "self_check_other": {
+      "message": "Sekačka nahlásila neznámý kód autotestu {code}."
+    },
+    "remote_drive_needs_cloud": {
+      "message": "Dálkové řízení přes cloud potřebuje funkční cloudové připojení k sekačce. Přes Bluetooth místo toho použijte tlačítka posunu."
+    },
+    "remote_drive_start_failed": {
+      "message": "Dálkové řízení se nepodařilo spustit: sekačka není přes cloud dosažitelná."
+    },
+    "remote_drive_already_running": {
+      "message": "Dálkové řízení přes cloud už běží. Před novým spuštěním ho nejprve vypněte."
+    },
+    "remote_drive_not_awaiting_confirmation": {
+      "message": "Není žádné bezpečnostní upozornění k potvrzení. Nejprve zapněte dálkové řízení přes cloud."
+    },
+    "remote_drive_no_reverse": {
+      "message": "Dálkovým řízením přes cloud nelze sekačkou couvat. Otočte ji doleva nebo doprava, nebo použijte Bluetooth."
+    },
+    "remote_drive_fence_paused": {
+      "message": "Sekačka zastavila u hranice. Před další jízdou stiskněte „Potvrdit varování u hranice“."
+    },
+    "remote_drive_safety_notice": {
+      "message": "Před dálkovým řízením sekačky se ujistěte, že v pracovní oblasti nejsou žádné osoby ani zvířata, a mějte sekačku celou dobu na očích. Jízdu zahájíte stisknutím „Potvrdit dálkové řízení“ do 3 minut. Relace sama skončí krátce poté, co přestanete zadávat pokyny."
+    },
+    "movement_unavailable": {
+      "message": "Sekačkou teď nelze pohnout. Přibližte se na dosah Bluetooth, nebo zapněte dálkové řízení přes cloud a stiskněte „Potvrdit dálkové řízení“."
+    },
+    "notification_title_remote_drive": {
+      "message": "{device_name}: dálkové řízení přes cloud"
+    },
+    "remote_drive_token_unavailable": {
+      "message": "Server Mammotion dálkové řízení nepovolil (kód {detail}). Zkuste to později."
+    },
+    "remote_drive_occupied_by_other": {
+      "message": "Sekačku už řídí jiný účet ({detail})."
+    },
+    "remote_drive_network_poor": {
+      "message": "Dálkové řízení skončilo: síťové připojení sekačky je příliš slabé."
+    },
+    "remote_drive_token_expired": {
+      "message": "Dálkové řízení skončilo: oprávnění k jízdě vypršelo."
+    },
+    "remote_drive_out_of_fence": {
+      "message": "Dálkové řízení skončilo: sekačka je mimo povolenou oblast."
+    },
+    "remote_drive_ble_preempt": {
+      "message": "Dálkové řízení skončilo: sekačku nyní přes Bluetooth ovládá {detail}."
+    },
+    "remote_drive_no_loc_mileage_exhausted": {
+      "message": "Dálkové řízení skončilo: sekačka ujela nejdelší vzdálenost povolenou bez určení polohy."
+    },
+    "remote_drive_env_not_ready": {
+      "message": "Dálkové řízení skončilo: sekačka není připravena k řízení (kód {detail})."
+    },
+    "remote_drive_send_failed": {
+      "message": "Dálkové řízení skončilo: příkaz se nepodařilo odeslat ({detail})."
+    },
+    "remote_drive_approach_fence": {
+      "message": "Sekačka zastavila těsně u hranice. Pro pokračování v jízdě stiskněte „Potvrdit varování u hranice“."
+    },
+    "remote_drive_safety_notice_timeout": {
+      "message": "Dálkové řízení skončilo: bezpečnostní upozornění nebylo potvrzeno do 3 minut."
+    },
+    "remote_drive_video_unavailable": {
+      "message": "Dálkové řízení skončilo: obraz z kamery se přerušil."
+    },
+    "battery_settings_unread": {
+      "message": "Nastavení baterie se ze sekačky zatím nepodařilo načíst. Změna by nyní vynulovala okno nabíjení mimo špičku, proto nebylo nic odesláno. Zkuste to znovu, až bude sekačka připojena."
+    }
+  },
+  "issues": {
+    "account_in_use": {
+      "title": "Účet Mammotion je používán jinou relací",
+      "description": "Váš účet Mammotion {account} je již aktivní v jiné relaci, proto je cloudové připojení pozastaveno. Odhlaste se z aplikace Mammotion; integrace se během několika minut automaticky znovu připojí."
+    },
+    "cloud_login_retrying": {
+      "title": "Cloud Mammotion není dostupný",
+      "description": "Home Assistant se nemohl přihlásit ke cloudu Mammotion pro účet {account} ({error}). Zařízení připojená přes Bluetooth fungují dál. Přihlášení se opakuje každých 15 minut, nejvýše 5krát, pomocí uložené relace."
+    },
+    "cloud_login_failed": {
+      "title": "Cloud Mammotion není připojen",
+      "description": "Home Assistant se nemohl přihlásit ke cloudu Mammotion pro účet {account} ({error}) a přestal to zkoušet. Zařízení připojená přes Bluetooth fungují dál. Jakmile bude služba Mammotion opět dostupná, znovu načtěte integraci Mammotion."
+    },
+    "deprecated_rain_tactics": {
+      "title": "Použita zrušená volba v akci Mammotion",
+      "description": "Automatizace nebo skript volá `{service}` s `{field}`. Tato volba byla odstraněna: do sekačky se nikdy nedostala, proto je ignorována a úloha se spustí jako obvykle. Místo ní použijte přepínač Detekce deště na sekačce a odeberte `{field}` z volání akce, aby tato zpráva zmizela."
     }
   }
 }

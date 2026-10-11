@@ -1,10 +1,17 @@
 """Base class for entities."""
 
 from abc import ABC
+from collections.abc import Callable, Iterable
 from typing import Any
 
+from homeassistant.components.camera import DOMAIN as CAMERA_DOMAIN
 from homeassistant.components.camera import Camera, CameraEntityFeature
-from homeassistant.core import callback
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.components.switch.const import DOMAIN as SWITCH_DOMAIN
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import translation
 from homeassistant.helpers.device_registry import (
     CONNECTION_BLUETOOTH,
     CONNECTION_NETWORK_MAC,
@@ -14,6 +21,8 @@ from homeassistant.helpers.device_registry import (
 from homeassistant.helpers.device_registry import (
     async_get as async_get_device_registry,
 )
+from homeassistant.helpers.entity import Entity, EntityDescription
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from pymammotion.data.model.device import PoolCleanerDevice, RTKBaseStationDevice
 from pymammotion.utility.device_type import DeviceType
@@ -24,6 +33,7 @@ from .coordinator import (
     MammotionRTKCoordinator,
     MammotionSpinoCoordinator,
 )
+from .models import MammotionMowerData
 
 
 def device_firmware_version(device_state: object | None) -> str:
@@ -35,6 +45,91 @@ def device_firmware_version(device_state: object | None) -> str:
     """
     device_firmwares = getattr(device_state, "device_firmwares", None)
     return device_firmwares.device_version if device_firmwares is not None else ""
+
+
+@callback
+def async_add_when_supported[DescriptionT: EntityDescription](
+    entry: ConfigEntry[Any],
+    coordinator: MammotionBaseUpdateCoordinator[Any],
+    *,
+    supported: Callable[[], bool],
+    descriptions: Iterable[DescriptionT],
+    build: Callable[[DescriptionT], Entity],
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Add the entities for *descriptions* once *supported* returns True.
+
+    What the gate reads (firmware, the server's function list) often arrives after
+    the platform sets up, so it is checked again on every coordinator update; each
+    description is added at most once.
+    """
+    pending = {description.key: description for description in descriptions}
+
+    @callback
+    def _async_check() -> None:
+        if not pending or not supported():
+            return
+        ready = list(pending.values())
+        pending.clear()
+        async_add_entities([build(description) for description in ready])
+
+    _async_check()
+    if pending:
+        entry.async_on_unload(coordinator.async_add_listener(_async_check))
+
+
+@callback
+def async_add_when_firmware_supports[DescriptionT: EntityDescription](
+    entry: ConfigEntry[Any],
+    coordinator: MammotionBaseUpdateCoordinator[Any],
+    *,
+    supported: Callable[[str], bool],
+    descriptions: Iterable[DescriptionT],
+    build: Callable[[DescriptionT], Entity],
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Add the entities for *descriptions* once the firmware version passes *supported*."""
+    async_add_when_supported(
+        entry,
+        coordinator,
+        supported=lambda: supported(device_firmware_version(coordinator.data)),
+        descriptions=descriptions,
+        build=build,
+        async_add_entities=async_add_entities,
+    )
+
+
+#: Mower entities that were removed outright: (platform, key).
+_RETIRED_MOWER_ENTITIES = ((SWITCH_DOMAIN, "rain_tactics"),)
+#: Created only where the app shows "Visual Positioning"; earlier versions made them on every Luba 2+.
+_VISION_ONLY_SENSOR_KEYS = ("visual_positioning_status", "camera_brightness")
+#: The Luba 3 publishes one feed; earlier versions gave it left/right cameras.
+_LUBA_VA_RETIRED_CAMERA_KEYS = ("webrtc_camera", "webrtc_camera_right")
+
+
+@callback
+def async_remove_retired_entities(
+    hass: HomeAssistant, mowers: Iterable[MammotionMowerData]
+) -> None:
+    """Drop registry rows for mower entities this integration no longer creates.
+
+    Left alone they linger as unavailable forever.
+    """
+    registry = er.async_get(hass)
+    for mower in mowers:
+        retired = list(_RETIRED_MOWER_ENTITIES)
+        if not DeviceType.supports_vision_positioning(
+            mower.device.device_name, mower.device.product_key
+        ):
+            retired += [(SENSOR_DOMAIN, key) for key in _VISION_ONLY_SENSOR_KEYS]
+        if DeviceType.value_of_str(mower.device.device_name).is_luba_va():
+            retired += [(CAMERA_DOMAIN, key) for key in _LUBA_VA_RETIRED_CAMERA_KEYS]
+        unique_name = mower.reporting_coordinator.unique_name
+        for domain, key in retired:
+            if entity_id := registry.async_get_entity_id(
+                domain, DOMAIN, f"{unique_name}_{key}"
+            ):
+                registry.async_remove(entity_id)
 
 
 def device_serial_number(device_name: str, device_type: DeviceType) -> str:
@@ -68,6 +163,41 @@ def supports_grass_collection(device_name: str) -> bool:
     """
     device_type = DeviceType.value_of_str(device_name)
     return device_type.is_yu_ka() or device_type.is_yu_ka_pro()
+
+
+def invalidate_cached_name(entity: Entity) -> None:
+    """Re-derive *entity*'s name after changing the description or placeholders it is built from."""
+    # Home Assistant caches these and clears each only on a write to its own ``_attr_``.
+    entity.__dict__.pop("name", None)
+    entity.__dict__.pop("translation_key", None)
+    entity.__dict__.pop("translation_placeholders", None)
+    entity.__dict__.pop("_name_translation_key", None)
+
+
+def strip_prefix_word(
+    hass: HomeAssistant, platform: str, translation_key: str, name: str
+) -> str | None:
+    """Return *name* after the word the "<word> {name}" template adds, or None if absent.
+
+    English counts in every locale: pymammotion's fallback names are English.
+    """
+    stripped = name.lstrip()
+    folded = stripped.casefold()
+    for language in {hass.config.language, "en"}:
+        template = translation.async_get_cached_translations(
+            hass, language, "entity", DOMAIN
+        ).get(f"component.{DOMAIN}.entity.{platform}.{translation_key}.name", "")
+        word = template.partition("{name}")[0].strip().casefold()
+        if word and folded.startswith(word) and folded[len(word) :][:1] in ("", " "):
+            return stripped[len(word) :].lstrip()
+    return None
+
+
+def name_starts_with_prefix(
+    hass: HomeAssistant, platform: str, translation_key: str, name: str
+) -> bool:
+    """Return True when *name* already starts with the word the "<word> {name}" template adds."""
+    return strip_prefix_word(hass, platform, translation_key, name) is not None
 
 
 class MammotionBaseEntity(CoordinatorEntity[MammotionBaseUpdateCoordinator[Any]]):  # type: ignore[misc]
@@ -212,7 +342,10 @@ class MammotionBaseRTKEntity(CoordinatorEntity[MammotionRTKCoordinator]):  # typ
             # The state model carries no product name, so take it off the account
             # record the way the mower does; falling back to the product key put
             # the raw "a1Nc68bGZzX" where the model should be.
-            model=self.coordinator.device.product_model or rtk_device.name or None,
+            model=self.coordinator.device.product_model
+            or self.coordinator.device.product_name
+            or rtk_device.name
+            or None,
             sw_version=self.coordinator.data.device_version,
             suggested_area="Garden",
             connections={
@@ -343,7 +476,6 @@ class MammotionCameraBaseEntity(Camera, ABC):  # type: ignore[misc]
     """Devices that support cameras."""
 
     _attr_has_entity_name = True
-    _attr_name = None
     _attr_is_streaming = True
     _attr_supported_features = CameraEntityFeature.STREAM
 

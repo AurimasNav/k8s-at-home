@@ -6,14 +6,14 @@ import asyncio
 import contextlib
 import dataclasses
 import datetime
-import json
 import secrets
 import time
 from abc import abstractmethod
 from collections.abc import Awaitable, Callable, Coroutine, Mapping
 from datetime import timedelta
+from enum import StrEnum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Protocol, cast
+from typing import TYPE_CHECKING, Any, Final, Protocol, cast
 
 from habluetooth import BluetoothScanningMode
 from habluetooth.models import BluetoothServiceInfoBleak
@@ -25,14 +25,20 @@ from homeassistant.components.bluetooth import (
 )
 from homeassistant.const import CONF_PASSWORD
 from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    HomeAssistantError,
+    ServiceValidationError,
+)
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
-from mashumaro.exceptions import InvalidFieldValue
+from mashumaro.exceptions import InvalidFieldValue, MissingField
+from mashumaro.mixins.dict import DataClassDictMixin
+from pyagorartc import APResponse, PyAgoraRTCError
 from pymammotion.aliyun.exceptions import (
     CloudSetupError,
     DeviceOfflineException,
@@ -51,14 +57,25 @@ from pymammotion.data.model.device import (
     PoolCleanerDevice,
     RTKBaseStationDevice,
 )
-from pymammotion.data.model.device_config import OperationSettings, create_path_order
+from pymammotion.data.model.device_config import (
+    OperationSettings,
+    build_route_information,
+)
+from pymammotion.data.model.device_info import ChargeSettings, RainProtectionSettings
 from pymammotion.data.model.enums import CollectorState, DumpState
 from pymammotion.data.model.hash_list import Plan, SvgMessage
+from pymammotion.data.model.mowing_modes import RainProtectionMode
 from pymammotion.data.model.pool_state import PoolPlan, SpinoToggle
 from pymammotion.data.model.report_info import Maintain, NetUsedType
-from pymammotion.data.mqtt.event import DeviceNotificationEventParams, ThingEventMessage
+from pymammotion.data.mqtt.event import ThingEventMessage
 from pymammotion.data.mqtt.properties import ThingPropertiesMessage
 from pymammotion.data.mqtt.status import StatusType, ThingStatusMessage
+from pymammotion.device.remote_drive import (
+    RemoteDriveError,
+    RemoteDriveEvent,
+    RemoteDriveEventKind,
+    RemoteDrivePhase,
+)
 from pymammotion.http.model.camera_stream import (
     StreamSubscriptionResponse,
 )
@@ -70,6 +87,7 @@ from pymammotion.http.model.map_backup import (
     BackupProgressType,
 )
 from pymammotion.http.model.product_params import ProductParam, ProductParamData
+from pymammotion.http.model.rain_protection import WeatherServerSync
 from pymammotion.mammotion.commands.mammotion_command import MammotionCommand
 from pymammotion.messaging.command_queue import Priority
 from pymammotion.proto import MulSex
@@ -79,7 +97,9 @@ from pymammotion.state.device_state import (
     DeviceSnapshot,
 )
 from pymammotion.transport.base import (
+    AccountInUseError,
     BLEUnavailableError,
+    CommandRejectedError,
     CommandTimeoutError,
     ConcurrentRequestError,
     LoginFailedError,
@@ -92,12 +112,15 @@ from pymammotion.transport.base import (
     TransportType,
     is_transient_network_error,
 )
-from pymammotion.utility.constant import MOWING_ACTIVE_MODES, WorkMode
+from pymammotion.utility.constant import (
+    MOWING_ACTIVE_MODES,
+    NO_REQUEST_MODES,
+    WorkMode,
+)
 from pymammotion.utility.device_type import DeviceType
 from pymammotion.utility.plan_id import make_copy_name, new_mower_plan_id
 from webrtc_models import RTCIceServer
 
-from .agora_api import SERVICE_IDS, AgoraAPIClient, AgoraResponse
 from .config import (
     TRANSPORT_BLUETOOTH,
     TRANSPORT_CLOUD,
@@ -105,17 +128,22 @@ from .config import (
     async_get_store,
 )
 from .const import (
+    COMMAND_EXCEPTIONS,
     CONF_ACCOUNTNAME,
     CONF_HAS_CLOUD_ACCOUNT,
     CONF_MAMMOTION_DATA,
+    CONF_MOVEMENT_USE_WIFI,
     DOMAIN,
     EXPIRED_CREDENTIAL_EXCEPTIONS,
     LOGGER,
-    NO_REQUEST_MODES,
+    NOTIFY_CATEGORY_BY_EVENT,
+    NOTIFY_WARNINGS,
 )
 from .error_codes import async_refresh_error_codes
+from .stream_session import async_choose_server, to_rtc_ice_servers
 
 if TYPE_CHECKING:
+    from pymammotion.data.model.device import Device as DeviceModel
     from pymammotion.device.handle import DeviceHandle
     from pymammotion.http.http import MammotionHTTP
 
@@ -125,8 +153,8 @@ if TYPE_CHECKING:
 class WebRTCSessionControl(Protocol):
     """Teardown surface the WebRTC camera entity exposes to its coordinator."""
 
-    async def async_teardown_stream(self) -> None:
-        """Leave the Agora channel and stop the mower's encoder."""
+    async def async_teardown_stream(self, *, stop_device: bool = True) -> None:
+        """Leave this camera's Agora session and optionally stop the encoder."""
 
 
 MAINTENANCE_INTERVAL = timedelta(minutes=60)
@@ -148,6 +176,12 @@ SPINO_INTERVAL = timedelta(weeks=1)
 #: entry ... cancelled" with a CancelledError from whichever read was in flight, which
 #: reads like a library fault rather than the timeout it is.  See issue #859.
 SETUP_COMMAND_BUDGET = timedelta(seconds=60)
+#: Start-up read batches an escaping exception may cost before they are given up.
+STARTUP_READ_ATTEMPTS = 3
+
+#: Minimum spacing of the saves a state push triggers: serialising the device on
+#: every push is wasted work, and the store only writes every SAVE_DELAY anyway.
+STATE_PUSH_SAVE_INTERVAL = timedelta(seconds=60)
 
 #: The app's satellite-map alignment offset lives only on the phone; this is what
 #: it sends when none was set.
@@ -158,6 +192,15 @@ MAP_BACKUP_CORRECTION_VALUE = '{"OffsetX":0.0,"OffsetY":0.0}'
 #: that long — the transfer keeps going regardless, only the returned hash is given up.
 SVG_SEND_TIMEOUT = timedelta(seconds=90)
 
+#: Upper bound, in seconds, on the fresh report a user action waits for; past it
+#: the action proceeds on the state already held.
+FRESH_STATE_TIMEOUT = 15
+#: Reports older than this, in seconds, are refreshed before a user action reads them.
+FRESH_STATE_MAX_AGE_S = 120.0
+
+#: Sent with a blade start while neither a planned nor a reported height is known.
+BLADE_HEIGHT_FALLBACK_MM = 60
+
 # Possible states for ``MammotionReportUpdateCoordinator.map_sync_status`` and
 # the ``map_sync_status`` diagnostic ENUM sensor that surfaces it.
 MAP_SYNC_STATUSES = ("synced", "syncing", "out_of_sync")
@@ -167,28 +210,194 @@ MAP_SYNC_STATUSES = ("synced", "syncing", "out_of_sync")
 # connection").  Treated as a device-offline signal.
 DEVICE_NOT_RESPONDING_CODE = 50504
 
+#: How long a nudge holds its speed in a remote-drive session before letting go.
+REMOTE_DRIVE_NUDGE_S = 0.5
+_REMOTE_DRIVE_START_FAILED: Final = "remote_drive_start_failed"
 
-#: The device echoes the reserved buffer back with every byte raised by ten —
-#: the same quirk that made enabling a schedule corrupt it (Mammotion-HA #891).
-#: Observed on a running job: b"\n\x0b\n\n\n\x12\x14(" decodes to
-#: 0/1/0/0/0/8/10, where the 8 and 10 are exactly the constants
-#: ``create_path_order`` writes, which is what confirms the offset.
-_RESERVED_ECHO_OFFSET = 10
-_RESERVED_ECHOED_BYTES = (0, 1, 2, 3, 4, 5, 6)
+#: Sign of (linear, angular) per movement command, as the legacy ``move_*`` commands
+#: send them.  No ``move_back``: the session drops negative linear speed.
+_REMOTE_DRIVE_DIRECTIONS: Final[dict[str, tuple[int, int]]] = {
+    "move_forward": (1, 0),
+    "move_left": (0, -1),
+    "move_right": (0, 1),
+}
+
+#: Phases in which a remote-drive session holds (or is getting) the drive token.
+REMOTE_DRIVE_LIVE_PHASES: Final = frozenset(
+    {
+        RemoteDrivePhase.REQUESTING_TOKEN,
+        RemoteDrivePhase.SAFETY_NOTICE,
+        RemoteDrivePhase.ACTIVE,
+    }
+)
+
+type RemoteDriveListener = Callable[[RemoteDriveEvent], Awaitable[None]]
 
 
-def _reserved_without_echo(reserved: str) -> str:
-    """Undo the device's +10 echo so a re-issued route does not accumulate it."""
-    raw = bytearray(reserved.encode("latin-1").ljust(8, b"\x00"))
-    for index in _RESERVED_ECHOED_BYTES:
-        raw[index] = max(raw[index] - _RESERVED_ECHO_OFFSET, 0)
-    return raw.decode("latin-1")
+class MovementPath(StrEnum):
+    """Which way a manual movement reaches the mower; see ``movement_path``."""
+
+    BLE = "ble"
+    LEGACY_CLOUD = "legacy_cloud"
+    REMOTE_DRIVE = "remote_drive"
+    FENCE_PAUSED = "fence_paused"
+    NONE = "none"
+
+
+def remote_drive_detail(event: RemoteDriveEvent | None) -> str:
+    """Return the code, account or error a remote-drive message shows for *event*."""
+    if event is None:
+        return "-"
+    if event.detail:
+        return event.detail
+    return str(event.error) if event.error is not None else "-"
+
+
+def remote_drive_wire_speeds(command: str, speed: float) -> tuple[int, int] | None:
+    """Return the session's (linear, angular) ints for a ``move_*`` *speed*, or None for reverse.
+
+    The app's joystick scaling (15 % dead zone, x10 linear, x4.5 angular), which is
+    also what the legacy ``move_*`` commands send for the same speed.
+    """
+    if (signs := _REMOTE_DRIVE_DIRECTIONS.get(command)) is None:
+        return None
+    rocker = int(max(speed * 100 - 15, 0))
+    return signs[0] * rocker * 10, signs[1] * int(rocker * 4.5)
+
+
+def _undecodable_field(exc: InvalidFieldValue) -> tuple[str, BaseException]:
+    """Return the dotted path of the field that failed and the innermost error."""
+    path = [exc.field_name]
+    innermost: BaseException = exc
+    while (cause := innermost.__cause__ or innermost.__context__) is not None:
+        if isinstance(cause, InvalidFieldValue):
+            path.append(cause.field_name)
+        innermost = cause
+    return ".".join(path), innermost
+
+
+def restore_device_state[StateT: DataClassDictMixin](
+    state_type: type[StateT], stored: object, device_name: str
+) -> StateT:
+    """Decode a stored device, dropping only the top-level sections that fail.
+
+    One stale sub-model must not take firmware, map and plans down with it.
+    """
+    if stored is None:
+        return state_type()
+    if isinstance(stored, Mapping):
+        data = dict(stored)
+        # Each failure drops one key, so this ends once every key has gone.
+        for _ in range(len(data) + 1):
+            try:
+                return state_type.from_dict(data)
+            except InvalidFieldValue as exc:
+                if exc.field_name not in data:
+                    break
+                path, reason = _undecodable_field(exc)
+                LOGGER.warning(
+                    "Dropping stored %s of %s: %s does not decode (%s)",
+                    exc.field_name,
+                    device_name,
+                    path,
+                    reason,
+                )
+                del data[exc.field_name]
+            except (MissingField, ValueError) as exc:
+                LOGGER.warning(
+                    "Stored state of %s does not decode: %s", device_name, exc
+                )
+                break
+    LOGGER.warning(
+        "Discarding the stored state of %s: nothing in it decodes", device_name
+    )
+    return state_type()
+
+
+def firmware_gated_reads(
+    device_name: str,
+    firmware: str,
+    rain_protection: RainProtectionSettings | None = None,
+) -> list[str]:
+    """Return the report coordinator's setting reads whose gate the device now passes.
+
+    Rain protection is gated at runtime rather than on firmware: its read is due once
+    the device proved support (self-check 34) without the values having been read.
+    """
+    reads = []
+    if DeviceType.is_luba_pro(device_name) and DeviceType.supports_wildlife_safety(
+        device_name, firmware
+    ):
+        reads.append("async_read_wildlife_safety")
+    if DeviceType.supports_charge_limit(device_name, firmware):
+        reads.extend(("async_read_battery_info", "async_read_charge_levels"))
+    if (
+        rain_protection is not None
+        and DeviceType.supports_rain_protection_modes(
+            device_name, probed=rain_protection.supported
+        )
+        and not rain_protection.reported
+    ):
+        reads.append("async_read_rain_protection")
+    return reads
+
+
+async def _async_run_setup_reads(
+    coordinator: MammotionReportUpdateCoordinator,
+    commands: list[tuple[str, dict[str, Any]]],
+) -> None:
+    """Send *commands* in order, skipping failures, under ``SETUP_COMMAND_BUDGET``.
+
+    A name that is not a coordinator method is sent through ``async_send_command``.
+    The budget keeps an unresponsive mower from holding up the config entry.
+    """
+    pending = [name for name, _ in commands]
+    try:
+        async with asyncio.timeout(SETUP_COMMAND_BUDGET.total_seconds()):
+            for command_name, kwargs in commands:
+                try:
+                    command_method = getattr(coordinator, command_name, None)
+                    if command_method is None:
+                        command_method = coordinator.async_send_command
+                        await command_method(command_name, **kwargs)
+                    else:
+                        await command_method(**kwargs)
+                except (
+                    DeviceOfflineException,
+                    NoTransportAvailableError,
+                    CommandTimeoutError,
+                    ConcurrentRequestError,
+                    BLEUnavailableError,
+                ) as exc:
+                    LOGGER.debug(
+                        "Command %s failed with exception: %s", command_name, exc
+                    )
+                # Not in a `finally`: when the budget expires mid-command this line
+                # is skipped, so the command that actually stalled stays in the list.
+                pending.remove(command_name)
+    except TimeoutError:
+        # Ours, not HA's: setup continues, the unread settings show their defaults
+        # until a later refresh picks them up.
+        LOGGER.warning(
+            "Setup reads for %s exceeded %ss; continuing without: %s",
+            coordinator.device_name,
+            SETUP_COMMAND_BUDGET.total_seconds(),
+            ", ".join(pending),
+        )
 
 
 class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # type: ignore[misc]
     """Mammotion DataUpdateCoordinator."""
 
-    def __init__(
+    remote_drive_nudge_s: float = REMOTE_DRIVE_NUDGE_S
+    #: Whether this coordinator owns its device's entry in the store; its siblings
+    #: see the same pushes and would save the same device again.
+    persists_device_state: bool = False
+    _pushed_state_saved_at: float | None = None
+    _startup_reads_running: bool = False
+    _startup_read_failures: int = 0
+
+    def __init__(  # noqa: PLR0917
         self,
         hass: HomeAssistant,
         config_entry: MammotionConfigEntry,
@@ -208,10 +417,13 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         # Public because the camera platform populates it from Agora and the
         # camera entity reads it back; the refresh below keeps it current.
         self.ice_servers: list[RTCIceServer] = []
-        self._agora_response = None
+        self._agora_response: APResponse | None = None
         # Set by the WebRTC camera entity so the start/stop_video services and
         # config-entry unload can drive the same teardown the frontend uses.
-        self._webrtc_session_control: WebRTCSessionControl | None = None
+        self._webrtc_session_controls: dict[str, WebRTCSessionControl] = {}
+        self._all_cameras_streaming = False
+        self._cameras_in_use: set[str] = set()
+        self._camera_session_lock = asyncio.Lock()
         self.service_info: BluetoothServiceInfoBleak | None = None
         assert config_entry.unique_id
         self.account = config_entry.data.get(CONF_ACCOUNTNAME, "")
@@ -238,6 +450,9 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             _user_account = 0
         self.commands = MammotionCommand(device.device_name, _user_account)
         self._subscriptions: list[Subscription] = []
+        self._remote_drive_subscription: Subscription | None = None
+        self._remote_drive_listeners: list[RemoteDriveListener] = []
+        self.remote_drive_last_event: RemoteDriveEvent | None = None
         self.map_offset_lat: float = 0.0
         self.map_offset_lon: float = 0.0
         self._store: MammotionConfigStore = async_get_store(hass, config_entry)
@@ -314,24 +529,28 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         await self._cloud_api_call(async_refresh_error_codes(self.hass, http))
 
     async def async_bring_up(self) -> None:
-        """Run the one-time setup hook, then refresh without raising.
+        """Run the setup hook until it succeeds, then refresh without raising.
 
         Home Assistant runs ``_async_setup`` only from the first-refresh path, which
-        the background bring-up does not use.  The hook wires the push subscriptions,
-        so it runs exactly once here; like Home Assistant's own guard, a failed setup
-        marks the coordinator failed and skips the refresh.
+        the background bring-up does not use.  The hook wires the push subscriptions;
+        the start-up reads it ends with retry from every refresh until they complete.
+        Like Home Assistant's own guard, a failed setup marks the coordinator failed
+        and skips the refresh; its partial wiring is dropped so a retry starts clean.
         """
         if not self._bring_up_done:
-            self._bring_up_done = True
             try:
                 await self._async_setup()
             except Exception as exc:  # noqa: BLE001 — mirrors DataUpdateCoordinator's setup guard
+                for sub in self._subscriptions:
+                    sub.cancel()
+                self._subscriptions.clear()
                 self.last_exception = exc
                 self.last_update_success = False
                 LOGGER.warning(
                     "%s: coordinator setup failed: %s", self.device_name, exc
                 )
                 return
+            self._bring_up_done = True
         await self.async_refresh()
 
     @property
@@ -351,7 +570,7 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
 
     async def async_check_stream_expiry(
         self, force: bool = False
-    ) -> tuple[StreamSubscriptionResponse | None, AgoraResponse | None]:
+    ) -> tuple[StreamSubscriptionResponse | None, APResponse | None]:
         """Return cached Agora stream data, refreshing only when the token is absent or stale."""
         now = time.monotonic()
         token_age = now - self._stream_data_fetched_at
@@ -370,8 +589,26 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
 
         try:
             stream_data = await self.manager.get_stream_subscription(
-                self.device_name, self.device.iot_id
+                self.device_name,
+                self.device.iot_id,
+                all_cameras=self.streams_all_cameras,
             )
+            if self.streams_all_cameras:
+                self._all_cameras_streaming = (
+                    stream_data is not None and stream_data.data is not None
+                )
+                if not self._all_cameras_streaming and (
+                    stream_data is None
+                    or stream_data.code not in (DEVICE_NOT_RESPONDING_CODE, 401)
+                ):
+                    LOGGER.warning(
+                        "All-camera stream token was not accepted (code %s); "
+                        "falling back to the left camera",
+                        stream_data.code if stream_data else "no_response",
+                    )
+                    stream_data = await self.manager.get_stream_subscription(
+                        self.device_name, self.device.iot_id
+                    )
             self.set_stream_data(stream_data)
             self._stream_data_fetched_at = time.monotonic()
 
@@ -391,47 +628,25 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
                 return None, self._agora_response
 
             if stream_data is not None and stream_data.data is not None:
-                LOGGER.debug("Received stream data: %s", stream_data)
-
-                # Get ICE servers from Agora API
+                LOGGER.debug(
+                    "Received stream data for channel %s (code %s)",
+                    stream_data.data.channelName,
+                    stream_data.code,
+                )
                 try:
-                    subscription = stream_data.data.to_dict()
-                    async with AgoraAPIClient() as agora_client:
-                        agora_response = await agora_client.choose_server(
-                            app_id=subscription["appid"],
-                            token=subscription["token"],
-                            channel_name=subscription["channelName"],
-                            user_id=int(subscription["uid"]),
-                            service_flags=[
-                                SERVICE_IDS["CHOOSE_SERVER"],  # Gateway addresses
-                                SERVICE_IDS["CLOUD_PROXY_FALLBACK"],  # TURN servers
-                            ],
-                        )
-
-                        # Get ICE servers and convert to RTCIceServer format - use only first TURN server to match SDK (3 entries)
-                        ice_servers_agora = agora_response.get_ice_servers(
-                            use_all_turn_servers=False
-                        )
-                        LOGGER.info("Ice Servers from Agora API:%s", ice_servers_agora)
-                        ice_servers = [
-                            RTCIceServer(
-                                urls=ice_server.urls,
-                                username=ice_server.username,
-                                credential=ice_server.credential,
-                            )
-                            for ice_server in ice_servers_agora
-                        ]
-
-                        # Store ICE servers in coordinator
-                        self.ice_servers = ice_servers
-                        self._agora_response = agora_response
-                        LOGGER.info(
-                            "Retrieved %d ICE servers from Agora API",
-                            len(ice_servers),
-                        )
-                except Exception:
-                    LOGGER.exception("Failed to get ICE servers from Agora API")
+                    agora_response = await async_choose_server(
+                        self.hass, stream_data.data
+                    )
+                # ValueError/TypeError: a token mammotion_credentials cannot convert.
+                except PyAgoraRTCError, ValueError, TypeError:
+                    LOGGER.exception("Agora edge discovery failed")
                     self.ice_servers = []
+                else:
+                    self.ice_servers = to_rtc_ice_servers(agora_response)
+                    self._agora_response = agora_response
+                    LOGGER.info(
+                        "Retrieved %d ICE servers from Agora", len(self.ice_servers)
+                    )
 
             LOGGER.debug("Stream token refreshed successfully")
         except Exception:
@@ -452,6 +667,16 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         return self._stream_data
 
     @property
+    def streams_all_cameras(self) -> bool:
+        """Whether token requests ask for every camera, not just the left one."""
+        return not DeviceType.is_luba1(self.device_name)
+
+    @property
+    def all_cameras_streaming(self) -> bool:
+        """Whether the latest token enabled the right (and a Yuka's rear) feed."""
+        return self._all_cameras_streaming
+
+    @property
     def is_on_4g(self) -> bool:
         """Return True when the device's active network interface is 4G/cellular."""
         device = self.manager.get_device_by_name(self.device_name)
@@ -462,15 +687,41 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
 
     @callback
     def register_webrtc_session_control(
-        self, control: WebRTCSessionControl | None
+        self,
+        control: WebRTCSessionControl | None,
+        camera_key: str = "default",
     ) -> None:
-        """Attach (or detach) the camera entity that owns this device's stream."""
-        self._webrtc_session_control = control
+        """Attach or detach one camera entity that owns this device's stream."""
+        if control is None:
+            self._webrtc_session_controls.pop(camera_key, None)
+        else:
+            self._webrtc_session_controls[camera_key] = control
+
+    async def async_register_camera_session(self, camera_key: str) -> None:
+        """Mark one of this mower's camera entities as having a viewer."""
+        async with self._camera_session_lock:
+            self._cameras_in_use.add(camera_key)
+
+    async def async_release_camera_session(self, camera_key: str) -> None:
+        """Stop the mower stream once no camera entity has a viewer left."""
+        async with self._camera_session_lock:
+            if camera_key not in self._cameras_in_use:
+                return
+            self._cameras_in_use.discard(camera_key)
+            if not self._cameras_in_use:
+                await self.leave_webrtc_channel()
+
+    @property
+    def has_active_camera_sessions(self) -> bool:
+        """Whether any of this mower's camera entities still has a viewer."""
+        return bool(self._cameras_in_use)
 
     async def join_webrtc_channel(self) -> None:
         """Start stream command."""
         await self.manager.get_stream_subscription(
-            self.device.device_name, self.device.iot_id
+            self.device.device_name,
+            self.device.iot_id,
+            all_cameras=self.streams_all_cameras,
         )
 
     async def leave_webrtc_channel(self) -> None:
@@ -478,11 +729,18 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
 
         Runs the same teardown as the frontend closing its session: leave the
         Agora channel, then stop the mower's encoder.  Without a camera entity
-        attached only the device-side half is possible.
+        attached only the device-side half is possible.  Every viewer is
+        forgotten, so the next offer mints a fresh token instead of reusing
+        the one for the stream just stopped.
         """
-        if self._webrtc_session_control is not None:
-            await self._webrtc_session_control.async_teardown_stream()
-            return
+        self._cameras_in_use.clear()
+        if self._webrtc_session_controls:
+            await asyncio.gather(
+                *(
+                    control.async_teardown_stream(stop_device=False)
+                    for control in self._webrtc_session_controls.values()
+                )
+            )
         await self.manager.stop_stream(self.device.device_name)
 
     async def set_scheduled_updates(self, enabled: bool) -> bool:
@@ -540,24 +798,64 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         """
 
     async def _async_ensure_startup_reads(self) -> None:
-        """Run :meth:`_async_startup_reads` once, and only while enabled."""
-        if self._startup_reads_done:
+        """Run :meth:`_async_startup_reads` until it completes, while enabled and reachable.
+
+        Called from setup and every refresh.  Reads sent with no usable transport
+        would all be dropped, so they wait; an escape is retried a bounded number of
+        times so a read that always fails cannot resend the batch on every refresh.
+        """
+        if (
+            self._startup_reads_done
+            or self._startup_reads_running
+            or self._startup_read_failures >= STARTUP_READ_ATTEMPTS
+        ):
             return
         device = self.manager.get_device_by_name(self.device_name)
-        if device is None or not device.enabled:
+        if device is None or not device.enabled or not self.is_online():
             return
+        self._startup_reads_running = True
+        try:
+            await self._async_startup_reads()
+        except ConfigEntryAuthFailed:
+            raise
+        except Exception as exc:  # noqa: BLE001 — best effort; never breaks setup or a refresh
+            self._startup_read_failures += 1
+            LOGGER.warning(
+                "%s: start-up reads failed (attempt %d of %d): %s",
+                self.device_name,
+                self._startup_read_failures,
+                STARTUP_READ_ATTEMPTS,
+                exc,
+            )
+            return
+        finally:
+            self._startup_reads_running = False
         self._startup_reads_done = True
-        await self._async_startup_reads()
 
-    def is_online(self) -> bool:
-        """Return True if the device currently has an active transport connection."""
+    def is_online(self, *, user_initiated: bool = False) -> bool:
+        """Return True if the device currently has an active transport connection.
+
+        *user_initiated* waives the cloud's advisory offline flag, as the library
+        does for a direct-priority send; a terminally failed transport still counts.
+
+        Raises:
+            AccountInUseError: *user_initiated*, and only the cloud could carry the
+                send while another session holds the account lock.
+
+        """
         device = self.manager.get_device_by_name(self.device_name)
         if device is None:
             return False
         handle = self.manager.mower(self.device_name)
         if handle is None:
             return bool(device.online)
-        return handle.has_usable_transport
+        if not user_initiated:
+            return handle.has_usable_transport
+        try:
+            handle.active_transport(user_initiated=True)
+        except NoTransportAvailableError:
+            return False
+        return True
 
     @property
     def mqtt_transport_connected(self) -> bool:
@@ -623,7 +921,7 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         if enabled:
             await handle.restart_keep_alive()
 
-    async def async_refresh_login(self, exc: Exception | None = None) -> None:
+    async def async_refresh_login(self, exc: Exception | None = None) -> None:  # noqa: C901
         """Refresh whichever credentials the failure actually implicates.
 
         LoginFailedError means an explicit login attempt was rejected, so the
@@ -717,7 +1015,11 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             ) from err
 
     @staticmethod
-    def _raise_if_user_waiting(priority: Priority, exc: Exception) -> None:
+    def _raise_if_user_waiting(
+        priority: Priority,
+        exc: BaseException | None,
+        translation_key: str = "command_failed",
+    ) -> None:
         """Surface a dropped command when a person is waiting on it.
 
         Background refreshes stay quiet — they retry on the next poll — but a user
@@ -725,65 +1027,109 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         """
         if priority.is_direct:
             raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="command_failed"
+                translation_domain=DOMAIN, translation_key=translation_key
             ) from exc
+
+    def _can_send(
+        self, priority: Priority, failure_key: str = "command_failed"
+    ) -> bool:
+        """Return whether a send can go out now; a direct priority raises instead of False."""
+        try:
+            if self.is_online(user_initiated=priority.is_direct):
+                return True
+        except AccountInUseError as exc:
+            self._raise_if_user_waiting(priority, exc, "account_in_use")
+            return False
+        self._raise_if_user_waiting(priority, None, failure_key)
+        return False
 
     async def async_send_and_wait(
         self,
         command: str,
         expected_field: str,
         priority: Priority = Priority.NORMAL,
+        failure_key: str = "command_failed",
         **kwargs: Any,
-    ) -> None:
-        """Send a command and wait for response with standard exception handling.
-
-        Handles credential expiry, gateway/transport timeouts, and device-offline
-        conditions uniformly.  Re-raises DeviceOfflineException after marking the
-        device offline so callers can bail out of their update loops.
+    ) -> bool:
+        """Send a command and wait for its reply; return whether the reply came.
 
         Pass ``priority=Priority.USER`` for a command a person is waiting on: it
-        spends past the library's self-imposed send quota, and a missing transport
-        is surfaced instead of logged, since silence is the one outcome the user
-        cannot act on.  See ``async_send_command`` for when that is appropriate.
+        spends past the library's self-imposed send quota, and every failure raises
+        (see ``_async_device_call``).  See ``async_send_command`` for when that is
+        appropriate.
         """
-        device = self.manager.get_device_by_name(self.device_name)
-        if device is None or not self.is_online():
-            return
-
-        try:
-            await self.manager.send_command_and_wait(
+        return await self._async_delivered(
+            lambda: self.manager.send_command_and_wait(
                 self.device_name,
                 command,
                 expected_field,
                 prefer_ble=self._bluetooth_enabled,
                 priority=priority,
                 **kwargs,
-            )
+            ),
+            priority,
+            failure_key,
+        )
+
+    async def _async_delivered(
+        self,
+        call: Callable[[], Awaitable[object]],
+        priority: Priority,
+        failure_key: str,
+    ) -> bool:
+        """Run *call* through ``_async_device_call``; return whether it completed."""
+
+        async def _completed() -> bool:
+            await call()
+            return True
+
+        return await self._async_device_call(_completed, priority, failure_key) is True
+
+    async def _async_device_call[ResultT](  # noqa: C901
+        self,
+        call: Callable[[], Awaitable[ResultT]],
+        priority: Priority,
+        failure_key: str = "command_failed",
+    ) -> ResultT | None:
+        """Run a library call that talks to the device; the one place send failures are mapped.
+
+        A background priority never raises for a failed send: it is logged and
+        ``None`` returned, since the next poll retries.  A direct priority raises a
+        ``HomeAssistantError`` for every failure instead: *failure_key* names it,
+        except a missing reply (``command_unconfirmed``, the command may have
+        landed) and a rate limit (``api_limit_exceeded``).
+        """
+        if not self._can_send(priority, failure_key):
+            return None
+
+        try:
+            result = await call()
         except EXPIRED_CREDENTIAL_EXCEPTIONS as exc:
             self.update_failures += 1
             await self.async_refresh_login(exc)
-        except DeviceOfflineException:
+            self._raise_if_user_waiting(priority, exc, failure_key)
+        except DeviceOfflineException as exc:
             device = self.manager.get_device_by_name(self.device_name)
             if device is not None:
                 self.device_offline(device)
+            self._raise_if_user_waiting(priority, exc, failure_key)
         except (TooManyRequestsException, TransportRateLimitedError) as exc:
-            # One message for both: TooManyRequestsException is the cloud's 429,
-            # TransportRateLimitedError is the ban or quota it left behind.  A USER
-            # command reaches the second one, and without this it surfaced as an
-            # untranslated library traceback.
-            raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="api_limit_exceeded"
-            ) from exc
-        except NoTransportAvailableError as exc:
-            LOGGER.debug("No Transport: %s", exc)
-            self._raise_if_user_waiting(priority, exc)
-        except (
-            GatewayTimeoutException,
-            CommandTimeoutError,
-            ConcurrentRequestError,
-        ):
-            pass
-        except asyncio.CancelledError:
+            # TooManyRequestsException is the cloud's 429, TransportRateLimitedError
+            # the ban or quota it left behind.
+            self._raise_if_user_waiting(priority, exc, "api_limit_exceeded")
+            LOGGER.debug("%s: send rate limited: %s", self.device_name, exc)
+        except AccountInUseError as exc:
+            self._raise_if_user_waiting(priority, exc, "account_in_use")
+            LOGGER.debug(
+                "%s: account held by another session: %s", self.device_name, exc
+            )
+        except CommandTimeoutError as exc:
+            # The command may have landed; only its reply is missing.
+            self._raise_if_user_waiting(priority, exc, "command_unconfirmed")
+        except FailedRequestException as exc:
+            self.update_failures += 1
+            self._raise_if_user_waiting(priority, exc, failure_key)
+        except asyncio.CancelledError as exc:
             # bleak_retry_connector raises CancelledError when no BLE slot is
             # available (it cancels its own internal sleep).  Re-raise only when
             # the enclosing task is genuinely being cancelled; otherwise treat it
@@ -795,6 +1141,19 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
                 "BLE connection cancelled (no available slot) for %s — skipping",
                 self.device_name,
             )
+            self._raise_if_user_waiting(priority, exc, failure_key)
+        except (
+            GatewayTimeoutException,
+            ConcurrentRequestError,
+            CommandRejectedError,
+            *COMMAND_EXCEPTIONS,
+        ) as exc:
+            self._raise_if_user_waiting(priority, exc, failure_key)
+            LOGGER.debug("%s: command not carried out: %s", self.device_name, exc)
+        else:
+            self.update_failures = 0
+            return result
+        return None
 
     @staticmethod
     def device_offline(device: MowingDevice | RTKBaseStationDevice) -> None:
@@ -843,9 +1202,16 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             )
 
     async def async_send_command(
-        self, command: str, priority: Priority = Priority.NORMAL, **kwargs: Any
-    ) -> bool | None:
-        """Send command via MammotionClient command queue.
+        self,
+        command: str,
+        priority: Priority = Priority.NORMAL,
+        failure_key: str = "command_failed",
+        **kwargs: Any,
+    ) -> bool:
+        """Send command via MammotionClient command queue; return whether it went out.
+
+        Failures are mapped by ``_async_device_call``: a background priority logs
+        and returns False, a direct one raises *failure_key*.
 
         ``priority=Priority.USER`` skips the queue and dispatches immediately, and
         spends past the library's self-imposed send quota (a cloud 429 still blocks).
@@ -859,110 +1225,19 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         light toggle queued behind a map sync still ends up correct and gains
         nothing from jumping it.
         """
-        device = self.manager.get_device_by_name(self.device_name)
-        if device is None or not self.is_online():
-            return False
-
-        try:
-            await self.manager.send_command_with_args(
+        prefer_ble = kwargs.pop("prefer_ble", self._bluetooth_enabled)
+        return await self._async_delivered(
+            lambda: self.manager.send_command_with_args(
                 self.device_name,
                 command,
-                prefer_ble=kwargs.pop("prefer_ble", self._bluetooth_enabled),
+                prefer_ble=prefer_ble,
                 skip_if_saga_active=False,
                 priority=priority,
                 **kwargs,
-            )
-        except FailedRequestException:
-            self.update_failures += 1
-        except EXPIRED_CREDENTIAL_EXCEPTIONS as exc:
-            self.update_failures += 1
-            await self.async_refresh_login(exc)
-        except GatewayTimeoutException as ex:
-            LOGGER.error("Gateway timeout exception: %s", ex.iot_id)
-            self.update_failures = 0
-            return False
-        except DeviceOfflineException:
-            self.device_offline(device)
-        except (TooManyRequestsException, TransportRateLimitedError) as exc:
-            # One message for both: TooManyRequestsException is the cloud's 429,
-            # TransportRateLimitedError is the ban or quota it left behind.  A USER
-            # command reaches the second one, and without this it surfaced as an
-            # untranslated library traceback.
-            raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="api_limit_exceeded"
-            ) from exc
-        except NoTransportAvailableError as exc:
-            LOGGER.debug(
-                "No transport connected yet for %s, command '%s' skipped",
-                self.device_name,
-                command,
-            )
-            raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="command_failed"
-            ) from exc
-            return False
-        except asyncio.CancelledError:
-            task = asyncio.current_task()
-            if task is not None and task.cancelling() > 0:
-                raise
-            LOGGER.debug(
-                "BLE connection cancelled (no available slot) for %s — skipping",
-                self.device_name,
-            )
-            return False
-        else:
-            self.update_failures = 0
-            return True
-        return False
-
-    async def async_send_cloud_command(
-        self, iot_id: str, command: bytes
-    ) -> bool | None:
-        """Send a raw cloud command via the device's active transport."""
-        device = self.manager.get_device_by_name(self.device_name)
-        if device is None or not self.is_online():
-            return False
-        handle = self.manager.mower(self.device_name)
-        if handle is None:
-            return False
-
-        try:
-            await handle.send_raw(command)
-        except FailedRequestException:
-            self.update_failures += 1
-        except EXPIRED_CREDENTIAL_EXCEPTIONS as exc:
-            self.update_failures += 1
-            await self.async_refresh_login(exc)
-        except GatewayTimeoutException as ex:
-            LOGGER.error("Gateway timeout exception: %s", ex.iot_id)
-            self.update_failures = 0
-            return False
-        except (DeviceOfflineException, NoTransportAvailableError) as ex:
-            LOGGER.error("Device offline: %s", ex.iot_id)
-            self.device_offline(device)
-            return False
-        except (TooManyRequestsException, TransportRateLimitedError) as exc:
-            # One message for both: TooManyRequestsException is the cloud's 429,
-            # TransportRateLimitedError is the ban or quota it left behind.  A USER
-            # command reaches the second one, and without this it surfaced as an
-            # untranslated library traceback.
-            raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="api_limit_exceeded"
-            ) from exc
-        except ReLoginRequiredError as err:
-            raise ConfigEntryAuthFailed(
-                f"Re-authentication required for Mammotion account: {err}"
-            ) from err
-        else:
-            self.update_failures = 0
-            return True
-        return False
-
-    async def async_send_bluetooth_command(
-        self, key: str, priority: Priority = Priority.NORMAL, **kwargs: Any
-    ) -> None:
-        """Send command via BLE transport."""
-        await self.async_send_command(key, priority=priority, prefer_ble=True, **kwargs)
+            ),
+            priority,
+            failure_key,
+        )
 
     async def check_firmware_version(self) -> None:
         """Check if firmware version is updated."""
@@ -1110,8 +1385,8 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             if self._can_retry_after_refresh():
                 await self.manager.start_map_sync(self.device_name)
 
-    async def async_sync_schedule(self) -> None:
-        """Sync all scheduled mowing plans from the device via PlanFetchSaga."""
+    async def async_sync_tasks(self) -> None:
+        """Sync all mowing tasks (plans) from the device via PlanFetchSaga."""
         try:
             await self.manager.start_plan_sync(self.device_name)
         except EXPIRED_CREDENTIAL_EXCEPTIONS as exc:
@@ -1156,9 +1431,10 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         )
 
     async def async_start_stop_blades(
-        self, start_stop: bool, blade_height: int = 60
+        self, start_stop: bool, blade_height: int | None = None
     ) -> None:
-        """Start stop blades."""
+        """Start or stop the blades at *blade_height*, else at ``blade_height`` the property."""
+        blade_height = blade_height or self.blade_height or BLADE_HEIGHT_FALLBACK_MM
         if DeviceType.is_luba1(self.device_name):
             if start_stop:
                 await self.async_send_and_wait(
@@ -1233,11 +1509,9 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
     def _rw_expected_field(self, rw_id: int) -> str:
         """Return the expected response field for a read_write_device command.
 
-        Mirrors the routing in MammotionCommand.read_write_device(): only
-        rw_ids [3, 6, 7, 8, 10, 11] on Pro/X3 devices are sent via the nav
-        adapter (nav_sys_param_cmd).  Every other rw_id — including 12 and 13
-        used for wildlife safety — always goes through allpowerfull_rw() and
-        responds on bidire_comm_cmd, regardless of device type.
+        Mirrors the routing in MammotionCommand.read_write_device() for the
+        generic ids: [3, 6, 7, 8, 10, 11] go via the nav adapter
+        (nav_sys_param_cmd) on Pro/X3 devices, via bidire_comm_cmd otherwise.
         """
         if rw_id in (3, 6, 7, 8, 10, 11) and DeviceType.is_luba_pro(self.device_name):
             return "nav_sys_param_cmd"
@@ -1267,6 +1541,36 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             rw=0,
         )
 
+    async def async_read_rain_protection(self) -> None:
+        """Read the rain-protection mode and delay; an answer is also what proves support."""
+        await self._async_device_call(
+            lambda: self.manager.read_rain_protection(self.device_name),
+            Priority.NORMAL,
+        )
+
+    async def async_set_rain_protection_mode(self, mode: RainProtectionMode) -> None:
+        """Set the rain-protection mode; Sensor mode resends the delay last used."""
+        await self._async_set_rain_protection(mode)
+
+    async def async_set_rain_protection_delay(self, delay_hours: int) -> None:
+        """Set the Sensor-mode delay, which the app only offers in Sensor mode."""
+        await self._async_set_rain_protection(RainProtectionMode.sensor, delay_hours)
+
+    async def _async_set_rain_protection(
+        self, mode: RainProtectionMode, delay_hours: int | None = None
+    ) -> None:
+        sync = await self._async_device_call(
+            lambda: self.manager.set_rain_protection(
+                self.device_name, mode, delay_hours
+            ),
+            Priority.USER,
+        )
+        if sync is WeatherServerSync.FAILED:
+            LOGGER.warning(
+                "%s: rain protection was set on the mower but the weather server was not updated",
+                self.device_name,
+            )
+
     async def async_read_battery_info(self) -> None:
         """Read the battery charge limit and off-peak charging settings."""
         await self.async_send_and_wait("query_battery_info", "bms_ctrl_info_msg")
@@ -1281,22 +1585,62 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         Switching it off keeps the limit the device last reported, which is 100
         while smart charging is active — the same value the app sends.
         """
-        current = self.data.mower_state.charge_settings
-        await self._async_set_battery_info(smart_charge, current.charge_limit or 100)
+        await self._async_set_battery_info(smart_charge)
 
     async def _async_set_battery_info(
-        self, smart_charge: bool, charge_limit: int
+        self, smart_charge: bool, charge_limit: int | None = None
     ) -> None:
-        """Send bms_ctrl_info_msg, resending the off-peak window it would otherwise reset."""
-        current = self.data.mower_state.charge_settings
+        """Send bms_ctrl_info_msg, resending the off-peak window it would otherwise reset.
+
+        *charge_limit* defaults to the reported one.  Unread settings are read
+        first, and the write is refused if they stay unread: sending defaults
+        would reset the device's window to 00:00-00:00.
+        """
+        current = self._reported_charge_settings()
+        if not current.reported:
+            await self.async_read_battery_info()
+            current = self._reported_charge_settings()
+        if not current.reported:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="battery_settings_unread"
+            )
         await self.async_send_and_wait(
             "set_battery_info",
             "bms_ctrl_info_msg",
+            priority=Priority.USER,
             smart_charge=smart_charge,
-            charge_limit=charge_limit,
+            charge_limit=current.charge_limit if charge_limit is None else charge_limit,
             peak_valley_charge=current.peak_valley_charge,
             valley_charge_start_time=current.valley_charge_start_time,
             valley_charge_end_time=current.valley_charge_end_time,
+        )
+
+    def _reported_charge_settings(self) -> ChargeSettings:
+        """Return the library's charge settings; ``data`` trails a reply by the push debounce."""
+        device = self.manager.get_device_by_name(self.device_name) or self.data
+        return cast(MowingDevice, device).mower_state.charge_settings
+
+    async def async_read_charge_levels(self) -> None:
+        """Read the return-to-charge and resume-mowing battery levels."""
+        await self.async_send_and_wait("read_recharge_level", "nav_sys_param_cmd")
+        await self.async_send_and_wait("read_resume_level", "nav_sys_param_cmd")
+
+    async def async_set_recharge_level(self, level: int) -> None:
+        """Set the level the mower returns to charge at, or ``SMART_CHARGE_LEVEL``."""
+        await self.async_send_and_wait(
+            "set_recharge_level",
+            "nav_sys_param_cmd",
+            priority=Priority.USER,
+            level=level,
+        )
+
+    async def async_set_resume_level(self, level: int) -> None:
+        """Set the level the mower resumes mowing at, or ``SMART_CHARGE_LEVEL``."""
+        await self.async_send_and_wait(
+            "set_resume_level",
+            "nav_sys_param_cmd",
+            priority=Priority.USER,
+            level=level,
         )
 
     async def async_set_sidelight(self, on_off: int) -> None:
@@ -1367,34 +1711,22 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
     async def async_set_wildlife_safety(self, mode: int) -> None:
         """Set wildlife safety mode (0=off, 1=stop mowing, 2=low-speed mowing).
 
-        Sends rw_id=13 (status) first, then rw_id=12 (mode).  Both are sent
-        via the device-appropriate channel (_rw_expected_field).
+        The app writes only the mode; the device derives the status from it.
         """
-        status = 0 if mode == 0 else 1
         await self.async_send_and_wait(
-            "read_write_device",
-            self._rw_expected_field(13),
+            "set_animal_protection_mode",
+            "nav_sys_param_cmd",
             priority=Priority.USER,
-            rw_id=13,
-            context=status,
-            rw=1,
-        )
-        await self.async_send_and_wait(
-            "read_write_device",
-            self._rw_expected_field(12),
-            priority=Priority.USER,
-            rw_id=12,
-            context=mode,
-            rw=1,
+            mode=mode,
         )
 
     async def async_read_wildlife_safety(self) -> None:
-        """Read current wildlife safety status and mode from device."""
+        """Read wildlife safety mode and status from device."""
         await self.async_send_and_wait(
-            "read_write_device", self._rw_expected_field(13), rw_id=13, context=0, rw=0
+            "read_animal_protection_mode", "nav_sys_param_cmd"
         )
         await self.async_send_and_wait(
-            "read_write_device", self._rw_expected_field(12), rw_id=12, context=0, rw=0
+            "read_animal_protection_status", "nav_sys_param_cmd"
         )
 
     async def async_set_turning_mode(self, context: int) -> None:
@@ -1481,6 +1813,23 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         """
         await self.send_command_and_update(
             "start_no_area_work", "todev_taskctrl_ack", priority=Priority.USER
+        )
+
+    async def async_continue_last_job(self) -> None:
+        """Resume the mower's latest interrupted job (the app's "Continue last job").
+
+        The job and whether it may be resumed come only from the cloud's newest
+        work report, so it is fetched on press rather than polled.
+        """
+        record = await self.manager.get_latest_work_report(self.device_name)
+        if record is None or not record.can_resume:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="no_job_to_continue"
+            )
+        await self.send_command_and_update(
+            "continue_last_job",
+            priority=Priority.USER,
+            work_id=int(record.work_id or 0),
         )
 
     async def async_cancel_task(self) -> None:
@@ -1596,56 +1945,225 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
 
         await self.manager.add_ble_to_device(self.device_name, ble_device)
 
-    async def async_move_forward(self, speed: float, use_wifi: bool = False) -> None:
-        """Move forward. Prefer BLE unless use_wifi=True (lower latency for manual control)."""
-        if not use_wifi:
-            await self._async_ensure_ble_client()
-        await self.async_send_command(
-            "move_forward",
-            priority=Priority.USER,
-            prefer_ble=not use_wifi,
-            linear=speed,
+    def movement_path(self, use_wifi: bool | None = None) -> MovementPath:
+        """Decide how a manual movement reaches the mower; every movement caller asks this.
+
+        An explicit *use_wifi* wins.  Otherwise the "movement over Wi-Fi" option sends
+        the legacy cloud command, then a usable BLE link, then an ACTIVE remote-drive
+        session on a mower that supports one.  Re-read on every call, so firmware or a
+        function list arriving after setup is picked up.
+        """
+        if use_wifi is not None:
+            return MovementPath.LEGACY_CLOUD if use_wifi else MovementPath.BLE
+        if self.config_entry is not None and self.config_entry.options.get(
+            CONF_MOVEMENT_USE_WIFI, False
+        ):
+            return MovementPath.LEGACY_CLOUD
+        if (handle := self.handle) is None:
+            return MovementPath.NONE
+        if (
+            ble := handle.get_transport(TransportType.BLE)
+        ) is not None and ble.is_usable:
+            return MovementPath.BLE
+        session = handle.remote_drive
+        if (
+            session is None
+            or session.phase is not RemoteDrivePhase.ACTIVE
+            or not handle.supports_wifi_movement()
+        ):
+            return MovementPath.NONE
+        if session.fence_paused:
+            return MovementPath.FENCE_PAUSED
+        return MovementPath.REMOTE_DRIVE
+
+    def can_move(self, command: str) -> bool:
+        """Whether *command* (``move_forward`` …) can reach the mower right now."""
+        match self.movement_path():
+            case MovementPath.BLE | MovementPath.LEGACY_CLOUD:
+                return True
+            case MovementPath.REMOTE_DRIVE:
+                return command in _REMOTE_DRIVE_DIRECTIONS
+        return False
+
+    async def _async_move(
+        self, command: str, use_wifi: bool | None, *, axis: str, speed: float
+    ) -> None:
+        """Send one movement down the path :meth:`movement_path` picks."""
+        match self.movement_path(use_wifi):
+            case MovementPath.BLE:
+                await self._async_ensure_ble_client()
+                await self.async_send_command(
+                    command, priority=Priority.USER, prefer_ble=True, **{axis: speed}
+                )
+            case MovementPath.LEGACY_CLOUD:
+                await self.async_send_command(
+                    command, priority=Priority.USER, prefer_ble=False, **{axis: speed}
+                )
+            case MovementPath.REMOTE_DRIVE:
+                if (wire := remote_drive_wire_speeds(command, speed)) is None:
+                    raise HomeAssistantError(
+                        translation_domain=DOMAIN,
+                        translation_key="remote_drive_no_reverse",
+                    )
+                await self.async_remote_drive_nudge(*wire)
+            case MovementPath.FENCE_PAUSED:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN,
+                    translation_key="remote_drive_fence_paused",
+                )
+            case MovementPath.NONE:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN, translation_key="movement_unavailable"
+                )
+
+    async def async_move_forward(
+        self, speed: float, use_wifi: bool | None = None
+    ) -> None:
+        """Move forward; an explicit ``use_wifi`` overrides :meth:`movement_path`."""
+        await self._async_move("move_forward", use_wifi, axis="linear", speed=speed)
+
+    async def async_move_left(self, speed: float, use_wifi: bool | None = None) -> None:
+        """Move left; ``use_wifi`` as for :meth:`async_move_forward`."""
+        await self._async_move("move_left", use_wifi, axis="angular", speed=speed)
+
+    async def async_move_right(
+        self, speed: float, use_wifi: bool | None = None
+    ) -> None:
+        """Move right; ``use_wifi`` as for :meth:`async_move_forward`."""
+        await self._async_move("move_right", use_wifi, axis="angular", speed=speed)
+
+    async def async_move_back(self, speed: float, use_wifi: bool | None = None) -> None:
+        """Move back; ``use_wifi`` as for :meth:`async_move_forward`."""
+        await self._async_move("move_back", use_wifi, axis="linear", speed=speed)
+
+    def supports_remote_drive(self) -> bool:
+        """Whether the mower accepts cloud remote drive; pymammotion's rule."""
+        return (handle := self.handle) is not None and handle.supports_wifi_movement()
+
+    @property
+    def remote_drive_phase(self) -> RemoteDrivePhase:
+        """The session's phase; IDLE before one was ever started."""
+        if (handle := self.handle) is None or (session := handle.remote_drive) is None:
+            return RemoteDrivePhase.IDLE
+        return session.phase
+
+    @property
+    def remote_drive_fence_paused(self) -> bool:
+        """True while the mower is stopped at the fence and waits for an acknowledgement."""
+        if (handle := self.handle) is None or (session := handle.remote_drive) is None:
+            return False
+        return session.fence_paused
+
+    @callback
+    def async_add_remote_drive_listener(
+        self, listener: RemoteDriveListener
+    ) -> CALLBACK_TYPE:
+        """Call *listener* with every remote-drive event; returns the remover."""
+        self._remote_drive_listeners.append(listener)
+        return lambda: self._remote_drive_listeners.remove(listener)
+
+    async def _async_on_remote_drive_event(self, event: RemoteDriveEvent) -> None:
+        self.remote_drive_last_event = event
+        for listener in list(self._remote_drive_listeners):
+            await listener(event)
+        self.async_update_listeners()
+
+    async def _async_request_remote_drive(self) -> bool:
+        """Ask the library for the drive token, translating the refusals it names."""
+        try:
+            return await self.manager.start_remote_drive(self.device_name)
+        except NoTransportAvailableError as exc:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="remote_drive_needs_cloud"
+            ) from exc
+        except RemoteDriveError as exc:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="remote_drive_already_running",
+            ) from exc
+        except Exception as exc:
+            # The token request is HTTP; a dropped connection is not one of the
+            # send failures _async_device_call maps.
+            if not is_transient_network_error(exc):
+                raise
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key=_REMOTE_DRIVE_START_FAILED
+            ) from exc
+
+    async def async_start_remote_drive(self) -> None:
+        """Request the drive token; the session then waits for the user to confirm."""
+        if self._remote_drive_subscription is None:
+            self._remote_drive_subscription = self.manager.subscribe_remote_drive(
+                self.device_name, self._guarded(self._async_on_remote_drive_event)
+            )
+        try:
+            if not self.is_online(user_initiated=True):
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN,
+                    translation_key="remote_drive_needs_cloud",
+                )
+            started = await self._async_device_call(
+                self._async_request_remote_drive,
+                Priority.USER,
+                _REMOTE_DRIVE_START_FAILED,
+            )
+        except AccountInUseError as exc:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="account_in_use"
+            ) from exc
+        finally:
+            self.async_update_listeners()
+        if started:
+            return
+        # The refusal's event was emitted during start and says why.
+        event = self.remote_drive_last_event
+        kind = RemoteDriveEventKind.TOKEN_UNAVAILABLE
+        if event is not None and event.kind is RemoteDriveEventKind.OCCUPIED_BY_OTHER:
+            kind = event.kind
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key=f"remote_drive_{kind.value}",
+            translation_placeholders={"detail": remote_drive_detail(event)},
         )
 
-    async def async_move_left(self, speed: float, use_wifi: bool = False) -> None:
-        """Move left. Prefer BLE unless use_wifi=True."""
-        if not use_wifi:
-            await self._async_ensure_ble_client()
-        await self.async_send_command(
-            "move_left",
-            priority=Priority.USER,
-            prefer_ble=not use_wifi,
-            angular=speed,
-        )
+    async def async_confirm_remote_drive(self) -> None:
+        """Confirm the safety notice: the area is clear and the mower stays in sight."""
+        try:
+            await self.manager.confirm_remote_drive(self.device_name)
+        except RemoteDriveError as exc:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="remote_drive_not_awaiting_confirmation",
+            ) from exc
+        finally:
+            self.async_update_listeners()
 
-    async def async_move_right(self, speed: float, use_wifi: bool = False) -> None:
-        """Move right. Prefer BLE unless use_wifi=True."""
-        if not use_wifi:
-            await self._async_ensure_ble_client()
-        await self.async_send_command(
-            "move_right",
-            priority=Priority.USER,
-            prefer_ble=not use_wifi,
-            angular=speed,
-        )
+    async def async_remote_drive_nudge(self, linear: int, angular: int) -> None:
+        """Drive at (*linear*, *angular*) wire units briefly, then let go."""
+        await self.manager.remote_drive(self.device_name, linear, angular)
+        try:
+            await asyncio.sleep(self.remote_drive_nudge_s)
+        finally:
+            await self.manager.remote_drive(self.device_name, 0, 0)
 
-    async def async_move_back(self, speed: float, use_wifi: bool = False) -> None:
-        """Move back. Prefer BLE unless use_wifi=True."""
-        if not use_wifi:
-            await self._async_ensure_ble_client()
-        await self.async_send_command(
-            "move_back",
-            priority=Priority.USER,
-            prefer_ble=not use_wifi,
-            linear=speed,
-        )
+    async def async_stop_remote_drive(self) -> None:
+        """Stop the mower and release the drive token; a no-op with no session."""
+        if (handle := self.handle) is None or handle.remote_drive is None:
+            return
+        await self.manager.stop_remote_drive(self.device_name)
+        self.async_update_listeners()
 
-    async def async_rtk_dock_location(self) -> None:
-        """RTK and dock location."""
+    async def async_acknowledge_remote_drive_fence(self) -> None:
+        """Resume input after the mower stopped at the fence."""
+        self.manager.acknowledge_remote_drive_fence(self.device_name)
+        self.async_update_listeners()
+
+    async def async_rtk_dock_location(self, priority: Priority = Priority.USER) -> None:
+        """Read the RTK and dock location; background callers pass their own priority."""
         await self.async_send_and_wait(
             "read_write_device",
             "bidire_comm_cmd",
-            priority=Priority.USER,
+            priority=priority,
             rw_id=5,
             rw=1,
             context=1,
@@ -1709,20 +2227,90 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         await self.async_get_reports(count=5)
 
     async def async_request_report_snapshot(self) -> None:
-        """Fire a one-shot count=1 snapshot; no-op while BLE stream is active."""
-        await self.manager.request_report_snapshot(self.device_name)
+        """Fire a one-shot count=1 snapshot; no-op while BLE stream is active.
+
+        Background: it follows user actions in a ``finally``, where a raise would
+        replace the action's own outcome.
+        """
+        await self._async_device_call(
+            lambda: self.manager.request_report_snapshot(self.device_name),
+            Priority.BACKGROUND,
+        )
 
     async def async_start_report_stream(self, duration_ms: int = 300_000) -> None:
-        """Start a transient continuous report window via the library."""
-        await self.manager.start_report_stream(self.device_name, duration_ms)
+        """Start a transient continuous report window via the library; failures are logged."""
+        await self._async_device_call(
+            lambda: self.manager.start_report_stream(self.device_name, duration_ms),
+            Priority.BACKGROUND,
+        )
 
     async def async_get_reports(self, count: int = 5) -> None:
         """Get reports from the device."""
         await self.manager.request_reports(self.device_name, count=count)
 
-    async def async_ensure_fresh_state(self) -> None:
-        """Fire a one-shot snapshot if device state is older than 2 minutes."""
-        await self.manager.ensure_fresh_state(self.device_name, max_age_s=120.0)
+    async def async_ensure_fresh_state(self, *, wait: bool = False) -> None:
+        """Refresh device state older than ``FRESH_STATE_MAX_AGE_S``.
+
+        Without *wait* a one-shot snapshot is fired and forgotten.  With it, for a
+        user action about to read the state, the report is awaited on the user path;
+        a mower silent past ``FRESH_STATE_TIMEOUT`` leaves the current snapshot to
+        act on, and any other failure raises ``command_failed``.
+        """
+        if not wait:
+            await self._async_device_call(
+                lambda: self.manager.ensure_fresh_state(
+                    self.device_name, max_age_s=FRESH_STATE_MAX_AGE_S
+                ),
+                Priority.BACKGROUND,
+            )
+            return
+
+        async def _fresh_report() -> None:
+            try:
+                async with asyncio.timeout(FRESH_STATE_TIMEOUT):
+                    await self.manager.ensure_fresh_state(
+                        self.device_name, max_age_s=FRESH_STATE_MAX_AGE_S, wait=True
+                    )
+            except TimeoutError:
+                LOGGER.debug(
+                    "%s: no fresh report in time, acting on the current state",
+                    self.device_name,
+                )
+
+        await self._async_device_call(_fresh_report, Priority.USER)
+
+    async def async_wait_for(
+        self,
+        predicate: Callable[[DataT], bool],
+        *,
+        timeout: float,
+        failure_key: str = "command_failed",
+    ) -> DataT:
+        """Return the device state once *predicate* holds, within *timeout* seconds.
+
+        The library asks for a report while the device is silent.  A direct wait:
+        running out of time, like every other failure, raises *failure_key*.
+        """
+        state = await self._async_device_call(
+            lambda: self.manager.wait_for(
+                self.device_name,
+                cast("Callable[[DeviceModel], bool]", predicate),
+                timeout=timeout,
+            ),
+            Priority.USER,
+            failure_key,
+        )
+        return cast(DataT, state)
+
+    async def async_refresh_status(self) -> None:
+        """Request a status report now, for a press of the refresh-status button.
+
+        Unlike ``async_ensure_fresh_state`` this is user-initiated: the library sends
+        it on this task, past the cloud's offline flag, and a failure is surfaced.
+        """
+        await self._async_device_call(
+            lambda: self.manager.refresh_status(self.device_name), Priority.USER
+        )
 
     async def send_svg_command(self, svg_message: SvgMessage) -> int | None:
         """Send an SVG tile to the device using the multi-frame saga protocol.
@@ -1775,54 +2363,15 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         self, operation_settings: OperationSettings
     ) -> GenerateRouteInformation:
         """Generate route information."""
-        device: MowingDevice = cast(MowingDevice, self.data)
-        if device.report_data.dev:
-            dev = device.report_data.dev
-            if dev.collector_status.collector_installation_status == 0:
-                operation_settings.is_dump = False
-
-        if DeviceType.is_yuka(self.device_name):
-            operation_settings.blade_height = -10
-
-        route_information = GenerateRouteInformation(
-            one_hashs=list(operation_settings.areas),
-            rain_tactics=operation_settings.rain_tactics,
-            speed=operation_settings.speed,
-            ultra_wave=operation_settings.ultra_wave,  # touch no touch etc
-            toward=operation_settings.toward,  # is just angle (route angle)
-            toward_included_angle=operation_settings.toward_included_angle  # demond_angle
-            if operation_settings.channel_mode == 1
-            else 0,  # crossing angle relative to grid
-            toward_mode=operation_settings.toward_mode,
-            blade_height=operation_settings.blade_height,
-            channel_mode=operation_settings.channel_mode,  # single, double, segment or none (route mode)
-            channel_width=operation_settings.channel_width,  # path space
-            job_mode=operation_settings.job_mode,  # taskMode grid or border first
-            edge_mode=operation_settings.mowing_laps,  # perimeter/mowing laps
-            path_order=create_path_order(operation_settings, self.device_name),
-            obstacle_laps=operation_settings.obstacle_laps,
-            auto_change_direction=operation_settings.auto_change_direction,
-        )
-
-        if DeviceType.is_luba1(self.device_name):
-            route_information.toward_mode = 0
-            route_information.toward_included_angle = 0
-        firmware = getattr(
-            getattr(self.data, "device_firmwares", None), "device_version", ""
-        )
-        if not DeviceType.supports_auto_change_direction(
-            self.device_name, firmware or ""
-        ):
-            # The app gates this row on a capability list and firmware; match it.
-            route_information.auto_change_direction = 0
-        return route_information
+        return build_route_information(self.device_name, self.data, operation_settings)
 
     async def async_plan_route(
         self,
         operation_settings: OperationSettings,
         priority: Priority = Priority.NORMAL,
-    ) -> bool | None:
-        """Plan mow."""
+        failure_key: str = "command_failed",
+    ) -> bool:
+        """Plan mow; return whether the device answered the plan."""
         route_information = self.generate_route_information(operation_settings)
 
         # not sure if this is artificial limit
@@ -1831,13 +2380,20 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         #     and route_information.toward_mode == 0
         # ):
         #     route_information.toward = 0
-        await self.async_send_and_wait(
+        return await self.async_send_and_wait(
             "generate_route_information",
             "bidire_reqconver_path",
             priority=priority,
+            failure_key=failure_key,
             generate_route_information=route_information,
         )
-        return True
+
+    def _ble_is_connected(self) -> bool:
+        """Return True if BLE transport exists and is currently connected."""
+        if handle := self.manager.mower(self.device_name):
+            if ble := handle.get_transport(TransportType.BLE):
+                return ble.is_connected
+        return False
 
     async def async_get_plan_route(self, operation_settings: OperationSettings) -> None:
         """Fetch the previously generated mow path from the device without replanning."""
@@ -1853,10 +2409,11 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         self,
         operation_settings: OperationSettings,
         priority: Priority = Priority.NORMAL,
-    ) -> bool | None:
-        """Modify plan mow.
+        failure_key: str = "command_failed",
+    ) -> bool:
+        """Modify plan mow; return whether the command went out.
 
-        Reached both from a user pressing start (``Priority.USER``) and from
+        Reached both from user actions (``Priority.USER``) and from
         ``async_modify_plan_if_mowing`` re-planning on its own, so the caller
         decides — this must not be marked USER wholesale.
         """
@@ -1867,6 +2424,11 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             operation_settings.toward_mode = work.toward_mode
             operation_settings.toward_included_angle = work.toward_included_angle
             operation_settings.mowing_laps = work.edge_mode
+            operation_settings.ride_boundary_distance = work.ride_boundary_distance
+            if work.auto_change_direction is not None:
+                operation_settings.auto_change_direction = int(
+                    work.auto_change_direction
+                )
             operation_settings.job_mode = work.job_mode
             operation_settings.job_id = work.job_id
             operation_settings.job_version = work.job_ver
@@ -1876,6 +2438,7 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         return await self.async_send_command(
             "modify_route_information",
             priority=priority,
+            failure_key=failure_key,
             generate_route_information=route_information,
         )
 
@@ -1995,6 +2558,19 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         """Return operation settings for planning."""
         return self._operation_settings
 
+    @property
+    def blade_height(self) -> int | None:
+        """Return the planned blade height, else the mower's reported one; None while neither is known.
+
+        0 is the unset default on both sides.  The Blade height number adopts this
+        and a blade start without a height sends it.
+        """
+        return (
+            self._operation_settings.blade_height
+            or cast(MowingDevice, self.data).report_data.work.knife_height
+            or None
+        )
+
     def _is_route_job_running(self) -> bool:
         """Return True while a route mow is in progress and not yet complete.
 
@@ -2025,6 +2601,7 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         settings.toward_mode = work.toward_mode
         settings.toward_included_angle = work.toward_included_angle
         settings.mowing_laps = work.edge_mode
+        settings.ride_boundary_distance = work.ride_boundary_distance
         settings.job_mode = work.job_mode
         settings.job_id = work.job_id
         settings.job_version = work.job_ver
@@ -2033,15 +2610,14 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         settings.ultra_wave = work.ultra_wave
         settings.channel_mode = work.channel_mode
         settings.blade_height = work.knife_height
-        settings.auto_change_direction = work.auto_change_direction
+        if (auto_change := work.auto_change_direction) is not None:
+            settings.auto_change_direction = int(auto_change)
         # create_path_order rebuilds the reserved buffer from these three, so
         # without seeding them a mid-job tweak ships the planning values —
         # notably start_progress, which would otherwise go out as whatever the
         # slider happens to hold rather than where the mower actually is.
         if work.reserved:
-            order = GenerateRouteInformation.decode_path_order(
-                _reserved_without_echo(work.reserved)
-            )
+            order = GenerateRouteInformation.decode_path_order(work.reserved)
             settings.border_mode = order.edge_mode
             settings.obstacle_laps = order.obstacle_laps
             settings.start_progress = order.start_progress
@@ -2051,7 +2627,9 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         if self._is_route_job_running():
             await self.async_modify_plan_route(self.operation_settings)
 
-    async def async_change_blade_height_if_working(self) -> None:
+    async def async_change_blade_height_if_working(
+        self, *, priority: Priority = Priority.NORMAL
+    ) -> None:
         """Apply a blade-height change to a running job the way the app does.
 
         Mirrors ``HomeMapFragment`` WorkingOptionView.onConfirm: Luba 2 and
@@ -2073,25 +2651,40 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             return
         self._seed_operation_settings_from_running_job()
         self._operation_settings.blade_height = new_height
-        await self.async_modify_plan_route(self._operation_settings)
+        await self.async_modify_plan_route(self._operation_settings, priority=priority)
 
-    async def _apply_route_field_if_working(self, field: str) -> None:
+    async def _apply_route_field_if_working(
+        self, field: str, priority: Priority
+    ) -> None:
         """Re-issue the running job's route with a single route field changed.
 
         The value is read off ``operation_settings`` first, because an entity
-        has already written it there.
+        has already written it there. An idle change only stores the setting.
         """
+        if self._running_job_refusal() is not None:
+            return
         await self.async_modify_running_job(
-            **{field: getattr(self._operation_settings, field)}
+            priority=priority, **{field: getattr(self._operation_settings, field)}
         )
 
-    async def async_modify_running_job(self, **changes: Any) -> bool:
+    def _running_job_refusal(self) -> str | None:
+        """Return why the running job cannot be changed, as a translation key."""
+        if not DeviceType.is_luba_pro(self.device_name):
+            return "running_job_modify_unsupported"
+        if not self._is_route_job_running():
+            return "no_running_job"
+        return None
+
+    async def async_modify_running_job(
+        self, *, priority: Priority = Priority.NORMAL, **changes: Any
+    ) -> None:
         """Change one or more route settings on the job already running.
 
         Mirrors the app's in-job editor (``WorkingOptionView``): it seeds from
         the active route and re-sends the whole parameter set with only the
         edited fields changed, so everything else about the running job
-        survives.  Returns False when there is nothing to change it on.
+        survives.  Raises ServiceValidationError when there is nothing to
+        change it on.
 
         Only fields ``async_modify_plan_route`` does not reseed can be changed
         this way; it forces the job's own identity and geometry (areas, toward,
@@ -2101,28 +2694,35 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
         The original Luba 1's in-job editor only offers blade height, which it
         sends as a direct command instead, so nothing is re-issued there.
         """
-        if not self._is_route_job_running():
-            return False
-        if not DeviceType.is_luba_pro(self.device_name):
-            return False
+        if (refusal := self._running_job_refusal()) is not None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key=refusal,
+                translation_placeholders={"device_name": self.device_name},
+            )
         self._seed_operation_settings_from_running_job()
         for field, value in changes.items():
             if value is not None:
                 setattr(self._operation_settings, field, value)
-        await self.async_modify_plan_route(self._operation_settings)
-        return True
+        await self.async_modify_plan_route(self._operation_settings, priority=priority)
 
-    async def async_change_speed_if_working(self) -> None:
+    async def async_change_speed_if_working(
+        self, *, priority: Priority = Priority.NORMAL
+    ) -> None:
         """Apply a mid-job task-speed change, preserving the running job's route."""
-        await self._apply_route_field_if_working("speed")
+        await self._apply_route_field_if_working("speed", priority)
 
-    async def async_change_bypass_if_working(self) -> None:
+    async def async_change_bypass_if_working(
+        self, *, priority: Priority = Priority.NORMAL
+    ) -> None:
         """Apply a mid-job obstacle-detection change, preserving the running job's route."""
-        await self._apply_route_field_if_working("ultra_wave")
+        await self._apply_route_field_if_working("ultra_wave", priority)
 
-    async def async_change_progress_if_working(self) -> None:
+    async def async_change_progress_if_working(
+        self, *, priority: Priority = Priority.NORMAL
+    ) -> None:
         """Apply a mid-job progress change, preserving the running job's route."""
-        await self._apply_route_field_if_working("start_progress")
+        await self._apply_route_field_if_working("start_progress", priority)
 
     async def async_restore_data(self) -> None:
         """Restore saved data."""
@@ -2130,26 +2730,12 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             self.device_name
         )
 
-        handle = self.manager.mower(self.device_name)
-
-        if restored_data is None:
-            empty = MowingDevice()
-            self.data = empty
-            if handle is not None:
-                handle.restore_device(empty)
-            return
-
-        try:
-            if restored_data is not None:
-                mower_state = MowingDevice().from_dict(restored_data)
-                if handle is not None:
-                    handle.restore_device(mower_state)
-                    self.data = mower_state
-        except InvalidFieldValue:
-            empty = MowingDevice()
-            self.data = empty
-            if handle is not None:
-                handle.restore_device(empty)
+        mower_state = restore_device_state(
+            MowingDevice, restored_data, self.device_name
+        )
+        self.data = mower_state  # type: ignore[assignment]  # DataT is unbound on the base
+        if (handle := self.manager.mower(self.device_name)) is not None:
+            handle.restore_device(mower_state)
 
     @callback
     def async_save_data(self, data: MowingDevice | PoolCleanerDevice) -> None:
@@ -2166,10 +2752,6 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
     async def async_flush_saved_data(self) -> None:
         """Write any queued device state to disk immediately."""
         await self._store.async_flush()
-
-    async def remove_saved_data(self) -> None:
-        """Remove saved coordinator data from persistent storage."""
-        await self._store.async_remove_device(self.device_name)
 
     async def _async_update_data(self) -> DataT | None:
         """Update data from the device."""
@@ -2317,7 +2899,16 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
 
     async def async_shutdown(self) -> None:
         """Flush queued state, cancel RAII subscriptions and shut down the coordinator."""
+        if self.persists_device_state:
+            # A throttled push may have left the latest state unsaved.
+            if device := self.manager.get_device_by_name(self.device_name) or self.data:
+                self.async_save_data(cast(MowingDevice | PoolCleanerDevice, device))
         await self.async_flush_saved_data()
+        if self._remote_drive_subscription is not None:
+            # Only the coordinator that started a session subscribed to it.
+            await self.async_stop_remote_drive()
+            self._remote_drive_subscription.cancel()
+            self._remote_drive_subscription = None
         for sub in self._subscriptions:
             sub.cancel()
         self._subscriptions.clear()
@@ -2332,35 +2923,44 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             getattr(snapshot.raw, "online", None),
         )
         self.async_set_updated_data(snapshot.raw)
+        self._async_save_pushed_state(
+            cast(MowingDevice | PoolCleanerDevice, snapshot.raw)
+        )
         await self._async_device_reported_in()
+
+    @callback
+    def _async_save_pushed_state(
+        self, device: MowingDevice | PoolCleanerDevice
+    ) -> None:
+        """Persist pushed state, at most once per ``STATE_PUSH_SAVE_INTERVAL``.
+
+        Pushes reschedule the poll, so while they keep arriving the poll's save
+        never runs.  ``async_shutdown`` saves whatever the throttle skipped.
+        """
+        if not self.persists_device_state:
+            return
+        now = time.monotonic()
+        if (
+            last := self._pushed_state_saved_at
+        ) is not None and now - last < STATE_PUSH_SAVE_INTERVAL.total_seconds():
+            return
+        self._pushed_state_saved_at = now
+        self.async_save_data(device)
 
     async def _async_device_reported_in(self) -> None:
         """React to fresh contact from the device."""
 
-    def find_entity_by_attribute_in_registry(
-        self, attribute_name: str, attribute_value: Any
-    ) -> tuple[str | None, er.RegistryEntry | None]:
-        """Find an entity using the entity registry based on attributes."""
-        entity_registry = er.async_get(self.hass)
-
-        for entity_id, entity_entry in entity_registry.entities.items():
-            entity_state = self.hass.states.get(entity_id)
-            if (
-                entity_state
-                and entity_state.attributes.get(attribute_name) == attribute_value
-            ):
-                return entity_id, entity_entry
-
-        return None, None
-
     def get_area_entity_name(self, area_hash: int) -> str | None:
-        """Get string name of area hash."""
+        """Name an area hash: its area, ``path`` for a mow-path segment, else ``unknown``."""
         if area_hash == 0:
             return None
 
         _mower_data = cast(MowingDevice, self.data)
-        if area_hash not in _mower_data.map.area:
-            return "path"
+        # Over MQTT the map fetch can stop at the names, so a named hash is an area too.
+        if area_hash not in _mower_data.map.area and not any(
+            area.hash == area_hash for area in _mower_data.map.area_name
+        ):
+            return "path" if area_hash in _mower_data.map.path else "unknown"
 
         # Prefer the user's HA-level entity name over the device-assigned name.
         entity_reg = er.async_get(self.hass)
@@ -2370,7 +2970,7 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
             return entry.name
 
         for area in _mower_data.map.computed_areas:
-            if area.hash == area_hash:
+            if area.hash == area_hash and area.name:
                 return area.name
 
         return f"area {area_hash}"
@@ -2406,6 +3006,10 @@ class MammotionBaseUpdateCoordinator[DataT](DataUpdateCoordinator[DataT]):  # ty
 class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevice]):
     """Mammotion report update coordinator."""
 
+    persists_device_state = True
+    #: Firmware-gated reads already sent, so a gate that passes late reads once.
+    _gated_reads_issued: frozenset[str] = frozenset()
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -2434,6 +3038,192 @@ class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevi
             function=self._add_ble_device,
             background=True,
         )
+        # Caps the route query at one a minute while its reply is on the way.
+        self._job_id_query_debouncer = Debouncer(
+            hass,
+            LOGGER,
+            cooldown=60,
+            immediate=True,
+            function=self._async_query_job_id,
+            background=True,
+        )
+        # The map card polls mow progress every few seconds; this caps the
+        # cover-path fetches those polls trigger at one a minute.
+        self._mow_progress_debouncer = Debouncer(
+            hass,
+            LOGGER,
+            cooldown=60,
+            immediate=True,
+            function=self._async_refresh_mow_progress_source,
+            background=True,
+        )
+
+    async def async_sync_tasks_if_unfetched(self) -> None:
+        """Fetch the tasks if none were ever fetched here, or they are marked stale.
+
+        pymammotion only re-fetches when ``init_cfg_hash`` changes, and never on the
+        first value it sees, so a mower whose tasks were never fetched (an empty,
+        restored plan list) would otherwise stay empty.  ``plans_fetched`` is
+        persisted, so this runs once per install rather than on every restart.
+        """
+        if (data := self.data) is None:
+            return
+        if data.map.plans_fetched and not data.map.plans_stale:
+            return
+        await self.async_sync_tasks()
+
+    async def _on_state_changed(self, snapshot: DeviceSnapshot) -> None:
+        """Push the update, then find out which task is running if HA does not know."""
+        await super()._on_state_changed(snapshot)
+        self._async_request_missing_job_id()
+        self._async_sync_tasks_for_unknown_job()
+        self._async_read_newly_supported_settings()
+
+    @callback
+    def _async_request_missing_job_id(self) -> None:
+        """Ask for the running job's route settings when HA has none for it.
+
+        The mower sends ``bidire_reqconver_path`` (with the job id) when a job
+        starts, so after a Home Assistant restart mid-job ``work`` is empty.  Only
+        then, and only while the report shows a mow in progress, is the route
+        queried (sub_cmd 2).  Its reply fills ``work``, which ends the condition.
+        """
+        if (data := self.data) is None:
+            return
+        report_work = data.report_data.work
+        # sys_status alone also covers returning home after a finished job.
+        mowing = data.report_data.dev.sys_status in MOWING_ACTIVE_MODES and bool(
+            report_work.ub_path_hash or report_work.path_hash > 1
+        )
+        if not mowing or data.work.job_id or data.work.zone_hashs:
+            return
+        self._job_id_query_debouncer.async_schedule_call()
+
+    async def _async_query_job_id(self) -> None:
+        LOGGER.debug("%s: job running with no job id, querying it", self.device_name)
+        await self.async_send_command("query_generate_route_information")
+
+    @callback
+    def _async_sync_tasks_for_unknown_job(self) -> None:
+        """Fetch the task list when a running job belongs to no stored task.
+
+        A task created or changed elsewhere (the app, another client) since the
+        last fetch leaves its job without a plan here.  An ad-hoc job reports
+        ``job_id`` 0 and never gets this far.  ``plans_fetched_job_id`` records the
+        job a fetch completed during, so a task job still unmatched after one (e.g.
+        its task was deleted) is not fetched for again.
+        """
+        if (data := self.data) is None:
+            return
+        if data.report_data.dev.sys_status not in MOWING_ACTIVE_MODES:
+            return
+        job_id = data.work.job_id
+        if not job_id or job_id == data.map.plans_fetched_job_id:
+            return
+        if self.running_plan is not None:
+            return
+        handle = self.manager.mower(self.device_name)
+        if handle is not None and handle.has_queued_commands():
+            # A fetch (this one or the start-up one) is queued or running; look
+            # again once it has landed rather than queueing another.
+            return
+        LOGGER.debug(
+            "%s: job %s matches no stored task, syncing tasks", self.device_name, job_id
+        )
+        if (entry := self.config_entry) is not None:
+            entry.async_create_background_task(
+                self.hass, self.async_sync_tasks(), f"{self.device_name} task sync"
+            )
+
+    @property
+    def is_job_active(self) -> bool:
+        """Return True while a job is running, paused, or waiting to resume.
+
+        The APK's ``DeviceWorkState.isWorkingStatus``: a job status, or ready with a
+        breakpoint outstanding.  Idle, the mower still reports its last task's zones.
+        """
+        if (data := self.data) is None:
+            return False
+        sys_status = data.report_data.dev.sys_status
+        return sys_status in MOWING_ACTIVE_MODES or (
+            sys_status == WorkMode.MODE_READY and data.report_data.work.bp_info > 0
+        )
+
+    @property
+    def running_plan(self) -> Plan | None:
+        """Return the stored task (plan) the mower is running, if the job is one.
+
+        A job the mower starts from a plan reports a ``job_id`` in
+        ``bidire_reqconver_path`` that is the plan's 21-digit ``plan_id`` cut to
+        fit an int64 (its leading 17 digits), so the plan whose id starts with it
+        is the one running.  An ad-hoc "mow these areas" job reports ``job_id`` 0.
+        """
+        if (data := self.data) is None:
+            return None
+        if data.report_data.dev.sys_status not in MOWING_ACTIVE_MODES:
+            return None
+        if not (job_id := data.work.job_id):
+            return None
+        prefix = str(job_id)
+        return next(
+            (
+                plan
+                for plan in data.map.plan.values()
+                if plan.plan_id.startswith(prefix)
+            ),
+            None,
+        )
+
+    @property
+    def supports_dynamics_line(self) -> bool:
+        """Return True if the mower streams its cut path as a dynamics line."""
+        # The whole-device version (e.g. 1.30.29.26) the APK compares; main_controller
+        # is a module version on its own numbering (e.g. 5.1.2.1600).
+        firmware = self.data.device_firmwares.device_version if self.data else None
+        return DeviceType.value_of_str(self.device_name).is_support_dynamics_line(
+            firmware or None
+        )
+
+    async def async_check_and_get_mow_path(self) -> bool:
+        """Fetch the running job's mow path data; return True if a fetch was queued.
+
+        The cover path is fetched unless a complete one is cached (mow progress is
+        rebuilt from it instead).  Dynamics-line mowers also get their live line,
+        as the APK fetches both for them.  Over MQTT both are skipped while
+        ``mow_path_fetch_enabled`` is off.
+        """
+        started = await self.manager.check_and_get_mow_path(self.device_name)
+        if self.supports_dynamics_line:
+            started = (
+                await self.manager.check_and_get_dynamics_line(self.device_name)
+                or started
+            )
+        return started
+
+    async def _async_refresh_mow_progress_source(self) -> None:
+        """Fetch the cover path the progress layer is drawn from."""
+        await self.manager.check_and_get_mow_path(self.device_name)
+
+    @callback
+    def async_request_mow_progress(self) -> None:
+        """Keep the progress layer's data coming while the map card polls it, during a job.
+
+        Over the cloud pymammotion polls a dynamics-line mower's line only inside a
+        five-minute window that each card poll extends (over BLE, for the whole job).
+        The cover path is fetched while nothing can be shown yet, at most once a minute.
+        """
+        if (data := self.data) is None:
+            return
+        if data.report_data.dev.sys_status not in MOWING_ACTIVE_MODES:
+            return
+        if self.supports_dynamics_line:
+            self.manager.watch_dynamics_line(self.device_name)
+            return
+        if data.report_data.work.path_hash <= 1 or (
+            data.map.generated_mow_progress_geojson.get("features")
+        ):
+            return
+        self._mow_progress_debouncer.async_schedule_call()
 
     @callback
     def _async_handle_bluetooth_event(
@@ -2441,34 +3231,22 @@ class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevi
         service_info: BluetoothServiceInfoBleak,
         change: BluetoothChange,
     ) -> None:
-        """Handle a bluetooth advertisement for this mower's MAC.
+        """Cache the advertisement and hand it to the BLE transport, at most once a minute.
 
-        Two responsibilities:
-
-        1. Cache the latest ``service_info`` for downstream use (RSSI gates,
-           freshness checks, etc.).
-        2. Push the freshest ``BLEDevice`` into the existing BLETransport so
-           ``bleak_retry_connector``'s ``ble_device_callback`` always has the
-           most recent advertisement.  This is a synchronous pointer-swap
-           (``BLETransport.set_ble_device``) — no event-loop work needed,
-           safe to run in this ``@callback``-decorated handler.
-
-        Initial transport wire-up (``add_ble_to_device``) is handled by
-        :func:`_attach_ble_to_mower` in ``__init__.py``, which has access to
-        the ``stay_connected_ble`` config flag.  Once the transport exists,
-        every subsequent advertisement flows through this fast path.
+        The hand-off, and the connect it may start, run in ``poll_debouncer``'s
+        background task: Home Assistant replays the last advertisement when this
+        callback is registered, and startup must not wait on that connect.
         """
         self.service_info = service_info
-
         self.poll_debouncer.async_schedule_call()
 
-    def _add_ble_device(self) -> None:
+    async def _add_ble_device(self) -> None:
         if not self.service_info or not self._bluetooth_enabled:
             return
         handle = self.manager.mower(self.device_name)
         if handle is None:
             return
-        self.hass.create_task(self._async_push_advertisement(handle))
+        await self._async_push_advertisement(handle)
 
     async def _async_push_advertisement(self, handle: DeviceHandle) -> None:
         """Hand the freshest advertisement to the BLE transport (creating it if needed) and connect."""
@@ -2477,6 +3255,9 @@ class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevi
         await self.manager.update_ble_device(
             self.device_name, self.service_info.device, self.service_info.rssi
         )
+        # The Bluetooth switch may have gone off during the hand-off.
+        if not self._bluetooth_enabled:
+            return
         ble = handle.get_transport(TransportType.BLE)
         if (
             ble is not None
@@ -2490,8 +3271,12 @@ class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevi
     async def async_set_bluetooth_enabled(self, enabled: bool) -> None:
         """Enable or disable Bluetooth, reconnecting if re-enabled."""
         await super().async_set_bluetooth_enabled(enabled)
-        if enabled:
-            self._add_ble_device()
+        if enabled and (entry := self.config_entry) is not None:
+            entry.async_create_background_task(
+                self.hass,
+                self._add_ble_device(),
+                name=f"{DOMAIN}_ble_handoff_{self.device_name}",
+            )
 
     @callback
     def _async_start(self) -> None:
@@ -2524,6 +3309,9 @@ class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevi
     async def async_shutdown(self) -> None:
         """Drop the advertisement subscription along with the rest."""
         self._async_stop()
+        self.poll_debouncer.async_shutdown()
+        self._mow_progress_debouncer.async_shutdown()
+        self._job_id_query_debouncer.async_shutdown()
         await super().async_shutdown()
 
     async def _async_reconnect_ble(self) -> None:
@@ -2609,24 +3397,20 @@ class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevi
         await super()._async_setup()
         self._async_start()
 
-        # With the updates switch off this coordinator sends nothing until it goes
-        # back on.  Only the outbound reads are skipped — the sys_status watch is
-        # wired below either way, because _async_setup runs once per session and
-        # skipping it here would strand the watch until a config-entry reload.
-        if not self.data.enabled:
-            if handle := self.manager.mower(self.device_name):
+        # Wired before anything that can fail, and whatever the updates switch
+        # says: _async_setup runs once per session.
+        if (handle := self.manager.mower(self.device_name)) is not None:
+            self._subscriptions.append(
+                handle.watch_field(
+                    lambda s: s.raw.report_data.dev.sys_status,
+                    self._guarded(self._on_sys_status_changed_refresh),
+                )
+            )
+            # With the updates switch off this coordinator sends nothing until it
+            # goes back on.
+            if not self.data.enabled:
                 await handle.stop_polling()
         await self._async_ensure_startup_reads()
-
-        # Watch sys_status changes so we can refresh the full status when the
-        # device transitions states.  Skipped when the BLE polling loop is
-        # already feeding a continuous count=0 stream — the stream is fresher
-        # than any count=1 poll we could fire.
-        if (handle := self.manager.mower(self.device_name)) is not None:
-            handle.watch_field(
-                lambda s: s.raw.report_data.dev.sys_status,
-                self._on_sys_status_changed_refresh,
-            )
 
     async def set_scheduled_updates(self, enabled: bool) -> bool:
         """Run the startup reads that setup skipped when updates were off.
@@ -2654,6 +3438,9 @@ class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevi
             ("async_read_turning_mode", {}),
             ("async_read_traversal_mode", {}),
         ]
+        # The probe is what proves support, so every X5 mower is asked.
+        if DeviceType.is_x5_series(self.device_name):
+            commands.append(("async_read_rain_protection", {}))
 
         # Add device-specific commands.  Two separate capabilities, gated the way the
         # app gates them: the lights on isSupportFillLight (night light excluded on
@@ -2670,49 +3457,55 @@ class MammotionReportUpdateCoordinator(MammotionBaseUpdateCoordinator[MowingDevi
         )
         if DeviceType.is_luba_pro(self.device_name):
             commands.append(("async_fetch_audio_config", {}))
-            if DeviceType.supports_wildlife_safety(self.device_name, firmware or ""):
-                commands.append(("async_read_wildlife_safety", {}))
-        if DeviceType.supports_charge_limit(self.device_name, firmware or ""):
-            commands.append(("async_read_battery_info", {}))
+        gated = [
+            read
+            for read in firmware_gated_reads(
+                self.device_name,
+                firmware or "",
+                self.data.mower_state.rain_protection,
+            )
+            if read not in self._gated_reads_issued
+        ]
+        self._gated_reads_issued |= frozenset(gated)
+        commands.extend((read, {}) for read in gated if (read, {}) not in commands)
 
+        commands.append(("async_sync_tasks_if_unfetched", {}))
         # Final command for all devices
         commands.append(("async_request_report_snapshot", {}))
 
-        # Execute all commands with unified exception handling, under one budget so an
-        # unresponsive mower cannot hold up the config entry (see SETUP_COMMAND_BUDGET).
-        pending = [name for name, _ in commands]
-        try:
-            async with asyncio.timeout(SETUP_COMMAND_BUDGET.total_seconds()):
-                for command_name, kwargs in commands:
-                    try:
-                        command_method = getattr(self, command_name, None)
-                        if command_method is None:
-                            command_method = self.async_send_command
-                            await command_method(command_name, **kwargs)
-                        else:
-                            await command_method(**kwargs)
-                    except (
-                        DeviceOfflineException,
-                        NoTransportAvailableError,
-                        CommandTimeoutError,
-                        ConcurrentRequestError,
-                        BLEUnavailableError,
-                    ) as exc:
-                        LOGGER.debug(
-                            "Command %s failed with exception: %s", command_name, exc
-                        )
-                    # Not in a `finally`: when the budget expires mid-command this line
-                    # is skipped, so the command that actually stalled stays in the list.
-                    pending.remove(command_name)
-        except TimeoutError:
-            # Ours, not HA's: setup continues, the unread settings show their defaults
-            # until a later refresh picks them up.
-            LOGGER.warning(
-                "Setup reads for %s exceeded %ss; continuing without: %s",
+        await _async_run_setup_reads(self, commands)
+
+    @callback
+    def _async_read_newly_supported_settings(self) -> None:
+        """Send the firmware-gated reads the startup reads skipped, once their gate passes.
+
+        Firmware is often unknown at setup (fresh install, cleared store): the
+        entities are then added later by ``async_add_when_firmware_supports``, and
+        without this they show defaults all session.
+        """
+        if (
+            not self._startup_reads_done
+            or (data := self.data) is None
+            or not data.enabled
+        ):
+            return
+        reads = [
+            read
+            for read in firmware_gated_reads(
                 self.device_name,
-                SETUP_COMMAND_BUDGET.total_seconds(),
-                ", ".join(pending),
+                data.device_firmwares.device_version,
+                data.mower_state.rain_protection,
             )
+            if read not in self._gated_reads_issued
+        ]
+        if not reads or (entry := self.config_entry) is None:
+            return
+        self._gated_reads_issued |= frozenset(reads)
+        entry.async_create_background_task(
+            self.hass,
+            _async_run_setup_reads(self, [(read, {}) for read in reads]),
+            f"{self.device_name} firmware-gated reads",
+        )
 
     async def _on_sys_status_changed_refresh(self, sys_status: int) -> None:
         """Trigger a one-shot count=1 poll on sys_status transitions when not streaming."""
@@ -2766,8 +3559,7 @@ class MammotionMaintenanceUpdateCoordinator(MammotionBaseUpdateCoordinator[Maint
         was_working = self._prev_sys_status in MOWING_ACTIVE_MODES
         self._prev_sys_status = sys_status
         if was_working and sys_status == WorkMode.MODE_READY:
-            with contextlib.suppress(DeviceOfflineException, GatewayTimeoutException):
-                await self.async_send_command("get_maintenance")
+            await self.async_send_command("get_maintenance")
 
     async def _async_update_data(self) -> Maintain:
         """Get data from the device."""
@@ -2783,22 +3575,51 @@ class MammotionMaintenanceUpdateCoordinator(MammotionBaseUpdateCoordinator[Maint
         await super()._async_setup()
 
         if handle := self.manager.mower(self.device_name):
-            handle.watch_field(
-                lambda s: s.raw.report_data.dev.sys_status,
-                self._on_sys_status_changed,
+            self._subscriptions.append(
+                handle.watch_field(
+                    lambda s: s.raw.report_data.dev.sys_status,
+                    self._guarded(self._on_sys_status_changed),
+                )
             )
 
         await self._async_ensure_startup_reads()
 
     async def _async_startup_reads(self) -> None:
         """Fetch the maintenance counters and the do-not-disturb window."""
-        try:
-            await self.async_send_command("get_maintenance")
-            await self.async_send_and_wait(
-                "read_job_do_not_disturb", "todev_unable_time_set"
-            )
-        except DeviceOfflineException, GatewayTimeoutException:
-            pass
+        await self.async_send_command("get_maintenance")
+        await self.async_send_and_wait(
+            "read_job_do_not_disturb", "todev_unable_time_set"
+        )
+
+
+def _unknown_version_reads(device: MowingDevice) -> list[tuple[str, str]]:
+    """Return the (command, reply field) reads for the version fields still unknown."""
+    return [
+        (command, expected_field)
+        for command, expected_field, known in (
+            (
+                "get_device_version_main",
+                "toapp_devinfo_resp",
+                device.mower_state.swversion,
+            ),
+            (
+                "get_device_version_info",
+                "toapp_dev_fw_info",
+                device.device_firmwares.main_controller,
+            ),
+            (
+                "get_device_base_info",
+                "toapp_devinfo_resp",
+                device.device_firmwares.device_version,
+            ),
+            (
+                "get_device_product_model",
+                "device_product_type_info",
+                device.mower_state.model_id,
+            ),
+        )
+        if not known
+    ]
 
 
 class MammotionDeviceVersionUpdateCoordinator(
@@ -2838,7 +3659,7 @@ class MammotionDeviceVersionUpdateCoordinator(
         """Get coordinator data."""
         return device
 
-    async def _async_update_data(self) -> MowingDevice:
+    async def _async_update_data(self) -> MowingDevice:  # noqa: C901
         """Get data from the device."""
         if data := await super()._async_update_data():
             return data
@@ -2846,35 +3667,9 @@ class MammotionDeviceVersionUpdateCoordinator(
         assert device is not None
         handle = self.manager.mower(self.device_name)
 
-        checks: list[tuple[str, str, bool]] = [
-            (
-                "get_device_version_main",
-                "toapp_devinfo_resp",
-                bool(device.mower_state.swversion),
-            ),
-            (
-                "get_device_version_info",
-                "toapp_dev_fw_info",
-                bool(device.device_firmwares.main_controller),
-            ),
-            (
-                "get_device_base_info",
-                "toapp_devinfo_resp",
-                bool(device.device_firmwares.device_version),
-            ),
-            (
-                "get_device_product_model",
-                "device_product_type_info",
-                bool(device.mower_state.model_id),
-            ),
-        ]
-        for command, expected_field, already_set in checks:
-            if already_set:
-                continue
-            try:
-                await self.async_send_and_wait(command, expected_field)
-            except DeviceOfflineException:
-                return device
+        # An unreachable mower fails each read at once; the firmware check still runs.
+        for command, expected_field in _unknown_version_reads(device):
+            await self.async_send_and_wait(command, expected_field)
 
         await self.check_firmware_version()
 
@@ -3040,62 +3835,34 @@ class MammotionDeviceVersionUpdateCoordinator(
 
     async def _async_startup_reads(self) -> None:
         """Fill in whichever firmware and model fields are still unknown."""
-        try:
-            device = self.manager.get_device_by_name(self.device_name)
-            if device is None:
-                return
+        device = self.manager.get_device_by_name(self.device_name)
+        if device is None:
+            return
 
-            checks: list[tuple[str, str, bool]] = [
-                (
-                    "get_device_version_main",
-                    "toapp_devinfo_resp",
-                    bool(device.mower_state.swversion),
-                ),
-                (
-                    "get_device_version_info",
-                    "toapp_dev_fw_info",
-                    bool(device.device_firmwares.main_controller),
-                ),
-                (
-                    "get_device_base_info",
-                    "toapp_devinfo_resp",
-                    bool(device.device_firmwares.device_version),
-                ),
-                (
-                    "get_device_product_model",
-                    "device_product_type_info",
-                    bool(device.mower_state.model_id),
-                ),
-            ]
-            for command, expected_field, already_set in checks:
-                if already_set:
-                    continue
-                with contextlib.suppress(DeviceOfflineException):
-                    await self.async_send_and_wait(command, expected_field)
+        for command, expected_field in _unknown_version_reads(device):
+            await self.async_send_and_wait(command, expected_field)
 
-            if not device.mower_state.wifi_mac:
-                await self.async_send_command("get_device_network_info")
+        if not device.mower_state.wifi_mac:
+            await self.async_send_command("get_device_network_info")
 
-            handle = self.manager.mower(self.device_name)
-            if handle is not None and self.cloud_http_usable:
-                http = self.manager.mammotion_http
-                if http is not None:
-                    ota_info = await self._cloud_api_call(
-                        http.get_device_ota_firmware([handle.iot_id])
-                    )
-                    device = self.manager.get_device_by_name(self.device_name)
-                    if (
-                        device is not None
-                        and ota_info is not None
-                        and (check_versions := ota_info.data)
-                    ):
-                        for check_version in check_versions:
-                            if check_version.device_id == handle.iot_id:
-                                device.apply_version_check(check_version)
+        handle = self.manager.mower(self.device_name)
+        if handle is not None and self.cloud_http_usable:
+            http = self.manager.mammotion_http
+            if http is not None:
+                ota_info = await self._cloud_api_call(
+                    http.get_device_ota_firmware([handle.iot_id])
+                )
+                device = self.manager.get_device_by_name(self.device_name)
+                if (
+                    device is not None
+                    and ota_info is not None
+                    and (check_versions := ota_info.data)
+                ):
+                    for check_version in check_versions:
+                        if check_version.device_id == handle.iot_id:
+                            device.apply_version_check(check_version)
 
-            self.async_set_updated_data(self.data)
-        except DeviceOfflineException:
-            pass
+        self.async_set_updated_data(self.data)
 
 
 class MammotionMapUpdateCoordinator(MammotionBaseUpdateCoordinator[MowerInfo]):
@@ -3140,32 +3907,19 @@ class MammotionMapUpdateCoordinator(MammotionBaseUpdateCoordinator[MowerInfo]):
         device = self.manager.get_device_by_name(self.device_name)
         assert device is not None
 
-        try:
-            # RTK/dock lat are radians with an exact-0.0 "unset" sentinel — compare to 0.0,
-            # not round(lat, 0), which would treat everything within ~0.5 rad (~28°) of the
-            # equator as unset and re-fetch the location on every update.
-            if (
-                device.location.RTK.latitude == 0.0
-                or device.location.dock.latitude == 0.0
-            ):
-                await self.async_rtk_dock_location()
+        # RTK/dock lat are radians with an exact-0.0 "unset" sentinel — compare to 0.0,
+        # not round(lat, 0), which would treat everything within ~0.5 rad (~28°) of the
+        # equator as unset and re-fetch the location on every update.
+        if device.location.RTK.latitude == 0.0 or device.location.dock.latitude == 0.0:
+            await self.async_rtk_dock_location(Priority.NORMAL)
 
-            bol_hash = (
-                device.report_data.locations[0].bol_hash
-                if device.report_data.locations
-                else 0
-            )
-            if not device.map.is_map_synced(bol_hash):
-                await self.manager.start_map_sync(self.device_name)
-
-        except DeviceOfflineException as ex:
-            if ex.iot_id == self.device.iot_id:
-                self.device_offline(device)
-                return device.mower_state
-        except GatewayTimeoutException:
-            pass
-        except ConcurrentRequestError, NoTransportAvailableError:
-            pass
+        bol_hash = (
+            device.report_data.locations[0].bol_hash
+            if device.report_data.locations
+            else 0
+        )
+        if not device.map.is_map_synced(bol_hash):
+            await self.manager.start_map_sync(self.device_name)
 
         _d = self.manager.get_device_by_name(self.device_name)
         assert _d is not None
@@ -3174,17 +3928,10 @@ class MammotionMapUpdateCoordinator(MammotionBaseUpdateCoordinator[MowerInfo]):
     def _device_supports_dynamics_line(self) -> bool:
         """Return True if this device supports the dynamics-line mow-progress stream."""
         device = self.manager.get_device_by_name(self.device_name)
-        firmware = device.device_firmwares.main_controller if device else None
+        firmware = device.device_firmwares.device_version if device else None
         return DeviceType.value_of_str(self.device_name).is_support_dynamics_line(
-            firmware
+            firmware or None
         )
-
-    def _ble_is_connected(self) -> bool:
-        """Return True if BLE transport exists and is currently connected."""
-        if handle := self.manager.mower(self.device_name):
-            if ble := handle.get_transport(TransportType.BLE):
-                return ble.is_connected
-        return False
 
     def _stop_dynamics_line_poll(self) -> None:
         if self._dynamics_line_cancel is not None:
@@ -3244,18 +3991,23 @@ class MammotionMapUpdateCoordinator(MammotionBaseUpdateCoordinator[MowerInfo]):
 
         if not device.enabled or not device.online:
             return
-        try:
-            await self.async_rtk_dock_location()
-        except DeviceOfflineException as ex:
-            if ex.iot_id == self.device.iot_id:
-                self.device_offline(device)
-        except GatewayTimeoutException:
-            pass
-        except NoTransportAvailableError:
-            LOGGER.debug(
-                "No transport connected yet for %s, map data will be fetched on next update",
-                self.device_name,
-            )
+        # A failure is logged; the refresh asks again while the location is unset.
+        await self.async_rtk_dock_location(Priority.NORMAL)
+
+
+#: Seconds an error-log read waits, so the firmware has replaced the entry's uptime
+#: stamp with real time and a fault's burst of events costs one read.
+ERROR_LOG_READ_DELAY: Final = 10
+#: Modes a fault is commonly logged on the way into.
+ERROR_LOG_READ_MODES: Final = frozenset(
+    {
+        WorkMode.MODE_READY,
+        WorkMode.MODE_WORKING,
+        WorkMode.MODE_RETURNING,
+        WorkMode.MODE_LOCK,
+        WorkMode.MODE_PAUSE,
+    }
+)
 
 
 class MammotionDeviceErrorUpdateCoordinator(
@@ -3283,28 +4035,36 @@ class MammotionDeviceErrorUpdateCoordinator(
         mowing_device = self.manager.get_device_by_name(self.device_name)
         if self.data is None:
             self.data = mowing_device
+        self._error_log_debouncer: Debouncer[Coroutine[Any, Any, None]] = Debouncer(
+            hass,
+            LOGGER,
+            cooldown=ERROR_LOG_READ_DELAY,
+            immediate=False,
+            function=self._async_read_error_log,
+            background=True,
+        )
 
     def get_coordinator_data(self, device: MowingDevice) -> MowingDevice:
         """Get coordinator data."""
         return device
 
-    async def _async_update_event_message(self, event: ThingEventMessage) -> None:
-        if (
-            hasattr(event.params, "identifier")
-            and event.params.identifier == "device_warning_code_event"
+    async def _async_on_notification(self, notification: DeviceNotification) -> None:
+        """Re-read the error log when the mower posts a warning."""
+        if NOTIFY_CATEGORY_BY_EVENT.get(notification.identifier) == NOTIFY_WARNINGS:
+            self._error_log_debouncer.async_schedule_call()
+
+    async def _async_read_error_log(self) -> None:
+        """Read both error-log registers; a failed read waits for the next trigger."""
+        device = self.manager.get_device_by_name(self.device_name)
+        if device is None or not device.enabled:
+            return
+        # One send per failure: the second register waits with the first.
+        if await self.async_send_and_wait(
+            "read_write_device", "bidire_comm_cmd", rw_id=5, rw=1, context=2
         ):
-            event_params: DeviceNotificationEventParams = cast(
-                DeviceNotificationEventParams, event.params
+            await self.async_send_and_wait(
+                "read_write_device", "bidire_comm_cmd", rw_id=5, rw=1, context=3
             )
-            # '[{"c":-2801,"ct":1,"ft":1731493734000},{"c":-1008,"ct":1,"ft":1731493734000}]'
-            try:
-                warning_event = json.loads(event_params.value.data)
-                LOGGER.debug("warning event %s", warning_event)
-                await self._async_update_data()
-                if device := self.manager.get_device_by_name(self.device_name):
-                    self.async_set_updated_data(device)
-            except json.JSONDecodeError:
-                """Failed to parse warning event."""
 
     def get_error_code(self, number: int) -> int:
         """Get error code from an error code list."""
@@ -3314,13 +4074,8 @@ class MammotionDeviceErrorUpdateCoordinator(
             return 0
 
     def get_error_time(self, number: int) -> datetime.datetime | None:
-        """Get error time from an error code list."""
-        try:
-            return datetime.datetime.fromtimestamp(
-                next(iter(self.data.errors.err_code_list_time)), datetime.UTC
-            )
-        except StopIteration:
-            return None
+        """Return when the newest error-log entry was logged, or None until it has a real time."""
+        return self.data.errors.latest_logged_at
 
     def get_error_message(self, number: int) -> str:
         """Return error message."""
@@ -3345,19 +4100,9 @@ class MammotionDeviceErrorUpdateCoordinator(
         return device
 
     async def _on_sys_status_changed(self, sys_status: WorkMode) -> None:
-        """Handle sys status changed."""
-        if sys_status in (
-            WorkMode.MODE_WORKING,
-            WorkMode.MODE_RETURNING,
-            WorkMode.MODE_LOCK,
-            WorkMode.MODE_PAUSE,
-        ):
-            await self.async_send_and_wait(
-                "read_write_device", "bidire_comm_cmd", rw_id=5, rw=1, context=2
-            )
-            await self.async_send_and_wait(
-                "read_write_device", "bidire_comm_cmd", rw_id=5, rw=1, context=3
-            )
+        """Re-read the error log on entering a mode a fault is commonly logged with."""
+        if sys_status in ERROR_LOG_READ_MODES:
+            self._error_log_debouncer.async_schedule_call()
 
     async def _async_setup(self) -> None:
         """Set up the device-version coordinator."""
@@ -3366,30 +4111,32 @@ class MammotionDeviceErrorUpdateCoordinator(
         if device is None:
             return
         if handle := self.manager.mower(self.device_name):
-            handle.watch_field(
-                lambda s: s.raw.report_data.dev.sys_status,
-                self._on_sys_status_changed,
+            self._subscriptions.append(
+                handle.watch_field(
+                    lambda s: s.raw.report_data.dev.sys_status,
+                    self._guarded(self._on_sys_status_changed),
+                )
+            )
+            self._subscriptions.append(
+                handle.subscribe_notification(
+                    self._guarded(self._async_on_notification)
+                )
             )
 
         await self._async_ensure_startup_reads()
 
     async def _async_startup_reads(self) -> None:
         """Read the two error registers and, if needed, the code table."""
-        device = self.manager.get_device_by_name(self.device_name)
-        if device is None:
+        if self.manager.get_device_by_name(self.device_name) is None:
             return
-        try:
-            await self.async_send_and_wait(
-                "read_write_device", "bidire_comm_cmd", rw_id=5, rw=1, context=2
-            )
-            await self.async_send_and_wait(
-                "read_write_device", "bidire_comm_cmd", rw_id=5, rw=1, context=3
-            )
-            await self._async_refresh_error_codes()
+        await self._async_read_error_log()
+        await self._async_refresh_error_codes()
+        self.async_set_updated_data(self.data)
 
-            self.async_set_updated_data(self.data)
-        except DeviceOfflineException:
-            pass
+    async def async_shutdown(self) -> None:
+        """Drop a pending error-log read along with the rest."""
+        self._error_log_debouncer.async_shutdown()
+        await super().async_shutdown()
 
 
 class MammotionRTKCoordinator(MammotionBaseUpdateCoordinator[RTKBaseStationDevice]):
@@ -3425,26 +4172,12 @@ class MammotionRTKCoordinator(MammotionBaseUpdateCoordinator[RTKBaseStationDevic
             self.device_name
         )
 
-        handle = self.manager.rtk_device(self.device_name)
-
-        if restored_data is None:
-            empty = RTKBaseStationDevice()
-            self.data = empty
-            if handle is not None:
-                handle.restore_device(empty)
-            return
-
-        try:
-            if restored_data is not None:
-                rtk_state = RTKBaseStationDevice().from_dict(restored_data)
-                if handle is not None:
-                    handle.restore_device(rtk_state)
-                    self.data = rtk_state
-        except InvalidFieldValue:
-            empty = RTKBaseStationDevice()
-            self.data = empty
-            if handle is not None:
-                handle.restore_device(empty)
+        rtk_state = restore_device_state(
+            RTKBaseStationDevice, restored_data, self.device_name
+        )
+        self.data = rtk_state
+        if (handle := self.manager.rtk_device(self.device_name)) is not None:
+            handle.restore_device(rtk_state)
 
     async def _async_update_data(self) -> RTKBaseStationDevice:
         """Return current RTK state from the device handle's state machine.
@@ -3541,6 +4274,8 @@ class MammotionRTKCoordinator(MammotionBaseUpdateCoordinator[RTKBaseStationDevic
 class MammotionSpinoCoordinator(MammotionBaseUpdateCoordinator[PoolCleanerDevice]):
     """Mammotion DataUpdateCoordinator for Spino pool cleaner devices."""
 
+    persists_device_state = True
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -3590,35 +4325,20 @@ class MammotionSpinoCoordinator(MammotionBaseUpdateCoordinator[PoolCleanerDevice
         # (sys_status / work_mode / battery) — the pool cleaner doesn't report
         # unsolicited otherwise. See get_report_cfg_spino / async_subscribe_status.
 
-        try:
-            with contextlib.suppress(
-                GatewayTimeoutException,
-                NoTransportAvailableError,
-                HomeAssistantError,
-            ):
-                await self.async_subscribe_status()
-            for toggle in SpinoToggle:
-                with contextlib.suppress(
-                    GatewayTimeoutException,
-                    NoTransportAvailableError,
-                ):
-                    await self.async_send_and_wait(
-                        "read_write_device",
-                        "bidire_comm_cmd",
-                        rw_id=int(toggle),
-                        context=0,
-                        rw=0,
-                    )
-            # Fetch pool geometry once at startup.  Responses arrive as unsolicited
-            # APP_DOWNLINK_CMD frames and are reassembled by PoolStateReducer.
-            for fetch in (self.async_fetch_pool_map, self.async_fetch_pool_line):
-                with contextlib.suppress(
-                    GatewayTimeoutException,
-                    NoTransportAvailableError,
-                ):
-                    await fetch()
-        except DeviceOfflineException:
-            self.device.online = False
+        # Background sends: a failure is logged and the next one is still tried.
+        await self.async_subscribe_status()
+        for toggle in SpinoToggle:
+            await self.async_send_and_wait(
+                "read_write_device",
+                "bidire_comm_cmd",
+                rw_id=int(toggle),
+                context=0,
+                rw=0,
+            )
+        # Fetch pool geometry once at startup.  Responses arrive as unsolicited
+        # APP_DOWNLINK_CMD frames and are reassembled by PoolStateReducer.
+        for fetch in (self.async_fetch_pool_map, self.async_fetch_pool_line):
+            await fetch()
 
     async def get_coordinator_data(
         self, device: PoolCleanerDevice
@@ -3632,25 +4352,12 @@ class MammotionSpinoCoordinator(MammotionBaseUpdateCoordinator[PoolCleanerDevice
             self.device_name
         )
 
-        handle = self.manager.pool_cleaner_device(self.device_name)
-
-        if restored_data is None:
-            empty = PoolCleanerDevice()
-            self.data = empty
-            if handle is not None:
-                handle.restore_device(empty)
-            return
-
-        try:
-            spino_state = PoolCleanerDevice().from_dict(restored_data)
-            if handle is not None:
-                handle.restore_device(spino_state)
-                self.data = spino_state
-        except InvalidFieldValue:
-            empty = PoolCleanerDevice()
-            self.data = empty
-            if handle is not None:
-                handle.restore_device(empty)
+        spino_state = restore_device_state(
+            PoolCleanerDevice, restored_data, self.device_name
+        )
+        self.data = spino_state
+        if (handle := self.manager.pool_cleaner_device(self.device_name)) is not None:
+            handle.restore_device(spino_state)
 
     def get_error_code(self) -> int:
         """Return the absolute error code of the most recent fault, or 0."""
@@ -3660,13 +4367,9 @@ class MammotionSpinoCoordinator(MammotionBaseUpdateCoordinator[PoolCleanerDevice
             return 0
 
     def get_error_time(self) -> datetime.datetime | None:
-        """Return the timestamp of the most recent fault as a UTC datetime, or None."""
-        try:
-            return datetime.datetime.fromtimestamp(
-                self.data.pool_state.error_log[0].timestamp, datetime.UTC
-            )
-        except IndexError:
-            return None
+        """Return when the most recent fault was logged, or None until it has a real time."""
+        log = self.data.pool_state.error_log
+        return log[0].logged_at if log else None
 
     def get_error_message(self) -> str:
         """Return a human-readable description of the most recent fault."""
@@ -3726,7 +4429,9 @@ class MammotionSpinoCoordinator(MammotionBaseUpdateCoordinator[PoolCleanerDevice
 
     async def async_request_status(self) -> None:
         """One-shot Spino status poll, backing the refresh-status button."""
-        await self.async_send_command("get_report_cfg_spino", count=1)
+        await self.async_send_command(
+            "get_report_cfg_spino", priority=Priority.USER, count=1
+        )
 
     async def async_set_work_mode(self, work_mode: int) -> None:
         """Set the Spino cleaning work mode."""
