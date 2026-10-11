@@ -250,7 +250,7 @@ generatorOptions:
 
 helmCharts:
 - name: home-assistant
-  version: 0.3.85
+  version: 0.3.86
   repo: http://pajikos.github.io/home-assistant-helm-chart/
   releaseName: home-assistant
   includeCRDs: true
