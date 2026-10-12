@@ -29,3 +29,4 @@ Keep them short and self-contained. Supersede rather than rewrite: mark the old 
 | [0003](0003-bathroom-presence-radar-retrofit.md) | Bathroom presence + ambient-light retrofit (ESP32-C6 SuperMini + mmWave, mains-fed) | Proposed 2026-08-02 |
 | [0004](0004-whole-home-backup-not-automatic.md) | Whole-home backup: changeover was in the wrong position, not miswired | **Resolved 2026-08-18** |
 | [0005](0005-opnsense-firewall-hardware.md) | OPNsense firewall hardware (Intel N150 mini-PC, not an official Deciso appliance) | Proposed 2026-09-12 |
+| [0006](0006-thread-presence-light-sensor-bundle.md) | DIY light-automation sensor bundle (ESP32-C6 on Thread, mmWave + PIR + lux, cat-aware) | Proposed 2026-10-11 |
