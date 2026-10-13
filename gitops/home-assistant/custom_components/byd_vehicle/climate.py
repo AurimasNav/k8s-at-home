@@ -55,8 +55,8 @@ class BydClimate(BydActionEntity, ClimateEntity):
     projections, guard windows, and reconcile internally.
     """
 
-    _TEMP_MIN_C = 15
-    _TEMP_MAX_C = 31
+    # fallback when the car hasn't reported its range, see pyBYD#74
+    _DEFAULT_TEMP_RANGE_C = (15.0, 31.0)
     _PRESET_MAX_HEAT = "max_heat"
     _PRESET_MAX_COOL = "max_cool"
     _DEFAULT_TEMP_C = 21.0
@@ -71,8 +71,6 @@ class BydClimate(BydActionEntity, ClimateEntity):
         | ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.PRESET_MODE
     )
-    _attr_min_temp = _TEMP_MIN_C
-    _attr_max_temp = _TEMP_MAX_C
     _attr_target_temperature_step = 1
     _attr_preset_modes = [_PRESET_MAX_HEAT, _PRESET_MAX_COOL]
 
@@ -89,26 +87,44 @@ class BydClimate(BydActionEntity, ClimateEntity):
         self._climate_duration = climate_duration
         self._attr_unique_id = f"{vin}_climate"
 
-    @staticmethod
-    def _clamp_temp(temp_c: float | int | None) -> float | None:
-        """Clamp a temperature to the valid range, or return None."""
+    @property
+    def _temp_range(self) -> tuple[float, float]:
+        """Settable range in °C, as reported by the car (eg 17-33 on the HAN)."""
+        car = self.coordinator.car
+        if car is None:
+            return self._DEFAULT_TEMP_RANGE_C
+        return car.hvac.temp_range
+
+    @property
+    def min_temp(self) -> float:
+        """Return the minimum settable temperature."""
+        return self._temp_range[0]
+
+    @property
+    def max_temp(self) -> float:
+        """Return the maximum settable temperature."""
+        return self._temp_range[1]
+
+    def _clamp_temp(self, temp_c: float | int | None) -> float | None:
+        """Return the temperature if it's within the valid range, else None."""
         if temp_c is None:
             return None
         val = float(temp_c)
-        if BydClimate._TEMP_MIN_C <= val <= BydClimate._TEMP_MAX_C:
+        temp_min, temp_max = self._temp_range
+        if temp_min <= val <= temp_max:
             return val
         return None
 
-    @staticmethod
-    def _preset_from_temp(temp_c: float | None) -> str | None:
+    def _preset_from_temp(self, temp_c: float | None) -> str | None:
         """Return a preset name if the temperature matches a boundary."""
         if temp_c is None:
             return None
         rounded = round(temp_c)
-        if rounded >= BydClimate._TEMP_MAX_C:
-            return BydClimate._PRESET_MAX_HEAT
-        if rounded <= BydClimate._TEMP_MIN_C:
-            return BydClimate._PRESET_MAX_COOL
+        temp_min, temp_max = self._temp_range
+        if rounded >= temp_max:
+            return self._PRESET_MAX_HEAT
+        if rounded <= temp_min:
+            return self._PRESET_MAX_COOL
         return None
 
     # ------------------------------------------------------------------
@@ -149,7 +165,8 @@ class BydClimate(BydActionEntity, ClimateEntity):
             temp_c = self._clamp_temp(hvac.main_setting_temp_new)
             if temp_c is not None:
                 return temp_c
-        return self._DEFAULT_TEMP_C
+        temp_min, temp_max = self._temp_range
+        return max(temp_min, min(temp_max, self._DEFAULT_TEMP_C))
 
     @property
     def preset_mode(self) -> str | None:
@@ -191,7 +208,8 @@ class BydClimate(BydActionEntity, ClimateEntity):
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is None:
             return
-        clamped = max(self._TEMP_MIN_C, min(self._TEMP_MAX_C, float(temp)))
+        temp_min, temp_max = self._temp_range
+        clamped = max(temp_min, min(temp_max, float(temp)))
 
         # If climate is currently on, send the update immediately
         if self.hvac_mode != HVACMode.OFF:
@@ -211,11 +229,8 @@ class BydClimate(BydActionEntity, ClimateEntity):
         self._ensure_action_allowed()
         if preset_mode not in self._attr_preset_modes:
             raise HomeAssistantError(f"Unsupported preset mode: {preset_mode}")
-        temp_c = (
-            float(self._TEMP_MAX_C)
-            if preset_mode == self._PRESET_MAX_HEAT
-            else float(self._TEMP_MIN_C)
-        )
+        temp_min, temp_max = self._temp_range
+        temp_c = temp_max if preset_mode == self._PRESET_MAX_HEAT else temp_min
         car = self.coordinator.car
         if car is None:
             return
