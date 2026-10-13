@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: sonarr
-        image: ghcr.io/linuxserver/sonarr:4.0.20-develop
+        image: ghcr.io/linuxserver/sonarr:5.0.0-develop
         imagePullPolicy: Always
         ports:
         - containerPort: 8989
