@@ -9,7 +9,11 @@ from typing import Any
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryNotReady,
+    HomeAssistantError,
+)
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pybyd import BydClient
@@ -230,7 +234,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def _fetch_vehicles(client: BydClient) -> list:
         return await client.get_vehicles()
 
-    vehicles = await api.async_call(_fetch_vehicles)
+    # async_call raises UpdateFailed on network errors, which HA treats as a
+    # permanent setup error instead of retrying (#194)
+    try:
+        vehicles = await api.async_call(_fetch_vehicles)
+    except ConfigEntryAuthFailed:
+        raise
+    except HomeAssistantError as exc:
+        raise ConfigEntryNotReady(f"Unable to reach the BYD cloud: {exc}") from exc
     if not vehicles:
         raise ConfigEntryNotReady("No vehicles available for this account")
 
@@ -291,6 +302,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("Running first refresh for BYD GPS coordinators")
         for gps_coordinator in gps_coordinators.values():
             await gps_coordinator.async_config_entry_first_refresh()
+    except ConfigEntryAuthFailed:
+        raise
     except Exception as exc:  # noqa: BLE001
         raise ConfigEntryNotReady from exc
 
