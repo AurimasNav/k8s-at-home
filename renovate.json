@@ -15,6 +15,14 @@
   "customManagers": [
     {
       "customType": "regex",
+      "managerFilePatterns": ["/gitops/.*/.*\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+- name: \\S+\\s+value: \"?(?<currentValue>[^\"\\s]+)\"?"
+      ],
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/kustomization\\.yaml/"],
       "matchStrings": [
         "https://github\\.com/(?<depName>.*/.*?)/releases/download/(?<currentValue>.*?)/"

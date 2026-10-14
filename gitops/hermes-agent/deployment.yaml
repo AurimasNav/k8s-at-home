@@ -27,6 +27,16 @@ spec:
         volumeMounts:
         - name: tools
           mountPath: /tools
+      - name: gh
+        image: alpine/k8s:latest
+        env:
+        # renovate: datasource=github-releases depName=cli/cli
+        - name: GH_VERSION
+          value: "2.102.0"
+        command: ["sh", "-c", "curl -fsSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz | tar -xzO gh_${GH_VERSION}_linux_amd64/bin/gh > /tools/gh && chmod +x /tools/gh"]
+        volumeMounts:
+        - name: tools
+          mountPath: /tools
       # placeholders stay literal in config.yaml; Hermes resolves them from env at connect time
       - name: mcp-config
         image: nousresearch/hermes-agent:latest
@@ -58,6 +68,10 @@ spec:
           mountPath: /opt/data
         - name: dshm
           mountPath: /dev/shm
+        # read-only: the container runs as root
+        - name: media
+          mountPath: /data
+          readOnly: true
         # on the image PATH and empty in debian
         - name: tools
           mountPath: /usr/local/sbin
@@ -86,6 +100,10 @@ spec:
           claimName: hermes-agent-data
       - name: tools
         emptyDir: {}
+      - name: media
+        hostPath:
+          path: /data
+          type: Directory
       - name: dshm
         emptyDir:
           medium: Memory

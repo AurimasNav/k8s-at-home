@@ -10,6 +10,18 @@ data:
   TELEGRAM_REQUIRE_MENTION: "false"
   # not HASS_*: those enable Hermes' built-in HA toolset, which ignores Assist exposure
   HA_URL: http://home-assistant.home-assistant.svc.cluster.local:8123
+  SONARR_URL: http://sonarr.sonarr.svc.cluster.local
+  RADARR_URL: http://radarr.radarr.svc.cluster.local
+  PROWLARR_URL: http://prowlarr.prowlarr.svc.cluster.local
+  PLEX_URL: http://plex.plex.svc.cluster.local:32400
+  GIT_AUTHOR_NAME: hermes
+  GIT_AUTHOR_EMAIL: hermes@sync.lt
+  GIT_COMMITTER_NAME: hermes
+  GIT_COMMITTER_EMAIL: hermes@sync.lt
+  # git push over https authenticates with GH_TOKEN via gh
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: credential.https://github.com.helper
+  GIT_CONFIG_VALUE_0: "!gh auth git-credential"
 ---
 apiVersion: v1
 kind: ConfigMap
