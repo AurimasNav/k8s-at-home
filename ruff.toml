@@ -1,0 +1,10 @@
+# Lint our own Python. Vendored Home Assistant integrations are third-party code.
+target-version = "py313"
+extend-exclude = ["gitops/home-assistant/custom_components", "**/charts"]
+
+[lint]
+select = ["E", "F", "W", "B", "UP", "S"]
+ignore = [
+  "E501",  # long lines are fine in report scripts
+  "S310",  # urlopen on fixed https URLs from code, not user input
+]

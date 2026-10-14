@@ -1,0 +1,19 @@
+# yamllint config for PR checks. Real errors (syntax, duplicate keys, bad indentation) fail CI.
+# Cosmetic rules are warnings: they show as PR annotations but do not block.
+extends: default
+ignore: |
+  **/charts/
+  gitops/home-assistant/custom_components/
+rules:
+  line-length: disable
+  document-start: disable
+  new-lines: disable            # repo mixes CRLF and LF
+  comments-indentation: disable
+  comments: {level: warning, min-spaces-from-content: 1}
+  indentation: {spaces: consistent, indent-sequences: whatever}
+  truthy: {check-keys: false}
+  brackets: {max-spaces-inside: 1}
+  braces: {max-spaces-inside: 1}
+  trailing-spaces: {level: warning}
+  new-line-at-end-of-file: {level: warning}
+  empty-lines: {level: warning}

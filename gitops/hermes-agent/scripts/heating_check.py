@@ -9,7 +9,7 @@ import os
 import sys
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 URL = os.environ.get("HA_URL", "").rstrip("/")
 TOK = os.environ.get("HA_TOKEN", "")
@@ -42,7 +42,7 @@ E = {
 ROOMS = {"Svetainė": "living_room", "Miegamasis": "bedroom", "Žaidimų k.": "gaming"}
 EXTRACT_AIR = "sensor.flexit_nordic_extract_air_temperature"
 BAD = ("unavailable", "unknown", "", None)
-now = datetime.now(timezone.utc)
+now = datetime.now(UTC)
 
 
 def api(path):
