@@ -18,7 +18,7 @@ data:
   GIT_AUTHOR_EMAIL: hermes@sync.lt
   GIT_COMMITTER_NAME: hermes
   GIT_COMMITTER_EMAIL: hermes@sync.lt
-  # git push over https authenticates with GH_TOKEN via gh
+  # git push over https authenticates with HERMES_GITHUB_TOKEN via the gh wrapper
   GIT_CONFIG_COUNT: "1"
   GIT_CONFIG_KEY_0: credential.https://github.com.helper
   GIT_CONFIG_VALUE_0: "!gh auth git-credential"

@@ -33,7 +33,13 @@ spec:
         # renovate: datasource=github-releases depName=cli/cli
         - name: GH_VERSION
           value: "2.102.0"
-        command: ["sh", "-c", "curl -fsSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz | tar -xzO gh_${GH_VERSION}_linux_amd64/bin/gh > /tools/gh && chmod +x /tools/gh"]
+        command: ["sh", "-c"]
+        args:
+        - >-
+          curl -fsSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz
+          | tar -xzO gh_${GH_VERSION}_linux_amd64/bin/gh > /tools/gh-bin &&
+          printf '#!/bin/sh\nGH_TOKEN="${GH_TOKEN:-$HERMES_GITHUB_TOKEN}" exec /usr/local/sbin/gh-bin "$@"\n' > /tools/gh &&
+          chmod +x /tools/gh /tools/gh-bin
         volumeMounts:
         - name: tools
           mountPath: /tools
