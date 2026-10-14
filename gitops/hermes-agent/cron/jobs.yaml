@@ -1,0 +1,23 @@
+# Hermes cron job definitions (source of truth).
+# Synced into /opt/data/cron/jobs.json by the cron-sync init container on every pod start.
+# Keys are job ids. Authored fields here win; scheduler state (next run, history) stays on the PVC.
+# Jobs not listed here (ad-hoc reminders made in chat) are left untouched.
+# deliver: telegram:<chat_id>:<thread_id>  (241 = Šildymas, 245 = APVA)
+# script: file name in ../scripts (mounted at /opt/data/scripts); its stdout is injected into the prompt.
+jobs:
+  03b0d43625b1:
+    name: NIBE dienos ataskaita
+    schedule: 0 8 * * *
+    deliver: telegram:-1004485564030:241
+    script: heating_check.py
+    enabled: true
+    prompt: |
+      Parašyk kasdienę NIBE F1245 šilumos siurblio ataskaitą lietuviškai. Pagrindinis duomenų šaltinis – aukščiau pateikta skripto heating_check.py išvestis (dabartinės reikšmės, 1 d. ir 3 d. istorija, patalpos). Jei skripto išvestyje yra KLAIDA arba trūksta duomenų, papildomai naudok HA MCP įrankį GetLiveContext. Įtrauk: lauko temperatūrą, tiekimo (be karšto vandens kaitinimo) ir skaičiuotą tiekimą, grįžtamąją, gruntą, karštą vandenį, laipsnių minutes, poslinkį S1, kompresoriaus būseną, darbo valandas ir startus, el. šildytuvą, aliarmus, energijos įvertinimą, patalpų temperatūrą ir drėgnį (Svetainė, Miegamasis, Žaidimų k.), bei 24 val./3 d. tendencijas. Formatas: aiškus, vizualus, su emoji ir Unicode juostomis, be lentelių, iki ~25 eilučių. Trumpa išvada gale. NIEKADA nekeisk šildymo nustatymų, tik pranešk. Nurodyk, jei kurių duomenų nėra.
+  1fe5831c9cd1:
+    name: APVA dienos ataskaita
+    schedule: 0 9 * * *
+    deliver: telegram:-1004485564030:245
+    script: apva_check.py
+    enabled: true
+    prompt: |
+      Parašyk lietuviškai LABAI trumpą APVA paramos būklės pranešimą (iki ~10 eilučių) namų savininkui, turinčiam saulės elektrinę ir besidominčiam namų baterijų (kaupiklių) parama. Pagrindinis šaltinis – aukščiau pateikta skripto apva_check.py išvestis (APVIS aktyvūs kvietimai ir apva.lrv.lt planuojami kvietimai). Jei skripto išvestyje yra KLAIDA, papildomai patikrink oficialius APVA šaltinius web paieška. Pirma eilutė: ar šiuo metu atidarytas kvietimas namų kaupikliams (TAIP/NE). Tada pateik TIK: 1) AKTYVIUS kvietimus, aktualius fiziniams asmenims (pavadinimas, likusi suma, pabaiga); 2) PLANUOJAMUS kvietimus, aktualius fiziniams asmenims arba energetikai (pavadinimas, numatoma pradžia, suma). Juridiniams asmenims skirtų, miškų, invazinių rūšių ir pan. kvietimų neminėk. Ankstesni (uždaryti) kvietimai nėra aktyvūs. NEPATEIKIK instrukcijų, kaip pildyti paraišką ar ką daryti. Gale 1–2 nuorodos. Nieko nespėliok. Formatas: trumpi sąrašai su emoji, be lentelių.
