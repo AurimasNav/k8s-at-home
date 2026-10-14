@@ -41,9 +41,9 @@ jobs:
         with:
           persist-credentials: false
       - name: yamllint
-        run: pipx run yamllint==${YAMLLINT_VERSION} -c .yamllint.yaml -f github .
+        run: pipx run "yamllint==${YAMLLINT_VERSION}" -c .yamllint.yaml -f github .
       - name: ruff (our Python; vendored HA custom_components excluded)
-        run: pipx run ruff==${RUFF_VERSION} check --output-format github .
+        run: pipx run "ruff==${RUFF_VERSION}" check --output-format github .
       - name: actionlint
         run: |
           set -euo pipefail
