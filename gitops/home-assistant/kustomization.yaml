@@ -63,6 +63,7 @@ configMapGenerator:
 # /config/custom_components/hikvision_next (see values.yaml) so it's installed
 # without needing HACS itself. Renovate tracks the source tag:
 # https://github.com/maciej-or/hikvision_next/archive/refs/tags/v1.1.1.tar.gz
+# Local patch: via_device -> via_device_id for HA 2026.9+ (keep on re-vendor)
 - name: ha-hikvision-next
   files:
   - custom_components/hikvision_next/__init__.py

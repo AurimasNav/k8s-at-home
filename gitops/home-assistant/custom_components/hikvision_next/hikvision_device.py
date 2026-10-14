@@ -64,6 +64,7 @@ class HikvisionDevice(ISAPIClient):
         super().__init__(host, username, password, verify_ssl, rtsp_port_forced, session)
 
         self.events_info: list[EventInfo] = []
+        self.root_device_id: str | None = None
 
     async def init_coordinators(self):
         """Initialize coordinators."""
@@ -105,14 +106,21 @@ class HikvisionDevice(ISAPIClient):
             camera_info = self.get_camera_by_id(camera_id)
             is_ip_camera = isinstance(camera_info, IPCamera)
 
-            return DeviceInfo(
+            device_info = DeviceInfo(
                 manufacturer=self.device_info.manufacturer,
                 identifiers={(DOMAIN, camera_info.serial_no)},
                 model=camera_info.model,
                 name=camera_info.name,
                 sw_version=camera_info.firmware if is_ip_camera else "Unknown",
-                via_device=(DOMAIN, self.device_info.serial_no) if self.device_info.is_nvr else None,
             )
+            # HA 2026.9 raises on a via_device key even when None (upstream PR #369)
+            if (
+                self.device_info.is_nvr
+                and self.root_device_id
+                and camera_info.serial_no != self.device_info.serial_no
+            ):
+                device_info["via_device_id"] = self.root_device_id
+            return device_info
 
     def get_device_event_capabilities(
         self,
