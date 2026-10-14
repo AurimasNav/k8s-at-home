@@ -1,7 +1,11 @@
 # Hermes scheduled-job scripts
 
-Backups of scripts used by Hermes cron jobs (live copies: `/opt/data/scripts/`).
-Credentials are never stored here; they come from env vars (`HA_URL`, `HA_TOKEN`) injected via ExternalSecret.
+Source of truth for scripts used by Hermes cron jobs. Kustomize builds the
+`hermes-agent-scripts` ConfigMap from these files. The ConfigMap is mounted
+read-only at `/opt/data/scripts`, and a content change rolls the pod.
+Make changes through PRs.
 
-- `heating_check.py` - NIBE F1245 + room temperatures from Home Assistant (read-only)
-- `apva_check.py` - APVA published/planned calls, flags energy-storage ones (read-only)
+Credentials are never stored here. Scripts read `HA_URL` and `HA_TOKEN` from env (ExternalSecret).
+
+- `heating_check.py` reads NIBE F1245 data, compressor/HW run hours and room climate from Home Assistant. Read-only.
+- `apva_check.py` reads APVA open (APVIS) and planned calls and flags home battery storage. Read-only.
