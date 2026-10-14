@@ -83,6 +83,10 @@ spec:
         # on the image PATH and empty in debian
         - name: tools
           mountPath: /usr/local/sbin
+        # git is the source of truth; edits go through PRs
+        - name: scripts
+          mountPath: /opt/data/scripts
+          readOnly: true
       - name: oauth2-proxy
         image: quay.io/oauth2-proxy/oauth2-proxy:latest
         ports:
@@ -108,6 +112,10 @@ spec:
           claimName: hermes-agent-data
       - name: tools
         emptyDir: {}
+      - name: scripts
+        configMap:
+          name: hermes-agent-scripts
+          defaultMode: 0555
       - name: media
         hostPath:
           path: /data

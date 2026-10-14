@@ -11,6 +11,13 @@ resources:
 - ./externalsecret.yaml
 - ./ha-mcp-setup.yaml
 
+# scripts for Hermes cron jobs; hash suffix rolls the pod on change
+configMapGenerator:
+- name: hermes-agent-scripts
+  files:
+  - scripts/heating_check.py
+  - scripts/apva_check.py
+
 images:
 - name: nousresearch/hermes-agent
   newTag: v2026.9.24
