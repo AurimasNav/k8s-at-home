@@ -3,3 +3,5 @@ show.values.yaml
 .claude/
 secrets.yaml
 **/.esphome/
+__pycache__/
+*.pyc
