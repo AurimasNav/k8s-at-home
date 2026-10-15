@@ -29,12 +29,14 @@ from .const import (
     CONF_DEVICE_PROFILE,
     CONF_GPS_POLL_INTERVAL,
     CONF_LANGUAGE,
+    CONF_MQTT_ENABLED,
     CONF_POLL_INTERVAL,
     COUNTRY_OPTIONS,
     DEFAULT_CLIMATE_DURATION,
     DEFAULT_COUNTRY,
     DEFAULT_DEBUG_DUMPS,
     DEFAULT_GPS_POLL_INTERVAL,
+    DEFAULT_MQTT_ENABLED,
     DEFAULT_POLL_INTERVAL,
     DOMAIN,
     get_country_connection_settings,
@@ -155,6 +157,13 @@ class BydVehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
                     ),
                 ): vol.In(list(_CLIMATE_DURATION_LABELS.values())),
                 vol.Optional(
+                    CONF_MQTT_ENABLED,
+                    default=defaults.get(
+                        CONF_MQTT_ENABLED,
+                        DEFAULT_MQTT_ENABLED,
+                    ),
+                ): bool,
+                vol.Optional(
                     CONF_DEBUG_DUMPS,
                     default=defaults.get(
                         CONF_DEBUG_DUMPS,
@@ -180,6 +189,10 @@ class BydVehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
             CONF_CLIMATE_DURATION: options.get(
                 CONF_CLIMATE_DURATION,
                 DEFAULT_CLIMATE_DURATION,
+            ),
+            CONF_MQTT_ENABLED: options.get(
+                CONF_MQTT_ENABLED,
+                DEFAULT_MQTT_ENABLED,
             ),
             CONF_DEBUG_DUMPS: options.get(
                 CONF_DEBUG_DUMPS,
@@ -244,6 +257,7 @@ class BydVehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
                         CONF_CLIMATE_DURATION: _climate_duration_label_to_minutes(
                             user_input[CONF_CLIMATE_DURATION]
                         ),
+                        CONF_MQTT_ENABLED: user_input[CONF_MQTT_ENABLED],
                         CONF_DEBUG_DUMPS: user_input[CONF_DEBUG_DUMPS],
                     }
 
@@ -276,6 +290,7 @@ class BydVehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
                         CONF_CLIMATE_DURATION: _climate_duration_label_to_minutes(
                             user_input[CONF_CLIMATE_DURATION]
                         ),
+                        CONF_MQTT_ENABLED: user_input[CONF_MQTT_ENABLED],
                         CONF_DEBUG_DUMPS: user_input[CONF_DEBUG_DUMPS],
                     },
                 )
@@ -347,6 +362,7 @@ class BydVehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
                     CONF_CLIMATE_DURATION: _climate_duration_label_to_minutes(
                         user_input[CONF_CLIMATE_DURATION]
                     ),
+                    CONF_MQTT_ENABLED: user_input[CONF_MQTT_ENABLED],
                     CONF_DEBUG_DUMPS: user_input[CONF_DEBUG_DUMPS],
                 }
 
@@ -369,6 +385,10 @@ class BydVehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
             CONF_CLIMATE_DURATION: reconfigure_entry.options.get(
                 CONF_CLIMATE_DURATION,
                 DEFAULT_CLIMATE_DURATION,
+            ),
+            CONF_MQTT_ENABLED: reconfigure_entry.options.get(
+                CONF_MQTT_ENABLED,
+                DEFAULT_MQTT_ENABLED,
             ),
             CONF_DEBUG_DUMPS: reconfigure_entry.options.get(
                 CONF_DEBUG_DUMPS,
