@@ -1,0 +1,31 @@
+# Accepted trivy findings. Each entry is scoped to a path and gives a reason.
+# CI blocks only on HIGH/CRITICAL findings that are not listed here.
+# The full, unfiltered report goes to GitHub code scanning (Security tab).
+misconfigurations:
+  # Hardening backlog (repo-wide). These are tracked in code scanning and are not blocking yet.
+  - id: KSV-0014
+    statement: readOnlyRootFilesystem not set; most media/home apps write to their root fs. Backlog.
+  - id: KSV-0118
+    statement: no explicit pod securityContext; images run as their own users. Backlog.
+
+  # Hardware/network access the workload needs
+  - id: KSV-0009
+    paths: [gitops/otbr/deployment.yaml, gitops/matter-server/deployment.yaml]
+    statement: Thread border router and Matter server need host networking (IPv6, mDNS).
+  - id: KSV-0017
+    paths: [gitops/otbr/deployment.yaml, gitops/matter-server/deployment.yaml]
+    statement: privileged is needed for the USB radio and IPv6 sysctls.
+  - id: KSV-0121
+    paths: [gitops/otbr/deployment.yaml]
+    statement: /dev hostPath is needed for the Thread USB dongle.
+
+  # Reviewed false positives / scoped exceptions
+  - id: KSV-0046
+    paths: [gitops/hermes-agent/rbac.yaml]
+    statement: wildcard resources are read-only (get/list/watch) on gateway, cilium and metallb API groups.
+  - id: KSV-0109
+    paths: [gitops/hermes-agent/ha-mcp-setup.yaml]
+    statement: the script reads the token from env (HA_ADMIN_TOKEN). The word TOKEN in code is not a secret.
+  - id: KSV-0109
+    paths: [gitops/vrising/configmap.yaml]
+    statement: "TODO: app not deployed; the game password is in plain text and should move to an ExternalSecret or be removed."

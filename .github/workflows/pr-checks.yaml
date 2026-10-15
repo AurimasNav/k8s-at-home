@@ -1,0 +1,143 @@
+name: PR checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.*)$
+  KUSTOMIZE_VERSION: "5.8.3"
+  # renovate: datasource=github-releases depName=helm/helm
+  HELM_VERSION: "4.3.0"
+  # renovate: datasource=github-releases depName=yannh/kubeconform
+  KUBECONFORM_VERSION: "0.8.0"
+  # renovate: datasource=github-releases depName=aquasecurity/trivy
+  TRIVY_VERSION: "0.76.0"
+  # renovate: datasource=pypi depName=yamllint
+  YAMLLINT_VERSION: "1.38.0"
+  # renovate: datasource=pypi depName=ruff
+  RUFF_VERSION: "0.17.0"
+  # renovate: datasource=github-releases depName=rhysd/actionlint
+  ACTIONLINT_VERSION: "1.7.12"
+  # schema version for kubeconform; keep near the cluster's k3s version
+  KUBERNETES_VERSION: "1.36.0"
+
+jobs:
+  lint:
+    name: Lint (yamllint, ruff, actionlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: yamllint
+        run: pipx run "yamllint==${YAMLLINT_VERSION}" -c .yamllint.yaml -f github .
+      - name: ruff (our Python; vendored HA custom_components excluded)
+        run: pipx run "ruff==${RUFF_VERSION}" check --output-format github .
+      - name: actionlint
+        run: |
+          set -euo pipefail
+          al="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          base="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
+          curl -fsSL --retry 3 -o "$al" "$base/$al"
+          curl -fsSL --retry 3 -o al.sum "$base/actionlint_${ACTIONLINT_VERSION}_checksums.txt"
+          grep " $al\$" al.sum | sha256sum -c -
+          tar xzf "$al" actionlint
+          ./actionlint -color
+
+  manifests:
+    name: Render + validate manifests (kustomize, kubeconform)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install tools (checksum-verified)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/bin" && cd "$(mktemp -d)"
+          dl() { curl -fsSL --retry 3 -o "$2" "$1"; }
+          verify() { echo "$1  $2" | sha256sum -c -; }
+
+          kz="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          base="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}"
+          dl "$base/$kz" "$kz"; dl "$base/checksums.txt" kz.sum
+          grep " $kz\$" kz.sum | sha256sum -c -; tar xzf "$kz" -C "$HOME/bin" kustomize
+
+          hm="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
+          dl "https://get.helm.sh/$hm" "$hm"; dl "https://get.helm.sh/$hm.sha256sum" hm.sum
+          sha256sum -c hm.sum; tar xzf "$hm" --strip-components=1 -C "$HOME/bin" linux-amd64/helm
+
+          kc="kubeconform-linux-amd64.tar.gz"
+          base="https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}"
+          dl "$base/$kc" "$kc"; dl "$base/CHECKSUMS" kc.sum
+          grep " $kc\$" kc.sum | sha256sum -c -; tar xzf "$kc" -C "$HOME/bin" kubeconform
+
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+      - name: Render every deployed app (same flags as ArgoCD)
+        run: .github/scripts/render-apps.sh rendered
+      - name: kubeconform (strict, CRDs from datreeio catalog)
+        run: |
+          kubeconform -strict -summary -output text \
+            -kubernetes-version "${KUBERNETES_VERSION}" \
+            -ignore-missing-schemas \
+            -skip CustomResourceDefinition \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            rendered/*.yaml
+      - name: Upload rendered manifests
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rendered-manifests
+          path: rendered/
+          retention-days: 7
+
+  security:
+    name: Security (trivy misconfig + secrets)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install trivy (checksum-verified)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/bin" && cd "$(mktemp -d)"
+          tv="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          base="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}"
+          curl -fsSL --retry 3 -o "$tv" "$base/$tv"
+          curl -fsSL --retry 3 -o sums "$base/trivy_${TRIVY_VERSION}_checksums.txt"
+          grep " $tv\$" sums | sha256sum -c -
+          tar xzf "$tv" -C "$HOME/bin" trivy
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+      - name: Secret scan (blocking)
+        run: trivy fs --scanners secret --exit-code 1 --no-progress .
+      - name: Misconfiguration scan (blocking on findings not in .trivyignore)
+        run: >
+          trivy config --exit-code 1 --severity HIGH,CRITICAL
+          --ignorefile .trivyignore.yaml --skip-dirs '**/charts' .
+      - name: Misconfiguration report (SARIF, all severities, non-blocking)
+        if: always()
+        run: >
+          trivy config --format sarif --output trivy.sarif
+          --ignorefile .trivyignore.yaml --skip-dirs '**/charts' .
+      - name: Upload to GitHub code scanning
+        if: always() && hashFiles('trivy.sarif') != ''
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-config

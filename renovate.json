@@ -8,7 +8,7 @@
   "pruneStaleBranches": true,
   "separateMajorMinor": false,
   "gitIgnoredAuthors": ["fake@mail.com"],
-  "enabledManagers": ["kubernetes", "kustomize", "custom.regex"],
+  "enabledManagers": ["kubernetes", "kustomize", "custom.regex", "github-actions"],
   "kubernetes": {
     "managerFilePatterns": ["/gitops/.*/.*\\.ya?ml$/"]
   },
@@ -44,6 +44,15 @@
         "https://github\\.com/(?<depName>[^/]+/[^/]+)/archive/refs/tags/(?<currentValue>.+?)\\.tar\\.gz"
       ],
       "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "description": "Tool versions in GitHub workflow env",
+      "managerFilePatterns": ["/^\\.github/workflows/.*\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\s+[A-Z_]+: \"(?<currentValue>[^\"]+)\""
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.*)${{/if}}"
     }
   ]
 }
