@@ -106,6 +106,7 @@
           "control_pin": "Control PIN (6-digit)",
           "country_code": "Country",
           "climate_duration": "Climate duration",
+          "mqtt_enabled": "MQTT push updates",
           "debug_dumps": "Debug dump API responses"
         }
       },
@@ -118,6 +119,7 @@
           "control_pin": "Control PIN (6-digit)",
           "country_code": "Country",
           "climate_duration": "Climate duration",
+          "mqtt_enabled": "MQTT push updates",
           "debug_dumps": "Debug dump API responses"
         }
       }

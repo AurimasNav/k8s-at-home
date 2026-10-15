@@ -43,8 +43,10 @@ from .const import (
     CONF_DEBUG_DUMPS,
     CONF_DEVICE_PROFILE,
     CONF_LANGUAGE,
+    CONF_MQTT_ENABLED,
     DEFAULT_DEBUG_DUMPS,
     DEFAULT_LANGUAGE,
+    DEFAULT_MQTT_ENABLED,
     DOMAIN,
 )
 
@@ -83,6 +85,7 @@ class BydApi:
             time_zone=time_zone,
             device=device,
             control_pin=entry.data.get(CONF_CONTROL_PIN) or None,
+            mqtt_enabled=entry.options.get(CONF_MQTT_ENABLED, DEFAULT_MQTT_ENABLED),
         )
         self._client: BydClient | None = None
         self._commands_enabled: bool = False
@@ -96,10 +99,11 @@ class BydApi:
         self._coordinators: dict[str, BydDataUpdateCoordinator] = {}
         self._gps_coordinators: dict[str, BydGpsUpdateCoordinator] = {}
         _LOGGER.debug(
-            "BYD API initialized: entry_id=%s, region=%s, language=%s",
+            "BYD API initialized: entry_id=%s, region=%s, language=%s, mqtt=%s",
             entry.entry_id,
             entry.data[CONF_BASE_URL],
             entry.data.get(CONF_LANGUAGE, DEFAULT_LANGUAGE),
+            self._config.mqtt_enabled,
         )
 
     # ------------------------------------------------------------------
