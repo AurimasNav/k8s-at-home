@@ -17,6 +17,10 @@ configMapGenerator:
   files:
   - scripts/heating_check.py
   - scripts/apva_check.py
+- name: hermes-agent-cron
+  files:
+  - cron/jobs.yaml
+  - cron/cron_sync.py
 
 images:
 - name: nousresearch/hermes-agent

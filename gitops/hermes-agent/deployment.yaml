@@ -56,6 +56,22 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /opt/data
+      # cron job definitions come from git (cron/jobs.yaml); scheduler state stays on the PVC
+      - name: cron-sync
+        image: nousresearch/hermes-agent:latest
+        command: ["/opt/hermes/.venv/bin/python", "/cron-config/cron_sync.py", "/cron-config/jobs.yaml"]
+        env:
+        - name: HERMES_HOME
+          value: /opt/data
+        securityContext:
+          runAsUser: 10000
+          runAsGroup: 10000
+        volumeMounts:
+        - name: data
+          mountPath: /opt/data
+        - name: cron-config
+          mountPath: /cron-config
+          readOnly: true
       containers:
       - name: hermes-agent
         image: nousresearch/hermes-agent:latest
@@ -112,6 +128,9 @@ spec:
           claimName: hermes-agent-data
       - name: tools
         emptyDir: {}
+      - name: cron-config
+        configMap:
+          name: hermes-agent-cron
       - name: scripts
         configMap:
           name: hermes-agent-scripts
