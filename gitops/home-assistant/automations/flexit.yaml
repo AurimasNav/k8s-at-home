@@ -17,29 +17,50 @@
         time so far: {{ states('sensor.flexit_nordic_air_filter_operating_time') }}h.
   mode: single
 
+# Phone presence is flaky (a phone can sit at not_home for days while its owner
+# is in the house, or blip home->not_home within a minute), so a 15-minute rule
+# kept dropping the unit to Away with people at home. Only go Away once neither
+# phone has shown up at home for a full 24 h.
+#
+# Polls instead of a `for: 24h` state trigger: `for` timers do not survive an HA
+# restart. After a restart the person entities' last_changed resets to the boot
+# time, so the 24 h window restarts too — that errs on the side of staying Home.
+# Any change of a person's state (home, or a move between zones) restarts the
+# window. Return-to-Home is handled by flexit_preset_home_when_someone_returns.
 - id: flexit_preset_away_when_empty
   alias: Flexit - away preset when house is empty
   triggers:
-  - trigger: state
-    entity_id:
-    - person.aurimas
-    - person.aleksandra
-    to: not_home
-    for:
-      minutes: 15
+  - trigger: time_pattern
+    minutes: /15
   conditions:
   - condition: state
-    entity_id: person.aurimas
-    state: not_home
-  - condition: state
-    entity_id: person.aleksandra
-    state: not_home
+    entity_id: climate.flexit_nordic
+    attribute: preset_mode
+    state: home
+  - condition: template
+    value_template: >-
+      {% set people = expand('person.aurimas', 'person.aleksandra') | list %}
+      {{ people | count == 2
+         and people | rejectattr('state', 'in', ['home', 'unknown', 'unavailable'])
+                    | list | count == 2
+         and people | selectattr('last_changed', 'gt', now() - timedelta(hours=24))
+                    | list | count == 0 }}
   actions:
   - action: climate.set_preset_mode
     target:
       entity_id: climate.flexit_nordic
     data:
       preset_mode: away
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: Flexit ventilation
+      message: >-
+        Neither phone has been home for 24 h - switched ventilation to Away.
+        It goes back to Home as soon as one of you arrives.
   mode: single
 
 - id: flexit_preset_home_when_someone_returns
