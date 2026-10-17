@@ -17,6 +17,7 @@ configMapGenerator:
   files:
   - scripts/heating_check.py
   - scripts/apva_check.py
+  - scripts/renovate_automerge.py
 - name: hermes-agent-cron
   files:
   - cron/jobs.yaml

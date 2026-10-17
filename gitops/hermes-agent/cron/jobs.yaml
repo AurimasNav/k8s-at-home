@@ -2,7 +2,7 @@
 # Synced into /opt/data/cron/jobs.json by the cron-sync init container on every pod start.
 # Keys are job ids. Authored fields here win; scheduler state (next run, history) stays on the PVC.
 # Jobs not listed here (ad-hoc reminders made in chat) are left untouched.
-# deliver: telegram:<chat_id>:<thread_id>  (241 = Šildymas, 245 = APVA)
+# deliver: telegram:<chat_id>:<thread_id>  (241 = Šildymas, 245 = APVA, 501 = Home server)
 # script: file name in ../scripts (mounted at /opt/data/scripts); its stdout is injected into the prompt.
 jobs:
   03b0d43625b1:
@@ -21,3 +21,19 @@ jobs:
     enabled: true
     prompt: |
       Parašyk lietuviškai LABAI trumpą APVA paramos būklės pranešimą (iki ~10 eilučių) namų savininkui, turinčiam saulės elektrinę ir besidominčiam namų baterijų (kaupiklių) parama. Pagrindinis šaltinis – aukščiau pateikta skripto apva_check.py išvestis (APVIS aktyvūs kvietimai ir apva.lrv.lt planuojami kvietimai). Jei skripto išvestyje yra KLAIDA, papildomai patikrink oficialius APVA šaltinius web paieška. Pirma eilutė: ar šiuo metu atidarytas kvietimas namų kaupikliams (TAIP/NE). Tada pateik TIK: 1) AKTYVIUS kvietimus, aktualius fiziniams asmenims (pavadinimas, likusi suma, pabaiga); 2) PLANUOJAMUS kvietimus, aktualius fiziniams asmenims arba energetikai (pavadinimas, numatoma pradžia, suma). Juridiniams asmenims skirtų, miškų, invazinių rūšių ir pan. kvietimų neminėk. Ankstesni (uždaryti) kvietimai nėra aktyvūs. NEPATEIKIK instrukcijų, kaip pildyti paraišką ar ką daryti. Gale 1–2 nuorodos. Nieko nespėliok. Formatas: trumpi sąrašai su emoji, be lentelių.
+  c4a472c22bee:
+    name: Renovate auto-merge
+    schedule: 0 10 * * *
+    deliver: telegram:-1004485564030:501
+    script: renovate_automerge.py
+    enabled: true
+    prompt: |
+      The script renovate_automerge.py has already run. Its output above is the full record of what happened: it merged eligible Renovate PRs in github.com/AurimasNav/k8s-at-home one at a time and watched each ArgoCD rollout. Your job is only to summarise it for the home-server Telegram topic. Do NOT merge, revert, rebase or change anything yourself.
+      - If the output is exactly NO_RENOVATE_PRS, reply with exactly [SILENT].
+      - If it starts with KLAIDA, report the error in 1-2 lines and say nothing was merged.
+      Otherwise write a short English summary (max ~15 lines), no tables:
+      1. First line: one status emoji and a headline, e.g. "✅ Renovate: 3 merged, all rolled out" or "⚠️ Renovate: 2 merged, 1 rollout failed".
+      2. One bullet per PR: ✅ merged and rolled out / 📦 merged, nothing to deploy / ⏳ waiting for checks / 🔁 rebase requested / ✋ held for a human / ❌ failed. Give the PR number linked as https://github.com/AurimasNav/k8s-at-home/pull/<n>, the package and the version change, and the affected app. Add image changes or the HA version only when the output has them.
+      3. If a rollout failed or something errored, say which app and what the script reported, and that the remaining PRs were left unmerged. Never claim a rollout succeeded unless the output says OK.
+      4. Last line: cluster health from the "Cluster after run" section (apps not Synced/Healthy, pods not running), or "cluster healthy".
+      For held PRs, say in a few words why (major update, vendored code not updated, would restart Hermes, failing checks), so the user knows what to do.
