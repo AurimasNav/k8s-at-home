@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegram-dl
+  labels:
+    app: telegram-dl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telegram-dl
+  template:
+    metadata:
+      labels:
+        app: telegram-dl
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: telegram-dl
+        image: python
+        command: ["python3", "/app/server.py"]
+        env:
+        - name: PORT
+          value: "8080"
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        ports:
+        - name: http
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /telegram/healthz
+            port: http
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /telegram/healthz
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: app
+          mountPath: /app
+          readOnly: true
+      volumes:
+      - name: app
+        configMap:
+          name: telegram-dl

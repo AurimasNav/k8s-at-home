@@ -40,3 +40,4 @@ resources:
 - ./apps/tempo
 - ./apps/loki
 - ./apps/hermes-agent
+- ./apps/telegram-dl
