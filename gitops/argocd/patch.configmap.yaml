@@ -2,3 +2,9 @@
   path: /data
   value:
     kustomize.buildOptions: --enable-alpha-plugins --enable-helm --load-restrictor LoadRestrictionsNone
+    # Argo CD >=3.3 adds pre/post-delete hook finalizers to child Applications whose
+    # charts ship Helm delete hooks (e.g. vm-operator cleanup). Ignore them so the
+    # app-of-apps parent does not flap OutOfSync and strip them (argo-cd #17433).
+    resource.customizations.ignoreDifferences.argoproj.io_Application: |
+      jqPathExpressions:
+      - '.metadata.finalizers[]? | select(startswith("pre-delete-finalizer.argocd.argoproj.io") or startswith("post-delete-finalizer.argocd.argoproj.io"))'
