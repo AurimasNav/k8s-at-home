@@ -89,6 +89,12 @@
 # up while the charger reports Charging. Polling then is close to free: the car
 # is awake and on shore power anyway.
 #
+# Since hass-byd-vehicle 0.0.92 the integration itself stretches the interval
+# 4x (capped at 20 min, never below the set value) while parked and charging
+# under 12 kW, so during home AC charging the effective poll is 20 min, not the
+# 300s set here. Fine for the completion notification; nothing here stops
+# charging on SoC.
+#
 # GPS stays slow even while charging - the car is parked, so location cannot
 # change. Raise it in the UI if live tracking while driving is ever wanted.
 #

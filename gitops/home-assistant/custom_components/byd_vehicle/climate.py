@@ -254,8 +254,8 @@ class BydClimate(BydActionEntity, ClimateEntity):
         if hvac is not None:
             attrs["exterior_temperature"] = hvac.temp_out_car
             attrs["passenger_set_temperature"] = hvac.copilot_setting_temp_new
-            attrs["fan_speed"] = hvac.wind_mode
-            attrs["airflow_direction"] = hvac.wind_position
+            attrs["fan_speed"] = hvac.wind_position
+            attrs["airflow_direction"] = hvac.wind_mode
             attrs["recirculation"] = hvac.cycle_choice
             attrs["front_defrost"] = hvac.front_defrost_status
             attrs["rear_defrost"] = hvac.electric_defrost_status
