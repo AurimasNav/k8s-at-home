@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Telegram Desktop portable (Windows) download relay at https://home.sync.lt/telegram.
+# server.py only fetches the fixed telegram.org portable URLs; it is not an open proxy.
+namespace: telegram-dl
+
+resources:
+- ./deployment.yaml
+- ./service.yaml
+- ./ingress.yaml
+
+configMapGenerator:
+- name: telegram-dl
+  files:
+  - server.py
+
+images:
+- name: python
+  newTag: 3.15.0-alpine3.24
