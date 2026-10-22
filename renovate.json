@@ -8,6 +8,14 @@
   "pruneStaleBranches": true,
   "separateMajorMinor": false,
   "gitIgnoredAuthors": ["fake@mail.com"],
+  "packageRules": [
+    {
+      "description": "Plex tags are <major>.<minor>.<patch>.<build>-<git hash>; compare the numbers, ignore the hash and per-arch tags",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["plexinc/pms-docker"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-[0-9a-f]+$"
+    }
+  ],
   "enabledManagers": ["kubernetes", "kustomize", "custom.regex", "github-actions"],
   "kubernetes": {
     "managerFilePatterns": ["/gitops/.*/.*\\.ya?ml$/"]
