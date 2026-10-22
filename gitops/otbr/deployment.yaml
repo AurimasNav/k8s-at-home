@@ -42,7 +42,7 @@ spec:
           echo "host IPv6 set -> forwarding=$(cat /proc/sys/net/ipv6/conf/all/forwarding) accept_ra_all=$(cat /proc/sys/net/ipv6/conf/all/accept_ra) accept_ra_eno1=$(cat /proc/sys/net/ipv6/conf/eno1/accept_ra) rt_info=$(cat /proc/sys/net/ipv6/conf/eno1/accept_ra_rt_info_max_plen)"
       containers:
       - name: otbr
-        image: ghcr.io/ownbee/hass-otbr-docker:latest
+        image: ghcr.io/ownbee/hass-otbr-docker:v0.4.0
         securityContext:
           privileged: true
         env:

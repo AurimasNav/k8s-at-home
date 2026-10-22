@@ -14,6 +14,12 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["plexinc/pms-docker"],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-[0-9a-f]+$"
+    },
+    {
+      "description": "hass-otbr-docker also publishes git-hash tags (e.g. 7781566); only follow vX.Y.Z releases",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/ownbee/hass-otbr-docker"],
+      "allowedVersions": "/^v\\d+\\.\\d+\\.\\d+$/"
     }
   ],
   "enabledManagers": ["kubernetes", "kustomize", "custom.regex", "github-actions"],
