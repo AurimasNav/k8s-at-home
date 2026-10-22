@@ -32,7 +32,7 @@ spec:
         env:
         # renovate: datasource=github-releases depName=cli/cli
         - name: GH_VERSION
-          value: "2.102.1"
+          value: "2.103.0"
         command: ["sh", "-c"]
         args:
         - >-
