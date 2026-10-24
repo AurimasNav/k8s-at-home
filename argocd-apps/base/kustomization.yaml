@@ -42,3 +42,4 @@ resources:
 - ./apps/hermes-agent
 - ./apps/telegram-dl
 - ./apps/homebox
+- ./apps/k8up
