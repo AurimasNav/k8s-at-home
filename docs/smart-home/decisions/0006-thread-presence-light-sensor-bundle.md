@@ -1,11 +1,12 @@
 # 0006 — DIY light-automation sensor bundle (Thread, mmWave + PIR + lux, cat-aware)
 
-- **Status:** **Proposed** 2026-10-11
+- **Status:** **Proposed** 2026-10-11; entrance hall amended 2026-10-24, see [Entrance hall variant](#entrance-hall-variant)
 - **Scope:** Hardware bundle and fusion logic for a mains-powered sensor node that decides "someone
   is here and it is dark" for light automation, in rooms the two cats use. ESPHome config, once
   built, lives in `src/smart-home/esphome/` — not duplicated here.
 - **Related:** [ADR 0003](0003-bathroom-presence-radar-retrofit.md) (same mains/enclosure pattern, pet-immune
-  tuning notes), [Sensor selection](../sensor-selection.md), [Matter-over-Thread setup](../../matter-thread-setup.md)
+  tuning notes), [ADR 0007](0007-dsc-alarm-keybus-integration.md) (alarm PIRs into HA; the hall node uses it),
+  [Sensor selection](../sensor-selection.md), [Matter-over-Thread setup](../../matter-thread-setup.md)
 
 ## Context
 
@@ -18,7 +19,7 @@ Light automation needs three signals that fail in different ways, so the node co
 | Ambient light | Deciding whether a light is needed at all | Sees the lamp it controls (feedback) |
 
 Constraints already settled: DIY, mains 230 V → 5 V via the existing Hi-Link HLK-PM01 module
-(0.6 A / 3 W, see ADR 0003), Thread network already running (OTBR + Nabu Casa ZBT-2), two cats in
+(0.6 A / 3 W, see ADR 0003; the entrance hall runs on the alarm's 12 V instead), Thread network already running (OTBR + Nabu Casa ZBT-2), two cats in
 the house.
 
 ## Decision
@@ -28,9 +29,9 @@ the house.
 | MCU | **ESP32-C6 SuperMini** (Seeed XIAO ESP32-C6 only if a node needs an external antenna) | 802.15.4 for Thread, supported by ESPHome's `openthread` component. Reuses `boards/esp32c6-supermini.yaml` (already ESP-IDF, no WiFi in it). XIAO adds a u.FL connector, at the cost of a second board profile |
 | Thread role | **FTD** (`device_type: FTD`, the default) | Mains-powered, so it can be promoted to a router and strengthens the mesh. No sleep needed |
 | Presence radar | **HLK-LD2410C** by default; **HLK-LD2450** only where [zones pay off](#when-to-pick-the-ld2450) | LD2410C is cheaper, smaller, better with still people and already in the repo; LD2450 adds X/Y positions and exclusion zones |
-| PIR | **Panasonic EKMC1601111** | Production-grade part named in [Sensor selection](../sensor-selection.md), clean digital output, 3–6 V, ~170 µA, ~5 m range |
+| PIR | **Panasonic EKMC1601111** | Production-grade part named in [Sensor selection](../sensor-selection.md), clean digital output, 3–6 V, ~170 µA, ~5 m range. Rooms with an alarm PIR use that instead ([ADR 0007](0007-dsc-alarm-keybus-integration.md)), as the [entrance hall](#entrance-hall-variant) does |
 | Ambient light | **Vishay VEML7700** (I²C, 0x10) | Calibrated lux, RoHS, ESPHome-native `veml7700` with automatic gain/integration, ~0–120 000 lux. Replaces the LD2410's unitless 0–255 `light` value |
-| Power | Existing **HLK-PM01** → 5 V into the board's `5V` pin | Same as ADR 0003. Re-check headroom, see [Power](#power) |
+| Power | Existing **HLK-PM01** → 5 V into the board's `5V` pin | Same as ADR 0003. Re-check headroom, see [Power](#power). Entrance hall: alarm 12 V → Pololu D45V5F5, see [Entrance hall variant](#entrance-hall-variant) |
 
 ### Thread, not WiFi, for this node
 
@@ -145,6 +146,9 @@ are switched one of two ways:
 In the entrance hall there is no cat spot to exclude: the cats walk the same floor as people, so the
 rule is simply "**anything low on the floor is a cat**". The node sits in a corner at about 2 m.
 
+In the entrance hall itself the alarm's pet-immune Swan Quad already does this (see
+[Entrance hall variant](#entrance-hall-variant)). The masking below is for transit spaces without an alarm PIR.
+
 Neither radar can do this. The LD2410C reports distance only, and the LD2450 reports X/Y in its own
 plane with no elevation, so a cat and a person at the same distance look alike. **Height has to come
 from the PIR's geometry**, the same trick as commercial pet-immune PIRs:
@@ -190,6 +194,44 @@ passes through plastic) and the light sensor, **but not for the PIR**:
   suggests.
 - Mains side: keep the PSU's AC pins physically separated from the low-voltage side and from the metal box,
   and have the mains work checked by a qualified electrician (ADR 0003 applies unchanged).
+
+## Entrance hall variant
+
+Added 2026-10-24. The spot planned for the hall node holds a **Crow Swan Quad** pet-immune PIR on the
+DSC alarm's 12 V AUX output, and there is no mains there. The hall node changes as below; everything
+else in this ADR still applies.
+
+| Part | Hall pick | Instead of |
+|---|---|---|
+| Power | Alarm 12 V (red +, white −), tapped at the Swan Quad's `-12V+` terminals → **Pololu D45V5F5** → 5 V | HLK-PM01 on mains |
+| PIR | The **Swan Quad stays** on its alarm zone. Its state reaches HA through the Keybus node ([ADR 0007](0007-dsc-alarm-keybus-integration.md)), and the hall node imports it with ESPHome's `homeassistant` binary sensor | EKMC1601111 with a masked lens |
+| Enclosure | Small surface box next to the Swan Quad: C6 SuperMini, LD2410C, VEML7700, converter | Reusing the Swan Quad housing: its board fills the base, and the radar cannot sit behind a PCB |
+
+```
+alarm red (+12 V) ──┬── Swan Quad +12V (stays)
+                    └── D45V5F5 VIN
+alarm white (−)   ──┬── Swan Quad −    (stays)
+                    └── D45V5F5 GND ── common GND: C6, LD2410C, VEML7700
+
+D45V5F5 VOUT (5 V) ─┬── C6 SuperMini 5V pin
+                    └── LD2410C VCC
+C6 3V3 ──────────────── VEML7700 VCC
+```
+
+- **Why:** no mains work in the hall, so the electrician step drops out for this node. The node rides on
+  the alarm battery during outages. The Swan Quad is a commercial pet-immune PIR, the height gate that
+  [Ignoring cats by height](#ignoring-cats-by-height-entrance-hall-transit-spaces) builds by hand, and it is
+  already mounted in the corner.
+- **Fusion:** the rules are unchanged, but the PIR edge now travels detector → panel → Keybus node → HA →
+  hall node. ON therefore also needs the Keybus node up (HA was already required). Measure the latency
+  (ADR 0007, open question 5) and widen the "radar moving target within ~2 s" window if needed. The
+  HOLD cap "max time since the last PIR edge" uses the same imported entity.
+- **Alarm side:** the Swan Quad's PET and PULSE jumpers are alarm settings too. Walk-test with the cats
+  before changing either.
+- **Before connecting:** measure voltage and polarity at the terminals. DSC rates AUX at 11.1–12.6 V; the
+  D45V5F5 takes 5.2–65 V but has **no reverse-polarity protection**. Check the AUX budget (ADR 0007).
+- Do not plug USB into the C6 while it runs from 12 V. Flash on the bench, then update OTA over Thread.
+- Opening the Swan Quad to add the tap logs a zone tamper on the alarm; it clears when the cover is closed.
 
 ## Why not the alternatives
 
@@ -265,6 +307,7 @@ count, or Hi-Link's own store for Hi-Link parts.
 | Panasonic EKMC1601111 | [Electrobase.lt](https://electrobase.lv/lt/node/798132) ~€17.80 (check the part number on the page) | [EKMC1601111](https://www.amazon.de/dp/B0F7HZQ61N) ~€26 | [search](https://www.aliexpress.com/w/wholesale-EKMC1601111.html) ~€5–11, see note | n/a (buy from a distributor) |
 | VEML7700 breakout | [Anodas.lt, DFRobot Gravity](https://www.anodas.lt/dfrobot-gravity-skaitmeninis-aplinkos-sviesos-jutiklis-veml7700-i2c) ~€11.50 | [Adafruit 4162](https://www.amazon.de/dp/B07QJG43FB) ~€11; [Ausi](https://www.amazon.de/dp/B0FMR4XWYZ) ~€8 | [search](https://www.aliexpress.com/w/wholesale-VEML7700.html) ~€2–3 | ~€5–6 |
 | HLK-PM01 | [Anodas.lt](https://www.anodas.lt/maitinimo-saltinis-hi-link-hlk-pm01-100v-240vac-5vdc-0-6a) ~€8.20; [Varle.lt](https://www.varle.lt/atviro-kodo-elektronika/acdc-itampos-keitiklis-is-230v-i-5v-600ma-step-down--14235174.html) ~€11.50 | [JZK, 2 pcs](https://www.amazon.de/dp/B073QH1XT8) ~€10 | [search](https://www.aliexpress.com/w/wholesale-HLK-PM01.html) ~€2–5, see note | ~€5–8 |
+| 12 V → 5 V: Pololu D45V5F5 (hall node, ADR 0007 node; checked 2026-10-24) | [kaina24.lt "5V 0.5A"](https://www.kaina24.lt/s/5v-0-5a/) lists it ~€7.60; [Botland.store](https://botland.store/converters-step-down/26472-d45v5f5-step-down-inverter-5v-05a-pololu-5433-5904422387679.html) ~€3.90 (PL), see note | [Pololu D24V5F5](https://www.amazon.de/dp/B07KHZ76T3) currently unavailable; fallback [Mini560 5 V, 5 pcs](https://www.amazon.de/dp/B0GS65YWQT) ~€9 | [Mini560 5 V search](https://www.aliexpress.com/w/wholesale-mini560-5V.html), price not checked | n/a |
 
 **EU import charges on AliExpress** (the "landed" column):
 
@@ -289,6 +332,9 @@ count, or Hi-Link's own store for Hi-Link parts.
 - **HLK-PM01:** it sits on mains, and cloned PM01s are common. Prefer the Anodas.lt one (also used for
   ADR 0003) or Hi-Link's own store over the cheapest listing.
 - **XIAO ESP32-C6 and HLK-10M05:** not on kaina24.lt; AliExpress has both if needed.
+- **D45V5F5:** Pololu #5433, 3 pins (VIN, GND, VOUT), 7.6 × 11.4 mm, 5.2–65 V in, no trimmer, headers not
+  included. Botland's title says "Pololu 5434", but #5434 is the **6 V** D45V5F6; check the page says 5 V
+  before ordering. The Mini560 is the fallback: fixed 5 V, but only 7–20 V in and about 30 × 18 mm.
 
 ## Sources
 
@@ -305,6 +351,8 @@ count, or Hi-Link's own store for Hi-Link parts.
 - [What is a pet-immune motion detector? (Alarm Grid)](https://alarmgrid.com/faq/what-is-a-pet-immune-motion-detector)
 - [TillFleisch/ESPHome-HLK-LD2450](https://github.com/TillFleisch/ESPHome-HLK-LD2450)
 - [C6 Thread border router project (WiFi coexistence notes)](https://github.com/p01di/esp32c6-thread-border-router)
+- [Pololu D45V5F5](https://www.pololu.com/product/5433)
+- [DSC PowerSeries PC1616/PC1832/PC1864 manual (manualsdir)](https://www.manualsdir.com/manuals/72556/dsc-powerseries-pc1616-powerseries-pc1864-powerseries-pc1832.html)
 - [Commission guidance on the €3 low-value import duty](https://transition-pathways.europa.eu/retail/news/commission-publishes-guidance-new-eu3-duty-low-value-imports)
 - [EU imposes €3 duty on parcels from China (LRT, 2026-07-01)](https://www.lrt.lt/en/news-in-english/19/2977091/eu-imposes-eur3-duty-on-parcels-from-china)
 - [Parcels from outside the EU to cost more from July (LRT)](https://www.lrt.lt/en/news-in-english/19/2962349/parcels-from-outside-the-eu-to-cost-more-from-july)

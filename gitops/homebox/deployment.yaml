@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homebox
+  namespace: homebox
+  labels:
+    app: homebox
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: homebox
+  template:
+    metadata:
+      labels:
+        app: homebox
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+      containers:
+      - name: homebox
+        image: ghcr.io/sysadminsmedia/homebox:latest-rootless
+        ports:
+        - containerPort: 7745
+        envFrom:
+        - configMapRef:
+            name: homebox
+        - secretRef:
+            name: homebox
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        readinessProbe:
+          httpGet:
+            path: /api/v1/status
+            port: 7745
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/v1/status
+            port: 7745
+          initialDelaySeconds: 30
+          periodSeconds: 30
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: homebox-data

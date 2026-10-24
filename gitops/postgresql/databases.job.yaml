@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: databases
+  namespace: postgresql
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: psql
+        image: postgres:18-alpine
+        env:
+        - name: PGHOST
+          value: postgresql
+        - name: PGUSER
+          valueFrom:
+            configMapKeyRef:
+              name: postgresql
+              key: POSTGRES_USER
+        - name: PGDATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: postgresql
+              key: POSTGRES_DB
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql
+              key: POSTGRES_PASSWORD
+        - name: HOMEBOX_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: homebox-db
+              key: HBOX_DATABASE_PASSWORD
+        command: ["sh", "-ec"]
+        # idempotent: creates role and database once, re-applies the password every sync
+        args:
+        - |
+          ensure_db() {
+            psql -v ON_ERROR_STOP=1 -v name="$1" -v pw="$2" <<'SQL'
+          SELECT format('CREATE ROLE %I LOGIN', :'name') WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'name')\gexec
+          SELECT format('ALTER ROLE %I WITH LOGIN PASSWORD %L', :'name', :'pw')\gexec
+          SELECT format('CREATE DATABASE %I OWNER %I', :'name', :'name') WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'name')\gexec
+          SQL
+            psql -v ON_ERROR_STOP=1 -d "$1" -c 'CREATE EXTENSION IF NOT EXISTS unaccent'
+          }
+          ensure_db homebox "$HOMEBOX_PASSWORD"
