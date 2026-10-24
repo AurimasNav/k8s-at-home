@@ -1,0 +1,37 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: k8up
+  namespace: k8up
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: k8up
+      app.kubernetes.io/instance: k8up
+  endpoints:
+  - port: http
+    interval: 60s
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: k8up
+  namespace: k8up
+spec:
+  groups:
+  - name: k8up
+    rules:
+    - alert: K8upJobFailed
+      expr: k8up_schedule_last_job_succeeded == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "K8up {{ $labels.jobType }} for {{ $labels.namespace }} failed"
+    - alert: K8upBackupStale
+      expr: sum by (namespace) (increase(k8up_jobs_successful_counter{jobType="backup"}[26h])) == 0
+      for: 1h
+      labels:
+        severity: critical
+      annotations:
+        summary: "No successful K8up backup for {{ $labels.namespace }} in 26 hours"

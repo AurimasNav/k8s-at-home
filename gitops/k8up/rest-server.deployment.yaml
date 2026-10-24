@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rest-server
+  namespace: k8up
+  labels:
+    app: rest-server
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rest-server
+  template:
+    metadata:
+      labels:
+        app: rest-server
+    spec:
+      initContainers:
+      - name: htpasswd
+        image: restic/rest-server:latest
+        command: ["sh", "-c", "htpasswd -B -b -c /auth/.htpasswd k8up \"$REST_PASSWORD\""]
+        env:
+        - name: REST_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rest-server
+              key: REST_PASSWORD
+        volumeMounts:
+        - name: auth
+          mountPath: /auth
+      containers:
+      - name: rest-server
+        image: restic/rest-server:latest
+        env:
+        - name: PASSWORD_FILE
+          value: /auth/.htpasswd
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: auth
+          mountPath: /auth
+          readOnly: true
+        readinessProbe:
+          tcpSocket:
+            port: 8000
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+      volumes:
+      - name: auth
+        emptyDir: {}
+      # point at the second disk's mount once it exists
+      - name: data
+        hostPath:
+          path: /var/backups/restic
+          type: DirectoryOrCreate

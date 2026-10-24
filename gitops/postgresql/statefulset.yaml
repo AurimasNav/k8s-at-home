@@ -13,6 +13,9 @@ spec:
     metadata:
       labels:
         app: postgresql
+      annotations:
+        k8up.io/backupcommand: pg_dumpall -U hairsera
+        k8up.io/file-extension: .sql
     spec:
       containers:
       - name: postgresql
