@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: homebox
+  namespace: homebox
+spec:
+  ports:
+  - name: app
+    port: 80
+    targetPort: 7745
+    protocol: TCP
+    appProtocol: http
+  selector:
+    app: homebox

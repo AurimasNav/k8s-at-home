@@ -6,3 +6,5 @@ resources:
 - ./externalsecret.yaml
 - ./statefulset.yaml
 - ./service.yaml
+- ./homebox.externalsecret.yaml
+- ./databases.job.yaml

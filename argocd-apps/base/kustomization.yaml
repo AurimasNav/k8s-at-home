@@ -41,3 +41,4 @@ resources:
 - ./apps/loki
 - ./apps/hermes-agent
 - ./apps/telegram-dl
+- ./apps/homebox
