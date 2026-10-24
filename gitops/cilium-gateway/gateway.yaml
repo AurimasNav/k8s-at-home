@@ -209,3 +209,16 @@ spec:
       - kind: Secret
         name: hermes-tls
         namespace: cilium-gateway
+  - name: https-homebox
+    hostname: homebox.sync.lt
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: homebox-tls
+        namespace: cilium-gateway
