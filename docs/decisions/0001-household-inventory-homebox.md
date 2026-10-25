@@ -48,10 +48,10 @@ are just where an item is. Labels carry the category (smart home, tools, electro
 
 ## Implementation notes
 
-- Doppler (project `k8s-at-home`, Production) needs a `HOMEBOX` secret holding JSON with
-  `HBOX_DATABASE_PASSWORD` (e.g. `openssl rand -hex 24`) and `HBOX_AUTH_API_KEY_PEPPER`
-  (`openssl rand -base64 48`; Homebox refuses to start below 32 bytes, and rotating it invalidates
-  API keys). Both `gitops/homebox` and `gitops/postgresql` extract it.
+- Doppler (project `k8s-at-home`, Production) holds two plain secrets: `HBOX_DATABASE_PASSWORD`
+  (e.g. `openssl rand -hex 24`), read by both `gitops/homebox` and `gitops/postgresql`, and
+  `HBOX_AUTH_API_KEY_PEPPER` (`openssl rand -base64 48`; Homebox refuses to start below 32 bytes, and
+  rotating it invalidates API keys).
 - DNS: `homebox.sync.lt` needs a record like the other hosts (there is no wildcard).
 - Registration starts enabled so the first account can be created. Set
   `HBOX_OPTIONS_ALLOW_REGISTRATION` to `"false"` in `gitops/homebox/configmap.yaml` right after; household

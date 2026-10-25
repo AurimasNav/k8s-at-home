@@ -26,7 +26,7 @@
 | Scope | Namespaces with a `Schedule`: postgresql, homebox, home-assistant, hermes-agent, matter-server, otbr. Inside them every PVC, unless annotated `k8up.io/backup: "false"` | Opt-in per namespace keeps the 1 Ti Plex transcode volume and re-downloadable media out |
 | Timing | Backup daily 03:00, prune Sunday 04:00, check Sunday 05:00 (Europe/Vilnius) | Quiet hours |
 | Retention | 7 daily, 4 weekly, 6 monthly | |
-| Secrets | Doppler `RESTIC` → `RESTIC_PASSWORD` (repository encryption) and `REST_PASSWORD` (rest-server login, user `k8up`), copied into each namespace by a `ClusterExternalSecret` | The repository password lives off the server, so backups stay readable if the server dies |
+| Secrets | Doppler `RESTIC_PASSWORD` (repository encryption) and `REST_PASSWORD` (rest-server login, user `k8up`), copied into each namespace by a `ClusterExternalSecret` | The repository password lives off the server, so backups stay readable if the server dies |
 
 ## Why not the alternatives
 
@@ -59,8 +59,8 @@
 
 ## Implementation notes
 
-- Doppler (project `k8s-at-home`, Production): add `RESTIC` as JSON with `RESTIC_PASSWORD` and
-  `REST_PASSWORD` (e.g. `openssl rand -base64 32` each). **Also keep `RESTIC_PASSWORD` in a password
+- Doppler (project `k8s-at-home`, Production) holds `RESTIC_PASSWORD` and `REST_PASSWORD` as plain
+  secrets (e.g. `openssl rand -base64 32` each). **Also keep `RESTIC_PASSWORD` in a password
   manager.** Never change it in Doppler alone: the repositories are encrypted with it (rotate with
   `restic key` instead).
 - To back up another namespace: add a `Schedule` to `gitops/k8up/schedules.yaml` and the namespace to
