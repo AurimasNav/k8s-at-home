@@ -21,7 +21,7 @@
 | Database | Its own role and database on the shared **`gitops/postgresql`** | Long-lived data belongs in the database that will be backed up, not a SQLite file on a PVC |
 | DB provisioning | `gitops/postgresql/databases.job.yaml`, an idempotent Argo CD Sync hook | Creates the role and database once and re-applies the password from Doppler every sync. The pattern for later apps |
 | Image | `ghcr.io/sysadminsmedia/homebox:<version>-rootless` | Runs as UID 65532 |
-| Exposure | `homebox.sync.lt` via the Cilium gateway | Same pattern as the other apps |
+| Exposure | `homebox.sync.lt` through ingress-nginx behind the `login.sync.lt` Google login (oauth2-proxy), plus a Cilium gateway route | The router forwards 80/443 to ingress-nginx; the gateway is LAN-only. Same as sonarr and homepage |
 
 **Model:** locations are physical places (room › furniture › box), so "installed" and "in storage"
 are just where an item is. Labels carry the category (smart home, tools, electronics, documents).
@@ -53,9 +53,12 @@ are just where an item is. Labels carry the category (smart home, tools, electro
   `HBOX_AUTH_API_KEY_PEPPER` (`openssl rand -base64 48`; Homebox refuses to start below 32 bytes, and
   rotating it invalidates API keys).
 - DNS: `homebox.sync.lt` needs a record like the other hosts (there is no wildcard).
+- Household members need their Google address in oauth2-proxy's `AUTHENTICATED_EMAILS` (Doppler)
+  before they can reach the Homebox login.
 - Registration starts enabled so the first account can be created. Set
   `HBOX_OPTIONS_ALLOW_REGISTRATION` to `"false"` in `gitops/homebox/configmap.yaml` right after; household
   members then join through invite links, which work with registration disabled.
 - The provisioning script was tested 2026-10-24 against a throwaway `postgres:18-alpine`: it is
   idempotent, handles quotes in the password, and the new role can create tables.
-- Upload limit is raised to 32 MB (`HBOX_WEB_MAX_UPLOAD_SIZE`) for manuals and receipts.
+- Upload limit is raised to 32 MB (`HBOX_WEB_MAX_UPLOAD_SIZE` and the Ingress `proxy-body-size`) for
+  manuals and receipts.
