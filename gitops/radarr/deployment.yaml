@@ -6,6 +6,10 @@ metadata:
     app: radarr
 spec:
   replicas: 1
+  # Stop the old pod before starting the new one: two Radarr instances must never
+  # share the /config SQLite DB (RWO local-path PVC).
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: radarr
