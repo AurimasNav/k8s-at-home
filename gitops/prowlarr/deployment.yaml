@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: prowlarr
-        image: ghcr.io/linuxserver/prowlarr:2.6.5-develop
+        image: ghcr.io/linuxserver/prowlarr:2.6.6-develop
         ports:
         - containerPort: 9696
         envFrom:
