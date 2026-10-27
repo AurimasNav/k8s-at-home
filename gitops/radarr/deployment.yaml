@@ -6,6 +6,10 @@ metadata:
     app: radarr
 spec:
   replicas: 1
+  # Stop the old pod before starting the new one: two Radarr instances must never
+  # share the /config SQLite DB (RWO local-path PVC).
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: radarr
@@ -16,7 +20,7 @@ spec:
     spec:
       containers:
       - name: radarr
-        image: ghcr.io/linuxserver/radarr:6.4.4-develop
+        image: ghcr.io/linuxserver/radarr:7.0.0-develop
         imagePullPolicy: Always
         ports:
         - containerPort: 7878
