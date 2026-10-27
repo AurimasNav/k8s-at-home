@@ -17,4 +17,4 @@ configMapGenerator:
 
 images:
 - name: python
-  newTag: 3.15.1-alpine3.24
+  newTag: 3.15.2-alpine3.24
