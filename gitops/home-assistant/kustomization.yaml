@@ -52,6 +52,11 @@ configMapGenerator:
 - name: ha-backup-power-package
   files:
   - packages/backup_power.yaml
+# package, not an automations file: ships the winterized input_boolean and the
+# notification script alongside the B-hyve winterization reminders
+- name: ha-bhyve-winterize-package
+  files:
+  - packages/bhyve_winterize.yaml
 - name: ha-energy-dashboard
   files:
   - dashboards/energy.yaml

@@ -79,6 +79,9 @@ views:
       name: Rytinė visko programa
     - entity: binary_sensor.laistymas_fault
       name: Fault
+    # packages/bhyve_winterize.yaml: stops the winterization reminders
+    - entity: input_boolean.bhyve_winterized
+      name: Paruošta žiemai
 
 - title: Mower
   path: mower
