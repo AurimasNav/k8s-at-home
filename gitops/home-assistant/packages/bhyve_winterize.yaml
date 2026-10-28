@@ -1,0 +1,153 @@
+# B-hyve "Laistymas" irrigation timer: winterization reminders.
+#
+# Steps from the installer (Karališkos Vejos, email 2025-10-17, forwarded by
+# Aleksandra as "Balandziu veja ziemai"):
+#   1. close the water supply to the garden (užsukti vandens padavimą į lauką);
+#   2. open the hydrant tap (atsukti vandens kolonėlės kraną);
+#   3. run every zone briefly (~15 s) by hand or from the app, then unplug the
+#      controller from the mains.
+#
+# input_boolean.bhyve_winterized is the "done for this season" flag. It is set
+# by the "Atlikta" button on the reminder or by hand (Garden dashboard), and
+# reset on 1 April so next autumn's reminders run again.
+#
+# Reminders, only while the flag is off:
+#   - weekly, Saturday 10:00, 15 Oct - 30 Nov;
+#   - frost warning, daily 18:00, Oct-Dec, when the met.no daily forecast has a
+#     low <= 0 °C today or in the next 2 days.
+#
+# Not auto-detected from the controller going offline (unplugging is the last
+# step): the timer was unavailable for 23 h on 24-25 Oct 2026 without anyone
+# unplugging it, which would have silenced the reminders by mistake.
+#
+# The "Atlikta" button needs the legacy notify.mobile_app_* actions;
+# notify.send_message (notify.iphone / notify.xiaomi entities) takes no data.
+
+input_boolean:
+  bhyve_winterized:
+    name: Laistymas paruoštas žiemai
+    icon: mdi:snowflake-check
+
+script:
+  bhyve_winterize_notify:
+    alias: Laistymas - priminimas paruošti žiemai
+    mode: queued
+    fields:
+      title:
+        description: Notification title
+      lead:
+        description: Sentence before the steps
+    sequence:
+    - action: notify.mobile_app_iphone
+      data: &bhyve_winterize_message
+        title: "{{ title }}"
+        message: >-
+          {{ lead }}
+          1) Užsukti vandens padavimą į lauką.
+          2) Atsukti vandens kolonėlės kraną.
+          3) Rankiniu būdu ar per programėlę trumpam (~15 s) įjungti visas 5 zonas,
+          tada išjungti valdiklį iš tinklo.
+        data:
+          tag: bhyve-winterize
+          actions:
+          - action: BHYVE_WINTERIZED_DONE
+            title: Atlikta
+    - action: notify.mobile_app_xiaomi
+      data: *bhyve_winterize_message
+
+automation:
+- id: bhyve_winterize_weekly_reminder
+  alias: Laistymas - savaitinis priminimas paruošti žiemai
+  triggers:
+  - trigger: time
+    at: "10:00:00"
+  conditions:
+  - condition: time
+    weekday: sat
+  - condition: template
+    value_template: "{{ (now().month == 10 and now().day >= 15) or now().month == 11 }}"
+  - condition: state
+    entity_id: input_boolean.bhyve_winterized
+    state: 'off'
+  actions:
+  - action: script.bhyve_winterize_notify
+    data:
+      title: Laistymas - paruošti žiemai
+      lead: Laistymo sistema dar neparuošta žiemai.
+  mode: single
+
+- id: bhyve_winterize_frost_warning
+  alias: Laistymas - šalnų įspėjimas
+  triggers:
+  - trigger: time
+    at: "18:00:00"
+  conditions:
+  - condition: template
+    value_template: "{{ now().month >= 10 }}"
+  - condition: state
+    entity_id: input_boolean.bhyve_winterized
+    state: 'off'
+  actions:
+  - action: weather.get_forecasts
+    target:
+      entity_id: weather.forecast_home
+    data:
+      type: daily
+    response_variable: fc
+  # Plain number/string variables (no dict round trip through the template
+  # renderer); 99 / '' mean "no frost in the next 3 days".
+  - variables:
+      frost_low: >-
+        {%- set d = fc['weather.forecast_home'].forecast[:3]
+            | selectattr('templow', 'number') | selectattr('templow', 'le', 0) | list -%}
+        {{ d[0].templow if d else 99 }}
+      frost_date: >-
+        {%- set d = fc['weather.forecast_home'].forecast[:3]
+            | selectattr('templow', 'number') | selectattr('templow', 'le', 0) | list -%}
+        {{ d[0].datetime if d else '' }}
+  - condition: template
+    value_template: "{{ frost_low | float(99) <= 0 }}"
+  - action: script.bhyve_winterize_notify
+    data:
+      title: >-
+        Šalna {{ as_timestamp(frost_date) | timestamp_custom('%m-%d') }}
+        ({{ frost_low | float | round(1) }} °C)
+      lead: Prognozuojama šalna, o laistymo sistema dar neparuošta žiemai.
+  mode: single
+
+- id: bhyve_winterize_done_action
+  alias: Laistymas - pažymėta paruošta žiemai (mygtukas)
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: BHYVE_WINTERIZED_DONE
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.bhyve_winterized
+  - action: notify.mobile_app_iphone
+    data:
+      message: clear_notification
+      data:
+        tag: bhyve-winterize
+  - action: notify.mobile_app_xiaomi
+    data:
+      message: clear_notification
+      data:
+        tag: bhyve-winterize
+  mode: single
+
+- id: bhyve_winterize_reset
+  alias: Laistymas - naujas sezonas (atstatyti žiemos žymą)
+  triggers:
+  - trigger: time
+    at: "00:05:00"
+  conditions:
+  - condition: template
+    value_template: "{{ now().month == 4 and now().day == 1 }}"
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.bhyve_winterized
+  mode: single
