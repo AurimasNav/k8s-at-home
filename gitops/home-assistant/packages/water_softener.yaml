@@ -1,0 +1,170 @@
+# Pribus water softener (boiler room): salt refill reminder.
+#
+# The softener has no network connection and the brine tank has no level
+# sensor, so this is calendar-based with a feedback loop:
+#   - input_datetime.water_softener_salt_refilled: last refill date.
+#   - input_datetime.water_softener_salt_next_check: when to remind.
+#   - Reminder (Aurimas's phone, 10:00) once next_check is reached. It nags
+#     again every 3 days until one of the buttons is pressed:
+#       "Refilled" -> refilled = today, next check in 91 days (~3 months);
+#       "Still enough" -> check again in 14 days.
+#   - Starting interval: 3 months for a 4-person household (Aurimas's call,
+#     2026-10-29). Tune it from real data: if salt is left at the 3-month
+#     check, lengthen it; next_check can also be edited by hand in the UI.
+#     input_button.water_softener_salt_refilled does the same as "Refilled"
+#     from the HA UI.
+#   - The "Refilled" confirmation says how long the previous fill lasted, so
+#     the 91-day interval can be tuned to real consumption here.
+#
+# Bootstrap: with no restored state, input_datetime starts at today's date, so
+# on the first start both helpers hold the same date. In normal use that never
+# happens (next_check is always >= today + 3 while refilled <= today), so
+# "equal dates" is the first-start marker. The bootstrap sets refilled to
+# 2026-10-29 (salt added when this was set up) and next_check to +91 days.
+# No `initial:` on purpose: it would override the restored value on every
+# restart.
+
+input_datetime:
+  water_softener_salt_refilled:
+    name: Water softener salt refilled
+    icon: mdi:shaker
+    has_date: true
+    has_time: false
+  water_softener_salt_next_check:
+    name: Water softener salt next check
+    icon: mdi:calendar-clock
+    has_date: true
+    has_time: false
+
+input_button:
+  water_softener_salt_refilled:
+    name: Water softener salt refilled
+    icon: mdi:shaker
+
+automation:
+- id: water_softener_salt_bootstrap
+  alias: Water softener - salt dates bootstrap
+  triggers:
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: template
+    value_template: >-
+      {{ states('input_datetime.water_softener_salt_refilled')
+         == states('input_datetime.water_softener_salt_next_check') }}
+  actions:
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.water_softener_salt_refilled
+    data:
+      date: "2026-10-29"
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.water_softener_salt_next_check
+    data:
+      date: "2027-01-28"
+  mode: single
+
+- id: water_softener_salt_reminder
+  alias: Water softener - salt check reminder
+  triggers:
+  - trigger: time
+    at: "10:00:00"
+  conditions:
+  - condition: template
+    value_template: >-
+      {{ '2000-01-01' < states('input_datetime.water_softener_salt_next_check')
+         <= now().date().isoformat() }}
+  actions:
+  - variables:
+      refilled: "{{ states('input_datetime.water_softener_salt_refilled') }}"
+      days: "{{ (now().date() - strptime(refilled, '%Y-%m-%d').date()).days }}"
+  - action: notify.mobile_app_xiaomi
+    data:
+      title: Water softener salt
+      message: >-
+        Check the salt in the softener's brine tank: last refilled {{ refilled }}
+        ({{ days }} days ago). Top it up if the salt is down to about a third
+        or no longer sits above the water.
+      data:
+        tag: water-softener-salt
+        actions:
+        - action: WATER_SOFTENER_SALT_REFILLED
+          title: Refilled
+        - action: WATER_SOFTENER_SALT_OK
+          title: Still enough
+  # No answer -> ask again in 3 days.
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.water_softener_salt_next_check
+    data:
+      date: "{{ (now().date() + timedelta(days=3)).isoformat() }}"
+  mode: single
+
+- id: water_softener_salt_refilled
+  alias: Water softener - salt refilled
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: WATER_SOFTENER_SALT_REFILLED
+  - trigger: state
+    entity_id: input_button.water_softener_salt_refilled
+  conditions:
+  # A restart restores the button from 'unknown'/'unavailable'; only a real
+  # press (new timestamp) counts.
+  - condition: template
+    value_template: >-
+      {{ trigger.platform == 'event'
+         or (trigger.from_state is not none
+             and trigger.from_state.state not in ['unavailable']
+             and trigger.to_state.state not in ['unknown', 'unavailable']) }}
+  actions:
+  - variables:
+      previous: "{{ states('input_datetime.water_softener_salt_refilled') }}"
+      lasted: >-
+        {{ (now().date() - strptime(previous, '%Y-%m-%d').date()).days
+           if previous > '2000-01-01' else 'unknown' }}
+      next_check: "{{ (now().date() + timedelta(days=91)).isoformat() }}"
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.water_softener_salt_refilled
+    data:
+      date: "{{ now().date().isoformat() }}"
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.water_softener_salt_next_check
+    data:
+      date: "{{ next_check }}"
+  - action: notify.mobile_app_xiaomi
+    data:
+      message: clear_notification
+      data:
+        tag: water-softener-salt
+  - action: notify.mobile_app_xiaomi
+    data:
+      title: Water softener salt refilled
+      message: >-
+        Logged. The previous fill lasted {{ lasted }} days.
+        Next salt check: {{ next_check }}.
+  mode: single
+
+- id: water_softener_salt_still_enough
+  alias: Water softener - salt still enough
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: WATER_SOFTENER_SALT_OK
+  actions:
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.water_softener_salt_next_check
+    data:
+      date: "{{ (now().date() + timedelta(days=14)).isoformat() }}"
+  - action: notify.mobile_app_xiaomi
+    data:
+      message: clear_notification
+      data:
+        tag: water-softener-salt
+  mode: single
