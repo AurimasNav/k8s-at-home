@@ -57,6 +57,10 @@ configMapGenerator:
 - name: ha-bhyve-winterize-package
   files:
   - packages/bhyve_winterize.yaml
+# package: Pribus water softener salt reminder (input_datetime/input_button helpers)
+- name: ha-water-softener-package
+  files:
+  - packages/water_softener.yaml
 - name: ha-energy-dashboard
   files:
   - dashboards/energy.yaml
