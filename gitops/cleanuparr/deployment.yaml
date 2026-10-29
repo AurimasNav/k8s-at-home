@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cleanuparr
+  labels:
+    app: cleanuparr
+spec:
+  replicas: 1
+  # SQLite on an RWO local-path PVC: never run two pods on the same /config.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cleanuparr
+  template:
+    metadata:
+      labels:
+        app: cleanuparr
+    spec:
+      automountServiceAccountToken: false
+      # uid/gid 1000 = the user qBittorrent, Radarr and Sonarr write /data/torrents as.
+      # Running non-root makes the image's entrypoint skip its root-only user setup.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: cleanuparr
+        image: ghcr.io/cleanuparr/cleanuparr:2.10.12
+        envFrom:
+        - configMapRef:
+            name: cleanuparr
+        ports:
+        - name: http
+          containerPort: 11011
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 5
+          failureThreshold: 24
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+          periodSeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 30
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 20m
+            memory: 256Mi
+          limits:
+            memory: 768Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: tmp
+          mountPath: /tmp
+        # Read-only, same path as in qBittorrent, so no path mapping is needed.
+        # Only used for the hardlink check (unlinked downloads). Every delete goes
+        # through the qBittorrent API. The orphaned-files mover needs write access
+        # and is deliberately not supported by this mount.
+        - name: torrents
+          mountPath: /data/torrents
+          readOnly: true
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: cleanuparr-config
+      - name: tmp
+        emptyDir:
+          sizeLimit: 256Mi
+      - name: torrents
+        hostPath:
+          path: /data/torrents
+          type: Directory
