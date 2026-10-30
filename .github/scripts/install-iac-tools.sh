@@ -25,5 +25,6 @@ grep " $f\$" tflint.sum | sha256sum -c -
 unzip -q -o "$f" tflint -d "$bin"
 
 if [ -n "${GITHUB_PATH:-}" ]; then echo "$bin" >> "$GITHUB_PATH"; fi
-"$bin/tofu" version | head -1
-"$bin/tflint" --version | head -1
+"$bin/tofu" version -json | grep -o '"terraform_version":"[^"]*"'
+"$bin/tflint" --version > "$work/tflint.version"
+sed -n 1p "$work/tflint.version"
