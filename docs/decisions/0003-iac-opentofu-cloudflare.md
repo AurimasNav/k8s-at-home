@@ -41,7 +41,9 @@
 - R2 has no object versioning. Mitigated by encryption, CI serialisation and by keeping every
   resource importable (state can be rebuilt from the `import` blocks in git history).
 - Losing the passphrase makes the state unreadable. It is kept in Doppler and GitHub.
-- The `tofu-state` bucket, its R2 token and the API tokens are created by hand once (`iac/README.md`).
+- The `tofu-state` bucket and its R2 token are created by hand once (`iac/README.md`). The two
+  Cloudflare API tokens (`iac-reader`, `iac`) were created in the dashboard and are then managed by
+  the stack itself, with permissions listed by name.
 - Dashboard edits to managed resources show up as drift in the weekly run and are reverted on the
   next apply. Changes go through PRs from now on.
 - An R2 lock can be left behind after a failed run (seen with S3-compatible stores,

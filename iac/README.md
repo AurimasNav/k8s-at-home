@@ -5,7 +5,7 @@ Decision record: [docs/decisions/0003-iac-opentofu-cloudflare.md](../docs/decisi
 
 | Stack | Manages | State key |
 |---|---|---|
-| [`cloudflare/`](cloudflare/) | `sync.lt` zone: DNS records and zone settings | `cloudflare/terraform.tfstate` |
+| [`cloudflare/`](cloudflare/) | `sync.lt` zone (DNS, settings) and account API tokens | `cloudflare/terraform.tfstate` |
 
 ## Layout
 
@@ -20,6 +20,10 @@ iac/
     ├── providers.tf       token from the environment, never in code
     ├── variables.tf
     ├── zone.tf            zone lookup (the zone itself is not managed)
+    ├── permission-groups.tf  permission group name -> ID lookup
+    ├── account-tokens.tf     API tokens (iac-reader, iac)
+    ├── account-token-*.tf    each token's permissions, by name
+    ├── imports.tf            one-time adoption of existing resources
     ├── outputs.tf
     └── scripts/generate-imports.sh
 ```
@@ -44,27 +48,30 @@ Conventions:
 - **No versioning:** R2 has no object versioning. If the state is lost or the passphrase is lost,
   rebuild it: everything here is importable, and the `import` blocks are in git history.
 
-## Bootstrap (once, by hand)
+## Credentials
+
+| What | Doppler (`k8s-at-home/prod`) | GitHub Actions | Hermes pod |
+|---|---|---|---|
+| Token `iac-reader` (all *Read*, account + all zones) | `CLOUDFLARE_IAC_READ_TOKEN` | repo secret `CLOUDFLARE_IAC_READ_TOKEN` | yes |
+| Token `iac` (write, account admin level) | `CLOUDFLARE_API_TOKEN` | `cloudflare` environment secret `CLOUDFLARE_IAC_EDIT_TOKEN` | no |
+| Account ID | `CLOUDFLARE_ACCOUNT_ID` | repo secret | yes |
+| State passphrase | `TOFU_STATE_PASSPHRASE` | repo secret | yes |
+| R2 state keys (bucket `tofu-state` only) | `TOFU_R2_ACCESS_KEY_ID`, `TOFU_R2_SECRET_ACCESS_KEY` | repo secrets | add once they exist |
+
+- Both Cloudflare tokens are defined in this stack (`account-token-*.tf`, permissions by name).
+  To change a token's permissions, edit the name list; the plan shows the change.
+- The `cloudflare` environment only deploys from `main`, so PR jobs cannot read the write token.
+  Add a required reviewer there to approve every apply by hand.
+- Doppler is the backup of the passphrase.
+
+## Bootstrap (once)
 
 The bucket and keys that hold the state cannot be managed by the same state.
 
-1. **R2:** in the Cloudflare dashboard, enable R2 (asks for a payment method; usage stays in the
-   free tier) and create the bucket `tofu-state` (location: Europe/automatic).
-2. **R2 API token** (R2 → Manage API tokens): *Object Read & Write*, **only** bucket `tofu-state`.
-   Gives an access key ID and secret.
-3. **Cloudflare API tokens** (My Profile → API Tokens → Custom token), zone `sync.lt` only:
-   - `iac-read`: Zone *Read*, DNS *Read*, Zone Settings *Read*, Zone WAF *Read*, Page Rules *Read*.
-   - `iac-edit`: the same permissions with *Edit*.
-4. **Passphrase:** `openssl rand -base64 32`.
-5. **Doppler** (project used by external-secrets): `CLOUDFLARE_ACCOUNT_ID`,
-   `CLOUDFLARE_IAC_READ_TOKEN`, `TOFU_R2_ACCESS_KEY_ID`, `TOFU_R2_SECRET_ACCESS_KEY`,
-   `TOFU_STATE_PASSPHRASE`. Doppler is the backup of the passphrase.
-6. **GitHub** (repo Settings):
-   - Secrets → Actions: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_IAC_READ_TOKEN`,
-     `TOFU_R2_ACCESS_KEY_ID`, `TOFU_R2_SECRET_ACCESS_KEY`, `TOFU_STATE_PASSPHRASE`.
-   - Environments → new `cloudflare`: *Deployment branches* = `main` only; secret
-     `CLOUDFLARE_IAC_EDIT_TOKEN`. Only the apply job on `main` can read the edit token.
-   - Variables → Actions: `TOFU_CLOUDFLARE_ENABLED` = `true` (turns on the plan/apply jobs).
+1. **R2:** enable R2 in the dashboard (asks for a payment method; usage stays in the free tier).
+2. **Bucket + keys:** create bucket `tofu-state` and an R2 token limited to it with *Object Read &
+   Write*; store its access key ID and secret in Doppler and as GitHub repo secrets (table above).
+3. **Turn on CI:** repo variable `TOFU_CLOUDFLARE_ENABLED` = `true`.
 
 ## Workflow
 
@@ -72,12 +79,12 @@ The bucket and keys that hold the state cannot be managed by the same state.
   summary lists addresses and counts only, because Actions logs are public in this repo.
 - **Merge to `main`:** plan + apply with the edit token.
 - **Weekly (Monday):** plan; the run fails when Cloudflare was changed outside the code.
-- **Local:** `iac/tofu.sh cloudflare init`, then `iac/tofu.sh cloudflare plan` (read-only token
-  by default). Applies go through CI.
+- **Local / Hermes:** `iac/tofu.sh cloudflare init`, then `iac/tofu.sh cloudflare plan`. Uses the
+  read-only token; `TOFU_WRITE=1` switches to the write token. Applies normally go through CI.
 
 ## Adopting existing resources
 
-1. `CLOUDFLARE_API_TOKEN=<read token> CLOUDFLARE_ACCOUNT_ID=... iac/cloudflare/scripts/generate-imports.sh`
+1. `CLOUDFLARE_API_TOKEN="$CLOUDFLARE_IAC_READ_TOKEN" iac/cloudflare/scripts/generate-imports.sh`
    writes HCL and `import` blocks to `iac/cloudflare/generated/` (git-ignored).
    Other types: pass them as the first argument (`cloudflare_ruleset`). Zone settings need the
    setting names: `RESOURCE_IDS=cloudflare_zone_setting=ssl,always_use_https,min_tls_version
