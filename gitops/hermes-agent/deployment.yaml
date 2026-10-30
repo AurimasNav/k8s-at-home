@@ -81,6 +81,9 @@ spec:
             name: hermes-agent
         - secretRef:
             name: hermes-agent
+        - secretRef:
+            name: hermes-agent-doppler
+            optional: true
         resources:
           requests:
             cpu: 100m
