@@ -14,7 +14,7 @@ spec:
   target:
     name: cleanuparr-setup
   data:
-  # Login of the Cleanuparr account; generated into Doppler by Hermes.
+  # Login of the Cleanuparr account (Doppler, 32 chars).
   - secretKey: CLEANUPARR_PASSWORD
     remoteRef:
       key: CLEANUPARR_PASSWORD
