@@ -1,0 +1,66 @@
+# Re-applies setup/desired.json once a day, so Cleanuparr converges back to git
+# even when the PostSync Job could not run (e.g. Doppler down during a sync) or
+# someone changed a setting in the UI. Same container and policy as setup-job.yaml.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleanuparr-setup
+spec:
+  schedule: "40 4 * * *"
+  timeZone: Europe/Vilnius
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+          labels:
+            app: cleanuparr-setup
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: setup
+            image: python
+            command: ["python3", "/setup/setup.py"]
+            env:
+            - name: CLEANUPARR_URL
+              value: http://cleanuparr.cleanuparr
+            - name: DESIRED_PATH
+              value: /setup/desired.json
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            envFrom:
+            - secretRef:
+                name: cleanuparr-setup
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            volumeMounts:
+            - name: setup
+              mountPath: /setup
+              readOnly: true
+          volumes:
+          - name: setup
+            configMap:
+              name: cleanuparr-setup
