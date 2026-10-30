@@ -20,9 +20,21 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/ownbee/hass-otbr-docker"],
       "allowedVersions": "/^v\\d+\\.\\d+\\.\\d+$/"
+    },
+    {
+      "description": "iac/ uses OpenTofu: resolve providers and modules from the OpenTofu registry",
+      "matchManagers": ["terraform"],
+      "matchDatasources": ["terraform-provider", "terraform-module"],
+      "registryUrls": ["https://registry.opentofu.org"]
+    },
+    {
+      "description": "required_version is an OpenTofu range, not a Terraform release; the tofu binary is pinned in .github/workflows/iac.yaml",
+      "matchManagers": ["terraform"],
+      "matchDepTypes": ["required_version"],
+      "enabled": false
     }
   ],
-  "enabledManagers": ["kubernetes", "kustomize", "custom.regex", "github-actions"],
+  "enabledManagers": ["kubernetes", "kustomize", "custom.regex", "github-actions", "terraform"],
   "kubernetes": {
     "managerFilePatterns": ["/gitops/.*/.*\\.ya?ml$/"]
   },

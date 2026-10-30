@@ -1,0 +1,140 @@
+name: IaC (OpenTofu)
+
+# Root modules under iac/. Today: iac/cloudflare (DNS and zone settings for sync.lt).
+#   - Every PR touching iac/: fmt, validate, tflint (no secrets).
+#   - Same-repo PRs: plan with a read-only Cloudflare token, shown in the job summary.
+#   - Push to main: plan + apply in the "cloudflare" environment (edit token lives only there).
+#   - Weekly: drift check; the job fails when Cloudflare differs from the code.
+# Jobs that need secrets run only when the repo variable TOFU_CLOUDFLARE_ENABLED is "true",
+# so the scaffolding can merge before the state bucket and tokens exist (iac/README.md).
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["iac/**", ".github/workflows/iac.yaml"]
+  push:
+    branches: [main]
+    paths: ["iac/**", ".github/workflows/iac.yaml"]
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # renovate: datasource=github-releases depName=opentofu/opentofu
+  TOFU_VERSION: "1.13.2"
+  # renovate: datasource=github-releases depName=terraform-linters/tflint
+  TFLINT_VERSION: "0.65.0"
+  TF_IN_AUTOMATION: "1"
+  TF_INPUT: "0"
+  STACK_DIR: iac/cloudflare
+
+jobs:
+  static:
+    name: Static checks (fmt, validate, tflint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install tofu + tflint (checksum-verified)
+        run: .github/scripts/install-iac-tools.sh
+      - name: tofu fmt
+        run: tofu fmt -check -recursive -diff iac
+      - name: tofu validate
+        working-directory: ${{ env.STACK_DIR }}
+        run: |
+          tofu init -backend=false -lockfile=readonly
+          tofu validate
+      - name: tflint
+        run: tflint --chdir="$STACK_DIR" --config="$PWD/iac/.tflint.hcl" --format=compact
+
+  plan:
+    name: Plan (read-only token)
+    needs: static
+    # Secrets never reach fork PRs; Renovate and Hermes branches live in this repo.
+    if: >-
+      vars.TOFU_CLOUDFLARE_ENABLED == 'true' &&
+      github.event_name != 'push' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    concurrency:
+      group: iac-cloudflare-state
+      cancel-in-progress: false
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.TOFU_R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.TOFU_R2_SECRET_ACCESS_KEY }}
+      TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_state_passphrase: ${{ secrets.TOFU_STATE_PASSPHRASE }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_IAC_READ_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install tofu (checksum-verified)
+        run: .github/scripts/install-iac-tools.sh
+      - name: Plan
+        id: plan
+        working-directory: ${{ env.STACK_DIR }}
+        # The repo is public, so Actions logs are too: print resource addresses and
+        # counts only, never attribute values. Read the full plan locally (iac/README.md).
+        run: |
+          tofu init -lockfile=readonly
+          set +e
+          tofu plan -lock-timeout=5m -detailed-exitcode -no-color > plan.txt 2>&1
+          code=$?
+          set -e
+          summary="$(grep -E '^(Plan:|No changes\.|  # [^ ]+ (will|must)|Error: )' plan.txt || true)"
+          echo "$summary"
+          {
+            echo "### tofu plan: \`$STACK_DIR\`"
+            echo '```'
+            echo "$summary"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          rm -f plan.txt
+          echo "exitcode=$code" >> "$GITHUB_OUTPUT"
+          # 0 = no changes, 2 = changes (fine on PRs), anything else = error
+          [ "$code" = 0 ] || [ "$code" = 2 ]
+      - name: Fail on drift (scheduled run)
+        if: github.event_name == 'schedule' && steps.plan.outputs.exitcode == '2'
+        run: |
+          echo "::error::Cloudflare differs from iac/cloudflare. Run the plan locally or check the job summary."
+          exit 1
+
+  apply:
+    name: Apply (main)
+    needs: static
+    if: vars.TOFU_CLOUDFLARE_ENABLED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # The edit token is an environment secret: only jobs in this environment can read it.
+    # Add a required reviewer on the environment to approve each apply by hand.
+    environment: cloudflare
+    concurrency:
+      group: iac-cloudflare-state
+      cancel-in-progress: false
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.TOFU_R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.TOFU_R2_SECRET_ACCESS_KEY }}
+      TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_state_passphrase: ${{ secrets.TOFU_STATE_PASSPHRASE }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_IAC_EDIT_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install tofu (checksum-verified)
+        run: .github/scripts/install-iac-tools.sh
+      - name: Plan and apply
+        working-directory: ${{ env.STACK_DIR }}
+        # Saved plan is encrypted by the stack's plan encryption. Output is reduced to
+        # addresses and counts because the logs are public.
+        run: |
+          tofu init -lockfile=readonly
+          tofu plan -lock-timeout=5m -no-color -out=tfplan > plan.txt 2>&1 || { grep -E '^(│ )?Error' -A8 plan.txt; exit 1; }
+          grep -E '^(Plan:|No changes\.|  # [^ ]+ (will|must))' plan.txt || true
+          tofu apply -lock-timeout=5m -no-color tfplan > apply.txt 2>&1 || { grep -E '^(│ )?Error' -A8 apply.txt; exit 1; }
+          grep -E '^Apply complete' apply.txt
+          rm -f plan.txt apply.txt tfplan

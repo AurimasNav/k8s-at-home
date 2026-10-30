@@ -5,3 +5,14 @@ secrets.yaml
 **/.esphome/
 __pycache__/
 *.pyc
+
+# OpenTofu (iac/): providers, local state and plans never go to git
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+*.tfplan
+plan.txt
+apply.txt
+crash*.log
+iac/**/generated/
