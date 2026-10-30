@@ -1,7 +1,8 @@
+# Same as gitops/sonarr: web UI only behind oauth2-proxy (Google login).
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: sonarr1
+  name: sonarr-ru
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -10,16 +11,16 @@ metadata:
 spec:
   tls:
   - hosts:
-    - sonarr1.sync.lt
-    secretName: sonarr1-letsencrypt
+    - sonarr-ru.sync.lt
+    secretName: sonarr-ru-letsencrypt
   rules:
-  - host: sonarr1.sync.lt
+  - host: sonarr-ru.sync.lt
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: sonarr1
+            name: sonarr-ru
             port:
               name: app

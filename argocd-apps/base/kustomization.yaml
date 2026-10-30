@@ -16,7 +16,7 @@ resources:
 - ./apps/qbittorrent
 - ./apps/sonarr
 - ./apps/radarr
-#- ./apps/radarr-no4k
+- ./apps/radarr-ru
 - ./apps/plex
 - ./apps/oauth2-proxy
 #- ./apps/ombi
@@ -24,7 +24,7 @@ resources:
 #- ./apps/blocky
 - ./apps/unbound
 - ./apps/seerr
-#- ./apps/sonarr1
+- ./apps/sonarr-ru
 #- ./apps/minecraft
 #- ./apps/vrising
 - ./apps/victoria-metrics-k8s-stack

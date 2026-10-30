@@ -12,6 +12,8 @@ data:
   HA_URL: http://home-assistant.home-assistant.svc.cluster.local:8123
   SONARR_URL: http://sonarr.sonarr.svc.cluster.local
   RADARR_URL: http://radarr.radarr.svc.cluster.local
+  RADARR_RU_URL: http://radarr-ru.radarr-ru.svc.cluster.local
+  SONARR_RU_URL: http://sonarr-ru.sonarr-ru.svc.cluster.local
   PROWLARR_URL: http://prowlarr.prowlarr.svc.cluster.local
   PLEX_URL: http://plex.plex.svc.cluster.local:32400
   GIT_AUTHOR_NAME: hermes

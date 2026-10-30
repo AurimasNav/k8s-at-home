@@ -1,0 +1,57 @@
+# Radarr for Russian-language releases: the first VSeerr version.
+# Library: /data/media/movies-ru; qBittorrent category: radarr-ru.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr-ru
+  labels:
+    app: radarr-ru
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  # Two Radarr pods must never share the /config SQLite DB (RWO local-path PVC).
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: radarr-ru
+  template:
+    metadata:
+      labels:
+        app: radarr-ru
+    spec:
+      initContainers:
+      # Root folder for this version's library, owned like the rest of /data/media.
+      - name: library-folder
+        image: busybox:1.37.0
+        command: ["sh", "-c", "mkdir -p /data/media/movies-ru && chown 1000:1000 /data/media/movies-ru"]
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      containers:
+      - name: radarr-ru
+        image: ghcr.io/linuxserver/radarr:7.0.0-develop
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7878
+        envFrom:
+        - configMapRef:
+            name: radarr-ru
+        - secretRef:
+            name: radarr-ru
+            # starts with a generated key until the Doppler key exists
+            optional: true
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: radarr-ru-config
+      - name: data
+        hostPath:
+          path: /data
+          type: Directory

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sonarr-ru
+data:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: Europe/Vilnius
+  SONARR__APP__INSTANCENAME: Sonarr RU
+  # Behind the gateway + oauth2-proxy; in-cluster callers (Seerr/VSeerr,
+  # Prowlarr, Hermes) use the API key.
+  SONARR__AUTH__METHOD: External
+  SONARR__AUTH__REQUIRED: DisabledForLocalAddresses

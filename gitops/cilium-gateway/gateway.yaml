@@ -79,32 +79,6 @@ spec:
       - kind: Secret
         name: sonarr-tls
         namespace: cilium-gateway
-  - name: https-sonarr1
-    hostname: sonarr1.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: sonarr1-tls
-        namespace: cilium-gateway
-  - name: https-radarr-no4k
-    hostname: radarr-no4k.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: radarr-no4k-tls
-        namespace: cilium-gateway
   - name: https-qbittorrent
     hostname: qbittorrent.sync.lt
     port: 443
