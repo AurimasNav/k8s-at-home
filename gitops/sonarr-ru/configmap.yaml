@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sonarr-ru
+data:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: Europe/Vilnius
+  SONARR__APP__INSTANCENAME: Sonarr RU
+  # In-cluster only: no Ingress, no DNS. Seerr/VSeerr, Prowlarr and Hermes call
+  # http://sonarr-ru.sonarr-ru.svc with the API key; for the web UI use
+  # kubectl -n sonarr-ru port-forward svc/sonarr-ru 8080:80
+  SONARR__AUTH__METHOD: External
+  SONARR__AUTH__REQUIRED: DisabledForLocalAddresses

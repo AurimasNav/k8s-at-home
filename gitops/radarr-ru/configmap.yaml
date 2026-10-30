@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: radarr-ru
+data:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: Europe/Vilnius
+  RADARR__APP__INSTANCENAME: Radarr RU
+  # In-cluster only: no Ingress, no DNS. Seerr/VSeerr, Prowlarr and Hermes call
+  # http://radarr-ru.radarr-ru.svc with the API key; for the web UI use
+  # kubectl -n radarr-ru port-forward svc/radarr-ru 8080:80
+  RADARR__AUTH__METHOD: External
+  RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
