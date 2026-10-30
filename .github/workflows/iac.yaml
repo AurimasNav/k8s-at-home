@@ -11,10 +11,10 @@ name: IaC (OpenTofu)
 on:
   pull_request:
     branches: [main]
-    paths: ["iac/**", ".github/workflows/iac.yaml"]
+    paths: ["iac/**", ".github/workflows/iac.yaml", ".github/scripts/install-iac-tools.ps1", "PSScriptAnalyzerSettings.psd1"]
   push:
     branches: [main]
-    paths: ["iac/**", ".github/workflows/iac.yaml"]
+    paths: ["iac/**", ".github/workflows/iac.yaml", ".github/scripts/install-iac-tools.ps1", "PSScriptAnalyzerSettings.psd1"]
   schedule:
     - cron: "17 5 * * 1"
   workflow_dispatch:
@@ -27,6 +27,8 @@ env:
   TOFU_VERSION: "1.13.2"
   # renovate: datasource=github-releases depName=terraform-linters/tflint
   TFLINT_VERSION: "0.65.0"
+  # renovate: datasource=nuget registryUrl=https://www.powershellgallery.com/api/v2 depName=PSScriptAnalyzer
+  PSSCRIPTANALYZER_VERSION: "1.24.0"
   TF_IN_AUTOMATION: "1"
   TF_INPUT: "0"
   STACK_DIR: iac/cloudflare
@@ -40,7 +42,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Install tofu + tflint (checksum-verified)
-        run: .github/scripts/install-iac-tools.sh
+        shell: pwsh
+        run: .github/scripts/install-iac-tools.ps1
       - name: tofu fmt
         run: tofu fmt -check -recursive -diff iac
       - name: tofu validate
@@ -50,6 +53,15 @@ jobs:
           tofu validate
       - name: tflint
         run: tflint --chdir="$STACK_DIR" --config="$PWD/iac/.tflint.hcl" --format=compact
+      - name: PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -RequiredVersion $env:PSSCRIPTANALYZER_VERSION -Scope CurrentUser -Force
+          $files = git ls-files '*.ps1' '*.psm1' '*.psd1' | Where-Object { $_ -match '^(iac|\.github)/' }
+          $issues = $files | ForEach-Object { Invoke-ScriptAnalyzer -Path $_ -Settings ./PSScriptAnalyzerSettings.psd1 }
+          $issues | Format-Table -AutoSize RuleName, Severity, ScriptName, Line, Message | Out-String -Width 200
+          if ($issues) { exit 1 }
 
   plan:
     name: Plan (read-only token)
@@ -74,7 +86,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Install tofu (checksum-verified)
-        run: .github/scripts/install-iac-tools.sh
+        shell: pwsh
+        run: .github/scripts/install-iac-tools.ps1
       - name: Plan
         id: plan
         working-directory: ${{ env.STACK_DIR }}
@@ -126,7 +139,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Install tofu (checksum-verified)
-        run: .github/scripts/install-iac-tools.sh
+        shell: pwsh
+        run: .github/scripts/install-iac-tools.ps1
       - name: Plan and apply
         working-directory: ${{ env.STACK_DIR }}
         # Saved plan is encrypted by the stack's plan encryption. Output is reduced to

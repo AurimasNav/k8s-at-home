@@ -12,7 +12,7 @@ Decision record: [docs/decisions/0003-iac-opentofu-cloudflare.md](../docs/decisi
 ```
 iac/
 ├── .tflint.hcl            shared lint rules
-├── tofu.sh                run tofu in a stack with the Doppler/GitHub secret names
+├── tofu.ps1               run tofu in a stack with the Doppler/GitHub secret names
 └── cloudflare/            one root module = one state
     ├── versions.tf        OpenTofu range + exact provider pin
     ├── .terraform.lock.hcl provider checksums (committed, multi-platform)
@@ -25,7 +25,7 @@ iac/
     ├── account-token-*.tf    each token's permissions, by name
     ├── imports.tf            one-time adoption of existing resources
     ├── outputs.tf
-    └── scripts/generate-imports.sh
+    └── scripts/generate-imports.ps1
 ```
 
 Conventions:
@@ -33,6 +33,7 @@ Conventions:
 - Files by topic (`dns.tf`, `zone_settings.tf`, `rulesets.tf`) as resources are added.
 - Resource names are `snake_case` and describe the thing (`cloudflare_dns_record.radarr`), never the ID.
 - Exact provider version + committed lock file; Renovate updates both (OpenTofu registry).
+- Scripts are PowerShell 7 (`pwsh`), linted with PSScriptAnalyzer in CI.
 - No secrets in code or `*.tfvars`. Values come from the environment (`TF_VAR_*`, `CLOUDFLARE_API_TOKEN`).
 - Existing resources are adopted with `import` blocks in a PR, never with `tofu import` by hand,
   so the import shows up in the plan and in git history.
@@ -79,16 +80,15 @@ The bucket and keys that hold the state cannot be managed by the same state.
   summary lists addresses and counts only, because Actions logs are public in this repo.
 - **Merge to `main`:** plan + apply with the edit token.
 - **Weekly (Monday):** plan; the run fails when Cloudflare was changed outside the code.
-- **Local / Hermes:** `iac/tofu.sh cloudflare init`, then `iac/tofu.sh cloudflare plan`. Uses the
-  read-only token; `TOFU_WRITE=1` switches to the write token. Applies normally go through CI.
+- **Local / Hermes:** `pwsh iac/tofu.ps1 cloudflare init`, then `pwsh iac/tofu.ps1 cloudflare plan`.
+  Uses the read-only token; `-Write` switches to the write token. Applies normally go through CI.
 
 ## Adopting existing resources
 
-1. `CLOUDFLARE_API_TOKEN="$CLOUDFLARE_IAC_READ_TOKEN" iac/cloudflare/scripts/generate-imports.sh`
+1. `$env:CLOUDFLARE_API_TOKEN = $env:CLOUDFLARE_IAC_READ_TOKEN; iac/cloudflare/scripts/generate-imports.ps1`
    writes HCL and `import` blocks to `iac/cloudflare/generated/` (git-ignored).
-   Other types: pass them as the first argument (`cloudflare_ruleset`). Zone settings need the
-   setting names: `RESOURCE_IDS=cloudflare_zone_setting=ssl,always_use_https,min_tls_version
-   generate-imports.sh cloudflare_zone_setting`.
+   Other types: `-ResourceType cloudflare_ruleset`. Zone settings need the setting names:
+   `-ResourceType cloudflare_zone_setting -ResourceId 'cloudflare_zone_setting=ssl,always_use_https'`.
 2. Move the reviewed blocks into `dns.tf` / `imports.tf`, rename resources after the hostname, drop
    computed attributes (`id`, `created_on`, `modified_on`, ...).
 3. Open a PR. The plan must say `N to import, 0 to add, 0 to change, 0 to destroy`.
@@ -96,7 +96,7 @@ The bucket and keys that hold the state cannot be managed by the same state.
 
 ## Recovering
 
-- **Stale lock** (a run died mid-way): `iac/tofu.sh cloudflare force-unlock <LOCK_ID>`; the ID is
+- **Stale lock** (a run died mid-way): `pwsh iac/tofu.ps1 cloudflare force-unlock <LOCK_ID>`; the ID is
   in the error message.
 - **Lost state or passphrase:** delete the state object, set a new passphrase everywhere, restore
   the `import` blocks from git history and let CI apply them.
