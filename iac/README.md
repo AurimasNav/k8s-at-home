@@ -57,7 +57,7 @@ Conventions:
 | Token `iac` (write, account admin level) | `CLOUDFLARE_API_TOKEN` | `cloudflare` environment secret `CLOUDFLARE_IAC_EDIT_TOKEN` | no |
 | Account ID | `CLOUDFLARE_ACCOUNT_ID` | repo secret | yes |
 | State passphrase | `TOFU_STATE_PASSPHRASE` | repo secret | yes |
-| R2 state keys (bucket `tofu-state` only) | `TOFU_R2_ACCESS_KEY_ID`, `TOFU_R2_SECRET_ACCESS_KEY` | repo secrets | add once they exist |
+| R2 state keys (token `tofu-state-r2`: bucket `tofu-state`, object read/write only) | `TOFU_R2_ACCESS_KEY_ID`, `TOFU_R2_SECRET_ACCESS_KEY` | repo secrets | no |
 
 - Both Cloudflare tokens are defined in this stack (`account-token-*.tf`, permissions by name).
   To change a token's permissions, edit the name list; the plan shows the change.
@@ -69,15 +69,22 @@ Conventions:
 
 The bucket and keys that hold the state cannot be managed by the same state.
 
-1. **R2:** enable R2 in the dashboard (asks for a payment method; usage stays in the free tier).
-2. **Bucket + keys:** create bucket `tofu-state` and an R2 token limited to it with *Object Read &
-   Write*; store its access key ID and secret in Doppler and as GitHub repo secrets (table above).
-3. **Turn on CI:** repo variable `TOFU_CLOUDFLARE_ENABLED` = `true`.
+Done on 2026-10-30:
+
+1. **R2:** enabled in the dashboard (asks for a payment method; usage stays in the free tier).
+2. **Bucket:** `tofu-state`, location hint EEUR, default jurisdiction, Standard storage class.
+3. **Keys:** account token `tofu-state-r2` with *Workers R2 Storage Bucket Item Write* on
+   `com.cloudflare.edge.r2.bucket.<account>_default_tofu-state` only. Its S3 keys: access key ID =
+   token ID, secret = SHA-256 of the token value. Stored in Doppler and as GitHub repo secrets.
+   Not managed by this stack yet (it guards the state itself); rotate it by hand.
+4. **CI:** repo variable `TOFU_CLOUDFLARE_ENABLED` = `true`.
 
 ## Workflow
 
-- **PR touching `iac/`:** fmt, validate and tflint; then a plan with the read-only token. The job
-  summary lists addresses and counts only, because Actions logs are public in this repo.
+- **PR touching `iac/`:** fmt, validate and tflint; then a plan with the read-only token. The plan
+  goes into the PR description (section *IaC (OpenTofu)*, replaced on every run) and the job
+  summary. Both are public: `.github/scripts/New-TofuPlanReport.ps1` masks sensitive values, the
+  account ID and token IDs, and names each permission group. The plan never goes to the log.
 - **Merge to `main`:** plan + apply with the edit token.
 - **Weekly (Monday):** plan; the run fails when Cloudflare was changed outside the code.
 - **Local / Hermes:** `pwsh iac/tofu.ps1 cloudflare init`, then `pwsh iac/tofu.ps1 cloudflare plan`.

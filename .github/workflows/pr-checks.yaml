@@ -1,5 +1,10 @@
 name: PR checks
 
+# Lint, rendered manifests and security scans for every PR and push to main. On PRs the
+# "PR report" job writes the results into the PR description (one section, replaced on each
+# run). The job names below are the required checks of the main ruleset: renaming one means
+# updating the ruleset too.
+
 on:
   pull_request:
     branches: [main]
@@ -23,84 +28,128 @@ env:
   KUBECONFORM_VERSION: "0.8.0"
   # renovate: datasource=github-releases depName=aquasecurity/trivy
   TRIVY_VERSION: "0.76.1"
+  # renovate: datasource=github-releases depName=gitleaks/gitleaks
+  GITLEAKS_VERSION: "8.30.1"
   # renovate: datasource=pypi depName=yamllint
   YAMLLINT_VERSION: "1.38.0"
   # renovate: datasource=pypi depName=ruff
   RUFF_VERSION: "0.17.3"
   # renovate: datasource=github-releases depName=rhysd/actionlint
   ACTIONLINT_VERSION: "1.7.12"
+  # renovate: datasource=nuget registryUrl=https://www.powershellgallery.com/api/v2 depName=PSScriptAnalyzer
+  PSSCRIPTANALYZER_VERSION: "1.24.0"
   # schema version for kubeconform; keep near the cluster's k3s version
   KUBERNETES_VERSION: "1.36.0"
+  # PR base commit: reports compare against it (empty on pushes to main).
+  BASE_SHA: ${{ github.event.pull_request.base.sha }}
 
 jobs:
   lint:
     name: Lint (yamllint, ruff, actionlint)
     runs-on: ubuntu-latest
+    outputs:
+      report: ${{ steps.report.outputs.report }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Install actionlint (checksum-verified)
+        shell: pwsh
+        run: .github/scripts/Install-CiTools.ps1 -Tool actionlint
       - name: yamllint
-        run: pipx run "yamllint==${YAMLLINT_VERSION}" -c .yamllint.yaml -f github .
+        id: yamllint
+        shell: pwsh
+        run: .github/scripts/Invoke-Check.ps1 yamllint { pipx run "yamllint==$env:YAMLLINT_VERSION" -c .yamllint.yaml -f github . }
       - name: ruff (our Python; vendored HA custom_components excluded)
-        run: pipx run "ruff==${RUFF_VERSION}" check --output-format github .
+        id: ruff
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: .github/scripts/Invoke-Check.ps1 ruff { pipx run "ruff==$env:RUFF_VERSION" check --output-format github . }
       - name: actionlint
-        run: |
-          set -euo pipefail
-          al="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
-          base="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
-          curl -fsSL --retry 3 -o "$al" "$base/$al"
-          curl -fsSL --retry 3 -o al.sum "$base/actionlint_${ACTIONLINT_VERSION}_checksums.txt"
-          grep " $al\$" al.sum | sha256sum -c -
-          tar xzf "$al" actionlint
-          ./actionlint -color
+        id: actionlint
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: .github/scripts/Invoke-Check.ps1 actionlint { actionlint -no-color }
+      - name: PSScriptAnalyzer
+        id: psscriptanalyzer
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: .github/scripts/Invoke-Check.ps1 psscriptanalyzer { .github/scripts/Test-PowerShell.ps1 }
+      - name: Report
+        id: report
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        env:
+          STEPS: ${{ toJSON(steps) }}
+        run: >
+          .github/scripts/New-StepReport.ps1 -Title 'Lint'
+          -Check ([ordered]@{ yamllint = 'yamllint'; ruff = 'ruff'; actionlint = 'actionlint'; psscriptanalyzer = 'PSScriptAnalyzer' })
 
   manifests:
     name: Render + validate manifests (kustomize, kubeconform)
     runs-on: ubuntu-latest
+    outputs:
+      report: ${{ steps.report.outputs.report }}
+      report_diff: ${{ steps.diff.outputs.report }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install tools (checksum-verified)
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/bin" && cd "$(mktemp -d)"
-          dl() { curl -fsSL --retry 3 -o "$2" "$1"; }
-          verify() { echo "$1  $2" | sha256sum -c -; }
-
-          kz="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
-          base="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}"
-          dl "$base/$kz" "$kz"; dl "$base/checksums.txt" kz.sum
-          grep " $kz\$" kz.sum | sha256sum -c -; tar xzf "$kz" -C "$HOME/bin" kustomize
-
-          hm="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
-          dl "https://get.helm.sh/$hm" "$hm"; dl "https://get.helm.sh/$hm.sha256sum" hm.sum
-          sha256sum -c hm.sum; tar xzf "$hm" --strip-components=1 -C "$HOME/bin" linux-amd64/helm
-
-          kc="kubeconform-linux-amd64.tar.gz"
-          base="https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}"
-          dl "$base/$kc" "$kc"; dl "$base/CHECKSUMS" kc.sum
-          grep " $kc\$" kc.sum | sha256sum -c -; tar xzf "$kc" -C "$HOME/bin" kubeconform
-
-          echo "$HOME/bin" >> "$GITHUB_PATH"
+          fetch-depth: 0
+      - name: Install kustomize, helm, kubeconform (checksum-verified)
+        shell: pwsh
+        run: .github/scripts/Install-CiTools.ps1 -Tool kustomize, helm, kubeconform
       - name: Render every deployed app (same flags as ArgoCD)
-        run: .github/scripts/render-apps.sh rendered
+        id: render
+        shell: pwsh
+        run: .github/scripts/Invoke-Check.ps1 render { .github/scripts/Render-Apps.ps1 -OutDir rendered }
       - name: kubeconform (strict, CRDs from datreeio catalog)
+        id: kubeconform
+        shell: pwsh
+        run: >
+          .github/scripts/Invoke-Check.ps1 kubeconform {
+          kubeconform -strict -summary -output text
+          -kubernetes-version $env:KUBERNETES_VERSION
+          -ignore-missing-schemas
+          -skip CustomResourceDefinition
+          -schema-location default
+          -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+          (Get-ChildItem rendered/*.yaml).FullName }
+      - name: Render the PR base, for the manifest diff
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        shell: pwsh
         run: |
-          kubeconform -strict -summary -output text \
-            -kubernetes-version "${KUBERNETES_VERSION}" \
-            -ignore-missing-schemas \
-            -skip CustomResourceDefinition \
-            -schema-location default \
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            rendered/*.yaml
+          git worktree add --detach ../base $env:BASE_SHA
+          # A base that does not render only makes the diff show every app as added.
+          .github/scripts/Render-Apps.ps1 -Root ../base -OutDir rendered-base
+          if ($LASTEXITCODE) {
+            Write-Host '::warning::The PR base did not render; the manifest diff is against nothing.'
+            Remove-Item -Recurse -Force rendered-base
+          }
+          exit 0
+      - name: Manifest diff
+        id: diff
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && steps.render.outcome == 'success' }}
+        shell: pwsh
+        run: .github/scripts/New-ManifestDiffReport.ps1 -Base rendered-base -Head rendered -DiffFile rendered.diff
+      - name: Report
+        id: report
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        env:
+          STEPS: ${{ toJSON(steps) }}
+        run: >
+          .github/scripts/New-StepReport.ps1 -Title 'Manifests'
+          -Check ([ordered]@{ render = 'kustomize render (deployed apps)'; kubeconform = 'kubeconform' })
       - name: Upload rendered manifests
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rendered-manifests
-          path: rendered/
+          path: |
+            rendered/
+            rendered.diff
           retention-days: 7
 
   security:
@@ -109,35 +158,86 @@ jobs:
     permissions:
       contents: read
       security-events: write
+    outputs:
+      report: ${{ steps.report.outputs.report }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install trivy (checksum-verified)
+          fetch-depth: 0
+      - name: Install trivy, gitleaks (checksum-verified)
+        shell: pwsh
+        run: .github/scripts/Install-CiTools.ps1 -Tool trivy, gitleaks
+      # Each scanner runs once and writes JSON; the blocking checks below read it.
+      - name: Scan (trivy secrets + misconfigurations, gitleaks)
+        shell: pwsh
         run: |
-          set -euo pipefail
-          mkdir -p "$HOME/bin" && cd "$(mktemp -d)"
-          tv="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
-          base="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}"
-          curl -fsSL --retry 3 -o "$tv" "$base/$tv"
-          curl -fsSL --retry 3 -o sums "$base/trivy_${TRIVY_VERSION}_checksums.txt"
-          grep " $tv\$" sums | sha256sum -c -
-          tar xzf "$tv" -C "$HOME/bin" trivy
-          echo "$HOME/bin" >> "$GITHUB_PATH"
-      - name: Secret scan (blocking)
-        run: trivy fs --scanners secret --exit-code 1 --no-progress .
-      - name: Misconfiguration scan (blocking on findings not in .trivyignore)
+          trivy fs --scanners secret --no-progress --quiet --format json --output trivy-secret.json .
+          if ($LASTEXITCODE) { throw 'trivy secret scan did not run' }
+          trivy config --quiet --format json --output trivy-config.json --ignorefile .trivyignore.yaml --skip-dirs '**/charts' .
+          if ($LASTEXITCODE) { throw 'trivy config scan did not run' }
+          # PRs: the PR's own commits. Pushes to main: the whole history.
+          $range = if ($env:BASE_SHA) { @("--log-opts=--no-merges $env:BASE_SHA..HEAD") } else { @() }
+          gitleaks git --no-banner --redact --config .gitleaks.toml --exit-code 0 @range --report-format json --report-path gitleaks.json .
+          if ($LASTEXITCODE) { throw 'gitleaks did not run' }
+      - name: Secrets in files (trivy, blocking)
+        shell: pwsh
+        run: trivy convert --format table --exit-code 1 trivy-secret.json
+      - name: Secrets in commits (gitleaks, blocking)
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: |
+          $found = @(Get-Content -Raw gitleaks.json | ConvertFrom-Json)
+          foreach ($f in $found) { Write-Host "::error file=$($f.File),line=$($f.StartLine)::gitleaks $($f.RuleID) in commit $($f.Commit)" }
+          if ($found.Count) { exit 1 }
+      - name: Misconfigurations (trivy, blocking on HIGH/CRITICAL not in .trivyignore)
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: trivy convert --format table --severity HIGH,CRITICAL --exit-code 1 trivy-config.json
+      - name: Report
+        id: report
+        if: ${{ !cancelled() }}
+        shell: pwsh
         run: >
-          trivy config --exit-code 1 --severity HIGH,CRITICAL
-          --ignorefile .trivyignore.yaml --skip-dirs '**/charts' .
-      - name: Misconfiguration report (SARIF, all severities, non-blocking)
-        if: always()
-        run: >
-          trivy config --format sarif --output trivy.sarif
-          --ignorefile .trivyignore.yaml --skip-dirs '**/charts' .
+          .github/scripts/New-SecurityReport.ps1
+          -GitleaksScope ($env:BASE_SHA ? 'commits in this PR' : 'repository history')
+      - name: SARIF for GitHub code scanning (all severities)
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: trivy convert --format sarif --output trivy.sarif trivy-config.json
       - name: Upload to GitHub code scanning
-        if: always() && hashFiles('trivy.sarif') != ''
+        if: ${{ !cancelled() && hashFiles('trivy.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: trivy.sarif
           category: trivy-config
+
+  # Writes the results above into the PR description, replacing the previous report.
+  # Never fails: a failed check already shows (and blocks the merge) on its own job.
+  report:
+    name: PR report
+    needs: [lint, manifests, security]
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Update the PR description
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEEDS: ${{ toJSON(needs) }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >
+          .github/scripts/Update-PrReport.ps1
+          -Repository $env:GITHUB_REPOSITORY
+          -PullRequest $env:PR_NUMBER
+          -HeadSha $env:HEAD_SHA
+          -Section pr-checks -Title 'PR checks'
+          -Jobs ([ordered]@{ lint = 'Lint'; manifests = 'Render + validate manifests'; security = 'Security' })

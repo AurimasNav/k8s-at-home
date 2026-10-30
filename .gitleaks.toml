@@ -1,0 +1,20 @@
+# gitleaks configuration (CI: .github/workflows/pr-checks.yaml, job "security").
+# Extends the default rules; the allowlists below only cover known false positives.
+title = "k8s-at-home"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "ExternalSecret secretKey/key lines name a Doppler secret; they hold no value"
+targetRules = ["generic-api-key"]
+regexTarget = "line"
+regexes = ['''^\s*(-\s+)?(secretKey|key):\s+[A-Z][A-Z0-9_]*\s*$''']
+
+[[allowlists]]
+description = "Vendored Home Assistant integrations: key=\"snake_case\" is an entity/translation key"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^gitops/home-assistant/custom_components/''']
+regexTarget = "match"
+regexes = ['''key="[a-z0-9_]+"''']

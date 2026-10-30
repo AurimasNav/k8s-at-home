@@ -1,20 +1,22 @@
 name: IaC (OpenTofu)
 
-# Root modules under iac/. Today: iac/cloudflare (DNS and zone settings for sync.lt).
+# Root modules under iac/. Today: iac/cloudflare (Cloudflare account and the sync.lt zone).
 #   - Every PR touching iac/: fmt, validate, tflint (no secrets).
-#   - Same-repo PRs: plan with a read-only Cloudflare token, shown in the job summary.
+#   - Same-repo PRs: plan with the read-only Cloudflare token. The "PR report" job writes the
+#     plan into the PR description (its own section, replaced on every run).
 #   - Push to main: plan + apply in the "cloudflare" environment (edit token lives only there).
 #   - Weekly: drift check; the job fails when Cloudflare differs from the code.
-# Jobs that need secrets run only when the repo variable TOFU_CLOUDFLARE_ENABLED is "true",
-# so the scaffolding can merge before the state bucket and tokens exist (iac/README.md).
+# Jobs that need secrets run only when the repo variable TOFU_CLOUDFLARE_ENABLED is "true".
+# The repo is public, so logs and the PR description are too: plans are only ever shown
+# through New-TofuPlanReport.ps1, which masks secrets, the account ID and token IDs.
 
 on:
   pull_request:
     branches: [main]
-    paths: ["iac/**", ".github/workflows/iac.yaml", ".github/scripts/install-iac-tools.ps1", "PSScriptAnalyzerSettings.psd1"]
+    paths: ["iac/**", ".github/workflows/iac.yaml", ".github/scripts/**"]
   push:
     branches: [main]
-    paths: ["iac/**", ".github/workflows/iac.yaml", ".github/scripts/install-iac-tools.ps1", "PSScriptAnalyzerSettings.psd1"]
+    paths: ["iac/**", ".github/workflows/iac.yaml", ".github/scripts/**"]
   schedule:
     - cron: "17 5 * * 1"
   workflow_dispatch:
@@ -27,41 +29,51 @@ env:
   TOFU_VERSION: "1.13.2"
   # renovate: datasource=github-releases depName=terraform-linters/tflint
   TFLINT_VERSION: "0.65.0"
-  # renovate: datasource=nuget registryUrl=https://www.powershellgallery.com/api/v2 depName=PSScriptAnalyzer
-  PSSCRIPTANALYZER_VERSION: "1.24.0"
   TF_IN_AUTOMATION: "1"
   TF_INPUT: "0"
   STACK_DIR: iac/cloudflare
+  # Values masked in plan reports (in addition to what tofu marks sensitive).
+  REDACT_ENV: CLOUDFLARE_API_TOKEN,TF_VAR_cloudflare_account_id,TF_VAR_state_passphrase,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
 
 jobs:
   static:
     name: Static checks (fmt, validate, tflint)
     runs-on: ubuntu-latest
+    outputs:
+      report: ${{ steps.report.outputs.report }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Install tofu + tflint (checksum-verified)
         shell: pwsh
-        run: .github/scripts/install-iac-tools.ps1
+        run: .github/scripts/Install-CiTools.ps1 -Tool tofu, tflint
       - name: tofu fmt
-        run: tofu fmt -check -recursive -diff iac
-      - name: tofu validate
-        working-directory: ${{ env.STACK_DIR }}
-        run: |
-          tofu init -backend=false -lockfile=readonly
-          tofu validate
-      - name: tflint
-        run: tflint --chdir="$STACK_DIR" --config="$PWD/iac/.tflint.hcl" --format=compact
-      - name: PSScriptAnalyzer
+        id: fmt
         shell: pwsh
-        run: |
-          Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module PSScriptAnalyzer -RequiredVersion $env:PSSCRIPTANALYZER_VERSION -Scope CurrentUser -Force
-          $files = git ls-files '*.ps1' '*.psm1' '*.psd1' | Where-Object { $_ -match '^(iac|\.github)/' }
-          $issues = $files | ForEach-Object { Invoke-ScriptAnalyzer -Path $_ -Settings ./PSScriptAnalyzerSettings.psd1 }
-          $issues | Format-Table -AutoSize RuleName, Severity, ScriptName, Line, Message | Out-String -Width 200
-          if ($issues) { exit 1 }
+        run: .github/scripts/Invoke-Check.ps1 fmt { tofu fmt -check -recursive -diff -no-color iac }
+      - name: tofu validate
+        id: validate
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: >
+          .github/scripts/Invoke-Check.ps1 validate {
+          tofu "-chdir=$env:STACK_DIR" init -backend=false -lockfile=readonly -no-color;
+          if (-not $LASTEXITCODE) { tofu "-chdir=$env:STACK_DIR" validate -no-color } }
+      - name: tflint
+        id: tflint
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: .github/scripts/Invoke-Check.ps1 tflint { tflint "--chdir=$env:STACK_DIR" "--config=$PWD/iac/.tflint.hcl" --format=compact --no-color }
+      - name: Report
+        id: report
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        env:
+          STEPS: ${{ toJSON(steps) }}
+        run: >
+          .github/scripts/New-StepReport.ps1 -Title 'Static checks'
+          -Check ([ordered]@{ fmt = 'tofu fmt'; validate = 'tofu validate'; tflint = 'tflint' })
 
   plan:
     name: Plan (read-only token)
@@ -75,6 +87,8 @@ jobs:
     concurrency:
       group: iac-cloudflare-state
       cancel-in-progress: false
+    outputs:
+      report: ${{ steps.report.outputs.report }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.TOFU_R2_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.TOFU_R2_SECRET_ACCESS_KEY }}
@@ -87,35 +101,40 @@ jobs:
           persist-credentials: false
       - name: Install tofu (checksum-verified)
         shell: pwsh
-        run: .github/scripts/install-iac-tools.ps1
+        run: .github/scripts/Install-CiTools.ps1 -Tool tofu
       - name: Plan
         id: plan
-        working-directory: ${{ env.STACK_DIR }}
-        # The repo is public, so Actions logs are too: print resource addresses and
-        # counts only, never attribute values. Read the full plan locally (iac/README.md).
+        shell: pwsh
+        # Output goes to a file, not the log; the report step shows a masked version.
         run: |
-          tofu init -lockfile=readonly
-          set +e
-          tofu plan -lock-timeout=5m -detailed-exitcode -no-color > plan.txt 2>&1
-          code=$?
-          set -e
-          summary="$(grep -E '^(Plan:|No changes\.|  # [^ ]+ (will|must)|Error: )' plan.txt || true)"
-          echo "$summary"
-          {
-            echo "### tofu plan: \`$STACK_DIR\`"
-            echo '```'
-            echo "$summary"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-          rm -f plan.txt
-          echo "exitcode=$code" >> "$GITHUB_OUTPUT"
-          # 0 = no changes, 2 = changes (fine on PRs), anything else = error
-          [ "$code" = 0 ] || [ "$code" = 2 ]
-      - name: Fail on drift (scheduled run)
-        if: github.event_name == 'schedule' && steps.plan.outputs.exitcode == '2'
+          $log = Join-Path $env:RUNNER_TEMP 'plan.log'
+          tofu "-chdir=$env:STACK_DIR" init -lockfile=readonly -no-color *> $log
+          $code = $LASTEXITCODE
+          if (-not $code) {
+            tofu "-chdir=$env:STACK_DIR" plan -lock-timeout=5m -detailed-exitcode -no-color -out=tfplan *>> $log
+            $code = $LASTEXITCODE
+          }
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "exitcode=$code"
+          Write-Host "tofu plan exit code: $code (0 = no changes, 2 = changes, other = error)"
+      - name: Report
+        id: report
+        shell: pwsh
+        env:
+          PLAN_EXIT_CODE: ${{ steps.plan.outputs.exitcode }}
+        run: >
+          .github/scripts/New-TofuPlanReport.ps1 -StackDir $env:STACK_DIR -ExitCode $env:PLAN_EXIT_CODE
+          -PlanLog (Join-Path $env:RUNNER_TEMP 'plan.log') -RedactEnv ($env:REDACT_ENV -split ',')
+      - name: Result
+        shell: pwsh
+        env:
+          PLAN_EXIT_CODE: ${{ steps.plan.outputs.exitcode }}
         run: |
-          echo "::error::Cloudflare differs from iac/cloudflare. Run the plan locally or check the job summary."
-          exit 1
+          Remove-Item -ErrorAction SilentlyContinue (Join-Path $env:STACK_DIR 'tfplan')
+          if ($env:PLAN_EXIT_CODE -notin '0', '2') { Write-Host '::error::tofu plan failed; see the job summary.'; exit 1 }
+          if ($env:GITHUB_EVENT_NAME -eq 'schedule' -and $env:PLAN_EXIT_CODE -eq '2') {
+            Write-Host '::error::Cloudflare differs from iac/cloudflare; the job summary has the plan.'
+            exit 1
+          }
 
   apply:
     name: Apply (main)
@@ -140,15 +159,73 @@ jobs:
           persist-credentials: false
       - name: Install tofu (checksum-verified)
         shell: pwsh
-        run: .github/scripts/install-iac-tools.ps1
-      - name: Plan and apply
-        working-directory: ${{ env.STACK_DIR }}
-        # Saved plan is encrypted by the stack's plan encryption. Output is reduced to
-        # addresses and counts because the logs are public.
+        run: .github/scripts/Install-CiTools.ps1 -Tool tofu
+      - name: Plan
+        id: plan
+        shell: pwsh
         run: |
-          tofu init -lockfile=readonly
-          tofu plan -lock-timeout=5m -no-color -out=tfplan > plan.txt 2>&1 || { grep -E '^(│ )?Error' -A8 plan.txt; exit 1; }
-          grep -E '^(Plan:|No changes\.|  # [^ ]+ (will|must))' plan.txt || true
-          tofu apply -lock-timeout=5m -no-color tfplan > apply.txt 2>&1 || { grep -E '^(│ )?Error' -A8 apply.txt; exit 1; }
-          grep -E '^Apply complete' apply.txt
-          rm -f plan.txt apply.txt tfplan
+          $log = Join-Path $env:RUNNER_TEMP 'plan.log'
+          tofu "-chdir=$env:STACK_DIR" init -lockfile=readonly -no-color *> $log
+          $code = $LASTEXITCODE
+          if (-not $code) {
+            tofu "-chdir=$env:STACK_DIR" plan -lock-timeout=5m -detailed-exitcode -no-color -out=tfplan *>> $log
+            $code = $LASTEXITCODE
+          }
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "exitcode=$code"
+          Write-Host "tofu plan exit code: $code"
+      - name: Plan report (job summary)
+        shell: pwsh
+        env:
+          PLAN_EXIT_CODE: ${{ steps.plan.outputs.exitcode }}
+        run: >
+          .github/scripts/New-TofuPlanReport.ps1 -StackDir $env:STACK_DIR -ExitCode $env:PLAN_EXIT_CODE
+          -PlanLog (Join-Path $env:RUNNER_TEMP 'plan.log') -RedactEnv ($env:REDACT_ENV -split ',') > $null
+      - name: Apply
+        if: steps.plan.outputs.exitcode == '2'
+        shell: pwsh
+        # Applies exactly the saved (encrypted) plan above. Only the outcome is logged.
+        run: |
+          $log = Join-Path $env:RUNNER_TEMP 'apply.log'
+          tofu "-chdir=$env:STACK_DIR" apply -lock-timeout=5m -no-color tfplan *> $log
+          $code = $LASTEXITCODE
+          $secrets = ($env:REDACT_ENV -split ',') | ForEach-Object { [Environment]::GetEnvironmentVariable($_) } | Where-Object { $_ }
+          $lines = Get-Content -LiteralPath $log | Select-String -Pattern '^(Apply complete|│ Error|Error)' -Context 0, 6 | ForEach-Object { $_.ToString() }
+          foreach ($l in $lines) { foreach ($s in $secrets) { $l = $l.Replace($s, '***') }; Write-Host $l }
+          Remove-Item -LiteralPath $log, (Join-Path $env:STACK_DIR 'tfplan') -ErrorAction SilentlyContinue
+          exit $code
+      - name: Result
+        if: steps.plan.outputs.exitcode != '0' && steps.plan.outputs.exitcode != '2'
+        run: |
+          echo "::error::tofu plan failed; see the job summary."
+          exit 1
+
+  # Writes the static checks and the plan into the PR description (section "iac").
+  report:
+    name: PR report
+    needs: [static, plan]
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Update the PR description
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEEDS: ${{ toJSON(needs) }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PLAN_ENABLED: ${{ vars.TOFU_CLOUDFLARE_ENABLED }}
+        run: >
+          .github/scripts/Update-PrReport.ps1
+          -Repository $env:GITHUB_REPOSITORY
+          -PullRequest $env:PR_NUMBER
+          -HeadSha $env:HEAD_SHA
+          -Section iac -Title 'IaC (OpenTofu)'
+          -Jobs ([ordered]@{ static = 'Static checks (fmt, validate, tflint)'; plan = 'Plan (read-only token)' })
+          -Note ($env:PLAN_ENABLED -eq 'true' ? @() : @('Plan skipped: repo variable TOFU_CLOUDFLARE_ENABLED is not "true".'))
