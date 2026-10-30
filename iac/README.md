@@ -23,7 +23,8 @@ iac/
     ├── permission-groups.tf  permission group name -> ID lookup
     ├── account-tokens.tf     API tokens (iac-reader, iac)
     ├── account-token-*.tf    each token's permissions, by name
-    ├── imports.tf            one-time adoption of existing resources
+    ├── dns.tf                sync.lt records (apex A + CNAMEs)
+    ├── imports.tf            one-time adoption of existing resources (only while adopting)
     ├── outputs.tf
     └── scripts/generate-imports.ps1
 ```
@@ -97,10 +98,10 @@ Done on 2026-10-30:
    writes HCL and `import` blocks to `iac/cloudflare/generated/` (git-ignored).
    Other types: `-ResourceType cloudflare_ruleset`. Zone settings need the setting names:
    `-ResourceType cloudflare_zone_setting -ResourceId 'cloudflare_zone_setting=ssl,always_use_https'`.
-2. Move the reviewed blocks into `dns.tf` / `imports.tf`, rename resources after the hostname, drop
+2. Move the reviewed blocks into the resource file and a new `imports.tf`, rename resources after the hostname, drop
    computed attributes (`id`, `created_on`, `modified_on`, ...).
 3. Open a PR. The plan must say `N to import, 0 to add, 0 to change, 0 to destroy`.
-4. Merge: CI applies the imports. Remove the `import` blocks in the next PR.
+4. Merge: CI applies the imports. Delete `imports.tf` in the next PR.
 
 ## Recovering
 

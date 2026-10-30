@@ -3,8 +3,9 @@
 # (not proxied): TLS ends in the cluster (cert-manager + ingress-nginx / cilium gateway).
 #
 # Add a hostname to local.hostnames (key = hostname, value = what serves it; it becomes
-# the record comment, so the dashboard shows which records are managed here). Records in
-# the zone that are not listed are left alone (tofu only manages what is in its state).
+# the record comment, so the dashboard shows which records are managed here). Removing a
+# hostname deletes its record. Records in the zone that are not listed are left alone
+# (tofu only manages what is in its state).
 
 locals {
   # Served by apps in the cluster (gitops/<app> Ingress or HTTPRoute) or kept on purpose.
@@ -29,25 +30,6 @@ locals {
     sonarr      = "gitops/sonarr"
     vrising     = "not deployed"
   }
-
-  # Served by nothing any more. Adopted only so their deletion goes through a
-  # reviewed plan: the follow-up PR empties this list, which deletes them.
-  stale_hostnames = toset([
-    "huntarr",
-    "ombi",
-    "radarr-no4k",
-    "radarr1",
-    "radarr2",
-    "radarr3",
-    "sonarr1",
-    "sonarr2",
-    "sonarr3",
-  ])
-
-  cname_records = merge(
-    { for h in local.stale_hostnames : h => "stale, to be deleted" },
-    local.hostnames,
-  )
 }
 
 resource "cloudflare_dns_record" "apex" {
@@ -61,7 +43,7 @@ resource "cloudflare_dns_record" "apex" {
 }
 
 resource "cloudflare_dns_record" "cname" {
-  for_each = local.cname_records
+  for_each = local.hostnames
 
   zone_id = local.zone_id
   name    = "${each.key}.${var.zone_name}"
@@ -70,10 +52,4 @@ resource "cloudflare_dns_record" "cname" {
   ttl     = 1 # automatic
   proxied = false
   comment = "OpenTofu iac/cloudflare: ${each.value}"
-}
-
-# Created on its own by #878: same record, new address (no delete and re-create).
-moved {
-  from = cloudflare_dns_record.cleanuparr
-  to   = cloudflare_dns_record.cname["cleanuparr"]
 }
