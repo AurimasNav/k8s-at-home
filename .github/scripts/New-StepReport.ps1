@@ -55,3 +55,4 @@ foreach ($id in $Check.Keys) {
 $md = @("#### $Title", '', '| Check | Result | Notes |', '| --- | --- | --- |') + $rows
 if ($details.Count) { $md += ''; $md += $details }
 Write-StepOutput -Name report -Value ($md -join "`n")
+exit 0

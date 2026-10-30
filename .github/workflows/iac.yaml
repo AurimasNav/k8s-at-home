@@ -116,6 +116,8 @@ jobs:
           }
           Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "exitcode=$code"
           Write-Host "tofu plan exit code: $code (0 = no changes, 2 = changes, other = error)"
+          # The Result step decides; this step only records the code.
+          exit 0
       - name: Report
         id: report
         shell: pwsh
@@ -173,6 +175,7 @@ jobs:
           }
           Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "exitcode=$code"
           Write-Host "tofu plan exit code: $code"
+          exit 0
       - name: Plan report (job summary)
         shell: pwsh
         env:

@@ -177,7 +177,8 @@ jobs:
           trivy config --quiet --format json --output trivy-config.json --ignorefile .trivyignore.yaml --skip-dirs '**/charts' .
           if ($LASTEXITCODE) { throw 'trivy config scan did not run' }
           # PRs: the PR's own commits. Pushes to main: the whole history.
-          $range = if ($env:BASE_SHA) { @("--log-opts=--no-merges $env:BASE_SHA..HEAD") } else { @() }
+          # @(...) around the if: splatting a single string would pass it one character per argument.
+          $range = @(if ($env:BASE_SHA) { "--log-opts=--no-merges $env:BASE_SHA..HEAD" })
           gitleaks git --no-banner --redact --config .gitleaks.toml --exit-code 0 @range --report-format json --report-path gitleaks.json .
           if ($LASTEXITCODE) { throw 'gitleaks did not run' }
       - name: Secrets in files (trivy, blocking)
@@ -187,6 +188,7 @@ jobs:
         if: ${{ !cancelled() }}
         shell: pwsh
         run: |
+          if (-not (Test-Path gitleaks.json)) { Write-Host '::error::gitleaks did not run'; exit 1 }
           $found = @(Get-Content -Raw gitleaks.json | ConvertFrom-Json)
           foreach ($f in $found) { Write-Host "::error file=$($f.File),line=$($f.StartLine)::gitleaks $($f.RuleID) in commit $($f.Commit)" }
           if ($found.Count) { exit 1 }

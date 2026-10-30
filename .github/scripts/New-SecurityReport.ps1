@@ -114,3 +114,4 @@ if ($other.Count) {
     $md.Add("<details><summary>Non-blocking misconfigurations in changed files ($($other.Count))</summary>`n`n$(Format-FindingTable $other -Limit $MaxRows -WithSeverity)`n</details>")
 }
 Write-StepOutput -Name report -Value ($md -join "`n")
+exit 0

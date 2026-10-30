@@ -168,3 +168,4 @@ $md.Add('')
 $md.Add('<sub>Sensitive values, the account ID and API token IDs are masked; this description is public.</sub>')
 if ($env:GITHUB_STEP_SUMMARY) { Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ($md -join "`n") }
 Write-StepOutput -Name report -Value ($md -join "`n")
+exit 0

@@ -133,3 +133,4 @@ if (-not $changes.Count) {
     }
 }
 Write-StepOutput -Name report -Value ($md -join "`n")
+exit 0
