@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Cleanuparr: queue cleaner (stalled/failed/malware downloads) + Seeker (re-searches
+# missing and cutoff-unmet items in Radarr/Sonarr). https://github.com/Cleanuparr/Cleanuparr
+#
+# Cleanuparr keeps its settings only in SQLite on the PVC. They are managed from git:
+# setup/desired.json is applied through the API by the PostSync Job in
+# setup-job.yaml (account, Dry Run, Radarr/Sonarr/qBittorrent, modules). Change the
+# JSON, not the UI; UI-only additions are left alone but not tracked.
+# Login: user from desired.json, password = Doppler CLEANUPARR_PASSWORD.
+namespace: cleanuparr
+
+resources:
+- ./deployment.yaml
+- ./service.yaml
+- ./ingress.yaml
+- ./configmap.yaml
+- ./pvc.yaml
+- ./networkpolicy.yaml
+- ./setup-job.yaml
+
+configMapGenerator:
+- name: cleanuparr-setup
+  files:
+  - setup/setup.py
+  - setup/desired.json
+
+images:
+- name: python
+  newTag: 3.15.2-alpine3.24

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cleanuparr
+data:
+  TZ: Europe/Vilnius
+  PORT: "11011"
+  HOME: /tmp
+  # No diagnostics IPC socket (dotnet-dump/trace) inside the pod.
+  DOTNET_EnableDiagnostics: "0"

@@ -43,3 +43,4 @@ resources:
 - ./apps/telegram-dl
 - ./apps/homebox
 - ./apps/k8up
+- ./apps/cleanuparr

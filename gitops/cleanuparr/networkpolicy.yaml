@@ -1,0 +1,106 @@
+# Cleanuparr holds the Radarr/Sonarr API keys, so it only talks to what it needs.
+# Ingress: ingress-nginx (behind oauth2-proxy), Hermes (health/API checks), the
+# setup Job and kubelet probes. Egress: DNS, Radarr, Sonarr, qBittorrent, plus HTTPS to the
+# official malware blocklists (cleanuparr.pages.dev) and the Telegram bot API.
+# Everything else is dropped (no update check, no other phone-home).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cleanuparr
+spec:
+  endpointSelector:
+    matchLabels:
+      app: cleanuparr
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: ingress-nginx
+        app.kubernetes.io/name: ingress-nginx
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: hermes-agent
+        app: hermes-agent
+    - matchLabels:
+        app: cleanuparr-setup
+    toPorts:
+    - ports:
+      - port: "11011"
+        protocol: TCP
+  - fromEntities:
+    - host
+    toPorts:
+    - ports:
+      - port: "11011"
+        protocol: TCP
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+      rules:
+        dns:
+        - matchPattern: "*"
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: radarr
+        app: radarr
+    toPorts:
+    - ports:
+      - port: "7878"
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: sonarr
+        app: sonarr
+    toPorts:
+    - ports:
+      - port: "8989"
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: qbittorrent
+        app: qbittorrent
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+  - toFQDNs:
+    - matchName: cleanuparr.pages.dev
+    - matchName: api.telegram.org
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+---
+# The setup Job holds the same keys plus the Cleanuparr password: it may only
+# resolve DNS and talk to Cleanuparr.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cleanuparr-setup
+spec:
+  endpointSelector:
+    matchLabels:
+      app: cleanuparr-setup
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+      rules:
+        dns:
+        - matchPattern: "*"
+  - toEndpoints:
+    - matchLabels:
+        app: cleanuparr
+    toPorts:
+    - ports:
+      - port: "11011"
+        protocol: TCP
