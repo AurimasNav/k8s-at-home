@@ -57,6 +57,7 @@ Conventions:
 | Token `iac` (write, account admin level) | `CLOUDFLARE_API_TOKEN` | `cloudflare` environment secret `CLOUDFLARE_IAC_EDIT_TOKEN` | no |
 | Account ID | `CLOUDFLARE_ACCOUNT_ID` | repo secret | yes |
 | State passphrase | `TOFU_STATE_PASSPHRASE` | repo secret | yes |
+| Home public IPv4 (apex `A` record; public via DNS anyway, kept out of git) | `HOME_PUBLIC_IPV4` | repo secret | no |
 | R2 state keys (token `tofu-state-r2`: bucket `tofu-state`, object read/write only) | `TOFU_R2_ACCESS_KEY_ID`, `TOFU_R2_SECRET_ACCESS_KEY` | repo secrets | no |
 
 - Both Cloudflare tokens are defined in this stack (`account-token-*.tf`, permissions by name).
