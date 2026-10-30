@@ -1,0 +1,87 @@
+# Applies setup/desired.json to Cleanuparr through its API after every Argo CD sync
+# (Cleanuparr keeps its config only in SQLite, so this is how it stays in git).
+# Idempotent: creates the account on first run, then matches instances, clients and
+# rules by name. Dry Run is applied before any instance is added.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: cleanuparr-setup
+spec:
+  refreshInterval: "1800s"
+  secretStoreRef:
+    name: doppler-secret-store
+    kind: ClusterSecretStore
+  target:
+    name: cleanuparr-setup
+  data:
+  # Login of the Cleanuparr account; generated into Doppler by Hermes.
+  - secretKey: CLEANUPARR_PASSWORD
+    remoteRef:
+      key: CLEANUPARR_PASSWORD
+  # The main Radarr/Sonarr API keys (each app has a single key).
+  - secretKey: RADARR_API_KEY
+    remoteRef:
+      key: HERMES_RADARR_API_KEY
+  - secretKey: SONARR_API_KEY
+    remoteRef:
+      key: HERMES_SONARR_API_KEY
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cleanuparr-setup
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app: cleanuparr-setup
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: setup
+        # stdlib only; same image as telegram-dl, so it is already on the node
+        image: python
+        command: ["python3", "/setup/setup.py"]
+        env:
+        - name: CLEANUPARR_URL
+          value: http://cleanuparr.cleanuparr
+        - name: DESIRED_PATH
+          value: /setup/desired.json
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        envFrom:
+        - secretRef:
+            name: cleanuparr-setup
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: setup
+          mountPath: /setup
+          readOnly: true
+      volumes:
+      - name: setup
+        configMap:
+          name: cleanuparr-setup

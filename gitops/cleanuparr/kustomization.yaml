@@ -4,15 +4,11 @@ kind: Kustomization
 # Cleanuparr: queue cleaner (stalled/failed/malware downloads) + Seeker (re-searches
 # missing and cutoff-unmet items in Radarr/Sonarr). https://github.com/Cleanuparr/Cleanuparr
 #
-# Everything is configured in the UI and stored in SQLite on the PVC (there is no
-# env/file config for *arr instances). First-run order, before adding any instance:
-#   1. Create the account, enable 2FA.
-#   2. General: turn ON Dry Run. Keep OFF "Disable Auth for Local Addresses" (every
-#      request arrives from the ingress pod, a 10.x address it would trust) and
-#      "Trust Forwarded Headers" (GHSA-8q44-v65j-jc3q). Turn OFF Status Check
-#      (its egress is blocked anyway).
-#   3. Add Radarr http://radarr.radarr, Sonarr http://sonarr.sonarr and
-#      qBittorrent http://qbittorrent.qbittorrent.
+# Cleanuparr keeps its settings only in SQLite on the PVC. They are managed from git:
+# setup/desired.json is applied through the API by the PostSync Job in
+# setup-job.yaml (account, Dry Run, Radarr/Sonarr/qBittorrent, modules). Change the
+# JSON, not the UI; UI-only additions are left alone but not tracked.
+# Login: user from desired.json, password = Doppler CLEANUPARR_PASSWORD.
 namespace: cleanuparr
 
 resources:
@@ -22,3 +18,14 @@ resources:
 - ./configmap.yaml
 - ./pvc.yaml
 - ./networkpolicy.yaml
+- ./setup-job.yaml
+
+configMapGenerator:
+- name: cleanuparr-setup
+  files:
+  - setup/setup.py
+  - setup/desired.json
+
+images:
+- name: python
+  newTag: 3.15.2-alpine3.24

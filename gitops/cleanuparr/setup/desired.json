@@ -1,0 +1,113 @@
+{
+  "account": {
+    "username": "aurimas"
+  },
+  "general": {
+    "dryRun": true,
+    "statusCheckEnabled": false,
+    "displaySupportBanner": false,
+    "ignoredDownloads": [
+      "manual"
+    ],
+    "auth": {
+      "disableAuthForLocalAddresses": false,
+      "trustForwardedHeaders": false,
+      "trustedNetworks": []
+    }
+  },
+  "radarr": [
+    {
+      "name": "radarr",
+      "url": "http://radarr.radarr",
+      "apiKeyEnv": "RADARR_API_KEY",
+      "version": 6,
+      "enabled": true
+    }
+  ],
+  "sonarr": [
+    {
+      "name": "sonarr",
+      "url": "http://sonarr.sonarr",
+      "apiKeyEnv": "SONARR_API_KEY",
+      "version": 4,
+      "enabled": true
+    }
+  ],
+  "downloadClients": [
+    {
+      "name": "qbittorrent",
+      "typeName": "qBittorrent",
+      "host": "http://qbittorrent.qbittorrent",
+      "enabled": true
+    }
+  ],
+  "queueCleaner": {
+    "enabled": true,
+    "cronExpression": "0 0/5 * * * ?",
+    "useAdvancedScheduling": false,
+    "failedImport": {
+      "maxStrikes": 3,
+      "ignorePrivate": false,
+      "deletePrivate": false,
+      "patterns": [
+        "already imported"
+      ],
+      "patternMode": "Include",
+      "changeCategory": false
+    }
+  },
+  "stallRules": [
+    {
+      "name": "public-stalled",
+      "enabled": true,
+      "maxStrikes": 6,
+      "privacyType": "Public",
+      "minCompletionPercentage": 0,
+      "maxCompletionPercentage": 100,
+      "resetStrikesOnProgress": true,
+      "deletePrivateTorrentsFromClient": false,
+      "changeCategory": false
+    }
+  ],
+  "malwareBlocker": {
+    "enabled": true,
+    "cronExpression": "0 0/5 * * * ?",
+    "useAdvancedScheduling": false,
+    "ignorePrivate": false,
+    "deletePrivate": false,
+    "deleteIfAnyFileBlocked": false,
+    "radarr": {
+      "enabled": true,
+      "blocklistType": "Blacklist",
+      "blocklistPath": "https://cleanuparr.pages.dev/static/blacklist"
+    },
+    "sonarr": {
+      "enabled": true,
+      "blocklistType": "Blacklist",
+      "blocklistPath": "https://cleanuparr.pages.dev/static/blacklist"
+    }
+  },
+  "seeker": {
+    "searchEnabled": true,
+    "searchInterval": 10,
+    "proactiveSearchEnabled": true,
+    "selectionStrategy": "BalancedWeighted",
+    "useRoundRobin": true,
+    "instances": {
+      "Radarr/radarr": {
+        "enabled": true,
+        "monitoredOnly": true,
+        "useCutoff": true,
+        "activeDownloadLimit": 3,
+        "minCycleTimeDays": 7
+      },
+      "Sonarr/sonarr": {
+        "enabled": true,
+        "monitoredOnly": true,
+        "useCutoff": true,
+        "activeDownloadLimit": 3,
+        "minCycleTimeDays": 7
+      }
+    }
+  }
+}
