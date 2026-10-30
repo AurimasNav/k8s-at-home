@@ -18,6 +18,11 @@ configMapGenerator:
   - scripts/heating_check.py
   - scripts/apva_check.py
   - scripts/renovate_automerge.py
+  - scripts/anthropic_pool_watchdog.py
+- name: hermes-agent-patches
+  files:
+  - patches/apply.sh
+  - patches/aux-rotation-144184.diff
 - name: hermes-agent-cron
   files:
   - cron/jobs.yaml

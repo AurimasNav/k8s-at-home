@@ -37,3 +37,10 @@ jobs:
       3. If a rollout failed or something errored, say which app and what the script reported, and that the remaining PRs were left unmerged. Never claim a rollout succeeded unless the output says OK.
       4. Last line: cluster health from the "Cluster after run" section (apps not Synced/Healthy, pods not running), or "cluster healthy".
       For held PRs, say in a few words why (major update, vendored code not updated, would restart Hermes, failing checks), so the user knows what to do.
+  be56cc93e148:
+    name: Anthropic pool watchdog
+    schedule: '*/5 * * * *'
+    deliver: telegram:-1004485564030:501
+    script: anthropic_pool_watchdog.py
+    no_agent: true
+    enabled: true

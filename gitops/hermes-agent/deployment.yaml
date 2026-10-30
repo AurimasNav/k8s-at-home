@@ -56,6 +56,22 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /opt/data
+      # upstream fixes not in a release yet (patches/*.diff), mounted over /opt/hermes below
+      - name: hermes-patches
+        image: nousresearch/hermes-agent:latest
+        command: ["sh", "/patches/apply.sh"]
+        env:
+        - name: HOME
+          value: /tmp
+        securityContext:
+          runAsUser: 10000
+          runAsGroup: 10000
+        volumeMounts:
+        - name: patches
+          mountPath: /patches
+          readOnly: true
+        - name: hermes-patched
+          mountPath: /patched
       # cron job definitions come from git (cron/jobs.yaml); scheduler state stays on the PVC
       - name: cron-sync
         image: nousresearch/hermes-agent:latest
@@ -106,6 +122,11 @@ spec:
         - name: scripts
           mountPath: /opt/data/scripts
           readOnly: true
+        # NousResearch/hermes-agent#144184: aux retry after pool rotation reused the capped key
+        - name: hermes-patched
+          mountPath: /opt/hermes/agent/auxiliary_client.py
+          subPath: agent/auxiliary_client.py
+          readOnly: true
       - name: oauth2-proxy
         image: quay.io/oauth2-proxy/oauth2-proxy:latest
         ports:
@@ -138,6 +159,11 @@ spec:
         configMap:
           name: hermes-agent-scripts
           defaultMode: 0555
+      - name: patches
+        configMap:
+          name: hermes-agent-patches
+      - name: hermes-patched
+        emptyDir: {}
       - name: media
         hostPath:
           path: /data
