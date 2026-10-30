@@ -26,3 +26,15 @@ variable "zone_name" {
   type        = string
   default     = "sync.lt"
 }
+
+variable "home_public_ipv4" {
+  description = "Public IPv4 of home, the target of the apex A record (TF_VAR_home_public_ipv4, Doppler HOME_PUBLIC_IPV4). Kept out of git; masked in plans."
+  type        = string
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = can(cidrhost("${var.home_public_ipv4}/32", 0))
+    error_message = "Must be an IPv4 address."
+  }
+}
