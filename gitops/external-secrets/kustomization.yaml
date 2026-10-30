@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
 - ./clustersecretstore.yaml
+- ./hermes-token-rbac.yaml
 
 helmGlobals:
   chartHome: charts

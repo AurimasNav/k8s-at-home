@@ -1,0 +1,28 @@
+# Lets Hermes (SA hermes-agent/hermes-agent) rotate the Doppler token that the
+# doppler-secret-store ClusterSecretStore authenticates with, and nothing else:
+# get + patch on this one Secret. Rotation: update DOPPLER_SERVICE_TOKEN in
+# Doppler, then Hermes copies it here through the Kubernetes API.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hermes-doppler-token-rotate
+  namespace: external-secrets
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["doppler-token-auth-api"]
+  verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-doppler-token-rotate
+  namespace: external-secrets
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hermes-doppler-token-rotate
+subjects:
+- kind: ServiceAccount
+  name: hermes-agent
+  namespace: hermes-agent
