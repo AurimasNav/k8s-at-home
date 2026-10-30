@@ -6,7 +6,8 @@
     The repo is public, so the report is public. Values tofu marks sensitive are already hidden
     as "(sensitive value)". On top of that the report masks:
       - the values of the environment variables named in -RedactEnv (tokens, account ID, ...),
-      - API token IDs (the ID of an API token is also its R2 access key ID).
+      - API token IDs (the ID of an API token is also its R2 access key ID),
+      - email addresses (token creator).
     Permission group IDs get their name appended (from the permission groups data source), so a
     token change reads "DNS Write" instead of a hex ID.
 
@@ -37,7 +38,8 @@ foreach ($name in $RedactEnv) {
 
 function Protect-Text([string] $Text) {
     foreach ($s in $secrets) { $Text = $Text.Replace($s, '***') }
-    $Text
+    # Email addresses (e.g. a token's creator_email_at_creation): personal data, public report.
+    $Text -replace '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', '***@***'
 }
 
 $title = "#### tofu plan: ``$StackDir``"
@@ -154,18 +156,18 @@ if (-not $rows.Count) {
     $body = Protect-Text $body
     $md.Add('')
     $head = $md -join "`n"
-    $footer = "`n`n<sub>Sensitive values, the account ID and API token IDs are masked; this description is public.</sub>"
+    $footer = "`n`n<sub>Sensitive values, the account ID, API token IDs and email addresses are masked; this description is public.</sub>"
     $summaryBlock = Format-CodeBlock -Text $body -Language diff -MaxLines 100000 -MaxChars 900000
     $prBlock = Format-CodeBlock -Text $body -Language diff -MaxLines 2000 -MaxChars $MaxChars
     if ($prBlock -ne $summaryBlock) { $prBlock += ': the whole plan is in the summary of the workflow run.' }
     if ($env:GITHUB_STEP_SUMMARY) {
-        Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "$head<details><summary>Full plan</summary>`n`n$summaryBlock`n</details>$footer"
+        Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "$head`n<details><summary>Full plan</summary>`n`n$summaryBlock`n</details>$footer"
     }
-    Write-StepOutput -Name report -Value "$head<details><summary>Full plan</summary>`n`n$prBlock`n</details>$footer"
+    Write-StepOutput -Name report -Value "$head`n<details><summary>Full plan</summary>`n`n$prBlock`n</details>$footer"
     exit 0
 }
 $md.Add('')
-$md.Add('<sub>Sensitive values, the account ID and API token IDs are masked; this description is public.</sub>')
+$md.Add('<sub>Sensitive values, the account ID, API token IDs and email addresses are masked; this description is public.</sub>')
 if ($env:GITHUB_STEP_SUMMARY) { Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ($md -join "`n") }
 Write-StepOutput -Name report -Value ($md -join "`n")
 exit 0
