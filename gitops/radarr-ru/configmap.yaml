@@ -7,7 +7,8 @@ data:
   PGID: "1000"
   TZ: Europe/Vilnius
   RADARR__APP__INSTANCENAME: Radarr RU
-  # Behind the gateway + oauth2-proxy; in-cluster callers (Seerr/VSeerr,
-  # Prowlarr, Hermes) use the API key.
+  # In-cluster only: no Ingress, no DNS. Seerr/VSeerr, Prowlarr and Hermes call
+  # http://radarr-ru.radarr-ru.svc with the API key; for the web UI use
+  # kubectl -n radarr-ru port-forward svc/radarr-ru 8080:80
   RADARR__AUTH__METHOD: External
   RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
