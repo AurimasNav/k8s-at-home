@@ -39,7 +39,7 @@ jobs:
       For held PRs, say in a few words why (major update, vendored code not updated, would restart Hermes, failing checks), so the user knows what to do.
   be56cc93e148:
     name: Anthropic pool watchdog
-    schedule: '*/5 * * * *'
+    schedule: '* * * * *'
     deliver: telegram:-1004485564030:501
     script: anthropic_pool_watchdog.py
     no_agent: true

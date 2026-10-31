@@ -5,14 +5,15 @@ Hermes parks a Claude subscription key for a fixed hour after a 429 and does
 not read Anthropic's unified rate-limit headers, so it can't tell "5-hour or
 weekly limit really reached" from "one burst 429" (or from the rotation bug
 in NousResearch/hermes-agent#144183, where the second 429 is blamed on the
-wrong key). This script runs every 5 minutes as a no_agent cron job and uses
-no LLM turns:
+wrong key). This script runs every minute (the cron tick) as a no_agent cron job
+and uses no LLM turns:
 
   for each pooled Anthropic key that Hermes currently has blocked:
     send a 1-token request on the blocked model (default: the main model)
     and read anthropic-ratelimit-unified-*;
     HTTP 200 / status=allowed  -> `hermes auth reset anthropic <label>`
-    anything else              -> leave the block alone
+    anything else              -> leave the block alone, and don't probe that
+                                  key again until its exhausted window resets
 
 Prints one line per cleared key (delivered to Telegram); prints nothing when
 there was nothing to do, so a quiet run is silent.
@@ -39,7 +40,10 @@ HERMES = "/opt/hermes/.venv/bin/hermes"
 TZ = zoneinfo.ZoneInfo("Europe/Vilnius")
 TTL = {429: 3600, 401: 300}  # Hermes defaults when no reset time was recorded
 STATE = os.path.join(HOME, "cache", "anthropic_pool_watchdog.json")
-BACKOFF = 30 * 60  # don't reset the same key twice within this window (avoids a reset/429 loop)
+# Don't reset the same key twice within this window (avoids a tight reset/429 loop).
+# 30 min was too long: in-flight retries re-block a key right after a reset, and it
+# then sat blocked with room left until the window ran out.
+BACKOFF = 5 * 60
 
 
 def vilnius(epoch):
@@ -120,6 +124,23 @@ def probe(token, model):
     return status, {k.lower()[len(prefix):]: v for k, v in h.items() if k.lower().startswith(prefix)}
 
 
+def limited_until(u, now):
+    """When a really-limited key is worth probing again.
+
+    The latest reset among the windows at or over 100%; 5 min when the 429 came
+    without unified headers (a burst limit). Saves ~60 pointless probes an hour
+    on a key that is out for the week.
+    """
+    resets = []
+    for win in ("5h", "7d"):
+        try:
+            if float(u.get(f"{win}-utilization", 0)) >= 1.0:
+                resets.append(float(u[f"{win}-reset"]))
+        except (KeyError, TypeError, ValueError):
+            pass
+    return max(resets) if resets else now + 5 * 60
+
+
 def summary(u):
     parts = []
     for win, label in (("5h", "5h"), ("7d", "week")):
@@ -162,6 +183,11 @@ def main():
             if args.verbose:
                 print(f"{label}: blocked until {vilnius(until)}, token not readable, skipped")
             continue
+        quiet_until = state.get(f"{label}:limited_until", 0)
+        if now < quiet_until:
+            if args.verbose:
+                print(f"{label}: really limited until {vilnius(quiet_until)}, not probing")
+            continue
         cooled = [m for m, t in (entry.get("model_cooldowns") or {}).items()
                   if isinstance(t, (int, float)) and t > now]
         model = cooled[0] if cooled else default_model
@@ -189,8 +215,10 @@ def main():
             state[label] = now
             print(f"♻️ {label}: cleared a false rate-limit block (was until {vilnius(until)}). "
                   f"Anthropic says {summary(u)}.")
-        elif args.verbose:
-            print(f"{label}: really limited on {model}, HTTP {status}, {summary(u)}, left alone")
+        else:
+            state[f"{label}:limited_until"] = limited_until(u, now)
+            if args.verbose:
+                print(f"{label}: really limited on {model}, HTTP {status}, {summary(u)}, left alone")
     if not args.dry_run:
         os.makedirs(os.path.dirname(STATE), exist_ok=True)
         with open(STATE, "w") as f:
