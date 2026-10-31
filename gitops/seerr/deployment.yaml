@@ -6,6 +6,9 @@ metadata:
     app: seerr
 spec:
   replicas: 1
+  # One pod at a time: two pods would open the same SQLite database.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: seerr
@@ -14,11 +17,36 @@ spec:
       labels:
         app: seerr
     spec:
+      # Runs VSeerr (github.com/AurimasNav/vseerr): Seerr plus versions. It uses
+      # Seerr's config folder and database as they are. Going back to Seerr:
+      # "From VSeerr to Seerr" in vseerr-docs/switching.md.
+      initContainers:
+      # Before VSeerr first opens the database, keep a copy of what Seerr left.
+      # Runs once: an existing backup is never overwritten.
+      - name: backup-seerr-config
+        image: ghcr.io/aurimasnav/vseerr
+        command:
+        - sh
+        - -c
+        - |
+          set -eu
+          dest=/app/config/backup-before-vseerr
+          if [ -d "$dest" ]; then
+            echo "backup exists: $dest"
+            exit 0
+          fi
+          rm -rf "$dest.tmp"
+          mkdir -p "$dest.tmp"
+          cp -a /app/config/settings.json /app/config/db "$dest.tmp/"
+          mv "$dest.tmp" "$dest"
+          echo "backed up settings.json and db/ to $dest"
+        volumeMounts:
+        - name: seerr-config
+          mountPath: /app/config
       containers:
       - name: seerr
-        image: seerr/seerr:develop
-        imagePullPolicy: Always
-        ports: 
+        image: ghcr.io/aurimasnav/vseerr
+        ports:
         - containerPort: 5055
         envFrom:
         - configMapRef:
