@@ -7,3 +7,6 @@ resources:
 - ./service.yaml
 - ./configmap.yaml
 - ./pvc.yaml
+- ./flaresolverr.yaml
+- ./flaresolverr-service.yaml
+- ./flaresolverr-networkpolicy.yaml

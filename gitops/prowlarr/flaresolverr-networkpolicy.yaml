@@ -1,0 +1,24 @@
+# FlareSolverr fetches any URL it is given with a real browser, so only Prowlarr
+# (and kubelet probes) may call it. Egress stays open: it must reach the trackers.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: flaresolverr
+spec:
+  endpointSelector:
+    matchLabels:
+      app: flaresolverr
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: prowlarr
+    toPorts:
+    - ports:
+      - port: "8191"
+        protocol: TCP
+  - fromEntities:
+    - host
+    toPorts:
+    - ports:
+      - port: "8191"
+        protocol: TCP
