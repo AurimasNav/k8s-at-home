@@ -7,3 +7,14 @@ resources:
 - ./service.yaml
 - ./configmap.yaml
 - ./pvc.yaml
+- ./externalsecret.yaml
+
+# setup/webui_auth.py runs as an init container; the hash suffix rolls the pod when it changes.
+configMapGenerator:
+- name: qbittorrent-setup
+  files:
+  - setup/webui_auth.py
+
+images:
+- name: python
+  newTag: 3.15.2-alpine3.24

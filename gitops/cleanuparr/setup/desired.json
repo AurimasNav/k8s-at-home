@@ -38,6 +38,8 @@
       "name": "qbittorrent",
       "typeName": "qBittorrent",
       "host": "http://qbittorrent.qbittorrent",
+      "usernameEnv": "QBITTORRENT_USERNAME",
+      "passwordEnv": "QBITTORRENT_PASSWORD",
       "enabled": true
     }
   ],

@@ -141,7 +141,10 @@ def sync_download_clients(wanted):
     _, cfg = call("GET", "/api/configuration/download_client")
     existing = {c["name"]: c for c in cfg.get("clients", [])}
     for want in wanted:
-        body = {"enabled": True, "username": None, "password": None, **want}
+        want = dict(want)
+        # "usernameEnv"/"passwordEnv" name env vars (Doppler via the ExternalSecret).
+        creds = {f: os.environ[want.pop(f"{f}Env")] for f in ("username", "password") if f"{f}Env" in want}
+        body = {"enabled": True, "username": None, "password": None, **want, **creds}
         if want["name"] in existing:
             call("PUT", f"/api/configuration/download_client/{existing[want['name']]['id']}", body)
             print(f"download client {want['name']}: synced ({want['host']})")

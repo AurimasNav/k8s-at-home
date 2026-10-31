@@ -6,6 +6,10 @@ metadata:
     app: qbittorrent
 spec:
   replicas: 1
+  # Never two qBittorrents on the same config and torrents: the old one saves its settings on
+  # exit, which would undo the init container's login settings in the file.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: qbittorrent
@@ -17,6 +21,35 @@ spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
+      initContainers:
+      # Turns on the Web UI/API login (Doppler) and removes the auth bypass before qBittorrent
+      # starts. See setup/webui_auth.py.
+      - name: webui-auth
+        image: python
+        command: ["python3", "/setup/webui_auth.py"]
+        env:
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+        envFrom:
+        - secretRef:
+            name: qbittorrent-webui
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: qbittorrent-config
+          mountPath: /config
+        - name: setup
+          mountPath: /setup
+          readOnly: true
       containers:
       - name: qbittorrent
         image: ghcr.io/onedr0p/qbittorrent:5.0.4
@@ -57,6 +90,9 @@ spec:
       - name: vuetorrent
         emptyDir:
           sizeLimit: 500Mi
+      - name: setup
+        configMap:
+          name: qbittorrent-setup
       # initContainers:
       # - name: clone-vuetorrent
       #   image: bitnami/git:2.42.0
