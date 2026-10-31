@@ -15,4 +15,4 @@ images:
 # build of main (image tag sha-<commit> names the commit of each build).
 - name: ghcr.io/aurimasnav/vseerr
   newTag: main
-  digest: sha256:a3b48f67dec6998f169f05338a09748b7857cf308c5edfce15646cf15e0b125d
+  digest: sha256:23ad1fc7b7111e3ddb53b9422b0a49a1f4e56ba5ce7927ff1f31a91545ad9024
