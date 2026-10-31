@@ -52,7 +52,10 @@ spec:
           hermes config set mcp_servers.home_assistant.url '${HA_URL}/api/mcp' &&
           hermes config set mcp_servers.home_assistant.headers.Authorization 'Bearer ${HA_TOKEN}' &&
           hermes config set model.default claude-opus-5-5 &&
-          hermes config set agent.reasoning_effort xhigh
+          hermes config set agent.reasoning_effort xhigh &&
+          hermes config set display.platforms.telegram.tool_progress off &&
+          hermes config set display.platforms.telegram.show_reasoning false &&
+          hermes config set display.platforms.telegram.interim_assistant_messages false
         volumeMounts:
         - name: data
           mountPath: /opt/data
