@@ -6,6 +6,10 @@ name: IaC (OpenTofu)
 #     plan into the PR description (its own section, replaced on every run).
 #   - Push to main: plan + apply in the "cloudflare" environment (edit token lives only there).
 #   - Weekly: drift check; the job fails when Cloudflare differs from the code.
+# Doppler: the stack writes some secrets to Doppler (iac/cloudflare/doppler.tf). Only the apply
+# job gets a Doppler token (environment secret DOPPLER_SERVICE_TOKEN, read/write). PR runs execute
+# the PR branch's workflow, so any secret a PR job can read is readable by whoever can push a
+# branch; PR plans and the drift check therefore skip the Doppler resources (TOFU_PLAN_EXCLUDE).
 # Jobs that need secrets run only when the repo variable TOFU_CLOUDFLARE_ENABLED is "true".
 # The repo is public, so logs and the PR description are too: plans are only ever shown
 # through New-TofuPlanReport.ps1, which masks secrets, the account ID and token IDs.
@@ -33,7 +37,7 @@ env:
   TF_INPUT: "0"
   STACK_DIR: iac/cloudflare
   # Values masked in plan reports (in addition to what tofu marks sensitive).
-  REDACT_ENV: CLOUDFLARE_API_TOKEN,TF_VAR_cloudflare_account_id,TF_VAR_state_passphrase,TF_VAR_home_public_ipv4,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
+  REDACT_ENV: CLOUDFLARE_API_TOKEN,DOPPLER_TOKEN,TF_VAR_cloudflare_account_id,TF_VAR_state_passphrase,TF_VAR_home_public_ipv4,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
 
 jobs:
   static:
@@ -96,6 +100,8 @@ jobs:
       TF_VAR_state_passphrase: ${{ secrets.TOFU_STATE_PASSPHRASE }}
       TF_VAR_home_public_ipv4: ${{ secrets.HOME_PUBLIC_IPV4 }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_IAC_READ_TOKEN }}
+      # No Doppler token here: these resources are left out of the plan (comma-separated addresses).
+      TOFU_PLAN_EXCLUDE: doppler_secret.account_token
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -112,11 +118,13 @@ jobs:
           tofu "-chdir=$env:STACK_DIR" init -lockfile=readonly -no-color *> $log
           $code = $LASTEXITCODE
           if (-not $code) {
-            tofu "-chdir=$env:STACK_DIR" plan -lock-timeout=5m -detailed-exitcode -no-color -out=tfplan *>> $log
+            $exclude = @($env:TOFU_PLAN_EXCLUDE -split ',' | Where-Object { $_ } | ForEach-Object { "-exclude=$_" })
+            tofu "-chdir=$env:STACK_DIR" plan -lock-timeout=5m -detailed-exitcode -no-color @exclude -out=tfplan *>> $log
             $code = $LASTEXITCODE
           }
           Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "exitcode=$code"
           Write-Host "tofu plan exit code: $code (0 = no changes, 2 = changes, other = error)"
+          if ($env:TOFU_PLAN_EXCLUDE) { Write-Host "Not planned (no Doppler token in this job): $env:TOFU_PLAN_EXCLUDE" }
           # The Result step decides; this step only records the code.
           exit 0
       - name: Report
@@ -157,6 +165,8 @@ jobs:
       TF_VAR_state_passphrase: ${{ secrets.TOFU_STATE_PASSPHRASE }}
       TF_VAR_home_public_ipv4: ${{ secrets.HOME_PUBLIC_IPV4 }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_IAC_EDIT_TOKEN }}
+      # Doppler "k3s" service token (k8s-at-home/prod, read/write); environment secret, main only.
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_SERVICE_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

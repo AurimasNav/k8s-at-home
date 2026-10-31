@@ -5,7 +5,7 @@ Decision record: [docs/decisions/0003-iac-opentofu-cloudflare.md](../docs/decisi
 
 | Stack | Manages | State key |
 |---|---|---|
-| [`cloudflare/`](cloudflare/) | `sync.lt` zone (DNS, settings) and account API tokens | `cloudflare/terraform.tfstate` |
+| [`cloudflare/`](cloudflare/) | `sync.lt` zone (DNS, settings), account API tokens, and the Doppler keys for tokens the cluster uses | `cloudflare/terraform.tfstate` |
 
 ## Layout
 
@@ -21,8 +21,9 @@ iac/
     ├── variables.tf
     ├── zone.tf            zone lookup (the zone itself is not managed)
     ├── permission-groups.tf  permission group name -> ID lookup
-    ├── account-tokens.tf     API tokens (iac-reader, iac)
+    ├── account-tokens.tf     API tokens (iac-reader, iac, cert-manager)
     ├── account-token-*.tf    each token's permissions, by name
+    ├── doppler.tf            token values written to Doppler for the cluster
     ├── imports.tf            one-time adoption of existing resources
     ├── outputs.tf
     └── scripts/generate-imports.ps1
@@ -59,12 +60,18 @@ Conventions:
 | State passphrase | `TOFU_STATE_PASSPHRASE` | repo secret | yes |
 | Home public IPv4 (apex `A` record; public via DNS anyway, kept out of git) | `HOME_PUBLIC_IPV4` | repo secret | no |
 | R2 state keys (token `tofu-state-r2`: bucket `tofu-state`, object read/write only) | `TOFU_R2_ACCESS_KEY_ID`, `TOFU_R2_SECRET_ACCESS_KEY` | repo secrets | no |
+| Token `cert-manager` (DNS Write + Zone Read, `sync.lt` only; created by this stack) | `CLOUDFLARE_DNS_API_TOKEN` (written by the apply) | none | no |
+| Doppler service token `k3s` (`k8s-at-home/prod`, read/write; also the cluster's store token) | `DOPPLER_SERVICE_TOKEN` | `cloudflare` environment secret `DOPPLER_SERVICE_TOKEN` | yes (`DOPPLER_TOKEN`) |
 
 - Both Cloudflare tokens are defined in this stack (`account-token-*.tf`, permissions by name).
   To change a token's permissions, edit the name list; the plan shows the change.
 - The `cloudflare` environment only deploys from `main`, so PR jobs cannot read the write token.
   Add a required reviewer there to approve every apply by hand.
 - Doppler is the backup of the passphrase.
+- **Doppler writes:** only the apply job has a Doppler token. A PR job runs the PR branch's
+  workflow, so anything it can read, anyone who can push a branch can read. PR plans and the
+  drift check leave the `doppler_secret` resources out (`TOFU_PLAN_EXCLUDE`); the apply job's
+  summary shows them. After regenerating the `k3s` token, update the GitHub environment secret too.
 
 ## Bootstrap (once)
 
