@@ -3,9 +3,6 @@ kind: Kustomization
 
 resources:
 - ./root-app.yaml
-# Temporary: adopts the empty legacy namespaces radarr-no4k and sonarr1 (created by hand in
-# 2023, never Argo-managed) so the follow-up PR can delete them by pruning. Remove both lines then.
-- ./legacy-namespaces.yaml
 - ./apps/cilium
 - ./apps/gateway-api-crds
 - ./apps/cilium-gateway
