@@ -8,7 +8,6 @@
 
 locals {
   # Served by apps in the cluster (gitops/<app> Ingress or HTTPRoute) or kept on purpose.
-  # In-cluster-only apps (radarr-ru, sonarr-ru) get no record, public or LAN.
   hostnames = {
     argocd      = "gitops/argocd"
     assistant   = "gitops/home-assistant"
@@ -25,8 +24,10 @@ locals {
     qb          = "not deployed"
     qbittorrent = "gitops/qbittorrent"
     radarr      = "gitops/radarr"
+    radarr-ru   = "gitops/radarr-ru"
     seerr       = "gitops/seerr"
     sonarr      = "gitops/sonarr"
+    sonarr-ru   = "gitops/sonarr-ru"
     vrising     = "not deployed"
   }
 
