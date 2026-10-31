@@ -24,7 +24,7 @@ spec:
       initContainers:
       # Root folder for this version's library, owned like the rest of /data/media.
       - name: library-folder
-        image: busybox:1.37.0
+        image: busybox:1.38.0
         command: ["sh", "-c", "mkdir -p /data/media/tv-ru && chown 1000:1000 /data/media/tv-ru"]
         volumeMounts:
         - name: data
