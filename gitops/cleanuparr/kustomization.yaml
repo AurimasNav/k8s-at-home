@@ -16,6 +16,7 @@ resources:
 - ./deployment.yaml
 - ./service.yaml
 - ./ingress.yaml
+- ./httproute.yaml
 - ./configmap.yaml
 - ./pvc.yaml
 - ./networkpolicy.yaml

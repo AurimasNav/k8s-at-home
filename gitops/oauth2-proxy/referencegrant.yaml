@@ -1,0 +1,16 @@
+# Lets HTTPRoutes in these namespaces use this oauth2-proxy as their ExternalAuth backend
+# (Cilium gateway). Add a namespace here when its route gets the Google login.
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: external-auth
+  namespace: oauth2-proxy
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: cleanuparr
+  to:
+  - group: ""
+    kind: Service
+    name: oauth2-proxy

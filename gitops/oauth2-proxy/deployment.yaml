@@ -30,7 +30,13 @@ spec:
         volumeMounts:
         - name: emails
           mountPath: /etc/oauth2-proxy
+        - name: templates
+          mountPath: /templates
+          readOnly: true
       volumes:
+      - name: templates
+        configMap:
+          name: oauth2-proxy-templates
       - name: emails
         secret:
           secretName: oauth2-proxy
