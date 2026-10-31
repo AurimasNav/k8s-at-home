@@ -1,0 +1,63 @@
+# FlareSolverr: a headless browser that passes Cloudflare "Just a moment..."
+# checks for Prowlarr indexers tagged "flaresolverr" (e.g. RuTracker login).
+# In-cluster only (no Service outside the namespace, no Ingress); Prowlarr reaches
+# it at http://flaresolverr.prowlarr.svc.cluster.local:8191.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flaresolverr
+  labels:
+    app: flaresolverr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flaresolverr
+  template:
+    metadata:
+      labels:
+        app: flaresolverr
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: flaresolverr
+        image: ghcr.io/flaresolverr/flaresolverr:v3.5.2@sha256:c80ae007ce2ccdcd217a12426e4f039ef763ff90738c808d38810c3e59323767
+        ports:
+        - containerPort: 8191
+        env:
+        - name: LOG_LEVEL
+          value: info
+        - name: TZ
+          value: Europe/Vilnius
+        - name: LANG
+          value: en_US
+        # Headless Chromium leaks memory over long runs; the limit restarts it
+        # instead of letting it grow.
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8191
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8191
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          timeoutSeconds: 10

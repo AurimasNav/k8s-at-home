@@ -1,0 +1,19 @@
+# Extra CoreDNS config for k3s. The k3s CoreDNS deployment mounts this ConfigMap
+# (optional volume "coredns-custom") and imports /etc/coredns/custom/*.server and
+# *.override, reloading changes without a restart.
+#
+# Torrent tracker domains: the ISP resolvers the node uses answer these with a
+# block page (195.182.88.52/53), so Prowlarr can't reach the trackers. These
+# domains alone are resolved through the home Unbound (192.168.1.154). Every
+# other name still goes through the default forwarder.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+data:
+  trackers.server: |
+    rutor.info rutor.is rutor.org nnmclub.to megapeer.vip bigfangroup.org freebfg.org kinozal.me kinozal.tv kinozal.guru riperam.org {
+        errors
+        cache 300
+        forward . 192.168.1.154
+    }
