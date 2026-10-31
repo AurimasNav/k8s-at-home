@@ -7,10 +7,10 @@ spec:
   parentRefs:
   - name: main
     namespace: cilium-gateway
-    sectionName: https-seerr
+    sectionName: https-wildcard
   - name: main
     namespace: cilium-gateway
-    sectionName: https-sync-lt
+    sectionName: https-apex
   hostnames:
   - seerr.sync.lt
   - sync.lt

@@ -1,5 +1,5 @@
 # One certificate for every host: sync.lt + *.sync.lt (DNS-01, see cert-manager ClusterIssuer).
-# The gateway listeners switch to this secret in a follow-up, once it is Ready.
+# Used by the gateway listeners https-apex and https-wildcard (gateway.yaml).
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
