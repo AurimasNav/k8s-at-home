@@ -1,0 +1,13 @@
+# Temporary. radarr-no4k and sonarr1 are empty namespaces left from the 2023 Radarr/Sonarr setups
+# (no pods, PVCs or PVs; only the auto-created kube-root-ca.crt ConfigMap and default
+# ServiceAccount). Listing them here makes the root app adopt them; the follow-up PR removes this
+# file and the root app prunes (deletes) them.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: radarr-no4k
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sonarr1
