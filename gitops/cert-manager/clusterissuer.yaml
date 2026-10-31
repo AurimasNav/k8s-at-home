@@ -9,9 +9,16 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-staging
     solvers:
-    - http01:
-        ingress:
-          class: nginx
+    # DNS-01 through Cloudflare: works for wildcards and needs no ingress controller.
+    # Token "cert-manager" (iac/cloudflare): DNS Write + Zone Read on sync.lt only.
+    - dns01:
+        cloudflare:
+          apiTokenSecretRef:
+            name: cloudflare-dns-api-token
+            key: CLOUDFLARE_DNS_API_TOKEN
+      selector:
+        dnsZones:
+        - sync.lt
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -24,6 +31,13 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
-    - http01:
-        ingress:
-          class: nginx
+    # DNS-01 through Cloudflare: works for wildcards and needs no ingress controller.
+    # Token "cert-manager" (iac/cloudflare): DNS Write + Zone Read on sync.lt only.
+    - dns01:
+        cloudflare:
+          apiTokenSecretRef:
+            name: cloudflare-dns-api-token
+            key: CLOUDFLARE_DNS_API_TOKEN
+      selector:
+        dnsZones:
+        - sync.lt

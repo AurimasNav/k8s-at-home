@@ -1,0 +1,15 @@
+# One certificate for every host: sync.lt + *.sync.lt (DNS-01, see cert-manager ClusterIssuer).
+# The gateway listeners switch to this secret in a follow-up, once it is Ready.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sync-lt-wildcard
+  namespace: cilium-gateway
+spec:
+  secretName: sync-lt-wildcard-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+  dnsNames:
+  - sync.lt
+  - "*.sync.lt"
