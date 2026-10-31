@@ -25,6 +25,13 @@ spec:
   - secretKey: SONARR_API_KEY
     remoteRef:
       key: HERMES_SONARR_API_KEY
+  # qBittorrent Web UI login (also used by the qbittorrent app's init container).
+  - secretKey: QBITTORRENT_USERNAME
+    remoteRef:
+      key: QBITTORRENT_USERNAME
+  - secretKey: QBITTORRENT_PASSWORD
+    remoteRef:
+      key: QBITTORRENT_PASSWORD
 ---
 apiVersion: batch/v1
 kind: Job
