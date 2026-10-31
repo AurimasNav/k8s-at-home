@@ -3,122 +3,21 @@ kind: Gateway
 metadata:
   name: main
   namespace: cilium-gateway
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   gatewayClassName: cilium
   listeners:
+  # Plain HTTP. No routes attach here yet; the HTTP -> HTTPS redirect route comes with the cutover.
   - name: http
     port: 80
     protocol: HTTP
     allowedRoutes:
       namespaces:
         from: All
-  - name: https-radarr
-    hostname: radarr.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: radarr-tls
-        namespace: cilium-gateway
-  - name: https-grafana
-    hostname: grafana.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: grafana-tls
-        namespace: cilium-gateway
-  - name: https-hairsera
-    hostname: hair.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: hairsera-tls
-        namespace: cilium-gateway
-  - name: https-homepage
-    hostname: home.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: homepage-tls
-        namespace: cilium-gateway
-  - name: https-sonarr
-    hostname: sonarr.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: sonarr-tls
-        namespace: cilium-gateway
-  - name: https-qbittorrent
-    hostname: qbittorrent.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: qbittorrent-tls
-        namespace: cilium-gateway
-  - name: https-prowlarr
-    hostname: prowlarr.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: prowlarr-tls
-        namespace: cilium-gateway
-  - name: https-seerr
-    hostname: seerr.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: seerr-tls
-        namespace: cilium-gateway
-  - name: https-sync-lt
+  # sync.lt and *.sync.lt share one certificate (certificate.yaml, DNS-01). A wildcard listener
+  # does not match the apex, hence two listeners.
+  # Routes must name their listener with sectionName (https-wildcard / https-apex): a route
+  # without sectionName also attaches to the http listener and would be served over plain HTTP.
+  - name: https-apex
     hostname: sync.lt
     port: 443
     protocol: HTTPS
@@ -129,10 +28,10 @@ spec:
       mode: Terminate
       certificateRefs:
       - kind: Secret
-        name: sync-lt-tls
+        name: sync-lt-wildcard-tls
         namespace: cilium-gateway
-  - name: https-ombi
-    hostname: ombi.sync.lt
+  - name: https-wildcard
+    hostname: "*.sync.lt"
     port: 443
     protocol: HTTPS
     allowedRoutes:
@@ -142,57 +41,5 @@ spec:
       mode: Terminate
       certificateRefs:
       - kind: Secret
-        name: ombi-tls
-        namespace: cilium-gateway
-  - name: https-oauth2-proxy
-    hostname: login.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: oauth2-proxy-tls
-        namespace: cilium-gateway
-  - name: https-flood
-    hostname: flood.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: flood-tls
-        namespace: cilium-gateway
-  - name: https-hermes
-    hostname: hermes.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: hermes-tls
-        namespace: cilium-gateway
-  - name: https-homebox
-    hostname: homebox.sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: homebox-tls
+        name: sync-lt-wildcard-tls
         namespace: cilium-gateway

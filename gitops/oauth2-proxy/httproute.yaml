@@ -7,7 +7,7 @@ spec:
   parentRefs:
   - name: main
     namespace: cilium-gateway
-    sectionName: https-oauth2-proxy
+    sectionName: https-wildcard
   hostnames:
   - login.sync.lt
   rules:
