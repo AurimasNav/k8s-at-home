@@ -8,3 +8,10 @@ resources:
 - ./externalsecret.yaml
 - ./ingress.yaml
 - ./httproute.yaml
+- ./referencegrant.yaml
+
+configMapGenerator:
+- name: oauth2-proxy-templates
+  namespace: oauth2-proxy
+  files:
+  - templates/sign_in.html

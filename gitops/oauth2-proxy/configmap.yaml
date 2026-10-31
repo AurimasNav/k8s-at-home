@@ -6,7 +6,12 @@ metadata:
 data:
   OAUTH2_PROXY_PROVIDER: google
   OAUTH2_PROXY_EMAIL_DOMAIN: "*"
-  OAUTH2_PROXY_UPSTREAM: "file:///dev/nul"
+  # Auth only, nothing to proxy: an authenticated request gets 200. That is what the Cilium
+  # gateway's ExternalAuth filter needs (2xx = allow). (The old OAUTH2_PROXY_UPSTREAM was never
+  # read: the setting is "upstreams".)
+  OAUTH2_PROXY_UPSTREAMS: "static://200"
+  # sign_in.html sends gateway logins to login.sync.lt (templates/sign_in.html).
+  OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
   OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4180"
   OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE: /etc/oauth2-proxy/authenticated-emails
   OAUTH2_PROXY_COOKIE_DOMAINS: ".sync.lt"
