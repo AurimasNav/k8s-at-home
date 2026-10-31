@@ -6,7 +6,7 @@ kind: Kustomization
 #
 # Cleanuparr keeps its settings only in SQLite on the PVC. They are managed from git:
 # setup/desired.json is applied through the API by the PostSync Job in
-# setup-job.yaml (account, Dry Run, Radarr/Sonarr/qBittorrent, modules), and again
+# setup-job.yaml (account, Dry Run, Radarr/Sonarr/qBittorrent, seeding rules, modules), and again
 # daily by setup-cronjob.yaml. Change the
 # JSON, not the UI; UI-only additions are left alone but not tracked.
 # Login: user from desired.json, password = Doppler CLEANUPARR_PASSWORD.

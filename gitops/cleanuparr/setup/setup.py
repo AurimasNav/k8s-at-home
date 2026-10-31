@@ -152,6 +152,45 @@ def sync_download_clients(wanted):
         print(f"download client {name}: unmanaged, left as is")
 
 
+def sync_seeding_rules(wanted_by_client):
+    """Seeding rules per download client, matched by name. The list order in
+    desired.json is the priority order: Cleanuparr applies the first rule that
+    matches a torrent. Keys starting with "_" are notes and are not sent."""
+    _, cfg = call("GET", "/api/configuration/download_client")
+    clients = {c["name"]: c["id"] for c in cfg.get("clients", [])}
+    for client_name, wanted in wanted_by_client.items():
+        client_id = clients.get(client_name)
+        if client_id is None:
+            print(f"seeding rules: no download client {client_name}, skipped")
+            continue
+        _, rules = call("GET", f"/api/seeding-rules/{client_id}")
+        existing = {r["name"]: r for r in rules}
+        ordered = []
+        for want in wanted:
+            body = {k: v for k, v in want.items() if not k.startswith("_")}
+            current = existing.get(body["name"])
+            if current is None:
+                _, created = call("POST", f"/api/seeding-rules/{client_id}", body)
+                ordered.append(created["id"])
+                print(f"seeding rule {body['name']}: created")
+            elif changed_keys(current, body):
+                call("PUT", f"/api/seeding-rules/{current['id']}", body)
+                ordered.append(current["id"])
+                print(f"seeding rule {body['name']}: updated")
+            else:
+                ordered.append(current["id"])
+                print(f"seeding rule {body['name']}: unchanged")
+        names = {w["name"] for w in wanted}
+        unmanaged = sorted((r for r in rules if r["name"] not in names), key=lambda r: r["priority"])
+        for r in unmanaged:
+            print(f"seeding rule {r['name']}: unmanaged, left as is (after the managed rules)")
+        ordered += [r["id"] for r in unmanaged]
+        _, now = call("GET", f"/api/seeding-rules/{client_id}")
+        if [r["id"] for r in sorted(now, key=lambda r: r["priority"])] != ordered:
+            call("PUT", f"/api/seeding-rules/{client_id}/reorder", {"orderedIds": ordered})
+            print(f"seeding rules ({client_name}): reordered")
+
+
 def sync_rules(kind, wanted):
     _, rules = call("GET", f"/api/queue-rules/{kind}")
     existing = {r["name"]: r for r in rules}
@@ -209,6 +248,11 @@ def main():
     sync_arr("radarr", desired.get("radarr", []))
     sync_arr("sonarr", desired.get("sonarr", []))
     sync_download_clients(desired.get("downloadClients", []))
+
+    # Rules first, then the module, so it never runs without them.
+    sync_seeding_rules(desired.get("seedingRules", {}))
+    if "downloadCleaner" in desired:
+        apply_settings("download cleaner", "/api/configuration/download_cleaner", desired["downloadCleaner"])
 
     apply_settings("queue cleaner", "/api/configuration/queue_cleaner", desired["queueCleaner"])
     sync_rules("stall", desired.get("stallRules", []))
