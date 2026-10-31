@@ -16,6 +16,12 @@
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-[0-9a-f]+$"
     },
     {
+      "description": "VSeerr tags are <Seerr release>-vseerr.<build>; compare the build number as a number, ignore main/sha-* tags",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/aurimasnav/vseerr"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-vseerr\\.(?<build>\\d+)$"
+    },
+    {
       "description": "hass-otbr-docker also publishes git-hash tags (e.g. 7781566); only follow vX.Y.Z releases",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/ownbee/hass-otbr-docker"],

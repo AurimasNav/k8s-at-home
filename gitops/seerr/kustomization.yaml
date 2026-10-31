@@ -10,9 +10,9 @@ resources:
 - ./pvc.yaml
 
 images:
-# VSeerr (github.com/AurimasNav/vseerr), built from its main branch by the
-# "VSeerr Image" workflow. Pinned by digest; Renovate opens a PR for each new
-# build of main (image tag sha-<commit> names the commit of each build).
+# VSeerr (github.com/AurimasNav/vseerr). Tags are <Seerr release>-vseerr.<build>
+# (see GitVersion.yml in that repo), pinned by digest. Renovate compares the
+# build number numerically (packageRule in renovate.json).
 - name: ghcr.io/aurimasnav/vseerr
-  newTag: main
-  digest: sha256:23ad1fc7b7111e3ddb53b9422b0a49a1f4e56ba5ce7927ff1f31a91545ad9024
+  newTag: 3.5.1-vseerr.14
+  digest: sha256:aaf19bf710c3373236b0caf22bd2a7fce292704be5bb74c4fd8f1861421474ae
