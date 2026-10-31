@@ -9,7 +9,6 @@
 locals {
   # Served by apps in the cluster (gitops/<app> Ingress or HTTPRoute) or kept on purpose.
   hostnames = {
-    argocd      = "gitops/argocd"
     assistant   = "gitops/home-assistant"
     cleanuparr  = "gitops/cleanuparr"
     flood       = "not deployed"
