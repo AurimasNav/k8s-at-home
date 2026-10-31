@@ -50,7 +50,8 @@
       "ignorePrivate": false,
       "deletePrivate": false,
       "patterns": [
-        "already imported"
+        "already imported",
+        "Not an upgrade"
       ],
       "patternMode": "Include",
       "changeCategory": false
@@ -64,6 +65,17 @@
       "privacyType": "Public",
       "minCompletionPercentage": 0,
       "maxCompletionPercentage": 100,
+      "resetStrikesOnProgress": true,
+      "deletePrivateTorrentsFromClient": false,
+      "changeCategory": false
+    },
+    {
+      "name": "private-dead",
+      "enabled": true,
+      "maxStrikes": 288,
+      "privacyType": "Private",
+      "minCompletionPercentage": 0,
+      "maxCompletionPercentage": 1,
       "resetStrikesOnProgress": true,
       "deletePrivateTorrentsFromClient": false,
       "changeCategory": false
