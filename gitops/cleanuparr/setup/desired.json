@@ -41,6 +41,153 @@
       "enabled": true
     }
   ],
+  "_seedingRules": "Download Cleaner seeding rules per download client, first match wins (list order = priority). A torrent is removed with its files when its ratio reaches maxRatio OR its seeding time reaches maxSeedTime (hours). Values are 2x the tracker's ratio and 10x its seed time. Private torrents on trackers not listed here never match, so they are never removed. Library files are hardlinks and stay.",
+  "seedingRules": {
+    "qbittorrent": [
+      {
+        "_why": "H&R: 1:1 ratio OR 10 days seeding (Registered class, the strictest; wiki.torrentleech.org/doku.php/hnr). Kept: 2x ratio, 10x time.",
+        "name": "TorrentLeech",
+        "categories": [
+          "movies",
+          "movies-non4k",
+          "tv",
+          "tv-sonarr",
+          "anime",
+          "sonarr-LT",
+          "radarr-ru",
+          "sonarr-ru"
+        ],
+        "trackerPatterns": [
+          "torrentleech.org",
+          "tleechreload.org"
+        ],
+        "tagsAny": [],
+        "tagsAll": [],
+        "privacyType": "Private",
+        "maxRatio": 2,
+        "minSeedTime": 0,
+        "maxSeedTime": 2400,
+        "minSeeders": 0,
+        "maxInactiveDays": -1,
+        "deleteSourceFiles": true,
+        "action": "Delete"
+      },
+      {
+        "_why": "AvistaZ network H&R: 72 h + 2 h per GB, up to about 19.6 days for the largest torrents, OR ratio 1.0. No size filter in Cleanuparr, so the largest case is used: 2x ratio, 10x 20 days.",
+        "name": "PrivateHD",
+        "categories": [
+          "movies",
+          "movies-non4k",
+          "tv",
+          "tv-sonarr",
+          "anime",
+          "sonarr-LT",
+          "radarr-ru",
+          "sonarr-ru"
+        ],
+        "trackerPatterns": [
+          "privatehd.to"
+        ],
+        "tagsAny": [],
+        "tagsAll": [],
+        "privacyType": "Private",
+        "maxRatio": 2,
+        "minSeedTime": 0,
+        "maxSeedTime": 4800,
+        "minSeeders": 0,
+        "maxInactiveDays": -1,
+        "deleteSourceFiles": true,
+        "action": "Delete"
+      },
+      {
+        "_why": "H&R: 48 h OR 1:1 (community list; the rules page needs a login). thefl.org is FileList's second announce domain. Kept: 2x ratio, 10x time.",
+        "name": "FileList",
+        "categories": [
+          "movies",
+          "movies-non4k",
+          "tv",
+          "tv-sonarr",
+          "anime",
+          "sonarr-LT",
+          "radarr-ru",
+          "sonarr-ru"
+        ],
+        "trackerPatterns": [
+          "filelist.io",
+          "thefl.org"
+        ],
+        "tagsAny": [],
+        "tagsAll": [],
+        "privacyType": "Private",
+        "maxRatio": 2,
+        "minSeedTime": 0,
+        "maxSeedTime": 480,
+        "minSeeders": 0,
+        "maxInactiveDays": -1,
+        "deleteSourceFiles": true,
+        "action": "Delete"
+      },
+      {
+        "_why": "No per-torrent requirement (Milkie: ratioless; LinkoManija: only an account ratio of 0.3). Floor: ratio 2 OR 30 days (10x the common 72 h).",
+        "name": "No H&R private (Milkie, LinkoManija)",
+        "categories": [
+          "movies",
+          "movies-non4k",
+          "tv",
+          "tv-sonarr",
+          "anime",
+          "sonarr-LT",
+          "radarr-ru",
+          "sonarr-ru"
+        ],
+        "trackerPatterns": [
+          "milkie.cc",
+          "linkomanija.org",
+          "linkomanija.net"
+        ],
+        "tagsAny": [],
+        "tagsAll": [],
+        "privacyType": "Private",
+        "maxRatio": 2,
+        "minSeedTime": 0,
+        "maxSeedTime": 720,
+        "minSeeders": 0,
+        "maxInactiveDays": -1,
+        "deleteSourceFiles": true,
+        "action": "Delete"
+      },
+      {
+        "_why": "Torrents without the private flag (RuTracker, Kinozal, NoNaMe Club, RuTor). No H&R. Floor: ratio 2 OR 30 days.",
+        "name": "Public and semi-private (RU trackers)",
+        "categories": [
+          "movies",
+          "movies-non4k",
+          "tv",
+          "tv-sonarr",
+          "anime",
+          "sonarr-LT",
+          "radarr-ru",
+          "sonarr-ru"
+        ],
+        "trackerPatterns": [],
+        "tagsAny": [],
+        "tagsAll": [],
+        "privacyType": "Public",
+        "maxRatio": 2,
+        "minSeedTime": 0,
+        "maxSeedTime": 720,
+        "minSeeders": 0,
+        "maxInactiveDays": -1,
+        "deleteSourceFiles": true,
+        "action": "Delete"
+      }
+    ]
+  },
+  "downloadCleaner": {
+    "enabled": true,
+    "cronExpression": "0 0 * * * ?",
+    "ignoredDownloads": []
+  },
   "queueCleaner": {
     "enabled": true,
     "cronExpression": "0 0/5 * * * ?",
