@@ -5,47 +5,13 @@ metadata:
   namespace: cilium-gateway
 spec:
   gatewayClassName: cilium
-  listeners:
-  # Plain HTTP: only the HTTP -> HTTPS redirect (http-redirect.yaml) attaches here.
-  - name: http
-    port: 80
-    protocol: HTTP
-    allowedRoutes:
-      namespaces:
-        from: All
+  # Every public host is served only through the Cloudflare Tunnel (gitops/cloudflared,
+  # iac/cloudflare/tunnel.tf): cloudflared connects here on :10443. The router forwards no
+  # port to this gateway, and the home IP is in no DNS record.
   # sync.lt and *.sync.lt share one certificate (certificate.yaml, DNS-01). A wildcard listener
   # does not match the apex, hence two listeners.
-  # Routes must name their listener with sectionName (https-wildcard / https-apex): a route
-  # without sectionName also attaches to the http listener and would be served over plain HTTP.
-  - name: https-apex
-    hostname: sync.lt
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: sync-lt-wildcard-tls
-        namespace: cilium-gateway
-  - name: https-wildcard
-    hostname: "*.sync.lt"
-    port: 443
-    protocol: HTTPS
-    allowedRoutes:
-      namespaces:
-        from: All
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: sync-lt-wildcard-tls
-        namespace: cilium-gateway
-  # Cloudflare Tunnel only (gitops/cloudflared, iac/cloudflare/tunnel.tf). The router forwards only
-  # 80/443, so a route attached here alone is unreachable from the home IP: an app moved to the
-  # tunnel answers only through Cloudflare. Same certificate as https-wildcard.
+  # Routes must name their listener with sectionName (https-tunnel / https-tunnel-apex).
+  listeners:
   - name: https-tunnel
     hostname: "*.sync.lt"
     port: 10443
@@ -59,7 +25,6 @@ spec:
       - kind: Secret
         name: sync-lt-wildcard-tls
         namespace: cilium-gateway
-  # The apex through the tunnel (a "*.sync.lt" listener does not match the bare sync.lt).
   - name: https-tunnel-apex
     hostname: sync.lt
     port: 10443
