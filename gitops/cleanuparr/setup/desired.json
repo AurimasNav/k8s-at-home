@@ -57,7 +57,9 @@
           "anime",
           "sonarr-LT",
           "radarr-ru",
-          "sonarr-ru"
+          "sonarr-ru",
+          "radarr-lt",
+          "sonarr-lt"
         ],
         "trackerPatterns": [
           "torrentleech.org",
@@ -85,7 +87,9 @@
           "anime",
           "sonarr-LT",
           "radarr-ru",
-          "sonarr-ru"
+          "sonarr-ru",
+          "radarr-lt",
+          "sonarr-lt"
         ],
         "trackerPatterns": [
           "privatehd.to"
@@ -112,7 +116,9 @@
           "anime",
           "sonarr-LT",
           "radarr-ru",
-          "sonarr-ru"
+          "sonarr-ru",
+          "radarr-lt",
+          "sonarr-lt"
         ],
         "trackerPatterns": [
           "filelist.io",
@@ -140,7 +146,9 @@
           "anime",
           "sonarr-LT",
           "radarr-ru",
-          "sonarr-ru"
+          "sonarr-ru",
+          "radarr-lt",
+          "sonarr-lt"
         ],
         "trackerPatterns": [
           "milkie.cc",
@@ -169,7 +177,9 @@
           "anime",
           "sonarr-LT",
           "radarr-ru",
-          "sonarr-ru"
+          "sonarr-ru",
+          "radarr-lt",
+          "sonarr-lt"
         ],
         "trackerPatterns": [],
         "tagsAny": [],

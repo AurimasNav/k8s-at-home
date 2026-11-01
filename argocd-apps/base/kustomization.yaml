@@ -16,6 +16,7 @@ resources:
 - ./apps/sonarr
 - ./apps/radarr
 - ./apps/radarr-ru
+- ./apps/radarr-lt
 - ./apps/plex
 - ./apps/oauth2-proxy
 #- ./apps/ombi
@@ -25,6 +26,7 @@ resources:
 - ./apps/coredns-custom
 - ./apps/seerr
 - ./apps/sonarr-ru
+- ./apps/sonarr-lt
 #- ./apps/minecraft
 #- ./apps/vrising
 - ./apps/victoria-metrics-k8s-stack
