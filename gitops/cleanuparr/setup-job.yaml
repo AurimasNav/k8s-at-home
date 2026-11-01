@@ -18,13 +18,26 @@ spec:
   - secretKey: CLEANUPARR_PASSWORD
     remoteRef:
       key: CLEANUPARR_PASSWORD
-  # The main Radarr/Sonarr API keys (each app has a single key).
+  # Radarr/Sonarr API keys (each app has a single key): the main instances and
+  # the version instances (Russian, Lithuanian).
   - secretKey: RADARR_API_KEY
     remoteRef:
       key: HERMES_RADARR_API_KEY
   - secretKey: SONARR_API_KEY
     remoteRef:
       key: HERMES_SONARR_API_KEY
+  - secretKey: RADARR_RU_API_KEY
+    remoteRef:
+      key: RADARR_RU_API_KEY
+  - secretKey: SONARR_RU_API_KEY
+    remoteRef:
+      key: SONARR_RU_API_KEY
+  - secretKey: RADARR_LT_API_KEY
+    remoteRef:
+      key: RADARR_LT_API_KEY
+  - secretKey: SONARR_LT_API_KEY
+    remoteRef:
+      key: SONARR_LT_API_KEY
   # qBittorrent Web UI login (also used by the qbittorrent app's init container).
   - secretKey: QBITTORRENT_USERNAME
     remoteRef:

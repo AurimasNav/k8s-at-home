@@ -22,6 +22,20 @@
       "apiKeyEnv": "RADARR_API_KEY",
       "version": 6,
       "enabled": true
+    },
+    {
+      "name": "radarr-ru",
+      "url": "http://radarr-ru.radarr-ru",
+      "apiKeyEnv": "RADARR_RU_API_KEY",
+      "version": 6,
+      "enabled": true
+    },
+    {
+      "name": "radarr-lt",
+      "url": "http://radarr-lt.radarr-lt",
+      "apiKeyEnv": "RADARR_LT_API_KEY",
+      "version": 6,
+      "enabled": true
     }
   ],
   "sonarr": [
@@ -29,6 +43,20 @@
       "name": "sonarr",
       "url": "http://sonarr.sonarr",
       "apiKeyEnv": "SONARR_API_KEY",
+      "version": 4,
+      "enabled": true
+    },
+    {
+      "name": "sonarr-ru",
+      "url": "http://sonarr-ru.sonarr-ru",
+      "apiKeyEnv": "SONARR_RU_API_KEY",
+      "version": 4,
+      "enabled": true
+    },
+    {
+      "name": "sonarr-lt",
+      "url": "http://sonarr-lt.sonarr-lt",
+      "apiKeyEnv": "SONARR_LT_API_KEY",
       "version": 4,
       "enabled": true
     }
@@ -276,6 +304,34 @@
         "minCycleTimeDays": 7
       },
       "Sonarr/sonarr": {
+        "enabled": true,
+        "monitoredOnly": true,
+        "useCutoff": true,
+        "activeDownloadLimit": 3,
+        "minCycleTimeDays": 7
+      },
+      "Radarr/radarr-ru": {
+        "enabled": true,
+        "monitoredOnly": true,
+        "useCutoff": true,
+        "activeDownloadLimit": 3,
+        "minCycleTimeDays": 7
+      },
+      "Radarr/radarr-lt": {
+        "enabled": true,
+        "monitoredOnly": true,
+        "useCutoff": true,
+        "activeDownloadLimit": 3,
+        "minCycleTimeDays": 7
+      },
+      "Sonarr/sonarr-ru": {
+        "enabled": true,
+        "monitoredOnly": true,
+        "useCutoff": true,
+        "activeDownloadLimit": 3,
+        "minCycleTimeDays": 7
+      },
+      "Sonarr/sonarr-lt": {
         "enabled": true,
         "monitoredOnly": true,
         "useCutoff": true,
