@@ -1,0 +1,38 @@
+# LG OLED83G51LW (living room): "turn on" for the webOS TV.
+#
+# webOS drops its network API in standby, so media_player.turn_on only works
+# if something wakes the TV first. The webostv integration exposes a
+# "webostv.turn_on" trigger: whenever media_player.turn_on is called on the
+# webostv entity, this automation sends a Wake-on-LAN magic packet to the TV.
+#
+#   - webostv entity: media_player.living_room_lg_oled83g51lw.
+#     (media_player.lg_webos_tv_oled83g51lw is the Google Cast entity of the
+#     same TV; it has no turn_on.)
+#   - MAC F8:01:B4:DC:31:61 (LG Electronics OUI), wired, 192.168.1.111.
+#     From the router's client list: last connected 2026-10-29 10:43, while
+#     the TV was on.
+#   - "wake_on_lan:" only loads the integration (it has no YAML options).
+#     HA runs with hostNetwork, so the broadcast reaches the LAN.
+#   - TV side, required once: Settings > General > Devices > External Devices
+#     > "Turn on via Wi-Fi" (on some webOS versions: Settings > General >
+#     Quick Start+). Without it the TV ignores the magic packet. Aurimas will
+#     enable it after the vacation (2026-11-01).
+
+wake_on_lan:
+
+automation:
+- id: lg_tv_turn_on_wol
+  alias: LG TV - turn on via Wake-on-LAN
+  description: >-
+    Sends a magic packet to the LG OLED (wired MAC) when media_player.turn_on
+    is called on it. Needs "Turn on via Wi-Fi" enabled on the TV.
+  mode: single
+  triggers:
+  - trigger: webostv.turn_on
+    entity_id:
+    - media_player.living_room_lg_oled83g51lw
+  actions:
+  - action: wake_on_lan.send_magic_packet
+    data:
+      mac: F8:01:B4:DC:31:61
+      broadcast_address: 192.168.1.255

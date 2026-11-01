@@ -62,6 +62,10 @@ configMapGenerator:
 - name: ha-water-softener-package
   files:
   - packages/water_softener.yaml
+# package: LG OLED turn-on via Wake-on-LAN (webostv.turn_on trigger)
+- name: ha-lg-tv-package
+  files:
+  - packages/lg_tv.yaml
 - name: ha-energy-dashboard
   files:
   - dashboards/energy.yaml
