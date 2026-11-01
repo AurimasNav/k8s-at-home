@@ -14,7 +14,7 @@
   - [Install argo-cd](#install-argo-cd)
     - [Deploy argo-cd applications](#deploy-argo-cd-applications)
     - [Update argo-cd password](#update-argo-cd-password)
-  - [Pi-Hole / Unbound config](#pi-hole--unbound-config)
+  - [Blocky / Unbound (LAN DNS)](#blocky--unbound-lan-dns)
   - [Alternative UI for qBittorrent | Mobile friendly iQbit](#alternative-ui-for-qbittorrent--mobile-friendly-iqbit)
 
 
@@ -355,10 +355,11 @@
 - add generated bcrypt hash to doppler secrets
   - `ARGOCD_ADMIN_PASSWORD`: `<your bcrypt hash>`
 
-## Pi-Hole / Unbound config
+## Blocky / Unbound (LAN DNS)
 
-- add pihole webui password to doppler secrets
-  - `PIHOLE_WEBPASSWORD`: `<your pihole admin password>`
+- Blocky (`gitops/blocky`, 192.168.1.152) is the LAN DNS server with ad blocking; it forwards to Unbound (`gitops/unbound`, 192.168.1.154).
+- Blocklists, allowlist exceptions and the unfiltered clients are all in `gitops/blocky/config.yml`; no secrets or UI state.
+- The router's DHCP hands out 192.168.1.152. The k3s host itself resolves through the router, so it can pull images after a reboot.
 
 
 

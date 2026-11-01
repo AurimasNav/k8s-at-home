@@ -184,7 +184,7 @@ devices on one L2.
 
 - DHCP reservations, at minimum `192.168.1.149` (nibegw, still open in [`../todo.md`](../todo.md))
   and `192.168.1.139` (Flexit, MAC `00:05:19:22:06:0A`, already reserved on the Asus)
-- `gw.sync.lt: 192.168.1.1` in `gitops/blocky/configmap.yaml` stays valid if OPNsense takes `.1`
+- `gw.sync.lt: 192.168.1.1` in `gitops/blocky/config.yml` stays valid if OPNsense takes `.1`
 - Blocky as the DHCP-advertised DNS server
 - Port forwards, DDNS and any VPN config move off the Asus, which loses them in AP Mode along with
   Adaptive QoS and Traffic Analyzer
