@@ -41,7 +41,7 @@ images:
 - name: nousresearch/hermes-agent
   newTag: v2026.9.24
 - name: alpine/k8s
-  newTag: 1.37.1
+  newTag: 1.37.2
 - name: ghcr.io/home-assistant/home-assistant
   newTag: 2026.10.4
 - name: quay.io/oauth2-proxy/oauth2-proxy
