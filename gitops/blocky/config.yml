@@ -52,8 +52,9 @@ blocking:
       # Allowlists win over denylists. Each entry says what breaks without it.
       - |
         # LG webOS TV: the Content Store fails with error -102 (verified on webOS 2026-10-07,
-        # github.com/Okazakee/tv-dns-blocklist). HaGeZi Normal blocks it.
-        rdx2.lgtvsdp.com
+        # github.com/Okazakee/tv-dns-blocklist). The TV asks for <country>.rdx2.lgtvsdp.com
+        # (lt., de., ...), which HaGeZi Normal blocks as *.rdx2.lgtvsdp.com: allow the subtree.
+        *.rdx2.lgtvsdp.com
         # PS5: "Recently played" and trophies (Pi-hole "commonly allowlisted domains").
         telemetry-console.api.playstation.com
         # PSN event API, same host family as the store and catalogue (precaution).
