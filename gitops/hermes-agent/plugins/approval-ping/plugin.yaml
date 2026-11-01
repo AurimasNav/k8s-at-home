@@ -1,0 +1,9 @@
+name: approval-ping
+version: 1.0.0
+description: "Telegram: @-mention approvers while an approval or clarify prompt is waiting, remind, delete the pings once answered."
+author: "Hermes Agent (AurimasNav/k8s-at-home)"
+provides_hooks:
+  - pre_approval_request
+  - post_approval_response
+  - pre_tool_call
+  - post_tool_call

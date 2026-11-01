@@ -55,7 +55,9 @@ spec:
           hermes config set agent.reasoning_effort xhigh &&
           hermes config set display.platforms.telegram.tool_progress off &&
           hermes config set display.platforms.telegram.show_reasoning false &&
-          hermes config set display.platforms.telegram.interim_assistant_messages false
+          hermes config set display.platforms.telegram.interim_assistant_messages false &&
+          hermes config set approvals.timeout 1800 &&
+          hermes config set plugins.enabled '["approval-ping"]'
         volumeMounts:
         - name: data
           mountPath: /opt/data
@@ -128,6 +130,10 @@ spec:
         - name: scripts
           mountPath: /opt/data/scripts
           readOnly: true
+        # @-mention + reminders on Telegram while an approval/clarify prompt waits
+        - name: plugin-approval-ping
+          mountPath: /opt/data/plugins/approval-ping
+          readOnly: true
         # NousResearch/hermes-agent#144184: aux retry after pool rotation reused the capped key
         - name: hermes-patched
           mountPath: /opt/hermes/agent/auxiliary_client.py
@@ -170,6 +176,9 @@ spec:
           name: hermes-agent-patches
       - name: hermes-patched
         emptyDir: {}
+      - name: plugin-approval-ping
+        configMap:
+          name: hermes-agent-plugin-approval-ping
       - name: media
         hostPath:
           path: /data
