@@ -24,6 +24,10 @@ configMapGenerator:
   files:
   - patches/apply.sh
   - patches/aux-rotation-144184.diff
+- name: hermes-agent-plugin-approval-ping
+  files:
+  - plugins/approval-ping/__init__.py
+  - plugins/approval-ping/plugin.yaml
 - name: hermes-agent-cron
   files:
   - cron/jobs.yaml
