@@ -4,14 +4,14 @@
 # either way (Cilium gateway, wildcard certificate from cert-manager).
 #
 # Add a hostname to local.hostnames (key = hostname, value = what serves it; it becomes
-# the record comment, so the dashboard shows which records are managed here). Records in
-# the zone that are not listed are left alone (tofu only manages what is in its state).
+# the record comment, so the dashboard shows which records are managed here). Removing a
+# hostname deletes its record. Records in the zone that are not listed are left alone
+# (tofu only manages what is in its state).
 
 locals {
-  # Served by apps in the cluster (gitops/<app> Ingress or HTTPRoute) or kept on purpose.
+  # Served by apps in the cluster (gitops/<app> HTTPRoute).
   hostnames = {
     cleanuparr  = "gitops/cleanuparr"
-    flood       = "not deployed"
     grafana     = "gitops/victoria-metrics-k8s-stack"
     hair        = "gitops/hairsera"
     ha          = "gitops/home-assistant"
@@ -19,9 +19,7 @@ locals {
     home        = "gitops/homepage"
     homebox     = "gitops/homebox"
     login       = "gitops/oauth2-proxy"
-    minecraft   = "not deployed"
     prowlarr    = "gitops/prowlarr"
-    qb          = "not deployed"
     qbittorrent = "gitops/qbittorrent"
     radarr      = "gitops/radarr"
     radarr-lt   = "gitops/radarr-lt"
@@ -30,27 +28,7 @@ locals {
     sonarr      = "gitops/sonarr"
     sonarr-lt   = "gitops/sonarr-lt"
     sonarr-ru   = "gitops/sonarr-ru"
-    vrising     = "not deployed"
   }
-
-  # Served by nothing any more. Adopted only so their deletion goes through a
-  # reviewed plan: the follow-up PR empties this list, which deletes them.
-  stale_hostnames = toset([
-    "huntarr",
-    "ombi",
-    "radarr-no4k",
-    "radarr1",
-    "radarr2",
-    "radarr3",
-    "sonarr1",
-    "sonarr2",
-    "sonarr3",
-  ])
-
-  cname_records = merge(
-    { for h in local.stale_hostnames : h => "stale, to be deleted" },
-    local.hostnames,
-  )
 }
 
 resource "cloudflare_dns_record" "apex" {
@@ -67,7 +45,7 @@ resource "cloudflare_dns_record" "apex" {
 # (orange cloud): visitors reach Cloudflare, never the home IP. The rest stay DNS-only CNAMEs to
 # the apex.
 resource "cloudflare_dns_record" "cname" {
-  for_each = local.cname_records
+  for_each = local.hostnames
 
   zone_id = local.zone_id
   name    = "${each.key}.${var.zone_name}"
@@ -76,10 +54,4 @@ resource "cloudflare_dns_record" "cname" {
   ttl     = 1 # automatic
   proxied = contains(local.tunnel_hostnames, each.key)
   comment = "OpenTofu iac/cloudflare: ${each.value}${contains(local.tunnel_hostnames, each.key) ? ", via tunnel k3s" : ""}"
-}
-
-# Created on its own by #878: same record, new address (no delete and re-create).
-moved {
-  from = cloudflare_dns_record.cleanuparr
-  to   = cloudflare_dns_record.cname["cleanuparr"]
 }
