@@ -24,9 +24,11 @@ locals {
     qb          = "not deployed"
     qbittorrent = "gitops/qbittorrent"
     radarr      = "gitops/radarr"
+    radarr-lt   = "gitops/radarr-lt"
     radarr-ru   = "gitops/radarr-ru"
     seerr       = "gitops/seerr"
     sonarr      = "gitops/sonarr"
+    sonarr-lt   = "gitops/sonarr-lt"
     sonarr-ru   = "gitops/sonarr-ru"
     vrising     = "not deployed"
   }

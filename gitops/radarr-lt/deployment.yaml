@@ -1,0 +1,59 @@
+# Radarr for Lithuanian-language releases (VSeerr version "Lithuanian").
+# Library: /data/media/kids (the former Plex Kids folder, kept so 2 TB of films
+# don't have to move); qBittorrent category: radarr-lt.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr-lt
+  labels:
+    app: radarr-lt
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  # Two Radarr pods must never share the /config SQLite DB (RWO local-path PVC).
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: radarr-lt
+  template:
+    metadata:
+      labels:
+        app: radarr-lt
+    spec:
+      initContainers:
+      # Root folder for this version's library, owned like the rest of /data/media
+      # (chown of the folder itself only, never recursive).
+      - name: library-folder
+        image: busybox:1.38.0
+        command: ["sh", "-c", "mkdir -p /data/media/kids && chown 1000:1000 /data/media/kids"]
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      containers:
+      - name: radarr-lt
+        image: ghcr.io/linuxserver/radarr:7.0.0-develop
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7878
+        envFrom:
+        - configMapRef:
+            name: radarr-lt
+        - secretRef:
+            name: radarr-lt
+            # starts with a generated key until the Doppler key exists
+            optional: true
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: radarr-lt-config
+      - name: data
+        hostPath:
+          path: /data
+          type: Directory

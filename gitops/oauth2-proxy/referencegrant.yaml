@@ -30,10 +30,16 @@ spec:
     namespace: radarr-ru
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
+    namespace: radarr-lt
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
     namespace: sonarr
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: sonarr-ru
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: sonarr-lt
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: telegram-dl
