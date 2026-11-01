@@ -1,6 +1,7 @@
-# Cache rules (http_request_cache_settings phase). Everything behind the tunnel is behind the
-# Google login, which the gateway checks on every request; a response cached at Cloudflare's
-# edge would be served to the next visitor without that check. So nothing is cached.
+# Cache rules (http_request_cache_settings phase). The tunnel hosts are behind a login: the Google
+# login, which the gateway checks on every request, or the app's own (ha, seerr, hair). A response
+# cached at Cloudflare's edge would be served to the next visitor without that check, so nothing is
+# cached. (The rule's description is left as is: changing it only rewrites the ruleset.)
 resource "cloudflare_ruleset" "cache" {
   zone_id = local.zone_id
   name    = "default"
