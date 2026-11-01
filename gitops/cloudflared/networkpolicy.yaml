@@ -1,0 +1,77 @@
+# The connector is the internet's way in, so it may only reach what it serves.
+# Ingress: kubelet probes and Hermes (health checks) on the metrics port; nothing else.
+# Egress: DNS, Cloudflare's tunnel edge (7844, QUIC or HTTP/2), the Cilium gateway, and the
+# backends behind the tunnel hostnames.
+#
+# Why the backends are listed: requests to the gateway go through Envoy, and Cilium (>= 1.17.2,
+# GHSA-24qp-4xx8-3jvj) checks the CLIENT's egress policy against the backend pod Envoy picks.
+# So every app served through the tunnel (iac/cloudflare/tunnel.tf, local.tunnel_hostnames) needs
+# an entry here, plus oauth2-proxy for the Google login check. Missing entry = 403 from Envoy.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cloudflared
+spec:
+  endpointSelector:
+    matchLabels:
+      app: cloudflared
+  ingress:
+  - fromEntities:
+    - host
+    toPorts:
+    - ports:
+      - port: "2000"
+        protocol: TCP
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: hermes-agent
+        app: hermes-agent
+    toPorts:
+    - ports:
+      - port: "2000"
+        protocol: TCP
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+      rules:
+        dns:
+        - matchPattern: "*"
+  # Cloudflare edge: region1/region2.v2.argotunnel.com (and the US/FedRAMP variants).
+  - toFQDNs:
+    - matchPattern: "*.v2.argotunnel.com"
+    toPorts:
+    - ports:
+      - port: "7844"
+        protocol: ANY
+  # The Cilium gateway Service (cilium-gateway/main), https only.
+  - toServices:
+    - k8sService:
+        serviceName: cilium-gateway-main
+        namespace: cilium-gateway
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+  # Backends behind the gateway, one entry per tunnel hostname.
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: oauth2-proxy
+        app: oauth2-proxy
+    toPorts:
+    - ports:
+      - port: "4180"
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: cleanuparr
+        app: cleanuparr
+    toPorts:
+    - ports:
+      - port: "11011"
+        protocol: TCP

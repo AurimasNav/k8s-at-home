@@ -5,7 +5,7 @@ Decision record: [docs/decisions/0003-iac-opentofu-cloudflare.md](../docs/decisi
 
 | Stack | Manages | State key |
 |---|---|---|
-| [`cloudflare/`](cloudflare/) | `sync.lt` zone (DNS, settings), account API tokens, and the Doppler keys for tokens the cluster uses | `cloudflare/terraform.tfstate` |
+| [`cloudflare/`](cloudflare/) | `sync.lt` zone (DNS, settings, cache rules), Cloudflare Tunnel `k3s`, account API tokens, and the Doppler keys for tokens the cluster uses | `cloudflare/terraform.tfstate` |
 
 ## Layout
 
@@ -23,6 +23,9 @@ iac/
     ├── permission-groups.tf  permission group name -> ID lookup
     ├── account-tokens.tf     API tokens (iac-reader, iac, cert-manager)
     ├── account-token-*.tf    each token's permissions, by name
+    ├── tunnel.tf             Cloudflare Tunnel "k3s" + its ingress rules (gitops/cloudflared)
+    ├── zone_settings.tf      zone settings (act on proxied/tunnel traffic only)
+    ├── rulesets.tf           cache rules (nothing is cached at the edge)
     ├── doppler.tf            token values written to Doppler for the cluster
     ├── imports.tf            one-time adoption of existing resources
     ├── outputs.tf
@@ -89,7 +92,9 @@ Done on 2026-10-30:
 
 ## Workflow
 
-- **PR touching `iac/`:** fmt, validate and tflint; then a plan with the read-only token. The plan
+- **PR touching `iac/`:** fmt, validate and tflint; then a plan with the read-only token. The tunnel's
+  connector token (and its Doppler copy) can only be read with the write token, so PR plans skip
+  it (`TOFU_PLAN_EXCLUDE`); the apply job writes it to Doppler `TUNNEL_TOKEN`. The plan
   goes into the PR description (section *IaC (OpenTofu)*, replaced on every run) and the job
   summary. Both are public: `.github/scripts/New-TofuPlanReport.ps1` masks sensitive values, the
   account ID and token IDs, and names each permission group. The plan never goes to the log.
