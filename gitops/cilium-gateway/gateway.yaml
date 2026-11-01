@@ -43,3 +43,19 @@ spec:
       - kind: Secret
         name: sync-lt-wildcard-tls
         namespace: cilium-gateway
+  # Cloudflare Tunnel only (gitops/cloudflared, iac/cloudflare/tunnel.tf). The router forwards only
+  # 80/443, so a route attached here alone is unreachable from the home IP: an app moved to the
+  # tunnel answers only through Cloudflare. Same certificate as https-wildcard.
+  - name: https-tunnel
+    hostname: "*.sync.lt"
+    port: 10443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: sync-lt-wildcard-tls
+        namespace: cilium-gateway

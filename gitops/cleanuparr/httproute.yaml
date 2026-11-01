@@ -15,6 +15,11 @@ metadata:
   name: cleanuparr
 spec:
   parentRefs:
+  # Served through the Cloudflare Tunnel (https-tunnel). https-wildcard stays only until the
+  # tunnel path is verified, then it is removed and the home IP no longer serves this host.
+  - name: main
+    namespace: cilium-gateway
+    sectionName: https-tunnel
   - name: main
     namespace: cilium-gateway
     sectionName: https-wildcard
