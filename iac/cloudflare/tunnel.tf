@@ -15,7 +15,21 @@
 #      serving it).
 locals {
   tunnel_hostnames = toset([
+    # Google login (oauth2-proxy ExternalAuth) on the gateway
     "cleanuparr",
+    "grafana",
+    "home",
+    "homebox",
+    "prowlarr",
+    "qbittorrent",
+    "radarr",
+    "radarr-lt",
+    "radarr-ru",
+    "sonarr",
+    "sonarr-lt",
+    "sonarr-ru",
+    # the Google sign-in itself (oauth2-proxy /oauth2/*)
+    "login",
   ])
 
   # In-cluster address of the gateway's tunnel-only listener (https-tunnel, port 10443; the router
