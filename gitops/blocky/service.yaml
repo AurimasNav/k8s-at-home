@@ -1,5 +1,6 @@
-# DNS on the LAN. externalTrafficPolicy Local keeps the client's real IP (client
-# groups and the query log depend on it).
+# DNS on the LAN: 192.168.1.152 is what the router's DHCP hands out (and what the k3s
+# host lists next to the router). externalTrafficPolicy Local keeps the client's real IP
+# (client groups and the query log depend on it).
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,7 +8,7 @@ metadata:
     app: blocky
   name: blocky
   annotations:
-    metallb.universe.tf/loadBalancerIPs: 192.168.1.153
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.152
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
