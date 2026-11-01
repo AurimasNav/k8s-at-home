@@ -1,12 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: cloudflared
   labels:
     app: cloudflared
-  name: cloudflared
-  namespace: cloudflared
+  annotations:
+    # restart when the token Secret changes
+    reloader.stakater.com/auto: "true"
 spec:
-  replicas: 1
+  # Two connectors: one can restart (upgrade, node drain) while the other keeps the tunnel up.
+  replicas: 2
   selector:
     matchLabels:
       app: cloudflared
@@ -15,38 +18,58 @@ spec:
       labels:
         app: cloudflared
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: cloudflared
-        image: cloudflare/cloudflared:latest
+        image: cloudflare/cloudflared:2026.10.7
+        # Remotely managed tunnel: the ingress rules come from Cloudflare (iac/cloudflare/tunnel.tf).
         args:
         - tunnel
-        - --config
-        - /etc/cloudflared/config/config.yaml
+        - --no-autoupdate
+        - --metrics
+        - 0.0.0.0:2000
         - run
-        imagePullPolicy: Always
+        env:
+        - name: TUNNEL_TOKEN_FILE
+          value: /etc/cloudflared/token/TUNNEL_TOKEN
+        ports:
+        - name: metrics
+          containerPort: 2000
+        # /ready is 200 only while the connector has a live connection to Cloudflare.
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: metrics
+          periodSeconds: 10
         livenessProbe:
           httpGet:
-            # Cloudflared has a /ready endpoint which returns 200 if and only if
-            # it has an active connection to the edge.
             path: /ready
-            port: 2000
-          failureThreshold: 1
-          initialDelaySeconds: 10
+            port: metrics
+          initialDelaySeconds: 30
           periodSeconds: 10
+          failureThreshold: 6
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         volumeMounts:
-        - name: config
-          mountPath: /etc/cloudflared/config
-          readOnly: true
-        - name: creds
-          mountPath: /etc/cloudflared/creds
+        - name: token
+          mountPath: /etc/cloudflared/token
           readOnly: true
       volumes:
-      - name: config
-        configMap:
-          name: cloudflared
-          items:
-          - key: config.yaml
-            path: config.yaml
-      - name: creds
+      - name: token
         secret:
           secretName: cloudflared

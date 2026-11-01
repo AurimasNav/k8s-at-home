@@ -23,3 +23,11 @@ resource "doppler_secret" "account_token" {
   name    = each.value
   value   = cloudflare_account_token.this[each.key].value
 }
+
+# Connector token of tunnel "k3s" (tunnel.tf) for gitops/cloudflared.
+resource "doppler_secret" "tunnel_token" {
+  project = local.doppler_project
+  config  = local.doppler_config
+  name    = "TUNNEL_TOKEN"
+  value   = data.cloudflare_zero_trust_tunnel_cloudflared_token.k3s.token
+}

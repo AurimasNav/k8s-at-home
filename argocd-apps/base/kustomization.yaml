@@ -44,3 +44,4 @@ resources:
 - ./apps/homebox
 - ./apps/k8up
 - ./apps/cleanuparr
+- ./apps/cloudflared

@@ -101,7 +101,7 @@ jobs:
       TF_VAR_home_public_ipv4: ${{ secrets.HOME_PUBLIC_IPV4 }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_IAC_READ_TOKEN }}
       # No Doppler token here: these resources are left out of the plan (comma-separated addresses).
-      TOFU_PLAN_EXCLUDE: doppler_secret.account_token
+      TOFU_PLAN_EXCLUDE: doppler_secret.account_token,doppler_secret.tunnel_token,data.cloudflare_zero_trust_tunnel_cloudflared_token.k3s
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

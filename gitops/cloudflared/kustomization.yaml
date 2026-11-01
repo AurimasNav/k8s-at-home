@@ -1,7 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+# Cloudflare Tunnel connector: public hostnames reach the cluster through an outbound-only
+# connection to Cloudflare instead of the router's 80/443 port forward.
+# The tunnel, its ingress rules and the DNS records are OpenTofu (iac/cloudflare/tunnel.tf);
+# the connector only needs its token (Doppler TUNNEL_TOKEN, written by the IaC apply).
+# Every tunnel rule points at the Cilium gateway, which still does routing, TLS and the
+# Google login.
+namespace: cloudflared
+
 resources:
 - ./deployment.yaml
-- ./configmap.yaml
 - ./externalsecret.yaml
+- ./networkpolicy.yaml
