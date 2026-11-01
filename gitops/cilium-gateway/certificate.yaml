@@ -1,5 +1,5 @@
 # One certificate for every host: sync.lt + *.sync.lt (DNS-01, see cert-manager ClusterIssuer).
-# Used by the gateway listeners https-apex and https-wildcard (gateway.yaml).
+# Used by the gateway listeners https-tunnel and https-tunnel-apex (gateway.yaml).
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
