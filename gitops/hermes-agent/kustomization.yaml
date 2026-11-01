@@ -19,6 +19,7 @@ configMapGenerator:
   - scripts/apva_check.py
   - scripts/renovate_automerge.py
   - scripts/anthropic_pool_watchdog.py
+  - scripts/media_weekly.py
 - name: hermes-agent-patches
   files:
   - patches/apply.sh
