@@ -4,9 +4,14 @@ metadata:
   labels:
     app: blocky
   name: blocky
-  namespace: blocky
 spec:
-  replicas: 1
+  # Two pods: a config change or upgrade rolls one at a time, so LAN DNS never drops.
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: blocky
@@ -15,30 +20,65 @@ spec:
       labels:
         app: blocky
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 100
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: blocky
-        envFrom:
-        - configMapRef:
-            name: blocky
-        image: spx01/blocky:latest
-        imagePullPolicy: Always
+        image: ghcr.io/0xerr0r/blocky:v0.35.0
+        # The image is kept on the node, so a restart doesn't need DNS to pull it.
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TZ
+          value: Europe/Vilnius
         ports:
         - name: dns-tcp
-          containerPort: 53
+          containerPort: 1053
           protocol: TCP
         - name: dns-udp
-          containerPort: 53
+          containerPort: 1053
           protocol: UDP
+        - name: http
+          containerPort: 4000
+          protocol: TCP
+        # `blocky healthcheck` asks the DNS listener for healthcheck.blocky (port from
+        # the config). The listener opens only after the blocklists are loaded.
+        startupProbe:
+          exec:
+            command: ["/app/blocky", "healthcheck"]
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          exec:
+            command: ["/app/blocky", "healthcheck"]
+          periodSeconds: 10
+          timeoutSeconds: 3
+        livenessProbe:
+          exec:
+            command: ["/app/blocky", "healthcheck"]
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 20m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         volumeMounts:
-        - name: blocky-querylogs
-          mountPath: /logs
-        - name: blocky-config
+        - name: config
           mountPath: /app/config.yml
           subPath: config.yml
+          readOnly: true
       volumes:
-      - name: blocky-querylogs
-        persistentVolumeClaim:
-          claimName: blocky-querylogs
-      - name: blocky-config
+      - name: config
         configMap:
           name: blocky-config

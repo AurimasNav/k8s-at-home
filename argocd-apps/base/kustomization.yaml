@@ -21,7 +21,7 @@ resources:
 - ./apps/oauth2-proxy
 #- ./apps/ombi
 - ./apps/pihole
-#- ./apps/blocky
+- ./apps/blocky
 - ./apps/unbound
 - ./apps/coredns-custom
 - ./apps/seerr

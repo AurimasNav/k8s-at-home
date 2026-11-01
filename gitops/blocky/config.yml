@@ -1,0 +1,99 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/0xERR0R/blocky/v0.35.0/docs/config.schema.json
+# Blocky: LAN DNS server with ad/tracker blocking.
+# Reference: https://0xerr0r.github.io/blocky/v0.35.0/configuration/
+#
+# Clients: LAN devices (the router's DHCP hands out the LoadBalancer IP in service.yaml).
+# Upstream: the in-cluster Unbound (recursive, no third-party resolver).
+# The k3s host must not depend on this server: after a reboot it needs DNS to pull
+# these images, so it resolves through the router.
+#
+# This file feeds a configMapGenerator: any change rolls the pods (one at a time).
+
+upstreams:
+  groups:
+    default:
+      - 192.168.1.154 # unbound LoadBalancer (gitops/unbound)
+  # Names Unbound hasn't cached are resolved recursively; the 2s default is tight.
+  timeout: 5s
+connectIPVersion: v4
+
+ports:
+  dns: 1053 # unprivileged; the Service maps 53 -> 1053
+  http: 4000 # metrics + REST API: ClusterIP only (service.yaml), never on the LAN IP
+
+log:
+  level: info
+
+# Unqualified LAN names and reverse lookups go to the router, which knows the DHCP
+# leases. The same lookup gives device names in the query log.
+conditional:
+  mapping:
+    1.168.192.in-addr.arpa: 192.168.1.1
+    .: 192.168.1.1
+clientLookup:
+  upstream: 192.168.1.1
+
+customDNS:
+  mapping:
+    gw.sync.lt: 192.168.1.1
+
+blocking:
+  denylists:
+    ads:
+      # HaGeZi Multi NORMAL, wildcard format (each entry blocks itself and its subdomains).
+      - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/multi.txt
+      - |
+        # Firefox DoH canary: NXDOMAIN keeps Firefox on this resolver instead of its built-in DoH.
+        use-application-dns.net
+    # No lists: clients mapped to this group get unfiltered answers.
+    unfiltered: []
+  allowlists:
+    ads:
+      # Allowlists win over denylists. Each entry says what breaks without it.
+      - |
+        # LG webOS TV: the Content Store fails with error -102 (verified on webOS 2026-10-07,
+        # github.com/Okazakee/tv-dns-blocklist). HaGeZi Normal blocks it.
+        rdx2.lgtvsdp.com
+        # PS5: "Recently played" and trophies (Pi-hole "commonly allowlisted domains").
+        telemetry-console.api.playstation.com
+        # PSN event API, same host family as the store and catalogue (precaution).
+        eventcom.api.np.km.playstation.net
+        # Epic Games (Satisfactory): purchases and launcher 2FA login (Pi-hole list).
+        tracking.epicgames.com
+        # ThreatMetrix device check that banking apps run at login (Pi-hole list).
+        h-sdk.online-metrix.net
+        h.online-metrix.net
+        # Xiaomi phone: Mi Cloud sync, Find device, account security (HaGeZi Normal blocks them).
+        *.micloud.xiaomi.net
+        api.device.xiaomi.net
+        authbe.sec.intl.miui.com
+      # Smart TV updates, app stores and DRM, device-verified on LG webOS and Sony BRAVIA.
+      - https://raw.githubusercontent.com/Okazakee/tv-dns-blocklist/main/pihole/allow.txt
+  clientGroupsBlock:
+    default:
+      - ads
+    # The cluster is never filtered: CoreDNS (pod network) and host-network pods
+    # (Home Assistant, otbr, matter-server) query from these. Their integrations call
+    # cloud APIs that blocklists may list (e.g. Mammotion/aliyun telemetry hosts).
+    10.42.0.0/24:
+      - unfiltered
+    192.168.1.21:
+      - unfiltered
+  # NXDOMAIN for every query type (A, AAAA, HTTPS/SVCB); required for the Firefox canary.
+  blockType: nxDomain
+  # Clients cache a block this long, so an allowlist fix takes effect within 5 minutes.
+  blockTTL: 5m
+  loading:
+    refreshPeriod: 4h
+    downloads:
+      attempts: 5
+      cooldown: 10s
+
+prometheus:
+  enable: true
+statistics:
+  enable: true
+
+# One log line per query (client, question, answer, block reason) to stdout -> Loki.
+queryLog:
+  type: console

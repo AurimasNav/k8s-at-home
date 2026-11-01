@@ -1,0 +1,29 @@
+# DNS (1053) is open to everyone: LAN clients and the cluster. The HTTP port (metrics and
+# the REST API, which can switch blocking off) only accepts vmagent and Hermes.
+# Egress is not restricted: Unbound, the router and the list downloads.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: blocky
+spec:
+  endpointSelector:
+    matchLabels:
+      app: blocky
+  ingress:
+  - fromEntities:
+    - all
+    toPorts:
+    - ports:
+      - port: "1053"
+        protocol: ANY
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: victoriametrics
+        app.kubernetes.io/name: vmagent
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: hermes-agent
+        app: hermes-agent
+    toPorts:
+    - ports:
+      - port: "4000"
+        protocol: TCP
