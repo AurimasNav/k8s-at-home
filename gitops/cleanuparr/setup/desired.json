@@ -322,7 +322,8 @@
         "monitoredOnly": true,
         "useCutoff": true,
         "activeDownloadLimit": 3,
-        "minCycleTimeDays": 7
+        "minCycleTimeDays": 7,
+        "useCustomFormatScore": true
       },
       "Sonarr/sonarr-ru": {
         "enabled": true,
@@ -336,7 +337,8 @@
         "monitoredOnly": true,
         "useCutoff": true,
         "activeDownloadLimit": 3,
-        "minCycleTimeDays": 7
+        "minCycleTimeDays": 7,
+        "useCustomFormatScore": true
       }
     }
   }
