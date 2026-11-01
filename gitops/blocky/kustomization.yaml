@@ -1,8 +1,17 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+# Blocky (https://github.com/0xERR0R/blocky): LAN DNS with ad/tracker blocking,
+# forwarding to Unbound. Stateless: all settings, lists and exceptions are in config.yml.
+namespace: blocky
+
 resources:
 - ./deployment.yaml
 - ./service.yaml
-- ./configmap.yaml
-- ./pvc.yaml
+- ./networkpolicy.yaml
+- ./monitoring.yaml
+
+configMapGenerator:
+- name: blocky-config
+  files:
+  - config.yml

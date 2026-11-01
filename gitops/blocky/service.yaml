@@ -1,25 +1,44 @@
+# DNS on the LAN. externalTrafficPolicy Local keeps the client's real IP (client
+# groups and the query log depend on it).
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app: blocky
   name: blocky
-  namespace: blocky
   annotations:
     metallb.universe.tf/loadBalancerIPs: 192.168.1.153
 spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: blocky
   ports:
   - name: dns-tcp
     port: 53
     protocol: TCP
-    targetPort: 53
+    targetPort: dns-tcp
     appProtocol: domain
   - name: dns-udp
     port: 53
     protocol: UDP
-    targetPort: 53
+    targetPort: dns-udp
     appProtocol: domain
+---
+# Metrics and REST API (stats; the API can also switch blocking off), cluster-only.
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: blocky
+    app.kubernetes.io/name: blocky
+  name: blocky-http
+spec:
+  type: ClusterIP
   selector:
     app: blocky
-  type: LoadBalancer
-  externalTrafficPolicy: Local
+  ports:
+  - name: http
+    port: 4000
+    protocol: TCP
+    targetPort: http
