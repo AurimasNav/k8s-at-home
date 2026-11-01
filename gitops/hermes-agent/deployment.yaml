@@ -111,6 +111,10 @@ spec:
           value: /opt/data/home/.cache/uv
         - name: UV_PYTHON_DOWNLOADS
           value: never
+        # the image's WORKDIR is /opt/hermes, whose pyproject.toml [tool.uv] sets exclude-newer = "14 days";
+        # uv would apply it here and refuse pins younger than two weeks ("no version of trimesh==5.2.0")
+        - name: UV_NO_CONFIG
+          value: "1"
         securityContext:
           runAsUser: 10000
           runAsGroup: 10000
