@@ -84,6 +84,7 @@ configuration:
         backup_power: !include package_backup_power.yaml
         bhyve_winterize: !include package_bhyve_winterize.yaml
         water_softener: !include package_water_softener.yaml
+        lg_tv: !include package_lg_tv.yaml
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
 securityContext:
@@ -185,6 +186,9 @@ additionalVolumes:
   - name: water-softener-package
     configMap:
       name: ha-water-softener-package
+  - name: lg-tv-package
+    configMap:
+      name: ha-lg-tv-package
   - name: energy-dashboard
     configMap:
       name: ha-energy-dashboard
@@ -269,6 +273,9 @@ additionalMounts:
   - name: water-softener-package
     mountPath: /config/package_water_softener.yaml
     subPath: water_softener.yaml
+  - name: lg-tv-package
+    mountPath: /config/package_lg_tv.yaml
+    subPath: lg_tv.yaml
   - name: energy-dashboard
     mountPath: /config/dashboard_energy.yaml
     subPath: energy.yaml
