@@ -91,6 +91,35 @@ spec:
         - name: cron-config
           mountPath: /cron-config
           readOnly: true
+      # CAD tools for 3D-printing work: rebuilds /opt/data/venvs/cad from cad/requirements.txt on
+      # every start so it can't drift from git. The uv cache on the PVC makes a warm start ~1 s and
+      # lets it rebuild offline; a failed install only logs, it never blocks the pod.
+      - name: cad-venv
+        image: nousresearch/hermes-agent:latest
+        command: ["sh", "-c"]
+        args:
+        - >-
+          t=$(date +%s);
+          uv venv -q --clear --python /usr/bin/python3 /opt/data/venvs/cad &&
+          { uv pip install -q --python /opt/data/venvs/cad/bin/python -r /cad/requirements.txt ||
+          uv pip install -q --offline --python /opt/data/venvs/cad/bin/python -r /cad/requirements.txt; } &&
+          echo "cad-venv: ready in $(( $(date +%s) - t ))s" ||
+          echo "cad-venv: install failed, CAD tools unavailable until the next restart";
+          exit 0
+        env:
+        - name: UV_CACHE_DIR
+          value: /opt/data/home/.cache/uv
+        - name: UV_PYTHON_DOWNLOADS
+          value: never
+        securityContext:
+          runAsUser: 10000
+          runAsGroup: 10000
+        volumeMounts:
+        - name: data
+          mountPath: /opt/data
+        - name: cad
+          mountPath: /cad
+          readOnly: true
       containers:
       - name: hermes-agent
         image: nousresearch/hermes-agent:latest
@@ -161,6 +190,9 @@ spec:
       - name: cron-config
         configMap:
           name: hermes-agent-cron
+      - name: cad
+        configMap:
+          name: hermes-agent-cad
       - name: scripts
         configMap:
           name: hermes-agent-scripts
