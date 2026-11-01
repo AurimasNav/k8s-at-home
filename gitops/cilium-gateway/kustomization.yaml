@@ -6,5 +6,3 @@ resources:
 - ./gateway.yaml
 - ./certificate.yaml
 - ./http-redirect.yaml
-# Temporary, remove after the ingress-nginx cleanup.
-- ./hermes-nginx-cleanup-rbac.yaml
