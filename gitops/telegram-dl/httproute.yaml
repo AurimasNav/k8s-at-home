@@ -1,5 +1,5 @@
 # Cilium gateway route for home.sync.lt/telegram (homepage serves the rest of the host; the
-# longer path prefix wins). Google login like the nginx Ingress; filter settings are explained
+# longer path prefix wins). Google login (ExternalAuth); filter settings are explained
 # in gitops/cleanuparr/httproute.yaml. Envoy streams the ~75 MB zip without buffering.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

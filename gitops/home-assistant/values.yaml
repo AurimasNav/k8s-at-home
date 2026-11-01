@@ -267,30 +267,9 @@ additionalMounts:
   - name: eso-translations
     mountPath: /config/custom_components/eso/translations
 
+# Served by the Cilium gateway (httproute.yaml) as ha.sync.lt, not by an Ingress from this chart.
+# external: true tells the chart a proxy sits in front, so it keeps the reverse-proxy http settings
+# (http-storage.json) in hass-configuration; with both false they drop out and HA restarts.
 ingress:
-  # Enable ingress for home assistant
-  enabled: true
-  # Enable external ingress (cannot be true when ingress.enabled is true)
-  external: false
-  className: nginx
-  labels: {}
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.org/proxy-read-timeout: "7200s"
-    nginx.org/proxy-send-timeout: "7200s"
-    nginx.org/keepalive: 300
-  hosts:
-    - host: ha.sync.lt
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-    # Old name: kept so the phone apps keep working until they are switched to ha.sync.lt.
-    - host: assistant.sync.lt
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls:
-  - hosts:
-    - ha.sync.lt
-    - assistant.sync.lt
-    secretName: assistant-letsencrypt
+  enabled: false
+  external: true

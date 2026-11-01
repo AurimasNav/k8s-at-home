@@ -6,7 +6,6 @@ resources:
 - ./service.yaml
 - ./configmap.yaml
 - ./externalsecret.yaml
-- ./ingress.yaml
 - ./httproute.yaml
 - ./referencegrant.yaml
 

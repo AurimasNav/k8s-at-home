@@ -1,6 +1,6 @@
 # Cleanuparr holds the Radarr/Sonarr API keys, so it only talks to what it needs.
-# Ingress: ingress-nginx and the Cilium gateway (both behind oauth2-proxy), Hermes
-# (health/API checks), the setup Job and kubelet probes. Egress: DNS, Radarr, Sonarr, qBittorrent, plus HTTPS to the
+# Ingress: the Cilium gateway (behind oauth2-proxy), Hermes (health/API checks), the
+# setup Job and kubelet probes. Egress: DNS, Radarr, Sonarr, qBittorrent, plus HTTPS to the
 # official malware blocklists (cleanuparr.pages.dev) and the Telegram bot API.
 # Everything else is dropped (no update check, no other phone-home).
 apiVersion: cilium.io/v2
@@ -13,9 +13,6 @@ spec:
       app: cleanuparr
   ingress:
   - fromEndpoints:
-    - matchLabels:
-        k8s:io.kubernetes.pod.namespace: ingress-nginx
-        app.kubernetes.io/name: ingress-nginx
     - matchLabels:
         k8s:io.kubernetes.pod.namespace: hermes-agent
         app: hermes-agent

@@ -1,4 +1,4 @@
-# Cilium gateway route. Google login (oauth2-proxy ExternalAuth) like the nginx Ingress;
+# Cilium gateway route behind the Google login (oauth2-proxy ExternalAuth);
 # the filter settings are explained in gitops/cleanuparr/httproute.yaml.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

@@ -13,7 +13,6 @@ resources:
 - ./migrate.job.yaml
 - ./deployment.yaml
 - ./service.yaml
-- ./ingress.yaml
 - ./httproute.yaml
 images:
 - name: ghcr.io/aurimasnav/hairsera

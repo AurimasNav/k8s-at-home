@@ -1,5 +1,5 @@
-# Cilium gateway route for Home Assistant (HA has its own login). The nginx Ingress from the
-# Helm values stays until ingress-nginx is removed. WebSockets are on for every gateway route.
+# Cilium gateway route for Home Assistant (HA has its own login). WebSockets are on for every
+# gateway route.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -12,8 +12,6 @@ spec:
     sectionName: https-wildcard
   hostnames:
   - ha.sync.lt
-  # Old name: kept so the phone apps keep working until they are switched to ha.sync.lt.
-  - assistant.sync.lt
   rules:
   - matches:
     - path:

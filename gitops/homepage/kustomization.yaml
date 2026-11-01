@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
 - ./externalSecret.yaml
-- ./ingress.yaml
 - ./httproute.yaml
 namespace: homepage
 

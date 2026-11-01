@@ -12,7 +12,7 @@ patches:
       path: /spec/template/spec/containers/0/args/-
       value: --enable-gateway-api
     # Certificate Secrets get an ownerReference to their Certificate, so removing a
-    # Certificate (or its Ingress) also removes the Secret.
+    # Certificate also removes the Secret.
     - op: add
       path: /spec/template/spec/containers/0/args/-
       value: --enable-certificate-owner-ref=true

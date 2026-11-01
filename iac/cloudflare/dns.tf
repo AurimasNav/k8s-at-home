@@ -1,6 +1,6 @@
 # DNS for sync.lt. The apex A record points at home; every other hostname is a CNAME
 # to the apex, so a new public IP only changes one record. All records are "DNS only"
-# (not proxied): TLS ends in the cluster (cert-manager + ingress-nginx / cilium gateway).
+# (not proxied): TLS ends in the cluster (Cilium gateway, wildcard certificate from cert-manager).
 #
 # Add a hostname to local.hostnames (key = hostname, value = what serves it; it becomes
 # the record comment, so the dashboard shows which records are managed here). Records in
@@ -9,7 +9,6 @@
 locals {
   # Served by apps in the cluster (gitops/<app> Ingress or HTTPRoute) or kept on purpose.
   hostnames = {
-    assistant   = "gitops/home-assistant (old name, until the HA apps use ha.sync.lt)"
     cleanuparr  = "gitops/cleanuparr"
     flood       = "not deployed"
     grafana     = "gitops/victoria-metrics-k8s-stack"
