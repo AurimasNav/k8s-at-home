@@ -9,11 +9,12 @@
 locals {
   # Served by apps in the cluster (gitops/<app> Ingress or HTTPRoute) or kept on purpose.
   hostnames = {
-    assistant   = "gitops/home-assistant"
+    assistant   = "gitops/home-assistant (old name, until the HA apps use ha.sync.lt)"
     cleanuparr  = "gitops/cleanuparr"
     flood       = "not deployed"
     grafana     = "gitops/victoria-metrics-k8s-stack"
     hair        = "gitops/hairsera"
+    ha          = "gitops/home-assistant"
     hermes      = "gitops/hermes-agent"
     home        = "gitops/homepage"
     homebox     = "gitops/homebox"
