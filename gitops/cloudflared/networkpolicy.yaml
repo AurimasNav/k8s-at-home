@@ -59,6 +59,7 @@ spec:
       - port: "10443"
         protocol: TCP
   # Backends behind the gateway, one entry per tunnel hostname.
+  # Google login check (ExternalAuth) for every protected host, and login.sync.lt
   - toEndpoints:
     - matchLabels:
         k8s:io.kubernetes.pod.namespace: oauth2-proxy
@@ -67,6 +68,7 @@ spec:
     - ports:
       - port: "4180"
         protocol: TCP
+  # cleanuparr.sync.lt
   - toEndpoints:
     - matchLabels:
         k8s:io.kubernetes.pod.namespace: cleanuparr
@@ -74,4 +76,114 @@ spec:
     toPorts:
     - ports:
       - port: "11011"
+        protocol: TCP
+  # homebox.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: homebox
+        app: homebox
+    toPorts:
+    - ports:
+      - port: "7745"
+        protocol: TCP
+  # home.sync.lt /
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: homepage
+        app.kubernetes.io/name: homepage
+        app.kubernetes.io/instance: homepage
+    toPorts:
+    - ports:
+      - port: "3000"
+        protocol: TCP
+  # home.sync.lt /telegram
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: telegram-dl
+        app: telegram-dl
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+  # prowlarr.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: prowlarr
+        app: prowlarr
+    toPorts:
+    - ports:
+      - port: "9696"
+        protocol: TCP
+  # qbittorrent.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: qbittorrent
+        app: qbittorrent
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+  # radarr.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: radarr
+        app: radarr
+    toPorts:
+    - ports:
+      - port: "7878"
+        protocol: TCP
+  # radarr-lt.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: radarr-lt
+        app: radarr-lt
+    toPorts:
+    - ports:
+      - port: "7878"
+        protocol: TCP
+  # radarr-ru.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: radarr-ru
+        app: radarr-ru
+    toPorts:
+    - ports:
+      - port: "7878"
+        protocol: TCP
+  # sonarr.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: sonarr
+        app: sonarr
+    toPorts:
+    - ports:
+      - port: "8989"
+        protocol: TCP
+  # sonarr-lt.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: sonarr-lt
+        app: sonarr-lt
+    toPorts:
+    - ports:
+      - port: "8989"
+        protocol: TCP
+  # sonarr-ru.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: sonarr-ru
+        app: sonarr-ru
+    toPorts:
+    - ports:
+      - port: "8989"
+        protocol: TCP
+  # grafana.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: victoriametrics
+        app.kubernetes.io/name: grafana
+        app.kubernetes.io/instance: victoria-metrics-k8s-stack
+    toPorts:
+    - ports:
+      - port: "3000"
         protocol: TCP
