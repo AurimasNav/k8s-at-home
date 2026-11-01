@@ -40,7 +40,7 @@
       "enabled": false
     }
   ],
-  "enabledManagers": ["kubernetes", "kustomize", "custom.regex", "github-actions", "terraform"],
+  "enabledManagers": ["kubernetes", "kustomize", "custom.regex", "github-actions", "terraform", "pip_requirements"],
   "kubernetes": {
     "managerFilePatterns": ["/gitops/.*/.*\\.ya?ml$/"]
   },

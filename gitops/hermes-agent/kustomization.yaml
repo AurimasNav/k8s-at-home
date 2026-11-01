@@ -27,6 +27,10 @@ configMapGenerator:
   files:
   - cron/jobs.yaml
   - cron/cron_sync.py
+# pinned CAD packages for the cad-venv init container; a pin bump rolls the pod and rebuilds the venv
+- name: hermes-agent-cad
+  files:
+  - cad/requirements.txt
 
 images:
 - name: nousresearch/hermes-agent

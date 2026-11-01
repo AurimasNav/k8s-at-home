@@ -1,0 +1,8 @@
+# CAD tooling for 3D-printable parts, installed by the cad-venv init container
+# into /opt/data/venvs/cad on every pod start (see deployment.yaml).
+# Top-level pins only; Renovate (pip_requirements) opens a PR per bump.
+# build123d needs Python <3.15; the venv uses the Hermes image's python3.
+build123d==0.13.0
+manifold3d==3.5.4
+matplotlib==3.11.2
+trimesh==5.2.0
