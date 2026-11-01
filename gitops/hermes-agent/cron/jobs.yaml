@@ -46,7 +46,7 @@ jobs:
     enabled: true
   e54a3896f34e:
     name: Weekly media report
-    schedule: 30 10 * * 1
+    schedule: 0 19 * * 5
     deliver: telegram:-1004485564030:1128
     script: media_weekly.py
     enabled: true
