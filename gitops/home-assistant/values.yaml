@@ -280,11 +280,17 @@ ingress:
     nginx.org/proxy-send-timeout: "7200s"
     nginx.org/keepalive: 300
   hosts:
+    - host: ha.sync.lt
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+    # Old name: kept so the phone apps keep working until they are switched to ha.sync.lt.
     - host: assistant.sync.lt
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
   - hosts:
+    - ha.sync.lt
     - assistant.sync.lt
     secretName: assistant-letsencrypt

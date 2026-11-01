@@ -11,6 +11,8 @@ spec:
     namespace: cilium-gateway
     sectionName: https-wildcard
   hostnames:
+  - ha.sync.lt
+  # Old name: kept so the phone apps keep working until they are switched to ha.sync.lt.
   - assistant.sync.lt
   rules:
   - matches:
