@@ -7,5 +7,4 @@ resources:
 - ./configmap.yaml
 - ./pvc.yaml
 - ./externalsecret.yaml
-- ./ingress.yaml
 - ./httproute.yaml

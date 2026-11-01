@@ -7,7 +7,7 @@ spec:
   parentRefs:
   - name: main
     namespace: cilium-gateway
-    sectionName: https-ombi
+    sectionName: https-wildcard
   hostnames:
   - ombi.sync.lt
   rules:

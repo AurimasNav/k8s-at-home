@@ -1,4 +1,4 @@
-# Cilium gateway route. Google login (oauth2-proxy ExternalAuth) like the nginx Ingress;
+# Cilium gateway route behind the Google login (oauth2-proxy ExternalAuth);
 # the filter settings are explained in gitops/cleanuparr/httproute.yaml.
 # Defaults (group, kind, weight) are written out: this app syncs with ServerSideApply, so Argo CD
 # compares with the live object, where the API server has filled them in (otherwise: OutOfSync).

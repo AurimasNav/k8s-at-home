@@ -4,7 +4,7 @@
   <head>
     <!-- Added for the Cilium gateway (ExternalAuth): there this page is served with a 403 on the
          app's own host. Send the browser to the central login with the full URL, like
-         ingress-nginx's auth-signin does, so the one Google callback (login.sync.lt) is used.
+         ingress-nginx's auth-signin did, so the one Google callback (login.sync.lt) is used.
          The rest of this file is the oauth2-proxy v7.15.5 default sign_in.html. -->
     <script>
       if (window.location.hostname !== "login.sync.lt") {

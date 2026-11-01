@@ -7,7 +7,7 @@ spec:
   parentRefs:
   - name: main
     namespace: cilium-gateway
-    sectionName: https-flood
+    sectionName: https-wildcard
   hostnames:
   - flood.sync.lt
   rules:
