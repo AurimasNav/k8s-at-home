@@ -62,7 +62,6 @@ Conventions:
 | Token `iac` (write, account admin level) | `CLOUDFLARE_API_TOKEN` | `cloudflare` environment secret `CLOUDFLARE_IAC_EDIT_TOKEN` | no |
 | Account ID | `CLOUDFLARE_ACCOUNT_ID` | repo secret | yes |
 | State passphrase | `TOFU_STATE_PASSPHRASE` | repo secret | yes |
-| Home public IPv4 (apex `A` record; public via DNS anyway, kept out of git) | `HOME_PUBLIC_IPV4` | repo secret | no |
 | R2 state keys (token `tofu-state-r2`: bucket `tofu-state`, object read/write only) | `TOFU_R2_ACCESS_KEY_ID`, `TOFU_R2_SECRET_ACCESS_KEY` | repo secrets | no |
 | Token `cert-manager` (DNS Write + Zone Read, `sync.lt` only; created by this stack) | `CLOUDFLARE_DNS_API_TOKEN` (written by the apply) | none | no |
 | Doppler service token `k3s` (`k8s-at-home/prod`, read/write; also the cluster's store token) | `DOPPLER_SERVICE_TOKEN` | `cloudflare` environment secret `DOPPLER_SERVICE_TOKEN` | yes (`DOPPLER_TOKEN`) |
