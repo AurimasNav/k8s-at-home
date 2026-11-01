@@ -5,6 +5,9 @@ metadata:
     app: pihole
   name: pihole
   namespace: pihole
+  annotations:
+    # restart on ConfigMap/Secret changes (env is read at start)
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   selector:
@@ -23,7 +26,8 @@ spec:
         - configMapRef:
             name: pihole
         image: pihole/pihole:2026.10.1
-        imagePullPolicy: Always
+        # tag is pinned (Renovate bumps it): start from the cached image after a reboot
+        imagePullPolicy: IfNotPresent
         ports:
         - name: dns-tcp
           containerPort: 53

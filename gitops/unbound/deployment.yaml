@@ -5,6 +5,9 @@ metadata:
     app: unbound
   name: unbound
   namespace: unbound
+  annotations:
+    # restart on unbound.conf changes (subPath mounts never update in place)
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   selector:
@@ -18,7 +21,8 @@ spec:
       containers:
       - name: unbound
         image: mvance/unbound:1.22.0
-        imagePullPolicy: Always
+        # tag is pinned (Renovate bumps it): start from the cached image after a reboot
+        imagePullPolicy: IfNotPresent
         ports:
         - name: dns-tcp
           containerPort: 53
