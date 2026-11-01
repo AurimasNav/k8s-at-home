@@ -41,8 +41,8 @@ locals {
   # DNS target of every tunnel hostname, the apex included (dns.tf).
   tunnel_cname = "${cloudflare_zero_trust_tunnel_cloudflared.k3s.id}.cfargotunnel.com"
 
-  # In-cluster address of the gateway's tunnel-only listener (https-tunnel, port 10443; the router
-  # forwards only 80/443, so routes attached only there are not reachable on the home IP).
+  # In-cluster address of the gateway's tunnel listeners (https-tunnel / https-tunnel-apex, port
+  # 10443). The router forwards no port to the gateway: the tunnel is the only way in.
   tunnel_origin = "https://cilium-gateway-main.cilium-gateway.svc.cluster.local:10443"
 }
 
