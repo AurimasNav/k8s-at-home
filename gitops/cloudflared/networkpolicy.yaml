@@ -187,3 +187,28 @@ spec:
     - ports:
       - port: "3000"
         protocol: TCP
+  # seerr.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: seerr
+        app: seerr
+    toPorts:
+    - ports:
+      - port: "5055"
+        protocol: TCP
+  # hair.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: hairsera
+        app: hairsera
+    toPorts:
+    - ports:
+      - port: "3000"
+        protocol: TCP
+  # ha.sync.lt: Home Assistant runs with hostNetwork (node IP), so its identity is the host entity.
+  - toEntities:
+    - host
+    toPorts:
+    - ports:
+      - port: "8123"
+        protocol: TCP

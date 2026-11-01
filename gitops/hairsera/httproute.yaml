@@ -5,6 +5,10 @@ metadata:
   namespace: hairsera
 spec:
   parentRefs:
+  # https-tunnel = Cloudflare Tunnel; https-wildcard (home IP) is dropped once the tunnel is verified.
+  - name: main
+    namespace: cilium-gateway
+    sectionName: https-tunnel
   - name: main
     namespace: cilium-gateway
     sectionName: https-wildcard
