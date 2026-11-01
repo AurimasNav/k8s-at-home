@@ -254,6 +254,10 @@ configMapGenerator:
 - name: ha-eso-translations
   files:
   - custom_components/eso/translations/en.json
+# Installs release-zip custom components (bambu_lab) in an init container; see values.yaml initContainers
+- name: ha-custom-component-installer
+  files:
+  - scripts/install_release_component.py
 generatorOptions:
   disableNameSuffixHash: true
 
@@ -289,3 +293,8 @@ patches:
           port: 9999
           targetPort: 9999
           protocol: UDP
+
+# init-container image (values.yaml initContainers); kustomize sets the tag on the rendered chart
+images:
+- name: python
+  newTag: 3.15.2-alpine3.24

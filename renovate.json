@@ -79,6 +79,14 @@
     },
     {
       "customType": "regex",
+      "description": "Release-zip assets pinned by version + sha256 (HA custom components installed by an init container); bumps both",
+      "managerFilePatterns": ["/gitops/.*/.*\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>\\S+) asset=\\S+\\s+- name: \\S+\\s+value: \"(?<currentValue>[^\"]+)\"\\s+- name: \\S+\\s+value: \"(?<currentDigest>[0-9a-f]{64})\""
+      ]
+    },
+    {
+      "customType": "regex",
       "description": "Tool versions in GitHub workflow env",
       "managerFilePatterns": ["/^\\.github/workflows/.*\\.ya?ml$/"],
       "matchStrings": [
