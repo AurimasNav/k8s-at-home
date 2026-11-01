@@ -6,15 +6,21 @@
 # keeps doing the routing, the wildcard TLS certificate and the Google login (ExternalAuth); the
 # tunnel only replaces the path from the internet to the gateway.
 #
-# Moving a hostname to the tunnel: add it to local.tunnel_hostnames. Its ingress rule is added
-# here, and dns.tf turns its record into a proxied CNAME to the tunnel in the same apply.
+# Moving a hostname to the tunnel:
+#   1. add it to local.tunnel_hostnames: ingress rule here, and dns.tf turns its record into a
+#      proxied CNAME to the tunnel in the same apply;
+#   2. gitops: attach its HTTPRoute to the gateway listener https-tunnel, and allow its backend in
+#      gitops/cloudflared/networkpolicy.yaml;
+#   3. after verifying through Cloudflare, drop the route's https-wildcard parent (home IP stops
+#      serving it).
 locals {
   tunnel_hostnames = toset([
     "cleanuparr",
   ])
 
-  # In-cluster address of the gateway's Service (ClusterIP, port 443).
-  tunnel_origin = "https://cilium-gateway-main.cilium-gateway.svc.cluster.local:443"
+  # In-cluster address of the gateway's tunnel-only listener (https-tunnel, port 10443; the router
+  # forwards only 80/443, so routes attached only there are not reachable on the home IP).
+  tunnel_origin = "https://cilium-gateway-main.cilium-gateway.svc.cluster.local:10443"
 }
 
 resource "cloudflare_zero_trust_tunnel_cloudflared" "k3s" {

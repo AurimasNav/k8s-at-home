@@ -1,6 +1,7 @@
 # DNS for sync.lt. The apex A record points at home; every other hostname is a CNAME
-# to the apex, so a new public IP only changes one record. All records are "DNS only"
-# (not proxied): TLS ends in the cluster (Cilium gateway, wildcard certificate from cert-manager).
+# to the apex, so a new public IP only changes one record, except hostnames served through the
+# Cloudflare Tunnel (tunnel.tf), which are proxied CNAMEs to the tunnel. TLS ends in the cluster
+# either way (Cilium gateway, wildcard certificate from cert-manager).
 #
 # Add a hostname to local.hostnames (key = hostname, value = what serves it; it becomes
 # the record comment, so the dashboard shows which records are managed here). Records in
@@ -60,16 +61,19 @@ resource "cloudflare_dns_record" "apex" {
   comment = "OpenTofu iac/cloudflare: home IP"
 }
 
+# Hostnames in local.tunnel_hostnames (tunnel.tf) point at the Cloudflare Tunnel and are proxied
+# (orange cloud): visitors reach Cloudflare, never the home IP. The rest stay DNS-only CNAMEs to
+# the apex.
 resource "cloudflare_dns_record" "cname" {
   for_each = local.cname_records
 
   zone_id = local.zone_id
   name    = "${each.key}.${var.zone_name}"
   type    = "CNAME"
-  content = var.zone_name
+  content = contains(local.tunnel_hostnames, each.key) ? "${cloudflare_zero_trust_tunnel_cloudflared.k3s.id}.cfargotunnel.com" : var.zone_name
   ttl     = 1 # automatic
-  proxied = false
-  comment = "OpenTofu iac/cloudflare: ${each.value}"
+  proxied = contains(local.tunnel_hostnames, each.key)
+  comment = "OpenTofu iac/cloudflare: ${each.value}${contains(local.tunnel_hostnames, each.key) ? ", via tunnel k3s" : ""}"
 }
 
 # Created on its own by #878: same record, new address (no delete and re-create).
