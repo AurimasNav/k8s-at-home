@@ -14,4 +14,4 @@ images:
 # build number numerically (packageRule in renovate.json).
 - name: ghcr.io/aurimasnav/vseerr
   newTag: 3.5.1-vseerr.23
-  digest: sha256:65a3fdec16965fa47d69dd9d092083a697dd72d124048f78ecfd9ff0ec9c467a
+  digest: sha256:ca85a322aa03e38bcc28f64ca10e61d8c6ba60d2e91a6a3e978869c3621cb89e
