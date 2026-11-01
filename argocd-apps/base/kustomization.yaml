@@ -3,6 +3,8 @@ kind: Kustomization
 
 resources:
 - ./root-app.yaml
+# Temporary: adopts the leftover huntarr namespace so the next PR can delete it by pruning.
+- ./legacy-namespaces.yaml
 - ./apps/cilium
 - ./apps/gateway-api-crds
 - ./apps/cilium-gateway

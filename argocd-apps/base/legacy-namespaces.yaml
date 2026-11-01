@@ -1,0 +1,8 @@
+# Temporary (step 1 of 2). huntarr is a leftover namespace (created by hand in 2025, never
+# Argo-managed): only an Ingress for huntarr.sync.lt and its Certificate, no workload. Listing it
+# here makes the root app adopt it; the next PR removes this file and the root app prunes
+# (deletes) it with everything inside.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: huntarr

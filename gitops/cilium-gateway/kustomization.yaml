@@ -6,3 +6,4 @@ resources:
 - ./gateway.yaml
 - ./certificate.yaml
 - ./http-redirect.yaml
+- ./legacy-certificates.yaml
