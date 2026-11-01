@@ -108,6 +108,36 @@ startupProbe:
   timeoutSeconds: 5
   failureThreshold: 60
 
+# Bambu Lab (greghesp/ha-bambulab) for the P2S printer. Too big for the ConfigMap
+# vendoring below (a 3 MB frontend card; ConfigMaps max out at 1 MiB), so this init
+# container installs the pinned release zip into /config/custom_components/bambu_lab
+# on the HA volume, checking its sha256. It skips the download when that version is
+# already there and never blocks HA: on failure the previous install stays.
+# Renovate bumps VERSION and SHA256 together (github-release-attachments).
+initContainers:
+  - name: bambu-lab
+    # tag pinned in kustomization.yaml images: (Renovate tracks it there)
+    image: python
+    command: ["python3", "/scripts/install_release_component.py"]
+    env:
+      - name: COMPONENT
+        value: bambu_lab
+      - name: REPO
+        value: greghesp/ha-bambulab
+      - name: ASSET
+        value: bambu_lab.zip
+      # renovate: datasource=github-release-attachments depName=greghesp/ha-bambulab asset=bambu_lab.zip
+      - name: VERSION
+        value: "v2.2.26"
+      - name: SHA256
+        value: "fc72606c55f76e5d0401b98723fe67a637faf01cdc16494572bcc228ca83cdcd"
+    volumeMounts:
+      - name: home-assistant
+        mountPath: /config
+      - name: custom-component-installer
+        mountPath: /scripts
+        readOnly: true
+
 # Mount the vendored mkaiser Sungrow package (ConfigMap) at /config/packages so the
 # templateConfig include (packages/modbus_sungrow.yaml) can resolve it. The Flexit
 # and lights automations ConfigMaps are each mounted as a single file (via subPath)
@@ -197,6 +227,9 @@ additionalVolumes:
   - name: eso-translations
     configMap:
       name: ha-eso-translations
+  - name: custom-component-installer
+    configMap:
+      name: ha-custom-component-installer
 additionalMounts:
   - name: sungrow-package
     mountPath: /config/packages
