@@ -41,6 +41,10 @@ spec:
           allowedResponseHeaders:
           - x-auth-request-user
           - x-auth-request-email
+    # Envoy's default is 15 s for the whole response; 0s turns that off (long downloads,
+    # interactive searches, streams). Idle connections still close after 300 s.
+    timeouts:
+      request: 0s
     backendRefs:
     - name: cleanuparr
       port: 80

@@ -1,0 +1,42 @@
+# Cilium gateway route. Google login (oauth2-proxy ExternalAuth) like the nginx Ingress;
+# the filter settings are explained in gitops/cleanuparr/httproute.yaml.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: radarr-ru
+  namespace: radarr-ru
+spec:
+  parentRefs:
+  - name: main
+    namespace: cilium-gateway
+    sectionName: https-wildcard
+  hostnames:
+  - radarr-ru.sync.lt
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    filters:
+    - type: ExternalAuth
+      externalAuth:
+        protocol: HTTP
+        backendRef:
+          name: oauth2-proxy
+          namespace: oauth2-proxy
+          port: 4180
+        http:
+          path: /_authz
+          allowedHeaders:
+          - cookie
+          - accept
+          allowedResponseHeaders:
+          - x-auth-request-user
+          - x-auth-request-email
+    # Envoy's default is 15 s for the whole response; 0s turns that off (long downloads,
+    # interactive searches, streams). Idle connections still close after 300 s.
+    timeouts:
+      request: 0s
+    backendRefs:
+    - name: radarr-ru
+      port: 80

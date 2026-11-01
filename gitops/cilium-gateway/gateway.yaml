@@ -6,7 +6,7 @@ metadata:
 spec:
   gatewayClassName: cilium
   listeners:
-  # Plain HTTP. No routes attach here yet; the HTTP -> HTTPS redirect route comes with the cutover.
+  # Plain HTTP: only the HTTP -> HTTPS redirect (http-redirect.yaml) attaches here.
   - name: http
     port: 80
     protocol: HTTP
