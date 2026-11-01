@@ -1,4 +1,4 @@
-# Port 80: redirect every host to HTTPS (what ingress-nginx's ssl-redirect does today).
+# Port 80: redirect every host to HTTPS with 308, same as ingress-nginx today (308 keeps POST a POST).
 # Certificates use DNS-01, so nothing needs plain HTTP for ACME.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -14,4 +14,4 @@ spec:
     - type: RequestRedirect
       requestRedirect:
         scheme: https
-        statusCode: 301
+        statusCode: 308
