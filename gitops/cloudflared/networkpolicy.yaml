@@ -49,14 +49,14 @@ spec:
     - ports:
       - port: "7844"
         protocol: TCP
-  # The Cilium gateway Service (cilium-gateway/main), https only.
+  # The Cilium gateway Service (cilium-gateway/main), tunnel listener https-tunnel only.
   - toServices:
     - k8sService:
         serviceName: cilium-gateway-main
         namespace: cilium-gateway
     toPorts:
     - ports:
-      - port: "443"
+      - port: "10443"
         protocol: TCP
   # Backends behind the gateway, one entry per tunnel hostname.
   - toEndpoints:
