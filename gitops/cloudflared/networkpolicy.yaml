@@ -212,3 +212,12 @@ spec:
     - ports:
       - port: "8123"
         protocol: TCP
+  # hermes.sync.lt (the pod's own oauth2-proxy sidecar)
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: hermes-agent
+        app: hermes-agent
+    toPorts:
+    - ports:
+      - port: "4180"
+        protocol: TCP

@@ -59,3 +59,17 @@ spec:
       - kind: Secret
         name: sync-lt-wildcard-tls
         namespace: cilium-gateway
+  # The apex through the tunnel (a "*.sync.lt" listener does not match the bare sync.lt).
+  - name: https-tunnel-apex
+    hostname: sync.lt
+    port: 10443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: sync-lt-wildcard-tls
+        namespace: cilium-gateway
