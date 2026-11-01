@@ -5,8 +5,8 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     # Google login (allowed emails only) is the only lock: the app itself runs with
-    # AUTH__METHOD=External. No HTTPRoute on purpose: the Cilium gateway has no
-    # oauth2-proxy, so a route there would skip the login.
+    # AUTH__METHOD=External. The Cilium gateway route
+    # (httproute.yaml) has the same Google login (ExternalAuth).
     nginx.ingress.kubernetes.io/auth-url: "https://login.sync.lt/oauth2/auth"
     nginx.ingress.kubernetes.io/auth-signin: "https://login.sync.lt/oauth2/start?rd=$scheme://$best_http_host$escaped_request_uri"
 spec:

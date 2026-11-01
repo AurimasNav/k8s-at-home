@@ -7,10 +7,8 @@ resources:
 - ./pvc.yaml
 - ./deployment.yaml
 - ./service.yaml
-# httproute.yaml is deliberately not included, same as the other
-# oauth2-proxy-protected apps: the Cilium gateway has no ext_authz, so the
-# route would serve Homebox without the login.sync.lt check.
 - ./ingress.yaml
+- ./httproute.yaml
 
 images:
 - name: ghcr.io/sysadminsmedia/homebox

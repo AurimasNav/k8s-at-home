@@ -5,3 +5,4 @@ resources:
 - ./namespace.yaml
 - ./gateway.yaml
 - ./certificate.yaml
+- ./http-redirect.yaml

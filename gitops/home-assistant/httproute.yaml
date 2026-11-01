@@ -1,0 +1,26 @@
+# Cilium gateway route for Home Assistant (HA has its own login). The nginx Ingress from the
+# Helm values stays until ingress-nginx is removed. WebSockets are on for every gateway route.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: home-assistant
+  namespace: home-assistant
+spec:
+  parentRefs:
+  - name: main
+    namespace: cilium-gateway
+    sectionName: https-wildcard
+  hostnames:
+  - assistant.sync.lt
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    # Envoy's default is 15 s for the whole response; 0s turns that off (long downloads,
+    # interactive searches, streams). Idle connections still close after 300 s.
+    timeouts:
+      request: 0s
+    backendRefs:
+    - name: home-assistant
+      port: 8123

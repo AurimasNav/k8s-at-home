@@ -8,6 +8,7 @@ resources:
 - ./dashboard-hairsera-traces.yaml
 - ./dashboard-hairsera-logs.yaml
 - ./ingress.yaml
+- ./httproute.yaml
 namespace: victoriametrics
 
 patches:
