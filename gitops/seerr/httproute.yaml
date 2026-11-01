@@ -5,17 +5,14 @@ metadata:
   namespace: seerr
 spec:
   parentRefs:
-  # seerr.sync.lt: only through the Cloudflare Tunnel (listener https-tunnel, iac/cloudflare/tunnel.tf).
-  # The apex sync.lt: https-tunnel-apex (tunnel); https-apex (home IP) is dropped once verified.
+  # Served only through the Cloudflare Tunnel (iac/cloudflare/tunnel.tf): seerr.sync.lt on
+  # https-tunnel, the apex sync.lt on https-tunnel-apex. The home IP's 443 does not serve them.
   - name: main
     namespace: cilium-gateway
     sectionName: https-tunnel
   - name: main
     namespace: cilium-gateway
     sectionName: https-tunnel-apex
-  - name: main
-    namespace: cilium-gateway
-    sectionName: https-apex
   hostnames:
   - seerr.sync.lt
   - sync.lt
