@@ -3,7 +3,7 @@
     "username": "aurimas"
   },
   "general": {
-    "dryRun": true,
+    "dryRun": false,
     "statusCheckEnabled": false,
     "displaySupportBanner": false,
     "ignoredDownloads": [
@@ -188,7 +188,12 @@
   "downloadCleaner": {
     "enabled": true,
     "cronExpression": "0 0 * * * ?",
-    "ignoredDownloads": []
+    "ignoredDownloads": [
+      "21b481771e3c64ed694fc219b9d8c03953d52965",
+      "00fd62b34d3b3c874dc0715eb11dbe5e811846ab",
+      "4599b068cf63063bc5eb18771d80a5d8d34cb047",
+      "2b1e13b493b7ec8014125ed5d2efe9f396633fa3"
+    ]
   },
   "queueCleaner": {
     "enabled": true,
