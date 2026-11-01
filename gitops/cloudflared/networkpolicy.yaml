@@ -1,6 +1,6 @@
 # The connector is the internet's way in, so it may only reach what it serves.
 # Ingress: kubelet probes and Hermes (health checks) on the metrics port; nothing else.
-# Egress: DNS, Cloudflare's tunnel edge (7844, QUIC or HTTP/2), the Cilium gateway, and the
+# Egress: DNS, Cloudflare's tunnel edge (TCP 7844, HTTP/2), the Cilium gateway, and the
 # backends behind the tunnel hostnames.
 #
 # Why the backends are listed: requests to the gateway go through Envoy, and Cilium (>= 1.17.2,
@@ -42,13 +42,13 @@ spec:
       rules:
         dns:
         - matchPattern: "*"
-  # Cloudflare edge: region1/region2.v2.argotunnel.com (and the US/FedRAMP variants).
+  # Cloudflare edge: region1/region2.v2.argotunnel.com (and the US/FedRAMP variants), HTTP/2 (TCP).
   - toFQDNs:
     - matchPattern: "*.v2.argotunnel.com"
     toPorts:
     - ports:
       - port: "7844"
-        protocol: ANY
+        protocol: TCP
   # The Cilium gateway Service (cilium-gateway/main), https only.
   - toServices:
     - k8sService:
