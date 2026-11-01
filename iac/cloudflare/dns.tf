@@ -1,7 +1,7 @@
-# DNS for sync.lt. The apex A record points at home; every other hostname is a CNAME
-# to the apex, so a new public IP only changes one record, except hostnames served through the
-# Cloudflare Tunnel (tunnel.tf), which are proxied CNAMEs to the tunnel. TLS ends in the cluster
-# either way (Cilium gateway, wildcard certificate from cert-manager).
+# DNS for sync.lt. Every record, the apex included, is a proxied (orange-cloud) CNAME to the
+# Cloudflare Tunnel (tunnel.tf): visitors reach Cloudflare, and no record carries the home IP.
+# The apex CNAME is flattened by Cloudflare. TLS still ends in the cluster (Cilium gateway,
+# wildcard certificate from cert-manager); the tunnel only carries the traffic there.
 #
 # Add a hostname to local.hostnames (key = hostname, value = what serves it; it becomes
 # the record comment, so the dashboard shows which records are managed here). Removing a
@@ -34,24 +34,29 @@ locals {
 resource "cloudflare_dns_record" "apex" {
   zone_id = local.zone_id
   name    = var.zone_name
-  type    = "A"
-  content = var.home_public_ipv4
+  type    = "CNAME"
+  content = local.tunnel_cname
   ttl     = 1 # automatic
-  proxied = false
-  comment = "OpenTofu iac/cloudflare: home IP"
+  proxied = true
+  comment = "OpenTofu iac/cloudflare: gitops/seerr, via tunnel k3s"
 }
 
-# Hostnames in local.tunnel_hostnames (tunnel.tf) point at the Cloudflare Tunnel and are proxied
-# (orange cloud): visitors reach Cloudflare, never the home IP. The rest stay DNS-only CNAMEs to
-# the apex.
+# A hostname must also be in local.tunnel_hostnames (tunnel.tf), which gives it its ingress rule.
 resource "cloudflare_dns_record" "cname" {
   for_each = local.hostnames
 
   zone_id = local.zone_id
   name    = "${each.key}.${var.zone_name}"
   type    = "CNAME"
-  content = contains(local.tunnel_hostnames, each.key) ? "${cloudflare_zero_trust_tunnel_cloudflared.k3s.id}.cfargotunnel.com" : var.zone_name
+  content = local.tunnel_cname
   ttl     = 1 # automatic
-  proxied = contains(local.tunnel_hostnames, each.key)
-  comment = "OpenTofu iac/cloudflare: ${each.value}${contains(local.tunnel_hostnames, each.key) ? ", via tunnel k3s" : ""}"
+  proxied = true
+  comment = "OpenTofu iac/cloudflare: ${each.value}, via tunnel k3s"
+
+  lifecycle {
+    precondition {
+      condition     = contains(local.tunnel_hostnames, each.key)
+      error_message = "Add ${each.key} to local.tunnel_hostnames (tunnel.tf) too: without an ingress rule the tunnel answers 404."
+    }
+  }
 }

@@ -34,7 +34,12 @@ locals {
     "ha",
     "hair",
     "seerr",
+    # Hermes web UI (its own oauth2-proxy sidecar, Google login)
+    "hermes",
   ])
+
+  # DNS target of every tunnel hostname, the apex included (dns.tf).
+  tunnel_cname = "${cloudflare_zero_trust_tunnel_cloudflared.k3s.id}.cfargotunnel.com"
 
   # In-cluster address of the gateway's tunnel-only listener (https-tunnel, port 10443; the router
   # forwards only 80/443, so routes attached only there are not reachable on the home IP).
@@ -55,6 +60,14 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "k3s" {
 
   config = {
     ingress = concat(
+      # The apex sync.lt (seerr; gateway listener https-tunnel-apex).
+      [{
+        hostname = var.zone_name
+        service  = local.tunnel_origin
+        origin_request = {
+          origin_server_name = var.zone_name
+        }
+      }],
       [
         for h in sort(tolist(local.tunnel_hostnames)) : {
           hostname = "${h}.${var.zone_name}"
