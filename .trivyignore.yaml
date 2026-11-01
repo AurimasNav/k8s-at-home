@@ -20,6 +20,9 @@ misconfigurations:
     statement: /dev hostPath is needed for the Thread USB dongle.
 
   # Reviewed false positives / scoped exceptions
+  - id: KSV-0114
+    paths: [gitops/cilium-gateway/hermes-nginx-cleanup-rbac.yaml]
+    statement: temporary; delete on the one named ValidatingWebhookConfiguration ingress-nginx-admission (resourceNames), to remove the leftover ingress-nginx install.
   - id: KSV-0046
     paths: [gitops/hermes-agent/rbac.yaml]
     statement: wildcard resources are read-only (get/list/watch) on gateway, cilium and metallb API groups.

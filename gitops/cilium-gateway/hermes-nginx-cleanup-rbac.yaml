@@ -1,0 +1,39 @@
+# TEMPORARY: lets Hermes (SA hermes-agent/hermes-agent) delete what is left of the old
+# ingress-nginx static install (applied by hand before Argo CD, so removing the Argo app in #908
+# deleted nothing). Only these named objects, only get + delete. Deleting the namespace removes
+# the controller, its Services, Jobs, ServiceAccounts, Roles and ConfigMap with it.
+# Remove this file once the cleanup is done.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hermes-ingress-nginx-cleanup
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  resourceNames: ["ingress-nginx"]
+  verbs: ["get", "delete"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingressclasses"]
+  resourceNames: ["nginx"]
+  verbs: ["get", "delete"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["validatingwebhookconfigurations"]
+  resourceNames: ["ingress-nginx-admission"]
+  verbs: ["get", "delete"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["clusterroles", "clusterrolebindings"]
+  resourceNames: ["ingress-nginx", "ingress-nginx-admission"]
+  verbs: ["get", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hermes-ingress-nginx-cleanup
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hermes-ingress-nginx-cleanup
+subjects:
+- kind: ServiceAccount
+  name: hermes-agent
+  namespace: hermes-agent
