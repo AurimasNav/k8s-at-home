@@ -9,6 +9,12 @@ metadata:
   namespace: victoriametrics
 spec:
   parentRefs:
+  # https-tunnel = Cloudflare Tunnel; https-wildcard (home IP) is dropped once the tunnel is verified.
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: main
+    namespace: cilium-gateway
+    sectionName: https-tunnel
   - group: gateway.networking.k8s.io
     kind: Gateway
     name: main
