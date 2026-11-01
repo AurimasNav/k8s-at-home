@@ -7,13 +7,11 @@ metadata:
   namespace: radarr-ru
 spec:
   parentRefs:
-  # https-tunnel = Cloudflare Tunnel; https-wildcard (home IP) is dropped once the tunnel is verified.
+  # Served only through the Cloudflare Tunnel (listener https-tunnel, iac/cloudflare/tunnel.tf);
+  # the home IP's 443 listener does not serve this host.
   - name: main
     namespace: cilium-gateway
     sectionName: https-tunnel
-  - name: main
-    namespace: cilium-gateway
-    sectionName: https-wildcard
   hostnames:
   - radarr-ru.sync.lt
   rules:
