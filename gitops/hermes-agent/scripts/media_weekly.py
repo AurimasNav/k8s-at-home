@@ -247,6 +247,13 @@ def main():
     now = dt.datetime.now(dt.UTC)
     since = now - dt.timedelta(days=a.days)
     print(f"MEDIA WEEKLY {since.astimezone(TZ):%Y-%m-%d %H:%M} -> {now.astimezone(TZ):%Y-%m-%d %H:%M} (Vilnius), {a.days} d")
+    state_file = {}
+    try:
+        with open(STATE) as f:
+            state_file = json.load(f)
+    except (OSError, ValueError):
+        pass
+    sizes = {h: v[1] for h, v in (state_file.get("qbit_torrents") or {}).items() if isinstance(v, list)}
 
     # --- requests (VSeerr) ---
     section("REQUESTS (VSeerr)")
@@ -369,6 +376,11 @@ def main():
             reasons = collections.Counter(e.get("cleanReason") for e in cleaned)
             cats = collections.Counter(e.get("cleanedCategory") for e in cleaned)
             print(f"download cleaner: {len(cleaned)} torrents deleted after meeting their seeding rule; reasons {dict(reasons)}; categories {dict(cats)}")
+            known = [sizes[e["itemHash"].lower()] for e in cleaned if (e.get("itemHash") or "").lower() in sizes]
+            if known:
+                print(f"  size of deleted torrents: {size_h(sum(known))} ({len(known)} of {len(cleaned)} sized from last week's snapshot)")
+            else:
+                print("  size of deleted torrents: unknown (no snapshot from the previous report; the disk free-space change below covers it)")
             avg_ratio = sum(e.get("seedRatio") or 0 for e in cleaned) / len(cleaned)
             avg_days = sum(e.get("seedingTimeHours") or 0 for e in cleaned) / len(cleaned) / 24
             print(f"  average ratio at deletion {avg_ratio:.2f}, average seeding {avg_days:.0f} days")
@@ -400,12 +412,6 @@ def main():
 
     # --- qBittorrent ---
     section("QBITTORRENT")
-    state_file = {}
-    try:
-        with open(STATE) as f:
-            state_file = json.load(f)
-    except (OSError, ValueError):
-        pass
     try:
         s, torrents = qbit()
         ul, dl = s.get("alltime_ul") or 0, s.get("alltime_dl") or 0
@@ -421,7 +427,9 @@ def main():
         print(f"torrents: {len(torrents)} ({private} private), total {size_h(sum(t['size'] for t in torrents))}; states {dict(by_state.most_common(6))}")
         prev_t = state_file.get("qbit_torrents") or {}
         if prev_t and a.days == 7:
-            deltas = sorted(((t.get("uploaded", 0) - prev_t[t["hash"]], t) for t in torrents if t["hash"] in prev_t), key=lambda x: -x[0])
+            def up(v):
+                return v[0] if isinstance(v, list) else v
+            deltas = sorted(((t.get("uploaded", 0) - up(prev_t[t["hash"]]), t) for t in torrents if t["hash"] in prev_t), key=lambda x: -x[0])
             active = [(d, t) for d, t in deltas if d > 0]
             print(f"torrents that uploaded this week: {len(active)} of {len(torrents)}")
             for d, t in active[:5]:
@@ -437,7 +445,7 @@ def main():
             print(f"missingFiles (dead, files gone): {len(missing)}")
         if a.days == 7:
             state_file["qbit"] = {"ts": time.time(), "ul": ul, "dl": dl}
-            state_file["qbit_torrents"] = {t["hash"]: t.get("uploaded", 0) for t in torrents}
+            state_file["qbit_torrents"] = {t["hash"]: [t.get("uploaded", 0), t.get("size", 0)] for t in torrents}
     except Exception as e:  # noqa: BLE001
         fail("qbittorrent", e)
 

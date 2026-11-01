@@ -55,11 +55,11 @@ jobs:
 
       English, Telegram markdown, no tables, at most ~40 lines. Times are Vilnius time, as in the output. Leave out any section with nothing to report.
 
-      1. Headline: "📺 Media week <first day> – <last day>", then one line: requests, GB added to the library, torrents/TB cleaned up, free space.
+      1. Headline: "📺 Media week <first day> – <last day>", then one line: requests, GB added to the library, torrents cleaned up (and their size when given), free space.
       2. 🙋 Requests: a ranked bar chart of requests per user (█ bars, 10 chars wide, count at the end). Then one line per request: ✅ available (and how fast, if "ready ... after the request" is given), ⏳ waiting + the reason from the output, 🎬 not released yet + the date.
       3. 📥 New in the library: title, quality, size, "requested by" when known. For TV, group episodes per season. Total at the end.
       4. ⬆️ Upgrades: title, quality, new size vs replaced size, and the net space change. Mention a notable custom format (Atmos/DTS:X, Remux) when present.
-      5. 🧹 Cleanuparr: torrents deleted by the download cleaner (count, ratio vs seed-time split, average ratio and seeding days), with one fun fact (longest seeded or best ratio). Queue removals and the most-struck download, if any. Seeker: searches run and what they found.
+      5. 🧹 Cleanuparr: torrents deleted by the download cleaner (count, total size when given, ratio vs seed-time split, average ratio and seeding days), with one fun fact (longest seeded or best ratio). Queue removals and the most-struck download, if any. Seeker: searches run and what they found.
       6. 🌱 Seeding (qBittorrent): uploaded and downloaded this week, top 3 seeders, torrents added, stuck or dead torrents.
       7. 💾 Storage: a 10-char ▓░ gauge of used/total for the /data pool, free space and its change this week; library size per instance with the change since the last report (skip instances that are empty).
       8. 🍿 Watched on Plex: total plays, top viewers (counts only), the most watched titles, movies watched.
