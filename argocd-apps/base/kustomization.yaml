@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
 - ./root-app.yaml
+- ./legacy-namespaces.yaml
 - ./apps/cilium
 - ./apps/gateway-api-crds
 - ./apps/cilium-gateway
