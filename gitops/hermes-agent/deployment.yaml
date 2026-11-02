@@ -152,10 +152,11 @@ spec:
           mountPath: /opt/data
         - name: dshm
           mountPath: /dev/shm
-        # read-only: the container runs as root
+        # read-write (Aurimas, 2026-11-02): Hermes cleans the media library itself (duplicate copies,
+        # leftover torrent files, folder moves). The container runs as root, so prefer the *arr/Plex/qBit
+        # APIs; for direct changes only delete or rename, and chown anything new to 1000:1000.
         - name: media
           mountPath: /data
-          readOnly: true
         # on the image PATH and empty in debian
         - name: tools
           mountPath: /usr/local/sbin
