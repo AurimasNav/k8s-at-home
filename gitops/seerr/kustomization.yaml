@@ -13,5 +13,5 @@ images:
 # (see GitVersion.yml in that repo), pinned by digest. Renovate compares the
 # build number numerically (packageRule in renovate.json).
 - name: ghcr.io/aurimasnav/vseerr
-  newTag: 3.5.1-vseerr.31
-  digest: sha256:6e0b87ee1501cff26fc6397b2328f74db6dd0a8573cd249d0b6aa90b8ae762c8
+  newTag: 3.5.1-vseerr.32
+  digest: sha256:120aa88d42c4c517c9a994db0c791d7d08813390211e5323b491f2652dc4b748
