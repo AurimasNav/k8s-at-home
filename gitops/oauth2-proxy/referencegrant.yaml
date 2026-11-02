@@ -1,7 +1,19 @@
 # Lets HTTPRoutes in these namespaces use this oauth2-proxy as their ExternalAuth backend
 # (Cilium gateway). Add a namespace here when its route gets the Google login.
 # Radarr/Sonarr (all six) are not here: they use their own Google sign-in instead.
-# victoriametrics: only Grafana's /metrics still uses it.
+# victoriametrics: only Grafana's /metrics still uses it. Cleanuparr uses its own Google sign-in.
+#
+# How a route uses it (the ExternalAuth filter in e.g. gitops/prowlarr/httproute.yaml):
+# Rule: a request without a valid _oauth2_proxy cookie never reaches the app.
+#   - Browser: oauth2-proxy answers 403 with its sign-in page; the page's script sends the
+#     browser to https://login.sync.lt/oauth2/start?rd=<this URL> (one Google callback for all).
+#   - Accept: application/json: 401.
+# http.path /_authz is required: it prefixes every check path, so a check never hits one of
+# oauth2-proxy's own endpoints. Without it /ping, /ready, /robots.txt, /oauth2/sign_in and
+# /oauth2/static/* answer 200 without a session, and Envoy would pass those requests on to
+# the app unauthenticated.
+# allowedResponseHeaders must stay an explicit list: empty means "copy every auth response
+# header into the request", which would overwrite e.g. Content-Type.
 apiVersion: gateway.networking.k8s.io/v1
 kind: ReferenceGrant
 metadata:
@@ -9,9 +21,6 @@ metadata:
   namespace: oauth2-proxy
 spec:
   from:
-  - group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    namespace: cleanuparr
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: homebox
