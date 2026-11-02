@@ -21,6 +21,25 @@ spec:
     spec:
       serviceAccountName: hermes-agent
       initContainers:
+      # one-time move of the PVC from the image's hermes uid (10000) to 1000:1000, the owner of the media
+      # disks (HERMES_UID below). Marker-gated, so later starts skip the walk; never blocks the pod.
+      - name: owner-1000
+        image: nousresearch/hermes-agent:latest
+        command: ["sh", "-c"]
+        args:
+        - >-
+          m=/opt/data/.owner-1000;
+          [ -f "$m" ] && exit 0;
+          t=$(date +%s);
+          if find /opt/data -xdev \( -uid 10000 -o -gid 10000 \) -exec chown -h 1000:1000 {} +; then
+          touch "$m" && chown 1000:1000 "$m" && echo "owner-1000: done in $(( $(date +%s) - t ))s";
+          else echo "owner-1000: chown failed, will retry on the next start"; fi;
+          exit 0
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: data
+          mountPath: /opt/data
       - name: kubectl
         image: alpine/k8s:latest
         command: ["sh", "-c", "cp \"$(command -v kubectl)\" /tools/"]
@@ -69,8 +88,8 @@ spec:
         - name: HOME
           value: /tmp
         securityContext:
-          runAsUser: 10000
-          runAsGroup: 10000
+          runAsUser: 1000
+          runAsGroup: 1000
         volumeMounts:
         - name: patches
           mountPath: /patches
@@ -85,8 +104,8 @@ spec:
         - name: HERMES_HOME
           value: /opt/data
         securityContext:
-          runAsUser: 10000
-          runAsGroup: 10000
+          runAsUser: 1000
+          runAsGroup: 1000
         volumeMounts:
         - name: data
           mountPath: /opt/data
@@ -118,8 +137,8 @@ spec:
         - name: UV_NO_CONFIG
           value: "1"
         securityContext:
-          runAsUser: 10000
-          runAsGroup: 10000
+          runAsUser: 1000
+          runAsGroup: 1000
         volumeMounts:
         - name: data
           mountPath: /opt/data
@@ -130,6 +149,13 @@ spec:
       - name: hermes-agent
         image: nousresearch/hermes-agent:latest
         args: ["gateway", "run"]
+        # the image remaps its hermes user to this uid/gid at boot; 1000:1000 owns the media disks (/data),
+        # so Hermes can clean them up itself (Aurimas, 2026-11-02)
+        env:
+        - name: HERMES_UID
+          value: "1000"
+        - name: HERMES_GID
+          value: "1000"
         envFrom:
         - configMapRef:
             name: hermes-agent
@@ -153,8 +179,8 @@ spec:
         - name: dshm
           mountPath: /dev/shm
         # read-write (Aurimas, 2026-11-02): Hermes cleans the media library itself (duplicate copies,
-        # leftover torrent files, folder moves). The container runs as root, so prefer the *arr/Plex/qBit
-        # APIs; for direct changes only delete or rename, and chown anything new to 1000:1000.
+        # leftover torrent files, folder moves) as uid 1000, the arrs' user. Prefer the *arr/Plex/qBit
+        # APIs; direct changes are deletes or renames only.
         - name: media
           mountPath: /data
         # on the image PATH and empty in debian
