@@ -214,3 +214,364 @@ spec:
       keepDaily: 7
       keepWeekly: 4
       keepMonthly: 6
+---
+# Media apps (configs + databases; media files are not backed up). 30 minutes after the others.
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: plex
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/plex
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: sonarr
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/sonarr
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: sonarr-ru
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/sonarr-ru
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: sonarr-lt
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/sonarr-lt
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: radarr
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/radarr
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: radarr-ru
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/radarr-ru
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: radarr-lt
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/radarr-lt
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: prowlarr
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/prowlarr
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: seerr
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/seerr
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: qbittorrent
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/qbittorrent
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "30 3 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "30 5 * * 0"
+  prune:
+    schedule: "30 4 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6
