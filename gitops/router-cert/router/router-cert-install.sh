@@ -1,5 +1,5 @@
 #!/bin/sh
-# Installs the Let's Encrypt certificate for the router's web UI (https://gw.sync.lt:8443).
+# Installs the Let's Encrypt certificate for the router's web UI (https://gw.sync.lt).
 #
 # Lives on the router as /jffs/scripts/router-cert-install.sh. It is the forced command of the
 # router-cert SSH key (nvram sshd_authkeys: command="...",restrict), so that key can run
