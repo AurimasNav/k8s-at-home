@@ -20,6 +20,28 @@ spec:
         app: rest-server
     spec:
       initContainers:
+      # One-time move from the system SSD (/var/backups/restic) to the media disk. Copies only when
+      # the new location is still empty; the old directory is left in place (delete by hand later).
+      - name: migrate
+        image: restic/rest-server:latest
+        command:
+        - sh
+        - -c
+        - |
+          set -eu
+          if [ -z "$(ls -A /data)" ] && [ -n "$(ls -A /old 2>/dev/null)" ]; then
+            echo "copying /old -> /data"
+            cp -a /old/. /data/
+            echo "done: $(du -sh /data | cut -f1)"
+          else
+            echo "nothing to copy"
+          fi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: old-data
+          mountPath: /old
+          readOnly: true
       - name: htpasswd
         image: restic/rest-server:latest
         command: ["sh", "-c", "htpasswd -B -b -c /auth/.htpasswd k8up \"$REST_PASSWORD\""]
@@ -58,8 +80,14 @@ spec:
       volumes:
       - name: auth
         emptyDir: {}
-      # point at the second disk's mount once it exists
+      # Media disk hdd2 (20 TB), not the system SSD the backed-up PVCs live on. The disk itself,
+      # not the mergerfs pool (/data): a restic repository must stay on one disk.
       - name: data
+        hostPath:
+          path: /mnt/hdd2/.backups/restic
+          type: Directory
+      # previous location, read only by the migrate init container
+      - name: old-data
         hostPath:
           path: /var/backups/restic
           type: DirectoryOrCreate
