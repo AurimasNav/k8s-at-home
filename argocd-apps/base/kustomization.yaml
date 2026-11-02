@@ -42,5 +42,6 @@ resources:
 - ./apps/telegram-dl
 - ./apps/homebox
 - ./apps/k8up
+- ./apps/smartctl-exporter
 - ./apps/cleanuparr
 - ./apps/cloudflared

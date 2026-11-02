@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# smartctl_exporter (https://github.com/prometheus-community/smartctl_exporter): SMART
+# health of the node's disks (system SSD + the three 22 TB media disks, which have no
+# redundancy) for VictoriaMetrics, with alerts to Telegram via Alertmanager.
+namespace: smartctl-exporter
+
+resources:
+- ./daemonset.yaml
+- ./service.yaml
+- ./monitoring.yaml

@@ -15,6 +15,9 @@ misconfigurations:
   - id: KSV-0017
     paths: [gitops/otbr/deployment.yaml, gitops/matter-server/deployment.yaml]
     statement: privileged is needed for the USB radio and IPv6 sysctls.
+  - id: KSV-0017
+    paths: [gitops/smartctl-exporter/daemonset.yaml]
+    statement: smartctl needs raw SMART/ATA passthrough on the host disks (read-only use).
   - id: KSV-0121
     paths: [gitops/otbr/deployment.yaml]
     statement: /dev hostPath is needed for the Thread USB dongle.

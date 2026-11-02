@@ -1,0 +1,70 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: smartctl-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: smartctl-exporter
+  endpoints:
+  - port: http
+    interval: 5m
+    scrapeTimeout: 2m
+---
+# Early signs of disk failure. Media disks sdb-sdd are single copies (mergerfs, no
+# parity), so warnings here are the cue to replace a disk before it dies.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: smartctl-exporter
+spec:
+  groups:
+  - name: disk-health
+    rules:
+    - alert: DiskSmartFailed
+      expr: smartctl_device_smart_status == 0
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Disk {{ $labels.device }} failed its SMART self-assessment; replace it"
+    - alert: DiskReallocatedSectorsGrowing
+      expr: delta(smartctl_device_attribute{attribute_name="Reallocated_Sector_Ct", attribute_value_type="raw"}[24h]) > 0
+      labels:
+        severity: critical
+      annotations:
+        summary: "Disk {{ $labels.device }} reallocated more sectors in the last 24 h (now {{ $value }} more)"
+    - alert: DiskReallocatedSectors
+      expr: smartctl_device_attribute{attribute_name="Reallocated_Sector_Ct", attribute_value_type="raw"} > 0
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "Disk {{ $labels.device }} has {{ $value }} reallocated sectors"
+    - alert: DiskPendingSectors
+      expr: smartctl_device_attribute{attribute_name=~"Current_Pending_Sector|Offline_Uncorrectable", attribute_value_type="raw"} > 0
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "Disk {{ $labels.device }}: {{ $value }} {{ $labels.attribute_name }} (unreadable sectors)"
+    - alert: DiskCrcErrors
+      expr: increase(smartctl_device_attribute{attribute_name="UDMA_CRC_Error_Count", attribute_value_type="raw"}[1h]) > 0
+      labels:
+        severity: warning
+      annotations:
+        summary: "Disk {{ $labels.device }} has new SATA CRC errors (check the cable/port)"
+    - alert: DiskTooHot
+      expr: smartctl_device_temperature{temperature_type="current"} > 55
+      for: 30m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Disk {{ $labels.device }} is at {{ $value }} °C"
+    - alert: DiskSmartDataMissing
+      expr: absent(smartctl_device_smart_status) or smartctl_devices < 4
+      for: 2h
+      labels:
+        severity: warning
+      annotations:
+        summary: "smartctl-exporter reports no or fewer disks than expected (4)"
