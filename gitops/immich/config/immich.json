@@ -26,7 +26,16 @@
     "enabled": false
   },
   "oauth": {
-    "enabled": false
+    "enabled": true,
+    "issuerUrl": "https://accounts.google.com",
+    "clientId": "",
+    "clientSecret": "",
+    "scope": "openid email profile",
+    "buttonText": "Sign in with Google",
+    "autoRegister": false,
+    "autoLaunch": false,
+    "mobileOverrideEnabled": true,
+    "mobileRedirectUri": "https://photos.sync.lt/api/oauth/mobile-redirect"
   },
   "passwordLogin": {
     "enabled": true
