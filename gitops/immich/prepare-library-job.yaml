@@ -1,0 +1,54 @@
+# Creates the photo library directory on media disk hdd0 before the PV (library-pv.yaml) is used.
+# It refuses to run when the disk is not mounted (no lost+found), so photos can never land on the
+# system SSD under an empty mountpoint. The media tree is owned by 1000:1000, the uid Immich runs as.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: immich-prepare-library
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: prepare
+        image: busybox:1.38.0
+        command:
+        - sh
+        - -ec
+        - |
+          test -d /disk/lost+found || { echo "hdd0 is not mounted at /mnt/hdd0"; exit 1; }
+          test -d /disk/media
+          mkdir -p /disk/media/immich
+          ls -ldn /disk/media/immich
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: hdd0
+          mountPath: /disk
+      volumes:
+      - name: hdd0
+        hostPath:
+          path: /mnt/hdd0
+          type: Directory

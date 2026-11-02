@@ -44,3 +44,4 @@ resources:
 - ./apps/smartctl-exporter
 - ./apps/cleanuparr
 - ./apps/cloudflared
+- ./apps/immich

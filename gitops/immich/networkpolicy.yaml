@@ -1,0 +1,161 @@
+# Immich holds the family's photos, so each part only talks to what it needs.
+# server: from the gateway (photos.sync.lt), kubelet probes and Hermes (setup, health checks);
+#   to Postgres, Valkey and machine learning. No internet (version check is off; map tiles and
+#   the web UI's other assets are loaded by the browser, not the server).
+# machine-learning: from the server; to the internet on 443 only (model downloads from Hugging Face).
+# postgres / valkey: from the server only (ingress rules only; they open no connections of their own).
+# k8up backup pods are not selected here (they reach rest-server in the k8up namespace).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: immich-server
+spec:
+  endpointSelector:
+    matchLabels:
+      app: immich-server
+  ingress:
+  - fromEntities:
+    - host
+    # Cilium gateway (Envoy) traffic has the reserved "ingress" identity.
+    - ingress
+    toPorts:
+    - ports:
+      - port: "2283"
+        protocol: TCP
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: hermes-agent
+        app: hermes-agent
+    toPorts:
+    - ports:
+      - port: "2283"
+        protocol: TCP
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+  - toEndpoints:
+    - matchLabels:
+        app: immich-postgres
+    toPorts:
+    - ports:
+      - port: "5432"
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        app: immich-valkey
+    toPorts:
+    - ports:
+      - port: "6379"
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        app: immich-machine-learning
+    toPorts:
+    - ports:
+      - port: "3003"
+        protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: immich-machine-learning
+spec:
+  endpointSelector:
+    matchLabels:
+      app: immich-machine-learning
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: immich-server
+    toPorts:
+    - ports:
+      - port: "3003"
+        protocol: TCP
+  - fromEntities:
+    - host
+    toPorts:
+    - ports:
+      - port: "3003"
+        protocol: TCP
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+  - toEntities:
+    - world
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: immich-postgres
+spec:
+  endpointSelector:
+    matchLabels:
+      app: immich-postgres
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: immich-server
+    toPorts:
+    - ports:
+      - port: "5432"
+        protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: immich-valkey
+spec:
+  endpointSelector:
+    matchLabels:
+      app: immich-valkey
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: immich-server
+    toPorts:
+    - ports:
+      - port: "6379"
+        protocol: TCP
+---
+# The hourly Plex refresh (plex-refresh-cronjob.yaml) only talks to Plex.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: immich-plex-refresh
+spec:
+  endpointSelector:
+    matchLabels:
+      app: immich-plex-refresh
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: plex
+        app: plex
+    toPorts:
+    - ports:
+      - port: "32400"
+        protocol: TCP

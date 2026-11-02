@@ -1,0 +1,26 @@
+# photos.sync.lt through the Cloudflare Tunnel. No Google login (ExternalAuth): the Immich phone
+# apps can't pass it, so Immich's own login protects it. Cloudflare limits one request to 100 MB,
+# which only matters for long videos.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: immich
+spec:
+  parentRefs:
+  - name: main
+    namespace: cilium-gateway
+    sectionName: https-tunnel
+  hostnames:
+  - photos.sync.lt
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    # Envoy's default is 15 s for the whole response; 0s turns that off (uploads, downloads of
+    # albums). Idle connections still close after 300 s.
+    timeouts:
+      request: 0s
+    backendRefs:
+    - name: immich-server
+      port: 2283
