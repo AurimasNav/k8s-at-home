@@ -194,6 +194,20 @@ def sync_seeding_rules(wanted_by_client):
             print(f"seeding rules ({client_name}): reordered")
 
 
+def sync_oidc(desired):
+    """Google sign-in. The client secret is never read back (the API masks it), so the config
+    is written on every run; the linked Google account (AuthorizedSubject) is left alone."""
+    if not desired:
+        return
+    body = {k: v for k, v in desired.items() if not k.startswith("_")}
+    body["clientId"] = os.environ["GOOGLE_OAUTH_CLIENT_ID"]
+    body["clientSecret"] = os.environ["GOOGLE_OAUTH_CLIENT_SECRET"]
+    call("PUT", "/api/account/oidc", body)
+    _, now = call("GET", "/api/account/oidc")
+    linked = bool(now.get("authorizedSubject"))
+    print(f"oidc: enabled={now.get('enabled')} linked={'yes' if linked else 'NO (link it in Settings > Account)'}")
+
+
 def sync_rules(kind, wanted):
     _, rules = call("GET", f"/api/queue-rules/{kind}")
     existing = {r["name"]: r for r in rules}
@@ -247,6 +261,7 @@ def main():
 
     # Dry Run and the auth hardening go first, before Cleanuparr knows any instance.
     apply_settings("general", "/api/configuration/general", desired["general"])
+    sync_oidc(desired.get("oidc"))
 
     sync_arr("radarr", desired.get("radarr", []))
     sync_arr("sonarr", desired.get("sonarr", []))

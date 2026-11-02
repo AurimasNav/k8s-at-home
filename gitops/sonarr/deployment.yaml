@@ -4,8 +4,14 @@ metadata:
   name: sonarr
   labels:
     app: sonarr
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
+  # Stop the old pod before starting the new one: two Sonarr instances must never
+  # share the /config SQLite DB (RWO local-path PVC).
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: sonarr
@@ -22,6 +28,8 @@ spec:
         - containerPort: 8989
         envFrom:
         - configMapRef:
+            name: sonarr
+        - secretRef:
             name: sonarr
         volumeMounts:
         - name: sonarr-config

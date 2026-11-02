@@ -1,8 +1,8 @@
 # Cleanuparr holds the Radarr/Sonarr API keys, so it only talks to what it needs.
 # Ingress: the Cilium gateway (behind oauth2-proxy), Hermes (health/API checks), the
 # setup Job and kubelet probes. Egress: DNS, every Radarr/Sonarr instance (main, -ru, -lt),
-# qBittorrent, plus HTTPS to the official malware blocklists (cleanuparr.pages.dev) and
-# the Telegram bot API.
+# qBittorrent, plus HTTPS to the official malware blocklists (cleanuparr.pages.dev),
+# the Telegram bot API and Google (sign-in).
 # Everything else is dropped (no update check, no other phone-home).
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -102,6 +102,11 @@ spec:
   - toFQDNs:
     - matchName: cleanuparr.pages.dev
     - matchName: api.telegram.org
+    # Google sign-in: discovery, token, userinfo and signing keys
+    - matchName: accounts.google.com
+    - matchName: oauth2.googleapis.com
+    - matchName: openidconnect.googleapis.com
+    - matchName: www.googleapis.com
     toPorts:
     - ports:
       - port: "443"
