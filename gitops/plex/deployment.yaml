@@ -50,9 +50,12 @@ spec:
       - name: plex-config
         persistentVolumeClaim:
           claimName: plex-config
+      # Transcoder scratch space on media disk hdd2 instead of a 1 TiB PVC on the 226 GB system
+      # disk, where a long transcode could fill the disk every pod and k3s itself runs on.
       - name: plex-transcode
-        persistentVolumeClaim:
-          claimName: plex-transcode
+        hostPath:
+          path: /mnt/hdd2/.plex-transcode
+          type: Directory
       - name: data
         hostPath:
           path: /data
