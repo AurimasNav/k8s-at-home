@@ -8,5 +8,13 @@ data:
   TZ: Europe/Vilnius
   RADARR__APP__INSTANCENAME: Radarr LT
   # Web UI: https://radarr-lt.sync.lt behind the Google login (httproute.yaml).
-  RADARR__AUTH__METHOD: External
-  RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
+  # Google sign-in (Radarr/Sonarr v7/v5 develop OIDC). Only the Doppler ADMIN_GOOGLE_EMAIL account
+  # may log in (OIDCUSERIDENTIFIER, from the ExternalSecret). Required=Enabled: every request goes
+  # through the gateway pod (a private IP), so "disabled for local addresses" would skip the login.
+  # API-key calls (Seerr/VSeerr, Prowlarr, Cleanuparr, Hermes, Homepage) are unaffected.
+  # TRUSTEDNETWORKS (pod CIDR) lets the app read X-Forwarded-Proto from the gateway, so the
+  # Google redirect is https://<host>/signin-oidc.
+  RADARR__AUTH__METHOD: Oidc
+  RADARR__AUTH__REQUIRED: Enabled
+  RADARR__AUTH__OIDCAUTHORITY: https://accounts.google.com
+  RADARR__SERVER__TRUSTEDNETWORKS: 10.42.0.0/16

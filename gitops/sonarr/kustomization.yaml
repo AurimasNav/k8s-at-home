@@ -6,4 +6,5 @@ resources:
 - ./httproute.yaml
 - ./service.yaml
 - ./configmap.yaml
+- ./externalsecret.yaml
 - ./pvc.yaml

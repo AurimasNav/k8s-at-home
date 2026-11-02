@@ -2,6 +2,25 @@ grafana:
   admin:
     existingSecret: grafana-admin
     passwordKey: admin-password
+  # Google sign-in. Client id/secret and the role rule (Doppler ADMIN_GOOGLE_EMAIL becomes
+  # GrafanaAdmin, any other account is refused: role_attribute_strict) come from the
+  # grafana-google Secret (externalsecret.yaml) as GF_AUTH_GOOGLE_* env vars.
+  # The local admin/password login stays as the fallback.
+  envFromSecrets:
+  - name: grafana-google
+  grafana.ini:
+    server:
+      domain: grafana.sync.lt
+      root_url: https://grafana.sync.lt
+    auth.google:
+      enabled: true
+      allow_sign_up: true
+      auto_login: false
+      scopes: openid email profile
+      use_pkce: true
+      allow_assign_grafana_admin: true
+      skip_org_role_sync: false
+      role_attribute_strict: true
 
 # k3s runs the scheduler, the controller-manager and its datastore (SQLite through kine, no etcd)
 # inside the single k3s process. There is no separate endpoint to scrape: these scrapes found no

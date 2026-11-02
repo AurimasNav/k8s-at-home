@@ -2,6 +2,15 @@
   "account": {
     "username": "aurimas"
   },
+  "oidc": {
+    "_comment": "Google sign-in. Client id/secret from env (shared Google OAuth client). The allowed Google account is linked once in Settings > Account (stored by Cleanuparr, not here). exclusiveMode stays false: the setup job logs in with the password.",
+    "enabled": true,
+    "issuerUrl": "https://accounts.google.com",
+    "scopes": "openid profile email",
+    "providerName": "Google",
+    "redirectUrl": "https://cleanuparr.sync.lt",
+    "exclusiveMode": false
+  },
   "general": {
     "dryRun": false,
     "statusCheckEnabled": false,

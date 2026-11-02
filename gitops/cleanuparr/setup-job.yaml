@@ -13,6 +13,10 @@ spec:
     kind: ClusterSecretStore
   target:
     name: cleanuparr-setup
+  dataFrom:
+  # Shared Google OAuth client for Cleanuparr's Google sign-in (setup.py sync_oidc).
+  - extract:
+      key: GOOGLE_OAUTH_JSON
   data:
   # Login of the Cleanuparr account (Doppler, 32 chars).
   - secretKey: CLEANUPARR_PASSWORD
