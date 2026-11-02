@@ -2,3 +2,105 @@ grafana:
   admin:
     existingSecret: grafana-admin
     passwordKey: admin-password
+
+# k3s runs the scheduler, the controller-manager and its datastore (SQLite through kine, no etcd)
+# inside the single k3s process. There is no separate endpoint to scrape: these scrapes found no
+# targets and fired KubeSchedulerDown / KubeControllerManagerDown / ScrapePoolHasNoTargets around
+# the clock. Disabling them also drops their rule groups (kube-scheduler.rules,
+# kubernetes-system-scheduler, kubernetes-system-controller-manager).
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeEtcd:
+  enabled: false
+
+defaultRules:
+  groups:
+    # etcd alerts: there is no etcd (see above).
+    etcd:
+      enabled: false
+
+# k3s serves the metrics of every embedded component (API server, scheduler, controllers) on the
+# API server port AND again on the kubelet port. The kubelet scrape therefore keeps only the
+# kubelet-level metrics; the API server scrape keeps the rest. Together they were ~180k of ~230k
+# series, and vmagent was CPU-throttled 40% of the time on this 2-core host.
+kubelet:
+  vmScrapes:
+    kubelet:
+      spec:
+        metricRelabelConfigs:
+        # chart defaults (this list replaces them)
+        - action: labeldrop
+          regex: (uid)
+        - action: labeldrop
+          regex: (id|name)
+        - action: drop
+          source_labels: [__name__]
+          regex: (rest_client_request_duration_seconds_bucket|rest_client_request_duration_seconds_sum|rest_client_request_duration_seconds_count)
+        # only what the kubelet dashboard and rules read; the rest duplicates the API server scrape
+        - action: keep
+          source_labels: [__name__]
+          regex: (kubelet_.*|volume_manager_.*|storage_operation_.*|process_.*|go_.*|rest_client_requests_total)
+
+kubeApiServer:
+  vmScrape:
+    spec:
+      endpoints:
+      # chart default endpoint (this list replaces it) + metricRelabelConfigs
+      - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+        port: https
+        scheme: https
+        tlsConfig:
+          caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          serverName: kubernetes
+        metricRelabelConfigs:
+        # histograms that no rule or dashboard reads
+        - action: drop
+          source_labels: [__name__]
+          regex: (etcd_request_duration_seconds_bucket|apiserver_request_body_size_bytes_bucket|apiserver_response_sizes_bucket|apiserver_watch_list_duration_seconds_bucket|apiserver_watch_cache_read_wait_seconds_bucket|apiserver_watch_events_sizes_bucket|apiserver_admission_controller_admission_duration_seconds_bucket|apiserver_flowcontrol_.*_bucket|workqueue_work_duration_seconds_bucket|scheduler_plugin_execution_duration_seconds_bucket|scheduler_event_handling_duration_seconds_bucket|kubernetes_feature_enabled)
+        # request latency: keep the buckets the SLO rules use (le 1, 5, 30, +Inf) plus 0.1 and 0.4
+        # for the dashboard's percentiles; drop the other 18
+        - action: drop
+          source_labels: [__name__, le]
+          regex: (apiserver_request_duration_seconds_bucket|apiserver_request_sli_duration_seconds_bucket);(0\.005|0\.025|0\.05|0\.2|0\.6|0\.8|1\.25|1\.5|2|3|4|6|8|10|15|20|45|60)
+
+# Alerts go to the "Home server" Telegram topic through the Hermes bot (token and chat from
+# Doppler, externalsecret-alertmanager.yaml). Watchdog and info-level alerts stay silent.
+alertmanager:
+  spec:
+    secrets:
+    - alertmanager-telegram
+  config:
+    route:
+      receiver: telegram
+      group_by: [alertname, namespace]
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 24h
+      routes:
+      - receiver: blackhole
+        matchers:
+        - 'alertname=~"Watchdog|InfoInhibitor"'
+      - receiver: blackhole
+        matchers:
+        - 'severity!~"warning|critical"'
+    inhibit_rules:
+    - source_matchers:
+      - 'severity="critical"'
+      target_matchers:
+      - 'severity="warning"'
+      equal: [alertname, namespace]
+    receivers:
+    - name: blackhole
+    - name: telegram
+      telegram_configs:
+      - bot_token_file: /etc/vm/secrets/alertmanager-telegram/bot-token
+        chat_id_file: /etc/vm/secrets/alertmanager-telegram/chat-id
+        message_thread_id: 501
+        send_resolved: true
+        parse_mode: HTML
+        message: |-
+          {{ range .Alerts }}{{ if eq .Status "firing" }}🔴{{ else }}✅{{ end }} <b>{{ .Labels.alertname | html }}</b>{{ with .Labels.namespace }} · {{ . | html }}{{ end }}{{ with .Labels.severity }} ({{ . | html }}){{ end }}
+          {{ with .Annotations.summary }}{{ . | html }}{{ else }}{{ with .Annotations.description }}{{ . | html }}{{ end }}{{ end }}
+          {{ end }}
