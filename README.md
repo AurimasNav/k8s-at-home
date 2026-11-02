@@ -15,6 +15,7 @@
     - [Deploy argo-cd applications](#deploy-argo-cd-applications)
     - [Update argo-cd password](#update-argo-cd-password)
   - [Blocky / Unbound (LAN DNS)](#blocky--unbound-lan-dns)
+  - [Router web UI certificate (gw.sync.lt)](#router-web-ui-certificate-gwsynclt)
   - [Alternative UI for qBittorrent | Mobile friendly iQbit](#alternative-ui-for-qbittorrent--mobile-friendly-iqbit)
 
 
@@ -362,6 +363,13 @@
 - The router's DHCP hands out 192.168.1.152. The k3s host itself resolves through the router, so it can pull images after a reboot.
 
 
+
+## Router web UI certificate (gw.sync.lt)
+
+- The router's web UI has a Let's Encrypt certificate: `https://gw.sync.lt:8443` (LAN only; `gw.sync.lt` has no public DNS record, Blocky answers 192.168.1.1). `http://192.168.1.1` still works.
+- `gitops/router-cert`: cert-manager gets and renews the certificate (DNS-01). A Job after each sync and a daily CronJob send it to the router over SSH.
+- The SSH key is Doppler `ROUTER_CERT_SSH_KEY`. On the router it is in nvram `sshd_authkeys` with a forced command, so it can only run `/jffs/scripts/router-cert-install.sh` (copy in `gitops/router-cert/router/`). The script checks the certificate (Let's Encrypt, only gw.sync.lt, key matches) before installing it and restarting the web UI.
+- Router settings: `http_enable=2` (HTTP and HTTPS), `https_lanport=8443`, `le_enable=2` (uploaded certificate in `/jffs/.cert`).
 
 ## Alternative UI for qBittorrent | [Mobile friendly iQbit](https://github.com/ntoporcov/iQbit)
 
