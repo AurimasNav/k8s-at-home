@@ -267,7 +267,7 @@
       "minCompletionPercentage": 0,
       "maxCompletionPercentage": 1,
       "resetStrikesOnProgress": true,
-      "deletePrivateTorrentsFromClient": false,
+      "deletePrivateTorrentsFromClient": true,
       "changeCategory": false
     }
   ],
