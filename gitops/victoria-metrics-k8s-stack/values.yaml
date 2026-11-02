@@ -65,6 +65,17 @@ kubeApiServer:
           source_labels: [__name__, le]
           regex: (apiserver_request_duration_seconds_bucket|apiserver_request_sli_duration_seconds_bucket);(0\.005|0\.025|0\.05|0\.2|0\.6|0\.8|1\.25|1\.5|2|3|4|6|8|10|15|20|45|60)
 
+# vmagent uses ~0.05 cores on average but scrapes in short bursts; the operator's default 200m CPU
+# limit throttled it ~40% of the time. A CPU request without a limit stops the operator adding one.
+vmagent:
+  spec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 200Mi
+      limits:
+        memory: 500Mi
+
 # Alerts go to the "Home server" Telegram topic through the Hermes bot (token and chat from
 # Doppler, externalsecret-alertmanager.yaml). Watchdog and info-level alerts stay silent.
 alertmanager:
