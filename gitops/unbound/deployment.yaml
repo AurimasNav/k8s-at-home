@@ -9,7 +9,14 @@ metadata:
     # restart on unbound.conf changes (subPath mounts never update in place)
     reloader.stakater.com/auto: "true"
 spec:
-  replicas: 1
+  # Two pods: Blocky (and so every LAN device) forwards here. One pod could be stopped by a restart
+  # or a node drain; the Service only sends queries to pods that answer on port 53.
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: unbound
@@ -37,6 +44,17 @@ spec:
         - name: unbound-config
           mountPath: /opt/unbound/etc/unbound/unbound.conf
           subPath: unbound.conf
+        readinessProbe:
+          tcpSocket:
+            port: dns-tcp
+          periodSeconds: 10
+        # 7-day peak per pod: ~11 MiB, under 1m CPU
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
