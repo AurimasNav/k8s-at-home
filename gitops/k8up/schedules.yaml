@@ -575,3 +575,42 @@ spec:
       keepDaily: 7
       keepWeekly: 4
       keepMonthly: 6
+---
+# Immich: the photo library on hdd0 (photos, thumbnails and Immich's own nightly database dump
+# at 02:00 in library/backups). Runs after the 03:00/03:30 groups; Postgres and model-cache PVCs
+# are excluded with k8up.io/backup: "false".
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  name: backup
+  namespace: immich
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backend:
+    repoPasswordSecretRef:
+      name: k8up-restic
+      key: RESTIC_PASSWORD
+    rest:
+      url: http://rest-server.k8up.svc.cluster.local:8000/immich
+      userSecretRef:
+        name: k8up-restic
+        key: REST_USER
+      passwordSecretReg:
+        name: k8up-restic
+        key: REST_PASSWORD
+  podSecurityContext:
+    runAsUser: 0
+  backup:
+    schedule: "0 4 * * *"
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+  check:
+    schedule: "0 6 * * 0"
+  prune:
+    schedule: "15 5 * * 0"
+    retention:
+      keepDaily: 7
+      keepWeekly: 4
+      keepMonthly: 6

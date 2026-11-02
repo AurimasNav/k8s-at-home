@@ -1,0 +1,104 @@
+# Immich server: web UI, API (phone apps) and the background workers (thumbnails, metadata,
+# storage template). Runs as 1000:1000, the owner of the media tree, so Plex can read the files.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  labels:
+    app: immich-server
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: immich-server
+  template:
+    metadata:
+      labels:
+        app: immich-server
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: server
+        image: ghcr.io/immich-app/immich-server:v3.3.5
+        ports:
+        - containerPort: 2283
+        env:
+        - name: TZ
+          value: Europe/Vilnius
+        - name: IMMICH_CONFIG_FILE
+          value: /config/immich.json
+        - name: DB_HOSTNAME
+          value: immich-postgres
+        - name: DB_USERNAME
+          value: postgres
+        - name: DB_DATABASE_NAME
+          value: immich
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: immich-db
+              key: DB_PASSWORD
+        - name: REDIS_HOSTNAME
+          value: immich-valkey
+        startupProbe:
+          httpGet:
+            path: /api/server/ping
+            port: 2283
+          periodSeconds: 10
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /api/server/ping
+            port: 2283
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/server/ping
+            port: 2283
+          periodSeconds: 30
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: library
+          mountPath: /data
+        - name: config
+          mountPath: /config
+          readOnly: true
+      volumes:
+      - name: library
+        persistentVolumeClaim:
+          claimName: immich-library
+      - name: config
+        configMap:
+          name: immich-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-server
+spec:
+  selector:
+    app: immich-server
+  ports:
+  - name: http
+    port: 2283
+    targetPort: 2283

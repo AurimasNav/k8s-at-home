@@ -1,0 +1,104 @@
+# Face recognition, smart search (CLIP) and OCR. CPU only: the pod has no GPU.
+# It unloads its models after 5 minutes idle (MACHINE_LEARNING_MODEL_TTL), so it holds memory
+# only while photos are being processed. A CPU request without a limit: it gets a small share
+# when Plex or qBittorrent are busy and the whole CPU when the host is idle.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-ml-cache
+  annotations:
+    # Downloaded models; re-downloaded when missing.
+    k8up.io/backup: "false"
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-machine-learning
+  labels:
+    app: immich-machine-learning
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: immich-machine-learning
+  template:
+    metadata:
+      labels:
+        app: immich-machine-learning
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: machine-learning
+        image: ghcr.io/immich-app/immich-machine-learning:v3.3.5
+        ports:
+        - containerPort: 3003
+        env:
+        - name: MACHINE_LEARNING_MODEL_TTL
+          value: "300"
+        - name: MACHINE_LEARNING_CACHE_FOLDER
+          value: /cache
+        - name: TRANSFORMERS_CACHE
+          value: /cache
+        - name: HF_XET_CACHE
+          value: /cache/huggingface-xet
+        - name: MPLCONFIGDIR
+          value: /cache/matplotlib-config
+        - name: TZ
+          value: Europe/Vilnius
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: 3003
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 3003
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 2560Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: cache
+          mountPath: /cache
+      volumes:
+      - name: cache
+        persistentVolumeClaim:
+          claimName: immich-ml-cache
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-machine-learning
+spec:
+  selector:
+    app: immich-machine-learning
+  ports:
+  - name: http
+    port: 3003
+    targetPort: 3003

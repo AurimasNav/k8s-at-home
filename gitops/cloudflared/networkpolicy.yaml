@@ -187,6 +187,15 @@ spec:
     - ports:
       - port: "3000"
         protocol: TCP
+  # photos.sync.lt (Immich)
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: immich
+        app: immich-server
+    toPorts:
+    - ports:
+      - port: "2283"
+        protocol: TCP
   # seerr.sync.lt
   - toEndpoints:
     - matchLabels:

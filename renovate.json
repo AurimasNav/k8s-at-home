@@ -28,6 +28,18 @@
       "allowedVersions": "/^v\\d+\\.\\d+\\.\\d+$/"
     },
     {
+      "description": "Immich server and machine-learning must run the same release: one PR for both",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/immich-app/immich-server", "ghcr.io/immich-app/immich-machine-learning"],
+      "groupName": "immich"
+    },
+    {
+      "description": "Immich Postgres (<pg>-vectorchord<x>-pgvector<y>): a Postgres major needs a dump/restore and a VectorChord bump an ALTER EXTENSION, so it is upgraded by hand following Immich's compose file",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/immich-app/postgres"],
+      "enabled": false
+    },
+    {
       "description": "iac/ uses OpenTofu: resolve providers and modules from the OpenTofu registry",
       "matchManagers": ["terraform"],
       "matchDatasources": ["terraform-provider", "terraform-module"],

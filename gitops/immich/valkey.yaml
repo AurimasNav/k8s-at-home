@@ -1,0 +1,71 @@
+# Job queue for the Immich server. Nothing to keep: queued jobs are re-created by Immich's
+# nightly tasks, so it runs without persistence.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-valkey
+  labels:
+    app: immich-valkey
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: immich-valkey
+  template:
+    metadata:
+      labels:
+        app: immich-valkey
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: valkey
+        image: docker.io/valkey/valkey:9.1.2
+        args: ["valkey-server", "--save", "", "--appendonly", "no"]
+        ports:
+        - containerPort: 6379
+        readinessProbe:
+          exec:
+            command: ["valkey-cli", "ping"]
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command: ["valkey-cli", "ping"]
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-valkey
+spec:
+  selector:
+    app: immich-valkey
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379

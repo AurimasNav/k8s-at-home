@@ -1,0 +1,104 @@
+# Immich's own Postgres (with the VectorChord extension for smart search and faces), on a
+# local-path PVC on the system SSD as Immich requires (never on the HDDs or a network share).
+# Not backed up as raw files: Immich writes a nightly database dump into the library volume
+# (config/immich.json backup.database), and k8up backs that volume up.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-postgres
+  annotations:
+    k8up.io/backup: "false"
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-postgres
+  labels:
+    app: immich-postgres
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: immich-postgres
+  template:
+    metadata:
+      labels:
+        app: immich-postgres
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: postgres
+        # Same extension version (VectorChord 0.4.3) as Immich's own compose file, on Postgres 17.
+        image: ghcr.io/immich-app/postgres:17-vectorchord0.4.3-pgvector0.8.1
+        # The image's SSD config asks for 512 MB shared_buffers; 256 MB is plenty for a family library.
+        args: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "shared_buffers=256MB"]
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_DB
+          value: immich
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: immich-db
+              key: DB_PASSWORD
+        - name: POSTGRES_INITDB_ARGS
+          value: --data-checksums
+        - name: DB_STORAGE_TYPE
+          value: SSD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "postgres", "-d", "immich"]
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "postgres", "-d", "immich"]
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: shm
+          mountPath: /dev/shm
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: immich-postgres
+      # Docker's default 64 MB /dev/shm is too small for Postgres; Immich's compose uses 128 MB.
+      - name: shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-postgres
+spec:
+  selector:
+    app: immich-postgres
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432

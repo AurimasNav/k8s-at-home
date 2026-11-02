@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Immich (photos.sync.lt): the family's photo backup and AI search.
+# Photos live on media disk hdd0 (library-pv.yaml); the restic backups on hdd2 (gitops/k8up).
+# Settings come from config/immich.json (IMMICH_CONFIG_FILE), so the admin settings page is read-only.
+namespace: immich
+
+resources:
+- ./externalsecret.yaml
+- ./prepare-library-job.yaml
+- ./library-pv.yaml
+- ./postgres.yaml
+- ./valkey.yaml
+- ./machine-learning.yaml
+- ./server.yaml
+- ./httproute.yaml
+- ./networkpolicy.yaml
+- ./plex-refresh-cronjob.yaml
+
+configMapGenerator:
+- name: immich-config
+  files:
+  - immich.json=config/immich.json
+- name: immich-plex-refresh
+  files:
+  - refresh.py=plex-refresh/refresh.py
+
+images:
+- name: python
+  newTag: 3.15.2-alpine3.24

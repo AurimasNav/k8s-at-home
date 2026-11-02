@@ -1,0 +1,47 @@
+{
+  "backup": {
+    "database": {
+      "enabled": true,
+      "cronExpression": "0 02 * * *",
+      "keepLastAmount": 14
+    }
+  },
+  "job": {
+    "backgroundTask": { "concurrency": 2 },
+    "faceDetection": { "concurrency": 1 },
+    "library": { "concurrency": 2 },
+    "metadataExtraction": { "concurrency": 2 },
+    "ocr": { "concurrency": 1 },
+    "search": { "concurrency": 2 },
+    "sidecar": { "concurrency": 2 },
+    "smartSearch": { "concurrency": 1 },
+    "thumbnailGeneration": { "concurrency": 2 },
+    "videoConversion": { "concurrency": 1 }
+  },
+  "machineLearning": {
+    "enabled": true,
+    "urls": ["http://immich-machine-learning:3003"]
+  },
+  "newVersionCheck": {
+    "enabled": false
+  },
+  "oauth": {
+    "enabled": false
+  },
+  "passwordLogin": {
+    "enabled": true
+  },
+  "server": {
+    "externalDomain": "https://photos.sync.lt",
+    "publicUsers": true
+  },
+  "storageTemplate": {
+    "enabled": true,
+    "hashVerificationEnabled": true,
+    "template": "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+  },
+  "trash": {
+    "enabled": true,
+    "days": 30
+  }
+}
