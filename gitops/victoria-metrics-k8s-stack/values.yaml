@@ -23,6 +23,17 @@ grafana:
       allow_assign_grafana_admin: true
       skip_org_role_sync: false
       role_attribute_strict: true
+    # Stock dashboards default to a 10-30 s auto-refresh; a tab left open from an alert link would
+    # query VictoriaMetrics that often for hours. 1m is the floor for every dashboard.
+    dashboards:
+      min_refresh_interval: 1m
+
+# Public Grafana address. vmalert uses it as -external.url ($externalURL in the rules' dashboard
+# links below) and for the alerts' "source" link (Grafana Explore with the alert expression).
+# Without it both pointed at "http://".
+external:
+  grafana:
+    host: https://grafana.sync.lt
 
 # k3s runs the scheduler, the controller-manager and its datastore (SQLite through kine, no etcd)
 # inside the single k3s process. There is no separate endpoint to scrape: these scrapes found no
@@ -41,6 +52,101 @@ defaultRules:
     # etcd alerts: there is no etcd (see above).
     etcd:
       enabled: false
+
+    # Grafana links. Every alert gets a `dashboard` annotation, which the Telegram message
+    # (alertmanager below) turns into a "📊 Dashboard" link covering the alert's time range.
+    # A group's `alerting` sets the default for its alerts and `rules.<alert>` overrides it. The
+    # vmagent/vmalert/vmsingle/vmoperator rules ship their own links (with the right panel), so
+    # those groups only list the alerts that have none: a group default would overwrite them.
+    # Dashboards: the chart's stock ones plus dashboard-disks.yaml (home-disks) and
+    # dashboard-backups.yaml (k8up-backups).
+    alertmanager.rules:
+      alerting:
+        spec:
+          annotations:
+            dashboard: '{{ $externalURL }}/d/alertmanager-overview?orgId=1'
+    general.rules:  # TargetDown: what the target's namespace is doing
+      alerting:
+        spec:
+          annotations:
+            dashboard: &namespace-view '{{ $externalURL }}/d/k8s_views_ns?orgId=1&var-namespace={{ $labels.namespace }}'
+    kube-apiserver-slos:
+      alerting:
+        spec:
+          annotations:
+            dashboard: &apiserver '{{ $externalURL }}/d/09ec8aa1e996d6ffcd6817bbaff4db1b?orgId=1'
+    kubernetes-system-apiserver:
+      alerting: {spec: {annotations: {dashboard: *apiserver}}}
+    kubernetes-system:
+      alerting: {spec: {annotations: {dashboard: *apiserver}}}
+    kube-state-metrics:
+      alerting: {spec: {annotations: {dashboard: '{{ $externalURL }}/d/k8s_views_ns?orgId=1&var-namespace=victoriametrics'}}}
+    kubernetes-apps:
+      alerting: {spec: {annotations: {dashboard: *namespace-view}}}
+      rules:
+        KubePodCrashLooping: {spec: {annotations: {dashboard: &pod-view '{{ $externalURL }}/d/k8s_views_pods?orgId=1&var-namespace={{ $labels.namespace }}&var-pod={{ $labels.pod }}'}}}
+        KubePodNotReady: {spec: {annotations: {dashboard: *pod-view}}}
+        KubeContainerWaiting: {spec: {annotations: {dashboard: *pod-view}}}
+    kubernetes-resources:
+      alerting: {spec: {annotations: {dashboard: '{{ $externalURL }}/d/efa86fd1d0c121a26444b636a3f509a8?orgId=1'}}}
+      rules:
+        CPUThrottlingHigh: {spec: {annotations: {dashboard: *pod-view}}}
+    # local-path volumes report no kubelet volume stats (the stock PV dashboard stays empty); they
+    # are directories on the system disk.
+    kubernetes-storage:
+      alerting: {spec: {annotations: {dashboard: '{{ $externalURL }}/d/home-disks?orgId=1&var-mountpoint=%2F'}}}
+    kubernetes-system-kubelet:
+      alerting: {spec: {annotations: {dashboard: '{{ $externalURL }}/d/3138fa155d5915769fbded898ac09fd9?orgId=1'}}}
+      rules:
+        KubeNodeNotReady: {spec: {annotations: {dashboard: &node-view '{{ $externalURL }}/d/k8s_views_nodes?orgId=1&var-node={{ $labels.node }}'}}}
+        KubeNodePressure: {spec: {annotations: {dashboard: *node-view}}}
+        KubeNodeUnreachable: {spec: {annotations: {dashboard: *node-view}}}
+        KubeNodeReadinessFlapping: {spec: {annotations: {dashboard: *node-view}}}
+        KubeNodeEviction: {spec: {annotations: {dashboard: *node-view}}}
+    node-exporter:
+      alerting: {spec: {annotations: {dashboard: &node-exporter '{{ $externalURL }}/d/rYdddlPWk?orgId=1&var-job=node-exporter&var-node={{ $labels.instance }}'}}}
+      rules:
+        NodeFilesystemSpaceFillingUp: {spec: {annotations: {dashboard: &disk-mount '{{ $externalURL }}/d/home-disks?orgId=1&var-mountpoint={{ $labels.mountpoint | queryEscape }}'}}}
+        NodeFilesystemAlmostOutOfSpace: {spec: {annotations: {dashboard: *disk-mount}}}
+        NodeFilesystemFilesFillingUp: {spec: {annotations: {dashboard: *disk-mount}}}
+        NodeFilesystemAlmostOutOfFiles: {spec: {annotations: {dashboard: *disk-mount}}}
+        NodeDiskIOSaturation: {spec: {annotations: {dashboard: '{{ $externalURL }}/d/home-disks?orgId=1&var-device={{ $labels.device }}'}}}
+    node-network:
+      alerting: {spec: {annotations: {dashboard: *node-exporter}}}
+    # vm-health covers every VictoriaMetrics component: pick the dashboard by scrape job.
+    vm-health:
+      alerting:
+        spec:
+          annotations:
+            dashboard: >-
+              {{ $externalURL }}/d/{{ if match "^vmagent" $labels.job }}G7Z9GzMGz{{ else if match "^vmalertmanager" $labels.job }}alertmanager-overview{{ else if match "^vmalert" $labels.job }}LzldHAVnz{{ else if match "operator" $labels.job }}1H179hunk{{ else }}wNf0q_kZk{{ end }}?orgId=1&var-instance={{ $labels.instance }}
+    vmagent:
+      rules:
+        ScrapePoolHasNoTargets: {spec: {annotations: {dashboard: &vmagent '{{ $externalURL }}/d/G7Z9GzMGz?orgId=1&var-instance={{ $labels.instance }}'}}}
+        ConfigurationReloadFailure: {spec: {annotations: {dashboard: *vmagent}}}
+        StreamAggrFlushTimeout: {spec: {annotations: {dashboard: *vmagent}}}
+        StreamAggrDedupFlushTimeout: {spec: {annotations: {dashboard: *vmagent}}}
+        PersistentQueueRunsOutOfSpaceIn12Hours: {spec: {annotations: {dashboard: *vmagent}}}
+        PersistentQueueRunsOutOfSpaceIn4Hours: {spec: {annotations: {dashboard: *vmagent}}}
+    vmalert:
+      rules:
+        ConfigurationReloadFailure: {spec: {annotations: {dashboard: &vmalert '{{ $externalURL }}/d/LzldHAVnz?orgId=1&var-instance={{ $labels.instance }}'}}}
+        TooManyMissedIterations: {spec: {annotations: {dashboard: *vmalert}}}
+        GroupIterationReset: {spec: {annotations: {dashboard: *vmalert}}}
+        RemoteWriteErrors: {spec: {annotations: {dashboard: *vmalert}}}
+        RemoteWriteDroppingData: {spec: {annotations: {dashboard: *vmalert}}}
+        RemoteWriteQueueHighUsage: {spec: {annotations: {dashboard: *vmalert}}}
+        AlertmanagerErrors: {spec: {annotations: {dashboard: *vmalert}}}
+        AlertingRuleResultsApproachingLimit: {spec: {annotations: {dashboard: *vmalert}}}
+        RecordingRuleResultsApproachingLimit: {spec: {annotations: {dashboard: *vmalert}}}
+    vmsingle:
+      rules:
+        # upstream links the cluster-version dashboard (oS7Bi_0Wz), which isn't deployed
+        NodeBecomesReadonlyIn3Days: {spec: {annotations: {dashboard: &vmsingle '{{ $externalURL }}/d/wNf0q_kZk?orgId=1&var-instance={{ $labels.instance }}'}}}
+        MetadataCacheUtilizationIsTooHigh: {spec: {annotations: {dashboard: *vmsingle}}}
+        MetricNameStatsCacheUtilizationIsTooHigh: {spec: {annotations: {dashboard: *vmsingle}}}
+        IndexDBRecordsDrop: {spec: {annotations: {dashboard: *vmsingle}}}
+        TooManyTSIDMisses: {spec: {annotations: {dashboard: *vmsingle}}}
 
 # k3s serves the metrics of every embedded component (API server, scheduler, controllers) on the
 # API server port AND again on the kubelet port. The kubelet scrape therefore keeps only the
@@ -99,6 +205,10 @@ vmagent:
 
 # Alerts go to the "Alerts" Telegram topic through the Hermes bot (token and chat from
 # Doppler, externalsecret-alertmanager.yaml). Watchdog and info-level alerts stay silent.
+# Each alert links its `dashboard` annotation with the alert's time range (1 h before it started
+# until now, or until 30 min after it resolved). Without one, a short Explore link (the alert
+# expression) is used. At most 5 alerts per message: Alertmanager checks Telegram's 4096-character
+# limit on the raw HTML (links included) and replaces a longer message with an error text.
 alertmanager:
   spec:
     secrets:
@@ -133,6 +243,7 @@ alertmanager:
         send_resolved: true
         parse_mode: HTML
         message: |-
-          {{ range .Alerts }}{{ if eq .Status "firing" }}🔴{{ else }}✅{{ end }} <b>{{ .Labels.alertname | html }}</b>{{ with .Labels.namespace }} · {{ . | html }}{{ end }}{{ with .Labels.severity }} ({{ . | html }}){{ end }}
-          {{ with .Annotations.summary }}{{ . | html }}{{ else }}{{ with .Annotations.description }}{{ . | html }}{{ end }}{{ end }}
-          {{ end }}
+          {{ range $i, $a := .Alerts }}{{ if lt $i 5 }}{{ if eq $a.Status "firing" }}🔴{{ else }}✅{{ end }} <b>{{ $a.Labels.alertname | html }}</b>{{ with $a.Labels.namespace }} · {{ . | html }}{{ end }}{{ with $a.Labels.severity }} ({{ . | html }}){{ end }}
+          {{ with $a.Annotations.summary }}{{ . | html }}{{ else }}{{ with $a.Annotations.description }}{{ . | html }}{{ end }}{{ end }}
+          {{ with $a.Annotations.dashboard }}<a href="{{ . }}&amp;from={{ ($a.StartsAt.Add -3600000000000).UnixMilli }}&amp;to={{ if eq $a.Status "firing" }}now{{ else }}{{ ($a.EndsAt.Add 1800000000000).UnixMilli }}{{ end }}">📊 Dashboard</a>{{ else }}{{ if and $a.GeneratorURL (lt (len $a.GeneratorURL) 500) }}<a href="{{ $a.GeneratorURL }}">🔎 Query</a>{{ end }}{{ end }}
+          {{ end }}{{ end }}{{ if gt (len .Alerts) 5 }}… {{ len .Alerts }} alerts in this group, the first 5 are shown{{ end }}

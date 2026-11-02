@@ -12,7 +12,8 @@ spec:
     scrapeTimeout: 2m
 ---
 # Early signs of disk failure. Media disks sdb-sdd are single copies (mergerfs, no
-# parity), so warnings here are the cue to replace a disk before it dies.
+# parity), so warnings here are the cue to replace a disk before it dies. Each alert links the
+# "Home server / Disks" dashboard (gitops/victoria-metrics-k8s-stack/dashboard-disks.yaml).
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMRule
 metadata:
@@ -20,6 +21,8 @@ metadata:
 spec:
   groups:
   - name: disk-health
+    # SMART data changes every 5 min (scrape interval); evaluating more often re-reads the same points.
+    interval: 5m
     rules:
     - alert: DiskSmartFailed
       expr: smartctl_device_smart_status == 0
@@ -28,12 +31,14 @@ spec:
         severity: critical
       annotations:
         summary: "Disk {{ $labels.device }} failed its SMART self-assessment; replace it"
+        dashboard: '{{ $externalURL }}/d/home-disks?orgId=1&var-device={{ $labels.device }}'
     - alert: DiskReallocatedSectorsGrowing
       expr: delta(smartctl_device_attribute{attribute_name="Reallocated_Sector_Ct", attribute_value_type="raw"}[24h]) > 0
       labels:
         severity: critical
       annotations:
         summary: "Disk {{ $labels.device }} reallocated more sectors in the last 24 h (now {{ $value }} more)"
+        dashboard: '{{ $externalURL }}/d/home-disks?orgId=1&var-device={{ $labels.device }}'
     - alert: DiskReallocatedSectors
       expr: smartctl_device_attribute{attribute_name="Reallocated_Sector_Ct", attribute_value_type="raw"} > 0
       for: 1h
@@ -41,6 +46,7 @@ spec:
         severity: warning
       annotations:
         summary: "Disk {{ $labels.device }} has {{ $value }} reallocated sectors"
+        dashboard: '{{ $externalURL }}/d/home-disks?orgId=1&var-device={{ $labels.device }}'
     - alert: DiskPendingSectors
       expr: smartctl_device_attribute{attribute_name=~"Current_Pending_Sector|Offline_Uncorrectable", attribute_value_type="raw"} > 0
       for: 1h
@@ -48,12 +54,14 @@ spec:
         severity: warning
       annotations:
         summary: "Disk {{ $labels.device }}: {{ $value }} {{ $labels.attribute_name }} (unreadable sectors)"
+        dashboard: '{{ $externalURL }}/d/home-disks?orgId=1&var-device={{ $labels.device }}'
     - alert: DiskCrcErrors
       expr: increase(smartctl_device_attribute{attribute_name="UDMA_CRC_Error_Count", attribute_value_type="raw"}[1h]) > 0
       labels:
         severity: warning
       annotations:
         summary: "Disk {{ $labels.device }} has new SATA CRC errors (check the cable/port)"
+        dashboard: '{{ $externalURL }}/d/home-disks?orgId=1&var-device={{ $labels.device }}'
     - alert: DiskTooHot
       expr: smartctl_device_temperature{temperature_type="current"} > 55
       for: 30m
@@ -61,6 +69,7 @@ spec:
         severity: warning
       annotations:
         summary: "Disk {{ $labels.device }} is at {{ $value }} °C"
+        dashboard: '{{ $externalURL }}/d/home-disks?orgId=1&var-device={{ $labels.device }}'
     - alert: DiskSmartDataMissing
       expr: absent(smartctl_device_smart_status) or smartctl_devices < 4
       for: 2h
@@ -68,3 +77,4 @@ spec:
         severity: warning
       annotations:
         summary: "smartctl-exporter reports no or fewer disks than expected (4)"
+        dashboard: '{{ $externalURL }}/d/home-disks?orgId=1'

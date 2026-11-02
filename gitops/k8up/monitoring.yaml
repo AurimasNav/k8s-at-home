@@ -12,6 +12,9 @@ spec:
   - port: http
     interval: 60s
 ---
+# The operator's metrics carry the backed-up namespace as `exported_namespace` (`namespace` is
+# k8up's own). Messages and dashboard links use it; the "Backups / K8up" dashboard is
+# gitops/victoria-metrics-k8s-stack/dashboard-backups.yaml.
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMRule
 metadata:
@@ -20,6 +23,8 @@ metadata:
 spec:
   groups:
   - name: k8up
+    # Daily jobs: a 5-minute evaluation is plenty and keeps the 26 h lookback below cheap.
+    interval: 5m
     rules:
     - alert: K8upJobFailed
       expr: k8up_schedule_last_job_succeeded == 0
@@ -27,11 +32,19 @@ spec:
       labels:
         severity: critical
       annotations:
-        summary: "K8up {{ $labels.jobType }} for {{ $labels.namespace }} failed"
+        summary: "K8up {{ $labels.jobType }} for {{ $labels.exported_namespace }} failed"
+        dashboard: '{{ $externalURL }}/d/k8up-backups?orgId=1&var-namespace={{ $labels.exported_namespace }}'
+    # One alert per backed-up namespace, and only for schedules that already existed 26 h ago (a new
+    # schedule has had no run yet). `sum by (namespace)` merged every namespace into "k8up", so a
+    # single namespace with no backups never fired while the others succeeded.
     - alert: K8upBackupStale
-      expr: sum by (namespace) (increase(k8up_jobs_successful_counter{jobType="backup"}[26h])) == 0
+      expr: |-
+        max by (exported_namespace) (k8up_schedules_gauge offset 26h)
+          unless on (exported_namespace)
+        (sum by (exported_namespace) (increase(k8up_jobs_successful_counter{jobType="backup"}[26h])) > 0)
       for: 1h
       labels:
         severity: critical
       annotations:
-        summary: "No successful K8up backup for {{ $labels.namespace }} in 26 hours"
+        summary: "No successful K8up backup for {{ $labels.exported_namespace }} in 26 hours"
+        dashboard: '{{ $externalURL }}/d/k8up-backups?orgId=1&var-namespace={{ $labels.exported_namespace }}'

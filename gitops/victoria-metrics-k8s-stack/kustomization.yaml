@@ -8,6 +8,8 @@ resources:
 - ./dashboard-hairsera-metrics.yaml
 - ./dashboard-hairsera-traces.yaml
 - ./dashboard-hairsera-logs.yaml
+- ./dashboard-disks.yaml
+- ./dashboard-backups.yaml
 - ./httproute.yaml
 namespace: victoriametrics
 
