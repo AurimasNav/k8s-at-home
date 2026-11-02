@@ -77,6 +77,9 @@ spec:
           hermes config set display.platforms.telegram.interim_assistant_messages false &&
           hermes config set approvals.timeout 1800 &&
           hermes config set plugins.enabled '["approval-ping"]'
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
         volumeMounts:
         - name: data
           mountPath: /opt/data
