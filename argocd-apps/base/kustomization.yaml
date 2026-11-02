@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
 - ./root-app.yaml
+- ./legacy-namespaces.yaml
 - ./apps/cilium
 - ./apps/gateway-api-crds
 - ./apps/cilium-gateway
@@ -19,7 +20,6 @@ resources:
 - ./apps/radarr-lt
 - ./apps/plex
 - ./apps/oauth2-proxy
-#- ./apps/ombi
 - ./apps/blocky
 - ./apps/router-cert
 - ./apps/unbound
@@ -27,11 +27,8 @@ resources:
 - ./apps/seerr
 - ./apps/sonarr-ru
 - ./apps/sonarr-lt
-#- ./apps/minecraft
-#- ./apps/vrising
 - ./apps/victoria-metrics-k8s-stack
 - ./apps/homepage
-#- ./apps/satisfactory
 - ./apps/home-assistant
 - ./apps/otbr
 - ./apps/matter-server

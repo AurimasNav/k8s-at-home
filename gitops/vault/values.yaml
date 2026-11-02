@@ -1,7 +1,0 @@
-server:
-  standalone:
-    enabled: true
-  dataStorage:
-    enabled: true
-    size: 1Gi
-    mountPath: "/vault/data"
