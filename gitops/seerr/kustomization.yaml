@@ -9,9 +9,10 @@ resources:
 - ./pvc.yaml
 
 images:
-# VSeerr (github.com/AurimasNav/vseerr). Tags are <Seerr release>-vseerr.<build>
-# (see GitVersion.yml in that repo), pinned by digest. Renovate compares the
-# build number numerically (packageRule in renovate.json).
+# VSeerr (github.com/AurimasNav/vseerr). Tags are
+# <Seerr release>-vseerr.<VSeerr MAJOR.MINOR.PATCH> (see GitVersion.yml in that
+# repo), pinned by digest. Renovate follows them as semver (packageRule in
+# renovate.json).
 - name: ghcr.io/aurimasnav/vseerr
   newTag: 3.5.1-vseerr.32
   digest: sha256:120aa88d42c4c517c9a994db0c791d7d08813390211e5323b491f2652dc4b748
