@@ -1,0 +1,40 @@
+# Reads SMART data with smartctl. That needs raw ATA/NVMe passthrough to the disks, so the
+# container is privileged (a privileged container already sees the host's block devices,
+# so no /dev hostPath is mounted). No host network; only the metrics port is exposed.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: smartctl-exporter
+  labels:
+    app.kubernetes.io/name: smartctl-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: smartctl-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: smartctl-exporter
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: smartctl-exporter
+        image: quay.io/prometheuscommunity/smartctl-exporter:v0.15.0
+        args:
+        # Poll every 5 min; skip disks that are spun down instead of waking them.
+        - --smartctl.interval=300s
+        - --smartctl.powermode-check=standby
+        # Only real disks (sdX, nvmeX), not device-mapper volumes.
+        - --smartctl.device-include=^(sd[a-z]+|nvme[0-9]+)$
+        ports:
+        - name: http
+          containerPort: 9633
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
