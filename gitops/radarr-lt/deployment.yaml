@@ -1,6 +1,6 @@
 # Radarr for Lithuanian-language releases (VSeerr version "Lithuanian").
-# Library: /data/media/kids (the former Plex Kids folder, kept so 2 TB of films
-# don't have to move); qBittorrent category: radarr-lt.
+# Library: /data/media/movies-lt (moved from the old Plex Kids folder
+# /data/media/kids on 2026-11-02); qBittorrent category: radarr-lt.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,7 +27,7 @@ spec:
       # (chown of the folder itself only, never recursive).
       - name: library-folder
         image: busybox:1.38.0
-        command: ["sh", "-c", "mkdir -p /data/media/kids && chown 1000:1000 /data/media/kids"]
+        command: ["sh", "-c", "mkdir -p /data/media/movies-lt && chown 1000:1000 /data/media/movies-lt"]
         volumeMounts:
         - name: data
           mountPath: /data
