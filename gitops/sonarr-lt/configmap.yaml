@@ -7,7 +7,7 @@ data:
   PGID: "1000"
   TZ: Europe/Vilnius
   SONARR__APP__INSTANCENAME: Sonarr LT
-  # Web UI: https://sonarr-lt.sync.lt behind the Google login (httproute.yaml).
+  # Web UI: https://sonarr-lt.sync.lt (Google sign-in below; no gateway login).
   # Google sign-in (Radarr/Sonarr v7/v5 develop OIDC). Only the Doppler ADMIN_GOOGLE_EMAIL account
   # may log in (OIDCUSERIDENTIFIER, from the ExternalSecret). Required=Enabled: every request goes
   # through the gateway pod (a private IP), so "disabled for local addresses" would skip the login.
