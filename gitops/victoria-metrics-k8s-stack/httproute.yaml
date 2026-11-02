@@ -1,7 +1,7 @@
 # Cilium gateway route. Grafana's own Google sign-in (values.yaml grafana.ini auth.google) is the
 # login, so the gateway login (oauth2-proxy ExternalAuth) is kept only on /metrics: Grafana serves
 # it without a session, and it is meant for the in-cluster scrape only (that goes to the Service
-# directly, not through here). The filter settings are explained in gitops/cleanuparr/httproute.yaml.
+# directly, not through here). The filter settings are explained in gitops/oauth2-proxy/referencegrant.yaml.
 # Defaults (group, kind, weight) are written out: this app syncs with ServerSideApply, so Argo CD
 # compares with the live object, where the API server has filled them in (otherwise: OutOfSync).
 apiVersion: gateway.networking.k8s.io/v1
