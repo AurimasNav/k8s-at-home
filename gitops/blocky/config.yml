@@ -17,6 +17,11 @@ upstreams:
   timeout: 5s
 connectIPVersion: v4
 
+# Names asked for at least 5 times in 2 hours are refreshed before their TTL runs out, so they
+# keep being answered from cache instead of waiting on a recursive lookup.
+caching:
+  prefetching: true
+
 ports:
   dns: 1053 # unprivileged; the Service maps 53 -> 1053
   http: 4000 # metrics + REST API: ClusterIP only (service.yaml), never on the LAN IP
