@@ -34,6 +34,8 @@ locals {
     "ha",
     "hair",
     "seerr",
+    # Immich (own login; the phone apps cannot pass the Google login)
+    "photos",
     # Hermes web UI (its own oauth2-proxy sidecar, Google login)
     "hermes",
   ])

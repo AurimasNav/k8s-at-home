@@ -19,6 +19,7 @@ locals {
     home        = "gitops/homepage"
     homebox     = "gitops/homebox"
     login       = "gitops/oauth2-proxy"
+    photos      = "gitops/immich"
     prowlarr    = "gitops/prowlarr"
     qbittorrent = "gitops/qbittorrent"
     radarr      = "gitops/radarr"
