@@ -1,5 +1,7 @@
-# Cilium gateway route behind the Google login (oauth2-proxy ExternalAuth);
-# the filter settings are explained in gitops/cleanuparr/httproute.yaml.
+# Cilium gateway route. Grafana's own Google sign-in (values.yaml grafana.ini auth.google) is the
+# login, so the gateway login (oauth2-proxy ExternalAuth) is kept only on /metrics: Grafana serves
+# it without a session, and it is meant for the in-cluster scrape only (that goes to the Service
+# directly, not through here). The filter settings are explained in gitops/cleanuparr/httproute.yaml.
 # Defaults (group, kind, weight) are written out: this app syncs with ServerSideApply, so Argo CD
 # compares with the live object, where the API server has filled them in (otherwise: OutOfSync).
 apiVersion: gateway.networking.k8s.io/v1
@@ -22,7 +24,7 @@ spec:
   - matches:
     - path:
         type: PathPrefix
-        value: /
+        value: /metrics
     filters:
     - type: ExternalAuth
       externalAuth:
@@ -43,6 +45,19 @@ spec:
           - x-auth-request-email
     # Envoy's default is 15 s for the whole response; 0s turns that off (long downloads,
     # interactive searches, streams). Idle connections still close after 300 s.
+    timeouts:
+      request: 0s
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: victoria-metrics-k8s-stack-grafana
+      port: 80
+      weight: 1
+  # Everything else: no gateway login.
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
     timeouts:
       request: 0s
     backendRefs:

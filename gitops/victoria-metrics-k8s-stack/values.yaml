@@ -5,7 +5,9 @@ grafana:
   # Google sign-in. Client id/secret and the role rule (Doppler ADMIN_GOOGLE_EMAIL becomes
   # GrafanaAdmin, any other account is refused: role_attribute_strict) come from the
   # grafana-google Secret (externalsecret.yaml) as GF_AUTH_GOOGLE_* env vars.
-  # The local admin/password login stays as the fallback.
+  # No gateway login in front (httproute.yaml). The local admin/password form stays as the
+  # fallback: random Doppler password, and Grafana locks a user after 5 failed logins in 5 min.
+  # Basic auth stays on too: the dashboard/datasource sidecars reload through it on localhost.
   envFromSecrets:
   - name: grafana-google
   grafana.ini:
