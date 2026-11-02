@@ -310,6 +310,7 @@
         "monitoredOnly": true,
         "useCutoff": true,
         "activeDownloadLimit": 3,
+        "ignoreStruckDownloads": true,
         "minCycleTimeDays": 7
       },
       "Sonarr/sonarr": {
@@ -317,6 +318,7 @@
         "monitoredOnly": true,
         "useCutoff": true,
         "activeDownloadLimit": 3,
+        "ignoreStruckDownloads": true,
         "minCycleTimeDays": 7
       },
       "Radarr/radarr-ru": {
@@ -324,6 +326,7 @@
         "monitoredOnly": true,
         "useCutoff": true,
         "activeDownloadLimit": 3,
+        "ignoreStruckDownloads": true,
         "minCycleTimeDays": 7
       },
       "Radarr/radarr-lt": {
@@ -331,6 +334,7 @@
         "monitoredOnly": true,
         "useCutoff": true,
         "activeDownloadLimit": 3,
+        "ignoreStruckDownloads": true,
         "minCycleTimeDays": 7,
         "useCustomFormatScore": true
       },
@@ -339,6 +343,7 @@
         "monitoredOnly": true,
         "useCutoff": true,
         "activeDownloadLimit": 3,
+        "ignoreStruckDownloads": true,
         "minCycleTimeDays": 7
       },
       "Sonarr/sonarr-lt": {
@@ -346,6 +351,7 @@
         "monitoredOnly": true,
         "useCutoff": true,
         "activeDownloadLimit": 3,
+        "ignoreStruckDownloads": true,
         "minCycleTimeDays": 7,
         "useCustomFormatScore": true
       }
