@@ -26,6 +26,3 @@ misconfigurations:
   - id: KSV-0109
     paths: [gitops/hermes-agent/ha-mcp-setup.yaml]
     statement: the script reads the token from env (HA_ADMIN_TOKEN). The word TOKEN in code is not a secret.
-  - id: KSV-0109
-    paths: [gitops/vrising/configmap.yaml]
-    statement: "TODO: app not deployed; the game password is in plain text and should move to an ExternalSecret or be removed."
