@@ -1,0 +1,153 @@
+# Pushes the gw.sync.lt certificate to the router (push.sh): once after every Argo CD sync
+# (PostSync runs only when the Certificate is Ready) and daily, so a renewal reaches the
+# router within a day. cert-manager renews 30 days before expiry. Unchanged certificate =
+# no change on the router.
+# Same pod spec in both: no Kubernetes API access, read-only root fs, non-root.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: router-cert-push
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels:
+        app: router-cert-push
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: push
+        image: alpine/git:v2.54.0
+        command: ["/bin/sh", "/etc/router-cert/push.sh"]
+        env:
+        - name: HOME
+          value: /tmp
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/router-cert
+          readOnly: true
+        - name: tls
+          mountPath: /tls
+          readOnly: true
+        - name: ssh
+          mountPath: /ssh
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: config
+        configMap:
+          name: router-cert-push
+      - name: tls
+        secret:
+          secretName: gw-sync-lt-tls
+          defaultMode: 0440
+      - name: ssh
+        secret:
+          secretName: router-cert-ssh
+          defaultMode: 0440
+      - name: tmp
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Mi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: router-cert-push
+spec:
+  schedule: "23 5 * * *"
+  timeZone: Europe/Vilnius
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          labels:
+            app: router-cert-push
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: push
+            image: alpine/git:v2.54.0
+            command: ["/bin/sh", "/etc/router-cert/push.sh"]
+            env:
+            - name: HOME
+              value: /tmp
+            resources:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            volumeMounts:
+            - name: config
+              mountPath: /etc/router-cert
+              readOnly: true
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+            - name: ssh
+              mountPath: /ssh
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          volumes:
+          - name: config
+            configMap:
+              name: router-cert-push
+          - name: tls
+            secret:
+              secretName: gw-sync-lt-tls
+              defaultMode: 0440
+          - name: ssh
+            secret:
+              secretName: router-cert-ssh
+              defaultMode: 0440
+          - name: tmp
+            emptyDir:
+              medium: Memory
+              sizeLimit: 1Mi

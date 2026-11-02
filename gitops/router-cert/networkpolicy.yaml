@@ -1,0 +1,19 @@
+# The push pods hold the router SSH key and the certificate key: they may only open SSH
+# to the router. No DNS (the router is addressed by IP), nothing else in or out.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: router-cert-push
+spec:
+  endpointSelector:
+    matchLabels:
+      app: router-cert-push
+  ingress:
+  - {}
+  egress:
+  - toCIDR:
+    - 192.168.1.1/32
+    toPorts:
+    - ports:
+      - port: "22"
+        protocol: TCP

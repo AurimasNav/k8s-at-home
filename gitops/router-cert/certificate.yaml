@@ -1,0 +1,20 @@
+# Certificate for the router's web UI only (gw.sync.lt). The *.sync.lt wildcard key stays in
+# the cluster: a leaked router key can then only impersonate the router page.
+# gw.sync.lt has no public DNS record; Blocky answers 192.168.1.1 on the LAN (gitops/blocky).
+# RSA because the router's web server and its certificate page expect it.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gw-sync-lt
+spec:
+  secretName: gw-sync-lt-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+  dnsNames:
+  - gw.sync.lt
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    encoding: PKCS8
+    rotationPolicy: Always
