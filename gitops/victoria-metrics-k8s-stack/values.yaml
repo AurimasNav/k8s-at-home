@@ -76,7 +76,7 @@ vmagent:
       limits:
         memory: 500Mi
 
-# Alerts go to the "Home server" Telegram topic through the Hermes bot (token and chat from
+# Alerts go to the "Alerts" Telegram topic through the Hermes bot (token and chat from
 # Doppler, externalsecret-alertmanager.yaml). Watchdog and info-level alerts stay silent.
 alertmanager:
   spec:
@@ -108,7 +108,7 @@ alertmanager:
       telegram_configs:
       - bot_token_file: /etc/vm/secrets/alertmanager-telegram/bot-token
         chat_id_file: /etc/vm/secrets/alertmanager-telegram/chat-id
-        message_thread_id: 501
+        message_thread_id: 2518 # "Alerts" topic
         send_resolved: true
         parse_mode: HTML
         message: |-
