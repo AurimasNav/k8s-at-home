@@ -22,6 +22,7 @@ configMapGenerator:
 - name: immich-config
   files:
   - immich.json=config/immich.json
+  - render-config.js=config/render-config.js
 - name: immich-plex-refresh
   files:
   - refresh.py=plex-refresh/refresh.py

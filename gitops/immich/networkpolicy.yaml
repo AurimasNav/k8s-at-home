@@ -1,7 +1,8 @@
 # Immich holds the family's photos, so each part only talks to what it needs.
 # server: from the gateway (photos.sync.lt), kubelet probes and Hermes (setup, health checks);
-#   to Postgres, Valkey and machine learning. No internet (version check is off; map tiles and
-#   the web UI's other assets are loaded by the browser, not the server).
+#   to Postgres, Valkey and machine learning; to the internet only for the Google login
+#   (discovery, token, keys, profile picture). Version check is off; map tiles and the web UI's
+#   other assets are loaded by the browser, not the server.
 # machine-learning: from the server; to the internet on 443 only (model downloads from Hugging Face).
 # postgres / valkey: from the server only (ingress rules only; they open no connections of their own).
 # k8up backup pods are not selected here (they reach rest-server in the k8up namespace).
@@ -39,6 +40,9 @@ spec:
     - ports:
       - port: "53"
         protocol: ANY
+      rules:
+        dns:
+        - matchPattern: "*"
   - toEndpoints:
     - matchLabels:
         app: immich-postgres
@@ -59,6 +63,16 @@ spec:
     toPorts:
     - ports:
       - port: "3003"
+        protocol: TCP
+  - toFQDNs:
+    - matchName: accounts.google.com
+    - matchName: oauth2.googleapis.com
+    - matchName: openidconnect.googleapis.com
+    - matchName: www.googleapis.com
+    - matchPattern: "*.googleusercontent.com"
+    toPorts:
+    - ports:
+      - port: "443"
         protocol: TCP
 ---
 apiVersion: cilium.io/v2
