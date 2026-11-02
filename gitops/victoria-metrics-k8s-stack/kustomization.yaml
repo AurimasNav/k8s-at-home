@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
 - ./externalsecret.yaml
+- ./externalsecret-alertmanager.yaml
 - ./datasources.yaml
 - ./dashboard-hairsera-metrics.yaml
 - ./dashboard-hairsera-traces.yaml
