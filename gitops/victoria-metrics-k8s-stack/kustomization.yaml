@@ -10,6 +10,7 @@ resources:
 - ./dashboard-hairsera-logs.yaml
 - ./dashboard-disks.yaml
 - ./dashboard-backups.yaml
+- ./node-pressure.yaml
 - ./httproute.yaml
 namespace: victoriametrics
 

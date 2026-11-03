@@ -111,6 +111,11 @@ defaultRules:
         NodeFilesystemFilesFillingUp: {spec: {annotations: {dashboard: *disk-mount}}}
         NodeFilesystemAlmostOutOfFiles: {spec: {annotations: {dashboard: *disk-mount}}}
         NodeDiskIOSaturation: {spec: {annotations: {dashboard: '{{ $externalURL }}/d/home-disks?orgId=1&var-device={{ $labels.device }}'}}}
+        # Both fire on ordinary evenings here (13 times, 429 min in 14 days): load counts processes
+        # waiting on disk, and page faults include normal file reads. node-pressure.yaml alerts on
+        # the time processes actually stall instead (4 times in the same 14 days).
+        NodeMemoryMajorPagesFaults: {enabled: false}
+        NodeSystemSaturation: {enabled: false}
     node-network:
       alerting: {spec: {annotations: {dashboard: *node-exporter}}}
     # vm-health covers every VictoriaMetrics component: pick the dashboard by scrape job.
