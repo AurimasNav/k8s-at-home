@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: radarr
-        image: ghcr.io/linuxserver/radarr:7.0.0-develop
+        image: ghcr.io/linuxserver/radarr:7.0.1-develop
         imagePullPolicy: Always
         ports:
         - containerPort: 7878
