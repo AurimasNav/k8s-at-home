@@ -8,6 +8,7 @@ resources:
 - ./rest-server.service.yaml
 - ./restic.clusterexternalsecret.yaml
 - ./schedules.yaml
+- ./hermes-essentials.prebackuppod.yaml
 - ./monitoring.yaml
 
 helmGlobals:
