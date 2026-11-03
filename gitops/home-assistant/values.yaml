@@ -138,6 +138,33 @@ initContainers:
       - name: custom-component-installer
         mountPath: /scripts
         readOnly: true
+  # PetKit (Jezza34000/homeassistant_petkit) for the Pura Max litter box (cloud
+  # polling + PetKit MQTT). Same installer as bambu_lab: the release zip is 3.4 MB
+  # (images), too big for ConfigMap vendoring. HA pip-installs pypetkitapi and
+  # friends from manifest.json on boot. Account is added in the UI (PetKit email +
+  # password; Apple/Google sign-in accounts need a PetKit password set first).
+  - name: petkit
+    # tag pinned in kustomization.yaml images: (Renovate tracks it there)
+    image: python
+    command: ["python3", "/scripts/install_release_component.py"]
+    env:
+      - name: COMPONENT
+        value: petkit
+      - name: REPO
+        value: Jezza34000/homeassistant_petkit
+      - name: ASSET
+        value: petkit.zip
+      # renovate: datasource=github-release-attachments depName=Jezza34000/homeassistant_petkit asset=petkit.zip
+      - name: VERSION
+        value: "1.29.0"
+      - name: SHA256
+        value: "532fca4941fde48add23ee4c44c6b365f1a05a0ac99d5a7d830d7a8e0b5e15d5"
+    volumeMounts:
+      - name: home-assistant
+        mountPath: /config
+      - name: custom-component-installer
+        mountPath: /scripts
+        readOnly: true
 
 # Mount the vendored mkaiser Sungrow package (ConfigMap) at /config/packages so the
 # templateConfig include (packages/modbus_sungrow.yaml) can resolve it. The Flexit

@@ -2,7 +2,8 @@
 
 Runs as a Home Assistant init container (values.yaml initContainers). Used for
 components whose release is too big for the ConfigMap vendoring pattern (a
-ConfigMap holds at most 1 MiB; ha-bambulab ships a 3 MB frontend card).
+ConfigMap holds at most 1 MiB; ha-bambulab ships a 3 MB frontend card,
+homeassistant_petkit 3.4 MB of images).
 
 Env:
   COMPONENT  integration domain, e.g. bambu_lab (also the target dir name)
