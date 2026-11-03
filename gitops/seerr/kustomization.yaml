@@ -14,5 +14,5 @@ images:
 # repo), pinned by digest. Renovate follows them as semver (packageRule in
 # renovate.json).
 - name: ghcr.io/aurimasnav/vseerr
-  newTag: 3.5.1-vseerr.2.118.3
-  digest: sha256:bd9fcb0cc3dc00844907cd3c63a9affb22b5c33b30a1695f9ac2541264886127
+  newTag: 3.5.1-vseerr.2.118.4
+  digest: sha256:77b8f284f77602f0f93047f695a63645e399dabd5f92819799743b6e477c5749
