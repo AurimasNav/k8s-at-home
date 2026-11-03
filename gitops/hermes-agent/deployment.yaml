@@ -75,6 +75,8 @@ spec:
           hermes config set display.platforms.telegram.tool_progress off &&
           hermes config set display.platforms.telegram.show_reasoning false &&
           hermes config set display.platforms.telegram.interim_assistant_messages false &&
+          hermes config set telegram.reactions true &&
+          hermes config set display.platforms.telegram.cleanup_progress true &&
           hermes config set approvals.timeout 1800 &&
           hermes config set plugins.enabled '["approval-ping"]'
         securityContext:
