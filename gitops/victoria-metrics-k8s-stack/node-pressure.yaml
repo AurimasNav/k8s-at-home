@@ -36,6 +36,7 @@ spec:
         dashboard: '{{ $externalURL }}/d/rYdddlPWk?orgId=1&var-job=node-exporter&var-node={{ $labels.instance }}'
     # The restart counter rose in the last 10 min and the last termination was an OOM kill. The
     # message says which container; Hermes being killed ends every session's running turn.
+    # Alertmanager sends to Telegram itself, so this arrives even when Hermes is the one killed.
     - alert: ContainerOOMKilled
       expr: |-
         (kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled"} == 1)
@@ -46,3 +47,24 @@ spec:
       annotations:
         summary: "{{ $labels.namespace }}/{{ $labels.container }} was killed for running out of memory (OOMKilled) and restarted"
         dashboard: '{{ $externalURL }}/d/k8s_views_pods?orgId=1&var-namespace={{ $labels.namespace }}&var-pod={{ $labels.pod }}'
+    # Every other kernel OOM kill: a child process inside a container (a build or tool run in the
+    # Hermes pod) that the kernel kills while the container keeps running, or a process on the
+    # host. No container restarts, so ContainerOOMKilled stays quiet. cAdvisor's per-container
+    # container_oom_events_total stays 0 on this k3s, so the host counter is the only signal.
+    # `for: 2m` gives a container restart time to show up, so one kill sends one message.
+    - alert: ProcessOOMKilled
+      expr: |-
+        increase(node_vmstat_oom_kill{job="node-exporter"}[5m]) > 0
+          unless on ()
+        ((kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled"} == 1)
+          and on (namespace, pod, container)
+        (increase(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[10m]) > 0))
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: >-
+          The kernel killed {{ printf "%.0f" $value }} process(es) on {{ $labels.instance }} for running out of
+          memory, and no container restarted: a process inside a container (a build, a tool run) or on the
+          host was killed. Memory per namespace is on the dashboard.
+        dashboard: '{{ $externalURL }}/d/efa86fd1d0c121a26444b636a3f509a8?orgId=1'
