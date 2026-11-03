@@ -1,0 +1,54 @@
+# Hermes: back up only what git can't rebuild. Everything else on the hermes-agent-data PVC
+# (skills, memories, sessions, caches, venvs, tools) is either in git or can be recreated, so it
+# isn't worth 24 GB read and ~3 GB added every night (Aurimas, 2026-11-03).
+#   cron/jobs.json  ad-hoc cron jobs (the git-listed ones are recreated by cron-sync anyway)
+#   lists/          Aleksandra's lists and garden plan
+#   plans/          handover notes and plans
+#   coordination/   cross-session board and its scripts
+#   backups/        rollback files (router, Plex sharing, GitHub settings)
+# k8up starts this pod at backup time, runs backupCommand in it, streams the tar into restic as one
+# file and deletes the pod. The PVC itself is annotated k8up.io/backup: "false" (gitops/hermes-agent/pvc.yaml).
+apiVersion: k8up.io/v1
+kind: PreBackupPod
+metadata:
+  name: hermes-essentials
+  namespace: hermes-agent
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  backupCommand: tar -cf - -C /opt/data cron/jobs.json lists plans coordination backups
+  fileExtension: .tar
+  pod:
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 5
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: tar
+        image: busybox:1.38.0
+        command: ["sleep", "86400"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            memory: 64Mi
+        volumeMounts:
+        - name: data
+          mountPath: /opt/data
+          readOnly: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: hermes-agent-data
+          readOnly: true
