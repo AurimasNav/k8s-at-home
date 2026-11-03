@@ -6,6 +6,10 @@ metadata:
     app: prowlarr
 spec:
   replicas: 1
+  # SQLite on an RWO PVC: never run two Prowlarr pods on the same database (a rolling update
+  # starts the new pod while the old one is still Terminating).
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: prowlarr
