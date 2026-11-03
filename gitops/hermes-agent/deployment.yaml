@@ -172,6 +172,9 @@ spec:
         - secretRef:
             name: hermes-agent-arr-ru
             optional: true
+        - secretRef:
+            name: hermes-agent-dashboard
+            optional: true
         resources:
           requests:
             cpu: 100m
