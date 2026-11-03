@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
 - https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.37/deploy/local-path-storage.yaml
-- ./hermes-pv-cleanup-rbac.yaml  # TEMPORARY, see the file
 
 # The readiness check (/ready) makes 5 LIST calls to the API server. Upstream runs it every 5 s with
 # a 1 s timeout: about 1 API request per second around the clock, and it fails whenever the API
