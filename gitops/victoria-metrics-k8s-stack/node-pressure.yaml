@@ -23,7 +23,7 @@ spec:
         summary: >-
           Processes on {{ $labels.instance }} spent {{ $value | humanizePercentage }} of the time waiting for
           memory (swapping) for 15 minutes; scrapes and probes slow down
-        dashboard: '{{ $externalURL }}/d/rYdddlPWk?orgId=1&var-job=node-exporter&var-node={{ $labels.instance }}'
+        dashboard: '{{ $externalURL }}/d/home-pods?orgId=1'
     - alert: NodeCPUPressure
       expr: rate(node_pressure_cpu_waiting_seconds_total{job="node-exporter"}[5m]) > 0.6
       for: 15m
@@ -33,7 +33,7 @@ spec:
         summary: >-
           Processes on {{ $labels.instance }} spent {{ $value | humanizePercentage }} of the time waiting for
           a CPU for 15 minutes
-        dashboard: '{{ $externalURL }}/d/rYdddlPWk?orgId=1&var-job=node-exporter&var-node={{ $labels.instance }}'
+        dashboard: '{{ $externalURL }}/d/home-pods?orgId=1'
     # The restart counter rose in the last 10 min and the last termination was an OOM kill. The
     # message says which container; Hermes being killed ends every session's running turn.
     # Alertmanager sends to Telegram itself, so this arrives even when Hermes is the one killed.
@@ -66,5 +66,5 @@ spec:
         summary: >-
           The kernel killed {{ printf "%.0f" $value }} process(es) on {{ $labels.instance }} for running out of
           memory, and no container restarted: a process inside a container (a build, a tool run) or on the
-          host was killed. Memory per namespace is on the dashboard.
-        dashboard: '{{ $externalURL }}/d/efa86fd1d0c121a26444b636a3f509a8?orgId=1'
+          host was killed. RAM per pod and namespace is on the dashboard.
+        dashboard: '{{ $externalURL }}/d/home-pods?orgId=1'
