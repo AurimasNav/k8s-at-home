@@ -15,6 +15,9 @@ spec:
       app: flaresolverr
   template:
     metadata:
+      annotations:
+        # bump to restart the pod via GitOps (Hermes has no delete/patch RBAC here)
+        restartedAt: "2026-11-03T13:55"
       labels:
         app: flaresolverr
     spec:
