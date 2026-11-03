@@ -3,3 +3,20 @@ kind: Kustomization
 
 resources:
 - https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.37/deploy/local-path-storage.yaml
+
+# The readiness check (/ready) makes 5 LIST calls to the API server. Upstream runs it every 5 s with
+# a 1 s timeout: about 1 API request per second around the clock, and it fails whenever the API
+# server is slow (k3s keeps its SQLite database on the same SSD as swap), which showed up as
+# KubePodNotReady flapping (22 % of checks failed). The provisioner has no Service, so readiness only
+# feeds the alerts; checking every 30 s with 5 s to answer is plenty.
+patches:
+- target:
+    kind: Deployment
+    name: local-path-provisioner
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/readinessProbe/periodSeconds
+      value: 30
+    - op: add
+      path: /spec/template/spec/containers/0/readinessProbe/timeoutSeconds
+      value: 5
