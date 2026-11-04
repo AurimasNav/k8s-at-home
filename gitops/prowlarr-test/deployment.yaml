@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr-test
+  labels:
+    app: prowlarr-test
+spec:
+  replicas: 1
+  # SQLite on an RWO PVC: never two pods on the same database.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: prowlarr-test
+  template:
+    metadata:
+      labels:
+        app: prowlarr-test
+    spec:
+      containers:
+      - name: prowlarr
+        # Prowlarr develop 69530d9 + PR #2765 head cfb7541, built by
+        # github.com/AurimasNav/prowlarr-pr-builds run 41784177407 (Prowlarr 3.0.1.2).
+        image: ghcr.io/aurimasnav/prowlarr-pr-builds:pr2765-cfb7541-develop-69530d9-r2@sha256:da1266620fa70a44386e9cc0bda2f02c6f03008fd70cd475346776627099c6ca
+        ports:
+        - containerPort: 9696
+        envFrom:
+        - configMapRef:
+            name: prowlarr-test
+        - secretRef:
+            name: prowlarr-test
+        readinessProbe:
+          tcpSocket:
+            port: 9696
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 10m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: prowlarr-test-config

@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# TEMPORARY test Prowlarr with open pull request Prowlarr/Prowlarr#2765 (LostFilm.tv indexer)
+# merged into Prowlarr develop. Image: github.com/AurimasNav/prowlarr-pr-builds.
+# Separate from the real Prowlarr: own namespace, own empty settings, not linked to any
+# Radarr/Sonarr. Remove this app, argocd-apps/base/apps/prowlarr-test and the prowlarr-test
+# hostname (iac/cloudflare) when the test is over.
+namespace: prowlarr-test
+
+resources:
+- ./deployment.yaml
+- ./service.yaml
+- ./configmap.yaml
+- ./externalsecret.yaml
+- ./pvc.yaml
+- ./httproute.yaml
+- ./networkpolicy.yaml
