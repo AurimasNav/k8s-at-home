@@ -141,8 +141,10 @@ initContainers:
   # PetKit (Jezza34000/homeassistant_petkit) for the Pura Max litter box (cloud
   # polling + PetKit MQTT). Same installer as bambu_lab: the release zip is 3.4 MB
   # (images), too big for ConfigMap vendoring. HA pip-installs pypetkitapi and
-  # friends from manifest.json on boot. Account is added in the UI (PetKit email +
-  # password; Apple/Google sign-in accounts need a PetKit password set first).
+  # friends from manifest.json on boot. Account is added in the UI with a SECOND
+  # PetKit account shared into the main account's Family: PetKit allows one
+  # session per account, so using the phone app's account logs the app out.
+  # Region is auto-detected (override under Advanced).
   - name: petkit
     # tag pinned in kustomization.yaml images: (Renovate tracks it there)
     image: python
