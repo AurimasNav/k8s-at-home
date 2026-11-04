@@ -174,7 +174,8 @@ initContainers:
 # so they don't collide with the UI-managed automations.yaml on the persistent volume.
 # The hikvision_next custom component (3 ConfigMaps, matching its own directory
 # layout) is mounted straight into custom_components/ so HA picks it up as an
-# installed integration without needing HACS itself.
+# installed integration without needing HACS itself. hikvision_bridge (9 ConfigMaps,
+# one per upstream directory) is mounted the same way, next to hikvision_next.
 additionalVolumes:
   - name: sungrow-package
     configMap:
@@ -233,6 +234,44 @@ additionalVolumes:
   - name: hikvision-next-translations
     configMap:
       name: ha-hikvision-next-translations
+  - name: hikvision-bridge
+    configMap:
+      name: ha-hikvision-bridge
+  # ConfigMap keys can't contain '@' (kustomization.yaml renames them);
+  # items maps them back to the upstream file names HA's brands view serves
+  - name: hikvision-bridge-brand
+    configMap:
+      name: ha-hikvision-bridge-brand
+      items:
+      - key: icon.png
+        path: icon.png
+      - key: icon-2x.png
+        path: icon@2x.png
+      - key: logo.png
+        path: logo.png
+      - key: logo-2x.png
+        path: logo@2x.png
+  - name: hikvision-bridge-cloud
+    configMap:
+      name: ha-hikvision-bridge-cloud
+  - name: hikvision-bridge-frontend
+    configMap:
+      name: ha-hikvision-bridge-frontend
+  - name: hikvision-bridge-model
+    configMap:
+      name: ha-hikvision-bridge-model
+  - name: hikvision-bridge-model-features
+    configMap:
+      name: ha-hikvision-bridge-model-features
+  - name: hikvision-bridge-runtime
+    configMap:
+      name: ha-hikvision-bridge-runtime
+  - name: hikvision-bridge-translations
+    configMap:
+      name: ha-hikvision-bridge-translations
+  - name: hikvision-bridge-wire
+    configMap:
+      name: ha-hikvision-bridge-wire
   - name: bhyve
     configMap:
       name: ha-bhyve
@@ -317,6 +356,24 @@ additionalMounts:
     mountPath: /config/custom_components/hikvision_next/isapi
   - name: hikvision-next-translations
     mountPath: /config/custom_components/hikvision_next/translations
+  - name: hikvision-bridge
+    mountPath: /config/custom_components/hikvision_bridge
+  - name: hikvision-bridge-brand
+    mountPath: /config/custom_components/hikvision_bridge/brand
+  - name: hikvision-bridge-cloud
+    mountPath: /config/custom_components/hikvision_bridge/cloud
+  - name: hikvision-bridge-frontend
+    mountPath: /config/custom_components/hikvision_bridge/frontend
+  - name: hikvision-bridge-model
+    mountPath: /config/custom_components/hikvision_bridge/model
+  - name: hikvision-bridge-model-features
+    mountPath: /config/custom_components/hikvision_bridge/model/features
+  - name: hikvision-bridge-runtime
+    mountPath: /config/custom_components/hikvision_bridge/runtime
+  - name: hikvision-bridge-translations
+    mountPath: /config/custom_components/hikvision_bridge/translations
+  - name: hikvision-bridge-wire
+    mountPath: /config/custom_components/hikvision_bridge/wire
   - name: bhyve
     mountPath: /config/custom_components/bhyve
   - name: bhyve-pybhyve

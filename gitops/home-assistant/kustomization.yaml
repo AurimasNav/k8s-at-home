@@ -113,6 +113,126 @@ configMapGenerator:
   - custom_components/hikvision_next/translations/pt-BR.json
   - custom_components/hikvision_next/translations/pt.json
   - custom_components/hikvision_next/translations/ru.json
+# Vendored yannik2480/hikvision_bridge (Apache-2.0), installed ALONGSIDE hikvision_next
+# so both can be compared on the DS-7604NXI-K1 before switching (tracked in #1029).
+# Nothing is configured automatically: the integration is added in the HA UI.
+# One ConfigMap per upstream directory (ConfigMaps can't nest), mounted at
+# /config/custom_components/hikvision_bridge (see values.yaml).
+# Left out: the 29 non-English translations (1.33 MB; there is no lt.json and this
+# house runs HA in English), same choice as bhyve/byd_vehicle. brand/ IS vendored:
+# home-assistant/brands has no custom_integrations/hikvision_bridge, so these PNGs are
+# the only icon source (HA serves a custom integration's brand/ folder first).
+# Sizes: brand/ (667 KB of PNGs, binaryData) and frontend/ (459 KB, hls.light.min.js)
+# each fit a ConfigMap's 1 MiB limit on their own.
+# ServerSideApply on brand/ and frontend/: as client-side apply their
+# kubectl.kubernetes.io/last-applied-configuration annotation (915 KB / 467 KB) is over
+# the apiserver's 256 KiB annotation limit and the sync fails; the other 7 stay under it.
+# ConfigMap keys can't contain '@', so brand/'s icon@2x.png and logo@2x.png are stored
+# as icon-2x.png / logo-2x.png and renamed back by the volume's items (values.yaml).
+# Renovate tracks the source tag:
+# https://github.com/yannik2480/hikvision_bridge/archive/refs/tags/v0.9.12.tar.gz
+- name: ha-hikvision-bridge
+  # Server-side apply although it fits client-side today (~200 KB of the 256 KiB
+  # last-applied limit): upstream grew ~27 KB in the 11 days to v0.9.12, and a
+  # re-vendor that crosses the limit would pass CI and then fail the Argo sync.
+  options:
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
+  files:
+  - custom_components/hikvision_bridge/__init__.py
+  - custom_components/hikvision_bridge/alarm_control_panel.py
+  - custom_components/hikvision_bridge/binary_sensor.py
+  - custom_components/hikvision_bridge/button.py
+  - custom_components/hikvision_bridge/camera.py
+  - custom_components/hikvision_bridge/cloud_entry.py
+  - custom_components/hikvision_bridge/config_flow.py
+  - custom_components/hikvision_bridge/const.py
+  - custom_components/hikvision_bridge/diagnostics.py
+  - custom_components/hikvision_bridge/entity.py
+  - custom_components/hikvision_bridge/event.py
+  - custom_components/hikvision_bridge/icons.json
+  - custom_components/hikvision_bridge/image.py
+  - custom_components/hikvision_bridge/manifest.json
+  - custom_components/hikvision_bridge/media_source.py
+  - custom_components/hikvision_bridge/number.py
+  - custom_components/hikvision_bridge/panel.py
+  - custom_components/hikvision_bridge/repairs.py
+  - custom_components/hikvision_bridge/select.py
+  - custom_components/hikvision_bridge/sensor.py
+  - custom_components/hikvision_bridge/services.py
+  - custom_components/hikvision_bridge/services.yaml
+  - custom_components/hikvision_bridge/switch.py
+  - custom_components/hikvision_bridge/views.py
+  - custom_components/hikvision_bridge/websocket.py
+- name: ha-hikvision-bridge-brand
+  options:
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
+  files:
+  - custom_components/hikvision_bridge/brand/icon.png
+  - icon-2x.png=custom_components/hikvision_bridge/brand/icon@2x.png
+  - custom_components/hikvision_bridge/brand/logo.png
+  - logo-2x.png=custom_components/hikvision_bridge/brand/logo@2x.png
+- name: ha-hikvision-bridge-cloud
+  files:
+  - custom_components/hikvision_bridge/cloud/__init__.py
+  - custom_components/hikvision_bridge/cloud/account.py
+  - custom_components/hikvision_bridge/cloud/actions.py
+  - custom_components/hikvision_bridge/cloud/catalog.py
+- name: ha-hikvision-bridge-frontend
+  options:
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
+  files:
+  - custom_components/hikvision_bridge/frontend/hikvision-bridge.js
+  - custom_components/hikvision_bridge/frontend/hls.js.LICENSE.txt
+  - custom_components/hikvision_bridge/frontend/hls.light.min.js
+- name: ha-hikvision-bridge-model
+  files:
+  - custom_components/hikvision_bridge/model/__init__.py
+  - custom_components/hikvision_bridge/model/audit.py
+  - custom_components/hikvision_bridge/model/discover.py
+  - custom_components/hikvision_bridge/model/inventory.py
+  - custom_components/hikvision_bridge/model/vocabulary.py
+- name: ha-hikvision-bridge-model-features
+  files:
+  - custom_components/hikvision_bridge/model/features/__init__.py
+  - custom_components/hikvision_bridge/model/features/adjust.py
+  - custom_components/hikvision_bridge/model/features/detection.py
+  - custom_components/hikvision_bridge/model/features/health.py
+  - custom_components/hikvision_bridge/model/features/image.py
+  - custom_components/hikvision_bridge/model/features/intercom.py
+  - custom_components/hikvision_bridge/model/features/io.py
+  - custom_components/hikvision_bridge/model/features/linkage.py
+  - custom_components/hikvision_bridge/model/features/park.py
+  - custom_components/hikvision_bridge/model/features/ptz.py
+  - custom_components/hikvision_bridge/model/features/recordings.py
+  - custom_components/hikvision_bridge/model/features/scrambling.py
+  - custom_components/hikvision_bridge/model/features/signals.py
+  - custom_components/hikvision_bridge/model/features/speaker.py
+  - custom_components/hikvision_bridge/model/features/storage.py
+- name: ha-hikvision-bridge-runtime
+  files:
+  - custom_components/hikvision_bridge/runtime/__init__.py
+  - custom_components/hikvision_bridge/runtime/bridge.py
+  - custom_components/hikvision_bridge/runtime/hookin.py
+  - custom_components/hikvision_bridge/runtime/identity.py
+  - custom_components/hikvision_bridge/runtime/playback.py
+  - custom_components/hikvision_bridge/runtime/refresh.py
+  - custom_components/hikvision_bridge/runtime/router.py
+  - custom_components/hikvision_bridge/runtime/sessions.py
+- name: ha-hikvision-bridge-translations
+  files:
+  - custom_components/hikvision_bridge/translations/en.json
+- name: ha-hikvision-bridge-wire
+  files:
+  - custom_components/hikvision_bridge/wire/__init__.py
+  - custom_components/hikvision_bridge/wire/faults.py
+  - custom_components/hikvision_bridge/wire/feed.py
+  - custom_components/hikvision_bridge/wire/link.py
+  - custom_components/hikvision_bridge/wire/scrub.py
+  - custom_components/hikvision_bridge/wire/signer.py
+  - custom_components/hikvision_bridge/wire/xmlview.py
 # Vendored Orbit B-hyve, same 3-ConfigMap pattern. Renovate tracks the source tag:
 # https://github.com/sebr/bhyve-home-assistant/archive/refs/tags/4.1.3.tar.gz
 - name: ha-bhyve
