@@ -114,6 +114,15 @@ spec:
     - ports:
       - port: "9696"
         protocol: TCP
+  # prowlarr-test.sync.lt (temporary, gitops/prowlarr-test)
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: prowlarr-test
+        app: prowlarr-test
+    toPorts:
+    - ports:
+      - port: "9696"
+        protocol: TCP
   # qbittorrent.sync.lt
   - toEndpoints:
     - matchLabels:

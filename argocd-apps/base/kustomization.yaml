@@ -45,3 +45,4 @@ resources:
 - ./apps/cleanuparr
 - ./apps/cloudflared
 - ./apps/immich
+- ./apps/prowlarr-test
