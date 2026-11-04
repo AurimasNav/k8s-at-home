@@ -15,6 +15,7 @@ upgrade is a clean replacement.
 | `mammotion` | [mikey0000/Mammotion-HA](https://github.com/mikey0000/Mammotion-HA) |
 | `byd_vehicle` | [jkaberg/hass-byd-vehicle](https://github.com/jkaberg/hass-byd-vehicle) (en.json only) |
 | `eso` | [algirdasc/hass-eso](https://github.com/algirdasc/hass-eso) (pinned to a commit: upstream has no tags; no `brand/`) |
+| `hikvision_bridge` | [yannik2480/hikvision_bridge](https://github.com/yannik2480/hikvision_bridge) (en.json only; runs next to `hikvision_next` until we pick one, see #1029) |
 
 ## Version tracking
 
@@ -36,13 +37,25 @@ by re-vendoring the files (below) on the same branch before merging.
    drop a patch once the new release contains the fix.
    Leaving files out is allowed only when the comment above that component's
    ConfigMap generator in `../kustomization.yaml` says which and why: non-English
-   translations (bhyve, byd_vehicle), or `brand/` when home-assistant/brands
+   translations (bhyve, byd_vehicle, hikvision_bridge), or `brand/` when home-assistant/brands
    serves the same images (eso).
 3. Diff the file list against the previous version. If upstream added or
    removed files, update the matching ConfigMap generator lists in
    `../kustomization.yaml`; only if a whole new subdirectory appeared, add a
    ConfigMap + mount for it in `../kustomization.yaml` and `../values.yaml`
    (ConfigMaps can't nest directories, hence one per subdirectory).
+   ConfigMap keys allow only `[-._a-zA-Z0-9]`: a file name with any other
+   character (`brand/icon@2x.png`) gets a renamed key in the generator
+   (`icon-2x.png=<path>`) and an `items` entry on its volume in `../values.yaml`
+   mapping the key back to the upstream name.
+   Size limits: a ConfigMap holds at most 1 MiB, and one bigger than about
+   256 KiB can't be synced with client-side apply, because its
+   `kubectl.kubernetes.io/last-applied-configuration` annotation goes over the
+   apiserver's 256 KiB annotation limit. Those generators carry
+   `argocd.argoproj.io/sync-options: ServerSideApply=true` (mammotion,
+   byd_vehicle, hikvision_bridge `brand/` and `frontend/`). Measure the
+   rendered objects after adding files. A component too big for 1 MiB ConfigMaps
+   goes through the init-container installer instead (bambu_lab, `../values.yaml`).
 4. Check the component's `manifest.json` for a `requirements` key — those pip
    packages get installed by HA at startup, which needs outbound internet and
    slows the first boot.
