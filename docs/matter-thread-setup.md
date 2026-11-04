@@ -69,21 +69,17 @@ ip6table_filter
 
 ### IPv6 Route for Thread OMR Prefix
 
-Since OTBR runs with `hostNetwork: true`, its Router Advertisements originate from the host's own link-local address. The Linux kernel ignores RAs from itself, so the Thread OMR prefix route is never installed automatically despite correct `accept_ra_rt_info_max_plen` settings.
+No hook or script is needed: otbr-agent puts the route on the host itself. It adds its SLAAC address from the OMR prefix to `wpan0`, and the kernel creates the matching prefix route, `<omr-prefix>/64 dev wpan0 proto kernel metric 64` (the Home Assistant OTBR build sets `OPENTHREAD_POSIX_CONFIG_NETIF_PREFIX_ROUTE_METRIC` to 64; see `AddRtAttrUint32(... IFA_RT_PRIORITY ...)` in openthread `src/posix/platform/netif.cpp`). When the prefix changes, otbr-agent swaps the address and the route follows; the log shows it moving from `fd5a:4090:9c9f:1::/64` to `fd54:6c84:47f:1::/64` without help.
 
-The OTBR container runs an extra s6 service, `otbr-omr-route` (`gitops/otbr/s6/otbr-omr-route/run`, mounted from a ConfigMap into `/etc/s6-overlay/s6-rc.d/`). It starts after `otbr-agent-configure` and every 30 seconds:
+Metric 64 is ahead of the metric-1024 routes the kernel learns from other Thread border routers' RAs on eno1 (an Aqara camera hub G350 at `fe80::56ef:44ff:fea0:8e52` advertises the same Thread network), so Matter traffic goes through this radio while OTBR runs.
 
-- reads the favored OMR prefix from `ot-ctl br omrprefix` (the local one if no favored prefix is shown), stripping the CRLF line endings `ot-ctl` prints;
-- adds `ip -6 route add <prefix> dev wpan0 metric 256` if that route is missing (after wpan0 is recreated, for example);
-- removes the old route and adds the new one when the prefix changes (Thread network reset, or another border router's prefix becoming favored).
+Until 2026-11 the deployment also had a `postStart` hook that tried to add the route once. It never worked (`ot-ctl` ends lines with CRLF, so `ip` got `<prefix>\r` and refused it; the error was discarded) and is removed. Because OTBR's RAs come from the host's own link-local address (`hostNetwork: true`), the kernel ignores them, so the RA route-info path does not help here; the address route above is what carries the traffic.
 
-Metric 256 keeps it ahead of the metric-1024 routes the kernel learns from other Thread border routers' RAs on eno1 (an Aqara camera hub G350 on the LAN is one), so traffic goes through this radio while OTBR runs and falls back to them when it stops. It replaced a `postStart` hook that ran once and never added the route: it passed `<prefix>\r` to `ip`, which refused it, and the error was discarded.
-
-The service logs to the OTBR container log (`kubectl -n otbr logs deploy/otbr | grep otbr-omr-route`). The current OMR prefix and route can be checked with:
+Check the prefix and route:
 
 ```sh
 kubectl exec deploy/otbr -n otbr -- ot-ctl br omrprefix
-kubectl exec deploy/otbr -n otbr -- ip -6 route show dev wpan0
+ip -6 route show dev wpan0          # on the host: <omr-prefix>/64 ... proto kernel metric 64
 ```
 
 ### USB Device
@@ -106,7 +102,7 @@ The device path (e.g., `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_DCB4D9124108-if00`
 - USB radio mounted from `/dev/serial/by-id/...` to `/dev/ttyACM0`
 - TUN device mounted from `/dev/net/tun`
 - PVC mounted at `/data` - persists the Thread dataset across pod restarts (the container symlinks `/var/lib/thread` to `/data/thread`), keeping the same network name, key, and OMR prefix
-- `otbr-omr-route` s6 service keeps the IPv6 route to the OMR prefix via wpan0 (checks every 30 seconds; see above)
+- `postStart` lifecycle hook dynamically queries OTBR for the OMR prefix and adds the IPv6 route via wpan0 (retries for up to 60 seconds while OTBR initializes)
 - Runs `mdnsd` (Apple mDNS daemon) which advertises `_meshcop._udp` for border router discovery
 
 ### python-matter-server

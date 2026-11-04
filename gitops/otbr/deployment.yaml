@@ -73,17 +73,6 @@ spec:
           mountPath: /dev
         - name: tun
           mountPath: /dev/net/tun
-        # otbr-omr-route: an extra s6 service that keeps the host route to the Thread
-        # OMR prefix through wpan0 (see s6/otbr-omr-route/run). s6-overlay compiles
-        # /etc/s6-overlay/s6-rc.d at container start; the empty file in user/contents.d
-        # adds the service to the bundle s6 starts.
-        - name: omr-route
-          mountPath: /etc/s6-overlay/s6-rc.d/otbr-omr-route
-          readOnly: true
-        - name: omr-route-bundle
-          mountPath: /etc/s6-overlay/s6-rc.d/user/contents.d/otbr-omr-route
-          subPath: bundle-entry
-          readOnly: true
       volumes:
       - name: data
         persistentVolumeClaim:
@@ -97,20 +86,3 @@ spec:
         hostPath:
           path: /dev/net/tun
           type: CharDevice
-      - name: omr-route
-        configMap:
-          name: otbr-omr-route
-          defaultMode: 0755
-          items:
-          - key: run
-            path: run
-          - key: type
-            path: type
-          - key: dependency
-            path: dependencies.d/otbr-agent-configure
-      - name: omr-route-bundle
-        configMap:
-          name: otbr-omr-route
-          items:
-          - key: bundle-entry
-            path: bundle-entry
