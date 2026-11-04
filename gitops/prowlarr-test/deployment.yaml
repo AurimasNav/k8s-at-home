@@ -20,8 +20,9 @@ spec:
       containers:
       - name: prowlarr
         # Prowlarr develop 69530d9 + PR #2765 head cfb7541, built by
-        # github.com/AurimasNav/prowlarr-pr-builds run 41784177407 (Prowlarr 3.0.1.2).
-        image: ghcr.io/aurimasnav/prowlarr-pr-builds:pr2765-cfb7541-develop-69530d9-r2@sha256:da1266620fa70a44386e9cc0bda2f02c6f03008fd70cd475346776627099c6ca
+        # github.com/AurimasNav/prowlarr-pr-builds run 41797793485 (Prowlarr 3.0.1.3): PR #2765 plus the
+        # proposed fixes in patches/pr2765-lostfilm-fixes.patch (mirror session reuse, date parsing).
+        image: ghcr.io/aurimasnav/prowlarr-pr-builds:pr2765-cfb7541-develop-69530d9-pr2765-lostfilm-fixes-r3@sha256:6da709e17a2f80c27e408535a8fc355d462cfeaedefcbbb7a6dc61deda61d098
         ports:
         - containerPort: 9696
         envFrom:
