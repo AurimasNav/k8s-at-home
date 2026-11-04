@@ -65,21 +65,6 @@ spec:
           value: "8086"
         - name: AUTOFLASH_FIRMWARE
           value: "1"
-        lifecycle:
-          postStart:
-            exec:
-              command:
-              - /bin/bash
-              - -c
-              - |
-                for i in $(seq 1 30); do
-                  prefix=$(ot-ctl br omrprefix 2>/dev/null | grep "Local:" | awk '{print $2}')
-                  if [ -n "$prefix" ]; then
-                    ip -6 route add "$prefix" dev wpan0 2>/dev/null || true
-                    break
-                  fi
-                  sleep 2
-                done
         volumeMounts:
         - name: data
           mountPath: /data

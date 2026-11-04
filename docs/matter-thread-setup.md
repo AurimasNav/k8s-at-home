@@ -47,9 +47,10 @@ net.ipv6.conf.all.forwarding = 1
 net.ipv6.conf.all.accept_ra = 2
 net.ipv6.conf.eno1.accept_ra = 2
 
-# Accept Route Information Options (RFC 4191) with prefix length up to /64
-# OTBR advertises Thread mesh prefixes via RIO - the host must accept them
-# to build routes that reach Thread devices
+# Accept Route Information Options (RFC 4191) with prefix length up to /64.
+# Our own OTBR's RAs come from this host, so the kernel ignores them; this lets the
+# host learn other border routers' Thread routes (Aqara hub, metric 1024) as a fallback.
+# The primary route comes from otbr-agent's address on wpan0 (see below).
 net.ipv6.conf.eno1.accept_ra_rt_info_max_plen = 64
 ```
 
@@ -69,21 +70,18 @@ ip6table_filter
 
 ### IPv6 Route for Thread OMR Prefix
 
-Since OTBR runs with `hostNetwork: true`, its Router Advertisements originate from the host's own link-local address. The Linux kernel ignores RAs from itself, so the Thread OMR prefix route is never installed automatically despite correct `accept_ra_rt_info_max_plen` settings.
+No hook or script is needed: otbr-agent puts the route on the host itself. It adds its SLAAC address from the OMR prefix to `wpan0`, and the kernel creates the matching prefix route, `<omr-prefix>/64 dev wpan0 proto kernel metric 64` (the Home Assistant OTBR build sets `OPENTHREAD_POSIX_CONFIG_NETIF_PREFIX_ROUTE_METRIC` to 64; see `AddRtAttrUint32(... IFA_RT_PRIORITY ...)` in openthread `src/posix/platform/netif.cpp`). When the prefix changes, otbr-agent swaps the address and the route follows; the log of the 2026-10-24 start showed it moving from `fd5a:4090:9c9f:1::/64` to `fd54:6c84:47f:1::/64` without help. The metric 64 is set in the Home Assistant OTBR build (`openthread-core-ha-config-posix.h` in home-assistant/app-openthread-border-router).
 
-The OTBR deployment includes a `postStart` lifecycle hook that dynamically queries the OMR prefix and adds the route:
+Metric 64 is ahead of the metric-1024 routes the kernel learns from other Thread border routers' RAs on eno1 (an Aqara camera hub G350 at `fe80::56ef:44ff:fea0:8e52` advertises the same Thread network), so Matter traffic goes through this radio while OTBR runs.
 
-```sh
-prefix=$(ot-ctl br omrprefix | grep "Local:" | awk '{print $2}')
-ip -6 route add "$prefix" dev wpan0
-```
+Until 2026-11 the deployment also had a `postStart` hook that tried to add the route once. It never worked (`ot-ctl` ends lines with CRLF, so `ip` got `<prefix>\r` and refused it; the error was discarded) and is removed. Because OTBR's RAs come from the host's own link-local address (`hostNetwork: true`), the kernel ignores them, so the RA route-info path does not help here; the address route above is what carries the traffic.
 
-This runs in a retry loop (up to 60 seconds) to wait for OTBR to initialize. Since the prefix is read from OTBR at runtime, it works even if the Thread network is reset and a new prefix is generated.
-
-The current OMR prefix can be verified via:
+Check the prefix and route:
 
 ```sh
 kubectl exec deploy/otbr -n otbr -- ot-ctl br omrprefix
+ip -6 route show dev wpan0          # on the host: <omr-prefix>/64 ... proto kernel metric 64
+ip -6 route get <thread-device-ip>  # on the host: should say dev wpan0 ... metric 64
 ```
 
 ### USB Device
@@ -106,7 +104,7 @@ The device path (e.g., `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_DCB4D9124108-if00`
 - USB radio mounted from `/dev/serial/by-id/...` to `/dev/ttyACM0`
 - TUN device mounted from `/dev/net/tun`
 - PVC mounted at `/data` - persists the Thread dataset across pod restarts (the container symlinks `/var/lib/thread` to `/data/thread`), keeping the same network name, key, and OMR prefix
-- `postStart` lifecycle hook dynamically queries OTBR for the OMR prefix and adds the IPv6 route via wpan0 (retries for up to 60 seconds while OTBR initializes)
+- No `postStart` hook: the OMR route comes from otbr-agent's SLAAC address on wpan0 (see IPv6 Route for Thread OMR Prefix)
 - Runs `mdnsd` (Apple mDNS daemon) which advertises `_meshcop._udp` for border router discovery
 
 ### python-matter-server
@@ -151,9 +149,9 @@ Both iOS and Android companion apps need the internal URL set to `http://<host-i
 4. Device joins the Thread network and gets a mesh-local IPv6 address
 5. Phone hands off to HA, which delegates to python-matter-server
 6. python-matter-server discovers the device via mDNS on the Thread/LAN boundary
-7. IPv6 traffic flows: matter-server (eno1) -> OTBR routing -> wpan0 -> Thread device
+7. IPv6 traffic flows: matter-server (host network) sends straight out of wpan0 from the host's OMR address (route `<omr-prefix>/64 dev wpan0 metric 64`) -> Thread device
 
-Steps 6-7 require the IPv6 sysctl settings to be correct - without forwarding and proper route acceptance, the host cannot route to Thread mesh addresses.
+Steps 6-7 need the IPv6 sysctl settings: forwarding lets OTBR route between Thread and the LAN, and route-info acceptance gives the host the fallback route through other border routers when OTBR is down.
 
 ## Troubleshooting
 
@@ -168,7 +166,7 @@ Steps 6-7 require the IPv6 sysctl settings to be correct - without forwarding an
 - Verify IPv6 forwarding: `cat /proc/sys/net/ipv6/conf/all/forwarding` (must be `1`)
 - Verify accept_ra: `cat /proc/sys/net/ipv6/conf/eno1/accept_ra` (must be `2`)
 - Verify rt_info_max_plen: `cat /proc/sys/net/ipv6/conf/eno1/accept_ra_rt_info_max_plen` (must be `64`)
-- Check Thread routes exist: `ip -6 route | grep wpan0`
+- Check Thread routes exist: `ip -6 route | grep wpan0`, and `ip -6 route get <thread-device-ip>` goes via wpan0
 - Ensure matter-server is on hostNetwork (mDNS multicast does not cross pod network boundaries)
 
 ### "Failed to advertise records" in matter-server
