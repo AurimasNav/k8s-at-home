@@ -18,6 +18,21 @@ spec:
       labels:
         app: qbittorrent
     spec:
+      # DNS through Blocky -> Unbound instead of the node's resolver (router -> ISP), which answers
+      # some tracker sites with the ISP block page (e.g. linkomanija.net, rutor, nnmclub). Same setup
+      # as Prowlarr (gitops/prowlarr/deployment.yaml): Blocky sends cluster.local back to CoreDNS, and
+      # there is no second nameserver, because musl asks all of them at once and takes the first answer.
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+        - 192.168.1.152 # Blocky LoadBalancer (gitops/blocky)
+        searches:
+        - qbittorrent.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+        options:
+        - name: ndots
+          value: "5"
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
