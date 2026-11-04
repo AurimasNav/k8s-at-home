@@ -74,10 +74,12 @@ spec:
         - containerPort: 8080
           name: webui
           protocol: TCP
-        - containerPort: 6881
+        # Torrent port: must match QBT_TORRENTING_PORT, the qbittorrent-traffic Service and the
+        # router forward (50413 TCP+UDP -> 192.168.1.212), or peers can't connect in.
+        - containerPort: 50413
           name: traffic
           protocol: TCP
-        - containerPort: 6881
+        - containerPort: 50413
           name: traffic-udp
           protocol: UDP
         # The onedr0p image set these two in its Dockerfile; the home-operations image does not.

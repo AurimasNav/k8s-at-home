@@ -20,14 +20,15 @@ metadata:
     metallb.universe.tf/loadBalancerIPs: 192.168.1.212
 spec:
   ports:
+  # Same port as QBT_TORRENTING_PORT (deployment.yaml); the router forwards 50413 TCP+UDP here.
   - name: traffic
-    port: 6881
-    targetPort: 6881
+    port: 50413
+    targetPort: 50413
     protocol: TCP
     appProtocol: TCP
   - name: traffic-udp
-    port: 6881
-    targetPort: 6881
+    port: 50413
+    targetPort: 50413
     protocol: UDP
     appProtocol: UDP
   selector:
