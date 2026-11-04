@@ -71,19 +71,19 @@ ip6table_filter
 
 Since OTBR runs with `hostNetwork: true`, its Router Advertisements originate from the host's own link-local address. The Linux kernel ignores RAs from itself, so the Thread OMR prefix route is never installed automatically despite correct `accept_ra_rt_info_max_plen` settings.
 
-The OTBR deployment includes a `postStart` lifecycle hook that dynamically queries the OMR prefix and adds the route:
+The OTBR container runs an extra s6 service, `otbr-omr-route` (`gitops/otbr/s6/otbr-omr-route/run`, mounted from a ConfigMap into `/etc/s6-overlay/s6-rc.d/`). It starts after `otbr-agent-configure` and every 30 seconds:
 
-```sh
-prefix=$(ot-ctl br omrprefix | grep "Local:" | awk '{print $2}')
-ip -6 route add "$prefix" dev wpan0
-```
+- reads the favored OMR prefix from `ot-ctl br omrprefix` (the local one if no favored prefix is shown), stripping the CRLF line endings `ot-ctl` prints;
+- adds `ip -6 route add <prefix> dev wpan0 metric 256` if that route is missing (after wpan0 is recreated, for example);
+- removes the old route and adds the new one when the prefix changes (Thread network reset, or another border router's prefix becoming favored).
 
-This runs in a retry loop (up to 60 seconds) to wait for OTBR to initialize. Since the prefix is read from OTBR at runtime, it works even if the Thread network is reset and a new prefix is generated.
+Metric 256 keeps it ahead of the metric-1024 routes the kernel learns from other Thread border routers' RAs on eno1 (an Aqara camera hub G350 on the LAN is one), so traffic goes through this radio while OTBR runs and falls back to them when it stops. It replaced a `postStart` hook that ran once and never added the route: it passed `<prefix>\r` to `ip`, which refused it, and the error was discarded.
 
-The current OMR prefix can be verified via:
+The service logs to the OTBR container log (`kubectl -n otbr logs deploy/otbr | grep otbr-omr-route`). The current OMR prefix and route can be checked with:
 
 ```sh
 kubectl exec deploy/otbr -n otbr -- ot-ctl br omrprefix
+kubectl exec deploy/otbr -n otbr -- ip -6 route show dev wpan0
 ```
 
 ### USB Device
@@ -106,7 +106,7 @@ The device path (e.g., `/dev/serial/by-id/usb-Nabu_Casa_ZBT-2_DCB4D9124108-if00`
 - USB radio mounted from `/dev/serial/by-id/...` to `/dev/ttyACM0`
 - TUN device mounted from `/dev/net/tun`
 - PVC mounted at `/data` - persists the Thread dataset across pod restarts (the container symlinks `/var/lib/thread` to `/data/thread`), keeping the same network name, key, and OMR prefix
-- `postStart` lifecycle hook dynamically queries OTBR for the OMR prefix and adds the IPv6 route via wpan0 (retries for up to 60 seconds while OTBR initializes)
+- `otbr-omr-route` s6 service keeps the IPv6 route to the OMR prefix via wpan0 (checks every 30 seconds; see above)
 - Runs `mdnsd` (Apple mDNS daemon) which advertises `_meshcop._udp` for border router discovery
 
 ### python-matter-server

@@ -1,0 +1,67 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+# ==============================================================================
+# Keep a host route to the Thread network's OMR prefix through wpan0 (added by
+# gitops/otbr, not part of the image).
+#
+# With hostNetwork, the Router Advertisements this OTBR sends on eno1 come from
+# the host itself, and the kernel ignores its own RAs. So it never learns from
+# them that the OMR prefix (the Thread devices' routable addresses) is reachable
+# through wpan0. This service checks every OMR_ROUTE_INTERVAL seconds
+# (default 30): the route comes back after wpan0 is recreated and follows the
+# prefix when the Thread network changes it. It replaces a postStart hook that
+# ran once and never worked (ot-ctl ends lines with CRLF, so `ip` got
+# "<prefix>\r" and refused it; the error was discarded).
+#
+# The prefix is the *favored* OMR prefix: the one in the Thread network data,
+# which the devices take their addresses from. This border router's own (local)
+# prefix is the fallback when ot-ctl shows no favored one.
+# Metric 256 keeps the route ahead of the metric-1024 routes the kernel learns
+# from another border router's RAs on eno1, so traffic uses this radio while it
+# is up; when the pod stops, wpan0 and this route disappear and those take over.
+# ==============================================================================
+
+interval="${OMR_ROUTE_INTERVAL:-30}"
+metric=256
+current=""
+logged=""
+
+omr_prefix() {
+    # Prints the favored OMR prefix, or the local one if no favored prefix is shown.
+    timeout 10 ot-ctl br omrprefix 2>/dev/null | tr -d '\r' | awk '
+        $1 == "Favored:" { favored = $2 }
+        $1 == "Local:"   { local_prefix = $2 }
+        END { if (favored != "") print favored; else if (local_prefix != "") print local_prefix }'
+}
+
+while true; do
+    prefix=""
+    # wpan0 exists only while otbr-agent runs; skip quietly until it does.
+    if [ -d /sys/class/net/wpan0 ]; then
+        prefix="$(omr_prefix)"
+    fi
+
+    if [ -n "${prefix}" ]; then
+        if [ -n "${current}" ] && [ "${current}" != "${prefix}" ]; then
+            if ip -6 route del "${current}" dev wpan0 metric "${metric}" 2>/dev/null; then
+                echo "INFO: otbr-omr-route: OMR prefix changed, removed ${current} dev wpan0"
+            fi
+            logged=""
+        fi
+
+        existing="$(ip -6 route show exact "${prefix}" dev wpan0 2>/dev/null)"
+        if [ -z "${existing}" ]; then
+            if ip -6 route add "${prefix}" dev wpan0 metric "${metric}"; then
+                echo "INFO: otbr-omr-route: added ${prefix} dev wpan0 metric ${metric}"
+            else
+                echo "WARNING: otbr-omr-route: could not add ${prefix} dev wpan0"
+            fi
+        elif [ "${logged}" != "${prefix}" ]; then
+            echo "INFO: otbr-omr-route: ${prefix} dev wpan0 already present: ${existing}"
+        fi
+        logged="${prefix}"
+        current="${prefix}"
+    fi
+
+    sleep "${interval}"
+done
