@@ -1,13 +1,15 @@
 # PROVENANCE — vendored, not written here.
 #
 # Source: https://github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant
-#   file: modbus_sungrow.yaml
+#   file: modbus_sungrow.yaml on main, last changed in commit 43ef9c7ed5 (the
+#   "Release date 2026-06-19" line below). Upstream's tags (v0.1.0a1 onward,
+#   pre-releases) belong to its new HA integration, not to this file: they
+#   carry a byte-identical copy as legacy/modbus_sungrow.yaml, e.g.
+#   https://raw.githubusercontent.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant/v0.1.0a25/legacy/modbus_sungrow.yaml
+#   (checked 2026-11-04: main, v0.1.0a25 and 43ef9c7ed5 all have blob 9046a73c1c).
 #
-# Upstream publishes NO tags or releases, so the "Release date" line below is
-# the only version marker there is. It read 2026-06-19 when vendored and still
-# matches upstream main as of 2026-08-18, i.e. we are current. To check for
-# drift, diff against the raw file on main; to update, re-download and re-apply
-# the local changes listed here.
+# To check for drift, diff against the raw file on main (or legacy/ at the
+# newest tag); to update, re-download and re-apply the local changes listed here.
 #
 # NOTE: these are register DEFINITIONS only. The code polling them is Home
 # Assistant's own core `modbus` integration - there is no custom component in
@@ -17,8 +19,9 @@
 #
 # LOCAL CHANGES vs upstream (re-apply these on every update):
 #   1. Secrets inlined - upstream uses !secret for host/port/device_address/
-#      message_wait_milliseconds, but this ships as a ConfigMap with no
-#      secrets.yaml alongside it. Set to 192.168.1.119:502, unit 1, 30 ms.
+#      message_wait_milliseconds/battery_max_power, but this ships as a
+#      ConfigMap with no secrets.yaml alongside it. Set to 192.168.1.119:502,
+#      unit 1 (SBR unit 200, commented out upstream too), 30 ms, 9600 W.
 #   2. `automation:` and `scene:` sections dropped - this package is read-only
 #      telemetry; control logic lives in automations/ where it can be reviewed.
 #   3. 9 sensors trimmed: the WiNet-S serves only a subset of the inverter's
