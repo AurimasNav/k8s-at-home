@@ -64,3 +64,10 @@ jobs:
       7. 💾 Storage: a 10-char ▓░ gauge of used/total for the /data pool, free space and its change this week; library size per instance with the change since the last report (skip instances that are empty).
       8. 🍿 Watched on Plex: total plays, top viewers (counts only), the most watched titles, movies watched.
       9. Last line "👀 Worth a look:" only for things that need a human: requests waiting more than 3 days with nothing grabbed, failed imports, stuck downloads, dead (missingFiles) torrents, pending replacement searches above 0. Otherwise end with "👀 Nothing needs attention."
+  d02d99c268ac:
+    name: Cron cleanup (jobs with no future run)
+    schedule: 30 9 * * *
+    deliver: telegram:-1004485564030:501
+    script: cron_cleanup.py
+    no_agent: true
+    enabled: true
