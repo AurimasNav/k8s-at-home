@@ -22,7 +22,7 @@ spec:
         # Prowlarr develop 69530d9 + PR #2765 head cfb7541, built by
         # github.com/AurimasNav/prowlarr-pr-builds run 41797793485 (Prowlarr 3.0.1.3): PR #2765 plus the
         # proposed fixes in patches/pr2765-lostfilm-fixes.patch (mirror session reuse, date parsing).
-        image: ghcr.io/aurimasnav/prowlarr-pr-builds:pr2765-cfb7541-develop-69530d9-pr2765-pr-a-b-c-r22@sha256:383fe3a159b32bd0d6f52e1b0cb3a134545bff0802291ea64f1fab3feebffed8
+        image: ghcr.io/aurimasnav/prowlarr-pr-builds:pr2765-cfb7541-develop-69530d9-pr2765-pr-a-b-c-r25@sha256:afaa681563d653a52ddf029846a3f873574828e5da57d864dd7704c515c7f487
         ports:
         - containerPort: 9696
         envFrom:
