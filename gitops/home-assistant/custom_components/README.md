@@ -13,6 +13,8 @@ upgrade is a clean replacement.
 | `hikvision_next` | [maciej-or/hikvision_next](https://github.com/maciej-or/hikvision_next) |
 | `bhyve` | [sebr/bhyve-home-assistant](https://github.com/sebr/bhyve-home-assistant) |
 | `mammotion` | [mikey0000/Mammotion-HA](https://github.com/mikey0000/Mammotion-HA) |
+| `byd_vehicle` | [jkaberg/hass-byd-vehicle](https://github.com/jkaberg/hass-byd-vehicle) (en.json only) |
+| `eso` | [algirdasc/hass-eso](https://github.com/algirdasc/hass-eso) (pinned to a commit: upstream has no tags; no `brand/`) |
 
 ## Version tracking
 
@@ -32,6 +34,10 @@ by re-vendoring the files (below) on the same branch before merging.
    `custom_components/<name>/` wholesale — no merging, no local edits. Then
    re-apply that component's patches from `patches/` (see Local patches);
    drop a patch once the new release contains the fix.
+   Leaving files out is allowed only when the comment above that component's
+   ConfigMap generator in `../kustomization.yaml` says which and why: non-English
+   translations (bhyve, byd_vehicle), or `brand/` when home-assistant/brands
+   serves the same images (eso).
 3. Diff the file list against the previous version. If upstream added or
    removed files, update the matching ConfigMap generator lists in
    `../kustomization.yaml`; only if a whole new subdirectory appeared, add a
