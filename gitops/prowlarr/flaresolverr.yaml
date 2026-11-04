@@ -21,6 +21,18 @@ spec:
       labels:
         app: flaresolverr
     spec:
+      # Same DNS as Prowlarr (see deployment.yaml): it opens the tracker pages itself.
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+        - 192.168.1.152 # Blocky LoadBalancer (gitops/blocky)
+        searches:
+        - prowlarr.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+        options:
+        - name: ndots
+          value: "5"
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
