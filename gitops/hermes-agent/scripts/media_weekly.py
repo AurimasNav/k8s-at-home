@@ -213,8 +213,9 @@ def cleanuparr_events(since):
 def qbit():
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
     data = urllib.parse.urlencode({"username": doppler("QBITTORRENT_USERNAME"), "password": doppler("QBITTORRENT_PASSWORD")}).encode()
-    body = opener.open(urllib.request.Request(QBIT + "/auth/login", data=data, headers={"Referer": QBIT}), timeout=TIMEOUT).read()
-    if body.strip() != b"Ok.":
+    resp = opener.open(urllib.request.Request(QBIT + "/auth/login", data=data, headers={"Referer": QBIT}), timeout=TIMEOUT)
+    # qBittorrent < 5.2 answers 200 "Ok."; 5.2+ answers 204 with no body (and 401 on a bad login).
+    if resp.read().strip() not in (b"Ok.", b""):
         raise RuntimeError("qBittorrent login failed")
     state = json.loads(opener.open(QBIT + "/sync/maindata", timeout=TIMEOUT).read())["server_state"]
     torrents = json.loads(opener.open(QBIT + "/torrents/info", timeout=TIMEOUT).read())
