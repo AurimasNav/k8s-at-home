@@ -97,8 +97,6 @@ spec:
           mountPath: /data/torrents
         - name: media
           mountPath: /data/media
-        - name: vuetorrent
-          mountPath: /vuetorrent
       volumes:
       - name: qbittorrent-config
         persistentVolumeClaim:
@@ -111,16 +109,6 @@ spec:
         hostPath:
           path: /data/media
           type: Directory
-      - name: vuetorrent
-        emptyDir:
-          sizeLimit: 500Mi
       - name: setup
         configMap:
           name: qbittorrent-setup
-      # initContainers:
-      # - name: clone-vuetorrent
-      #   image: bitnami/git:2.42.0
-      #   volumeMounts:
-      #   - name: vuetorrent
-      #     mountPath: /vuetorrent
-      #   command: ['sh', '-c', "git clone --single-branch --branch nightly-release https://github.com/WDaan/VueTorrent.git /vuetorrent"]
