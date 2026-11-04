@@ -4,16 +4,23 @@ From the workaround audit of 2026-11-04 (main `87f3bba`): every place where we p
 around or vendor an open-source product to cover a missing feature or a bug. Newest context
 first; tick items off in the PR that does them.
 
+**Status:** 5 of 17 done. Done items stay ticked with the PR that did them.
+
 ## Act now
 
-- [ ] **qBittorrent image is a dead end.** In progress: #1019 (image + init script) and #1018
-      (Hermes `media_weekly.py` accepts the 5.2+ 204 login). `ghcr.io/onedr0p/qbittorrent` is archived (the
+- [x] **qBittorrent image is a dead end.** Done 2026-11-04: #1019 (home-operations 5.3.0 image,
+      init script writes the 5.3 `[WebUI]` section) and #1018 (Hermes `media_weekly.py` accepts the
+      5.2+ 204 login); 350/350 seeding torrents kept, all arr download-client tests pass.
+      `ghcr.io/onedr0p/qbittorrent` is archived (the
       project moved to `home-operations/containers`), so Renovate never sees a release after
       5.0.4. Switch to `ghcr.io/home-operations/qbittorrent` (same Dockerfile and entrypoint,
       5.3.0, libtorrent 2.1). Radarr has the qBittorrent 5.2 login fix since 2026-05
       (`b028efbe3e`, in our `7.0.1-develop`). Re-check `setup/webui_auth.py` and the
       arr/Cleanuparr/Hermes logins after the bump.
-- [ ] **hikvision_next carries a local edit inside a vendored component.**
+- [x] **hikvision_next carries a local edit inside a vendored component.** Done: the edit is now
+      `gitops/home-assistant/custom_components/patches/hikvision_next-via-device-id.diff` (verified to
+      turn stock v1.1.1 into our copy byte for byte), and `custom_components/README.md` documents
+      local patches and re-applying them after a re-vendor.
       `custom_components/hikvision_next/hikvision_device.py` sets `via_device_id` instead of
       `via_device` (HA 2026.9 raises on the old key). Upstream fix maciej-or/hikvision_next#369
       is open since 2026-09-03; last release v1.1.1 (2024-12). `custom_components/README.md`
@@ -50,10 +57,10 @@ first; tick items off in the PR that does them.
 
 ## Clean up
 
-- [ ] Delete `gitops/victoria-metrics-k8s-stack/patches/deployment-operator.yaml` (unreferenced
+- [x] Delete `gitops/victoria-metrics-k8s-stack/patches/deployment-operator.yaml` (unreferenced
       since 2024-08; pins operator v0.47.2).
-- [ ] Delete `gitops/external-secrets/unused-vault-clustersecretstore.yaml` (unreferenced).
-- [ ] Delete `src/akeyless_arch/` (old secret-store experiment).
+- [x] Delete `gitops/external-secrets/unused-vault-clustersecretstore.yaml` (unreferenced).
+- [x] Delete `src/akeyless_arch/` (old secret-store experiment).
 - [ ] Delete the commented-out VueTorrent init container in `gitops/qbittorrent/deployment.yaml`
       (and the unused `vuetorrent` volume/mount, `WebUI__RootFolder`).
 - [ ] Remove the Hermes `owner-1000` init container: the one-time chown finished on
