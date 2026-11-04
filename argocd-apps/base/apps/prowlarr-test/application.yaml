@@ -1,20 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: coredns-custom
+  name: prowlarr-test
   namespace: argocd
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
     server: https://kubernetes.default.svc
-    namespace: kube-system
+    namespace: prowlarr-test
   project: default
   source:
-    path: gitops/coredns-custom
+    path: gitops/prowlarr-test
     repoURL: https://github.com/AurimasNav/k8s-at-home.git
     targetRevision: main
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

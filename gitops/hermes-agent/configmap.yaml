@@ -7,6 +7,11 @@ data:
   HERMES_DASHBOARD: "1"
   # loopback only, reachable solely through the oauth2-proxy sidecar
   HERMES_DASHBOARD_HOST: "127.0.0.1"
+  # The browser-facing name. Without it the dashboard rejects Host hermes.sync.lt ("Invalid Host
+  # header"). Declaring it also switches on the dashboard's own login, so the bundled
+  # username/password provider is configured below (password + session key: hermes-agent-dashboard).
+  HERMES_DASHBOARD_PUBLIC_URL: https://hermes.sync.lt
+  HERMES_DASHBOARD_BASIC_AUTH_USERNAME: aurimas
   TELEGRAM_REQUIRE_MENTION: "false"
   # not HASS_*: those enable Hermes' built-in HA toolset, which ignores Assist exposure
   HA_URL: http://home-assistant.home-assistant.svc.cluster.local:8123

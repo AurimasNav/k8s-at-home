@@ -11,15 +11,23 @@ resources:
 - ./externalsecret.yaml
 - ./ha-mcp-setup.yaml
 
-# scripts for Hermes cron jobs; hash suffix rolls the pod on change
 configMapGenerator:
+# Scripts for Hermes cron jobs. Fixed name and Reloader-ignored, so a script edit does NOT restart
+# Hermes (which would cut every running chat): the kubelet swaps the files in the mounted volume
+# (no subPath) within about a minute and each cron run reads them fresh. The other generators below
+# keep the hash suffix: they feed init containers or startup, so their changes need the restart.
 - name: hermes-agent-scripts
+  options:
+    disableNameSuffixHash: true
+    annotations:
+      reloader.stakater.com/ignore: "true"
   files:
   - scripts/heating_check.py
   - scripts/apva_check.py
   - scripts/renovate_automerge.py
   - scripts/anthropic_pool_watchdog.py
   - scripts/media_weekly.py
+  - scripts/cron_cleanup.py
 - name: hermes-agent-patches
   files:
   - patches/apply.sh

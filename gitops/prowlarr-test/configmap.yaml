@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prowlarr-test
+data:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: Europe/Vilnius
+  # The Google login on the gateway is the login (Prowlarr "External" authentication), so it
+  # isn't asked for twice. networkpolicy.yaml lets only the gateway, Hermes and kubelet in.
+  PROWLARR__AUTH__METHOD: External
+  # More detail in the logs for the test report.
+  PROWLARR__LOG__LEVEL: debug

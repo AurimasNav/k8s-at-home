@@ -21,6 +21,7 @@ locals {
     "home",
     "homebox",
     "prowlarr",
+    "prowlarr-test", # temporary (gitops/prowlarr-test)
     "qbittorrent",
     "radarr",
     "radarr-lt",

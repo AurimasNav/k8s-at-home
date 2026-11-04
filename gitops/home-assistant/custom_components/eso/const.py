@@ -22,6 +22,14 @@ PROVIDER_IGNITIS = "ignitis"
 PROVIDERS = [PROVIDER_ESO, PROVIDER_IGNITIS]
 DEFAULT_PROVIDER = PROVIDER_ESO
 
+# How the Ignitis client authenticates: "direct" posts to the Energy Smart API,
+# "sso" goes through the e.ignitis.lt web login like the mobile app does.
+CONF_AUTH_TYPE = "auth_type"
+AUTH_TYPE_DIRECT = "direct"
+AUTH_TYPE_SSO = "sso"
+AUTH_TYPES = [AUTH_TYPE_DIRECT, AUTH_TYPE_SSO]
+DEFAULT_AUTH_TYPE = AUTH_TYPE_DIRECT
+
 # IMAP (two-factor) configuration
 CONF_IMAP = "imap"
 CONF_IMAP_HOST = "host"
@@ -66,6 +74,9 @@ IGNITIS_IMPORT_HOUR = 10
 IGNITIS_IMPORT_MINUTE = 30
 IGNITIS_RETRY_DELAY_SECONDS = 10 * 60
 IGNITIS_MAX_RETRIES = 10
+# Ignitis serves at most 8 days per request and silently truncates a wider
+# window to the most recent days, so backfills are split into weekly requests.
+IGNITIS_RANGE_CHUNK_DAYS = 7
 
 # Subentry type: one metering point (object) per subentry
 SUBENTRY_TYPE_OBJECT = "object"

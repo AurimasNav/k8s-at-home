@@ -4,14 +4,17 @@ Home Assistant custom components (integrations that would normally be installed
 via HACS) are vendored here byte-for-byte from their upstream release tarballs,
 shipped as ConfigMaps (`../kustomization.yaml`) and mounted into
 `/config/custom_components/` (`../values.yaml` additionalVolumes/additionalMounts).
-No HACS runs in the pod. Never edit vendored files — the directory must stay
-identical to upstream so an upgrade is a clean replacement.
+No HACS runs in the pod. Don't edit vendored files by hand — the directory must
+stay identical to upstream plus the patches in `patches/` (below), so an
+upgrade is a clean replacement.
 
 | Component | Upstream |
 |---|---|
 | `hikvision_next` | [maciej-or/hikvision_next](https://github.com/maciej-or/hikvision_next) |
 | `bhyve` | [sebr/bhyve-home-assistant](https://github.com/sebr/bhyve-home-assistant) |
 | `mammotion` | [mikey0000/Mammotion-HA](https://github.com/mikey0000/Mammotion-HA) |
+| `byd_vehicle` | [jkaberg/hass-byd-vehicle](https://github.com/jkaberg/hass-byd-vehicle) (en.json only) |
+| `eso` | [algirdasc/hass-eso](https://github.com/algirdasc/hass-eso) (pinned to a commit: upstream has no tags; no `brand/`) |
 
 ## Version tracking
 
@@ -28,7 +31,13 @@ by re-vendoring the files (below) on the same branch before merging.
 1. Download the new tag's tarball, e.g.
    `curl -sL https://github.com/sebr/bhyve-home-assistant/archive/refs/tags/<tag>.tar.gz | tar -xz`
 2. Delete the component directory here and copy in the tarball's
-   `custom_components/<name>/` wholesale — no merging, no local edits.
+   `custom_components/<name>/` wholesale — no merging, no local edits. Then
+   re-apply that component's patches from `patches/` (see Local patches);
+   drop a patch once the new release contains the fix.
+   Leaving files out is allowed only when the comment above that component's
+   ConfigMap generator in `../kustomization.yaml` says which and why: non-English
+   translations (bhyve, byd_vehicle), or `brand/` when home-assistant/brands
+   serves the same images (eso).
 3. Diff the file list against the previous version. If upstream added or
    removed files, update the matching ConfigMap generator lists in
    `../kustomization.yaml`; only if a whole new subdirectory appeared, add a
@@ -43,9 +52,18 @@ by re-vendoring the files (below) on the same branch before merging.
 Sanity check after wiring changes: `kustomize build --enable-helm .` from
 `gitops/home-assistant/`.
 
-## Known quirks
+## Local patches
 
-No local patches are carried — everything here is stock upstream.
+Fixes we need before upstream releases them. Each patch is a plain diff
+against the vendored release, applied from this directory:
+`git apply patches/<file>.diff`. Check that the repo copy still matches with
+`git apply --check -R patches/<file>.diff`.
+
+| Patch | Component | Why | Drop when |
+|---|---|---|---|
+| `hikvision_next-via-device-id.diff` | `hikvision_next` v1.1.1 | HA 2026.9 raises on a `via_device` key in `DeviceInfo`, so camera entities fail to load. Registers the NVR device first and links cameras with `via_device_id`. | [maciej-or/hikvision_next#369](https://github.com/maciej-or/hikvision_next/pull/369) is in a release |
+
+## Known quirks
 
 - **Mammotion camera** (Luba mini AWD 800, fw 1.30.29.8): the live view is
   browser-dependent. Works in Chrome (hardware H.265 decode) and the iOS/Android

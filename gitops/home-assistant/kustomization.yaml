@@ -77,7 +77,8 @@ configMapGenerator:
 # /config/custom_components/hikvision_next (see values.yaml) so it's installed
 # without needing HACS itself. Renovate tracks the source tag:
 # https://github.com/maciej-or/hikvision_next/archive/refs/tags/v1.1.1.tar.gz
-# Local patch: via_device -> via_device_id for HA 2026.9+ (keep on re-vendor)
+# Local patch: custom_components/patches/hikvision_next-via-device-id.diff (HA 2026.9+;
+# re-apply after re-vendoring until upstream PR #369 ships, see custom_components/README.md)
 - name: ha-hikvision-next
   files:
   - custom_components/hikvision_next/__init__.py
@@ -236,11 +237,14 @@ configMapGenerator:
 # Previous-day data only, one import per day, so it is for reconciliation and
 # billing insight - not usable for automations.
 #
-# Pinned to commit bcb95c4fb8 (2026-08-12): this project publishes NO tags or
-# releases, so unlike every other vendored component here it cannot be pinned to
-# a version. The manifest says 1.3.0 but no such tag exists. Upstream also warns
-# it is still in testing and may break. Re-pin by picking a newer SHA:
-# https://github.com/algirdasc/hass-eso/archive/bcb95c4fb8.tar.gz
+# Pinned to commit 5969af1678 (main as of 2026-10-20): this project publishes NO
+# tags or releases, so unlike every other vendored component here it cannot be
+# pinned to a version. The manifest says 1.3.0 but no such tag exists. Upstream
+# also warns it is still in testing and may break. Re-pin by picking a newer SHA:
+# https://github.com/algirdasc/hass-eso/archive/5969af16786d9af87b68dd9c79f2cfb22730c851.tar.gz
+# Upstream's brand/ folder (4 PNGs) is not vendored: the same images, byte for
+# byte, are served for this domain from home-assistant/brands
+# (custom_integrations/eso), so the UI icon is unchanged without them.
 - name: ha-eso
   files:
   - custom_components/eso/__init__.py

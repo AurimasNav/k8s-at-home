@@ -2,6 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: qbittorrent
+  # Replace=true: Argo's client-side apply merges ports by port number only (kubernetes/kubernetes#39188),
+  # so moving TCP+UDP from 6881 to 50413 would keep only 50413/TCP and still show Synced. A replace
+  # writes the ports exactly as in git. Tracked for removal in #1029 once this is live.
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
   labels:
     app: qbittorrent
 spec:
@@ -18,6 +23,21 @@ spec:
       labels:
         app: qbittorrent
     spec:
+      # DNS through Blocky -> Unbound instead of the node's resolver (router -> ISP), which answers
+      # some tracker sites with the ISP block page (e.g. linkomanija.net, rutor, nnmclub). Same setup
+      # as Prowlarr (gitops/prowlarr/deployment.yaml): Blocky sends cluster.local back to CoreDNS, and
+      # there is no second nameserver, because musl asks all of them at once and takes the first answer.
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+        - 192.168.1.152 # Blocky LoadBalancer (gitops/blocky)
+        searches:
+        - qbittorrent.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+        options:
+        - name: ndots
+          value: "5"
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -52,17 +72,28 @@ spec:
           readOnly: true
       containers:
       - name: qbittorrent
-        image: ghcr.io/onedr0p/qbittorrent:5.0.4
+        # onedr0p/containers is archived (no releases after 5.0.4); home-operations/containers is its successor,
+        # same Dockerfile/entrypoint and the same userdocs static build of qBittorrent.
+        image: ghcr.io/home-operations/qbittorrent:5.3.0@sha256:5a858e61f94cf2712391db32ed03556576c700858f3e62c4c6fcde262443ebd8
         ports:
         - containerPort: 8080
           name: webui
           protocol: TCP
-        - containerPort: 6881
+        # Torrent port: must match QBT_TORRENTING_PORT, the qbittorrent-traffic Service and the
+        # router forward (50413 TCP+UDP -> 192.168.1.212), or peers can't connect in.
+        - containerPort: 50413
           name: traffic
           protocol: TCP
-        - containerPort: 6881
+        - containerPort: 50413
           name: traffic-udp
           protocol: UDP
+        # The onedr0p image set these two in its Dockerfile; the home-operations image does not.
+        # qBittorrent reads QBT_<OPTION> as its --webui-port / --torrenting-port command-line options.
+        env:
+        - name: QBT_WEBUI_PORT
+          value: "8080"
+        - name: QBT_TORRENTING_PORT
+          value: "50413"
         envFrom:
         - configMapRef:
             name: qbittorrent
@@ -73,8 +104,6 @@ spec:
           mountPath: /data/torrents
         - name: media
           mountPath: /data/media
-        - name: vuetorrent
-          mountPath: /vuetorrent
       volumes:
       - name: qbittorrent-config
         persistentVolumeClaim:
@@ -87,16 +116,6 @@ spec:
         hostPath:
           path: /data/media
           type: Directory
-      - name: vuetorrent
-        emptyDir:
-          sizeLimit: 500Mi
       - name: setup
         configMap:
           name: qbittorrent-setup
-      # initContainers:
-      # - name: clone-vuetorrent
-      #   image: bitnami/git:2.42.0
-      #   volumeMounts:
-      #   - name: vuetorrent
-      #     mountPath: /vuetorrent
-      #   command: ['sh', '-c', "git clone --single-branch --branch nightly-release https://github.com/WDaan/VueTorrent.git /vuetorrent"]

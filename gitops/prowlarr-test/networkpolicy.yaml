@@ -1,0 +1,30 @@
+# The test Prowlarr has no login of its own (External authentication behind the Google login),
+# so only these reach it: the Cilium gateway (reserved "ingress" identity, after the Google
+# login check), Hermes (API tests) and kubelet probes.
+# Egress stays open: LostFilm moves between mirror domains and serves its .torrent files
+# from other hosts.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: prowlarr-test
+spec:
+  endpointSelector:
+    matchLabels:
+      app: prowlarr-test
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: hermes-agent
+        app: hermes-agent
+    toPorts:
+    - ports:
+      - port: "9696"
+        protocol: TCP
+  - fromEntities:
+    - host
+    # Cilium gateway (Envoy) traffic has the reserved "ingress" identity.
+    - ingress
+    toPorts:
+    - ports:
+      - port: "9696"
+        protocol: TCP

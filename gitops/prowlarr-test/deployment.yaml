@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr-test
+  labels:
+    app: prowlarr-test
+spec:
+  replicas: 1
+  # SQLite on an RWO PVC: never two pods on the same database.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: prowlarr-test
+  template:
+    metadata:
+      labels:
+        app: prowlarr-test
+    spec:
+      containers:
+      - name: prowlarr
+        # Prowlarr develop 69530d9 + PR #2765 head cfb7541, built by
+        # github.com/AurimasNav/prowlarr-pr-builds run 41830338644 (Prowlarr 3.0.1.30): PR #2765 plus all
+        # five proposed LostFilm fixes in patches/pr2765-pr-a-e.patch (date parsing, mirror session,
+        # used captcha, Email label, History).
+        image: ghcr.io/aurimasnav/prowlarr-pr-builds:pr2765-cfb7541-develop-69530d9-pr2765-pr-a-e-r30@sha256:beba5627bc246f6652cd099b193675679c5b0bc13bccfc385e9e6fb0f4f49899
+        ports:
+        - containerPort: 9696
+        envFrom:
+        - configMapRef:
+            name: prowlarr-test
+        - secretRef:
+            name: prowlarr-test
+        readinessProbe:
+          tcpSocket:
+            port: 9696
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 10m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: prowlarr-test-config

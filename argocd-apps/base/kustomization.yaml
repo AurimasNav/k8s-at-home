@@ -22,7 +22,6 @@ resources:
 - ./apps/blocky
 - ./apps/router-cert
 - ./apps/unbound
-- ./apps/coredns-custom
 - ./apps/seerr
 - ./apps/sonarr-ru
 - ./apps/sonarr-lt
@@ -45,3 +44,4 @@ resources:
 - ./apps/cleanuparr
 - ./apps/cloudflared
 - ./apps/immich
+- ./apps/prowlarr-test

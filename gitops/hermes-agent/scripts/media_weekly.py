@@ -4,6 +4,7 @@
 Read-only. Sources (all in-cluster):
   - VSeerr requests (who asked for what)            SEERR_API_KEY from Doppler via DOPPLER_TOKEN
   - Radarr/Sonarr (+ RU instances) history          RADARR_*/SONARR_* URL + API key env vars
+  - requests still waiting from earlier weeks       same sources; LT instances' keys from Doppler
   - Cleanuparr events (cleaned / removed / searched) CLEANUPARR_PASSWORD from Doppler
   - qBittorrent transfer totals and torrent count   QBITTORRENT_USERNAME/PASSWORD from Doppler
   - Plex play history (what was watched)            PLEX_URL + PLEX_TOKEN
@@ -117,8 +118,7 @@ def arr_get(inst, path):
 
 
 def seerr_requests(since):
-    key = os.environ.get("SEERR_API_KEY") or doppler("SEERR_API_KEY")
-    h = {"X-Api-Key": key}
+    h = seerr_headers()
     reqs, skip = [], 0
     while True:
         r = get_json(f"{SEERR}/request?take=100&skip={skip}&sort=added&filter=all", headers=h)
@@ -128,6 +128,14 @@ def seerr_requests(since):
             break
         skip += 100
     reqs = [q for q in reqs if q["createdAt"] >= since.strftime("%Y-%m-%dT%H:%M:%S")]
+    return reqs, request_titles(reqs, h)
+
+
+def seerr_headers():
+    return {"X-Api-Key": os.environ.get("SEERR_API_KEY") or doppler("SEERR_API_KEY")}
+
+
+def request_titles(reqs, h):
     titles = {}
     for q in reqs:
         m = q["media"]
@@ -139,12 +147,63 @@ def seerr_requests(since):
                 titles[k] = f"{d.get('title') or d.get('name')} ({year})" if year else (d.get("title") or d.get("name"))
             except Exception:  # noqa: BLE001
                 titles[k] = f"tmdb {m['tmdbId']}"
-    return reqs, titles
+    return titles
 
 
-def find_inst(kind, ru):
-    want = f"{kind}-ru" if ru else kind
-    return next((i for i in arr_instances() if i[0] == want), None)
+def seerr_still_waiting(since):
+    """Requests made before this report's window that are still not available (pending, approved or failed)."""
+    h = seerr_headers()
+    reqs, skip = [], 0
+    while True:
+        page = get_json(f"{SEERR}/request?take=100&skip={skip}&sort=added&filter=all", headers=h).get("results", [])
+        reqs += page
+        if len(page) < 100:
+            break
+        skip += 100
+    cut = since.strftime("%Y-%m-%dT%H:%M:%S")
+    waiting = [q for q in reqs if q["createdAt"] < cut and q["status"] in (1, 2, 4)
+               and (q["media"].get("status4k") if q.get("is4k") else q["media"].get("status")) != 5]
+    return waiting, request_titles(waiting, h)
+
+
+LOOK_GROUPS = ("released, nothing found yet", "nothing on disk yet", "missing from Radarr/Sonarr", "other")
+LOOK_AFTER_DAYS = 14
+
+
+def reason_group(why):
+    """Short bucket for a waiting_reason() text."""
+    if why.startswith("not released yet"):
+        return "not released yet"
+    if why.startswith("released, nothing grabbed"):
+        return "released, nothing found yet"
+    if "downloading" in why:
+        return "downloading"
+    if " episodes on disk" in why:
+        have = why.split("/", 1)[0]
+        return "nothing on disk yet" if have == "0" else "partly on disk"
+    if why.startswith("not in "):
+        return "missing from Radarr/Sonarr"
+    if why.startswith("file in"):
+        return "file there, Plex scan pending"
+    return "other"
+
+
+# Seerr server ids (Settings -> Services): 0 main, 1 RU, 2 LT; same order for Radarr and Sonarr.
+SERVER_SUFFIX = {0: "", 1: "-ru", 2: "-lt"}
+_lt = {}
+
+
+def find_inst(kind, server_id):
+    want = kind + SERVER_SUFFIX.get(server_id or 0, "")
+    inst = next((i for i in arr_instances() if i[0] == want), None)
+    if inst or not want.endswith("-lt"):
+        return inst
+    # The LT instances have no env vars in the pod: default service URL + API key from Doppler.
+    if want not in _lt:
+        app = want.upper().replace("-", "_")
+        url = (os.environ.get(app + "_URL") or f"http://{want}.{want}").rstrip("/")
+        _lt[want] = (want, kind, url, os.environ.get(app + "_API_KEY") or doppler(app + "_API_KEY"))
+    return _lt[want]
 
 
 _queues = {}
@@ -162,7 +221,7 @@ def waiting_reason(q):
     m = q["media"]
     try:
         if q["type"] == "movie":
-            inst = find_inst("radarr", q.get("serverId") == 1)
+            inst = find_inst("radarr", q.get("serverId"))
             if not inst:
                 return ""
             mv = arr_get(inst, f"/api/v3/movie?tmdbId={m['tmdbId']}")
@@ -176,7 +235,7 @@ def waiting_reason(q):
             if not mv.get("isAvailable"):
                 return f"not released yet ({mv.get('status')}, digital {str(mv.get('digitalRelease') or mv.get('physicalRelease') or '?')[:10]})"
             return "released, nothing grabbed yet (no release matched the profile so far)"
-        inst = find_inst("sonarr", q.get("serverId") == 1)
+        inst = find_inst("sonarr", q.get("serverId"))
         if not inst or not m.get("tvdbId"):
             return ""
         se = arr_get(inst, f"/api/v3/series?tvdbId={m['tvdbId']}")
@@ -213,8 +272,9 @@ def cleanuparr_events(since):
 def qbit():
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
     data = urllib.parse.urlencode({"username": doppler("QBITTORRENT_USERNAME"), "password": doppler("QBITTORRENT_PASSWORD")}).encode()
-    body = opener.open(urllib.request.Request(QBIT + "/auth/login", data=data, headers={"Referer": QBIT}), timeout=TIMEOUT).read()
-    if body.strip() != b"Ok.":
+    resp = opener.open(urllib.request.Request(QBIT + "/auth/login", data=data, headers={"Referer": QBIT}), timeout=TIMEOUT)
+    # qBittorrent < 5.2 answers 200 "Ok."; 5.2+ answers 204 with no body (and 401 on a bad login).
+    if resp.read().strip() not in (b"Ok.", b""):
         raise RuntimeError("qBittorrent login failed")
     state = json.loads(opener.open(QBIT + "/sync/maindata", timeout=TIMEOUT).read())["server_state"]
     torrents = json.loads(opener.open(QBIT + "/torrents/info", timeout=TIMEOUT).read())
@@ -279,6 +339,35 @@ def main():
                   f"{' | ' + why if why else ''}")
     except Exception as e:  # noqa: BLE001
         fail("seerr", e)
+
+    # --- requests from earlier weeks that are still not available ---
+    section("STILL WAITING (requested before this week, not available yet)")
+    try:
+        waiting, wtitles = seerr_still_waiting(since)
+        status = {1: "pending approval", 2: "approved", 4: "FAILED to reach Radarr/Sonarr"}
+        rows = []
+        for q in waiting:
+            m = q["media"]
+            why = waiting_reason(q)
+            if q["status"] != 2:
+                why = status[q["status"]] + (f"; {why}" if why else "")
+            age = (now - dt.datetime.fromisoformat(q["createdAt"].replace("Z", "+00:00"))).days
+            seasons = ",".join(str(x["seasonNumber"]) for x in q.get("seasons") or [])
+            version = {1: "RU", 2: "LT"}.get(q.get("serverId"), "4K" if q.get("is4k") else "")
+            group = "FAILED / pending" if q["status"] != 2 else reason_group(why)
+            rows.append((group, -age, f"  {age} d | {user_name(q['requestedBy'])} | {q['type']} | {wtitles[(m['mediaType'], m['tmdbId'])]}"
+                                       f"{' S' + seasons if seasons else ''}{' [' + version + ']' if version else ''} | {why or 'status unknown'}"))
+        groups = collections.Counter(r[0] for r in rows)
+        print(f"still waiting: {len(rows)} requests from earlier weeks"
+              + (" (" + ", ".join(f"{g} {n}" for g, n in groups.most_common()) + ")" if rows else ""))
+        # List only what may need a human; the rest (not released, downloading, partly there) stays a count.
+        look = sorted(r for r in rows if r[0] == "FAILED / pending" or (r[0] in LOOK_GROUPS and -r[1] > LOOK_AFTER_DAYS))
+        if look:
+            print(f" needs a look (failed/pending, or nothing found for more than {LOOK_AFTER_DAYS} days):")
+            for _, _, line in look:
+                print(line)
+    except Exception as e:  # noqa: BLE001
+        fail("seerr-waiting", e)
 
     # --- downloads / upgrades / deletions (arr history) ---
     section("LIBRARY CHANGES (Radarr/Sonarr history)")
