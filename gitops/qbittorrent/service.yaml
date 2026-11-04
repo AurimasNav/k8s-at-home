@@ -16,7 +16,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: qbittorrent-traffic
+  # Replace=true: Argo's client-side apply merges ports by port number only (kubernetes/kubernetes#39188),
+  # so moving TCP+UDP from 6881 to 50413 would keep only 50413/TCP and still show Synced. A replace
+  # writes the ports exactly as in git. Tracked for removal in #1029 once this is live.
   annotations:
+    argocd.argoproj.io/sync-options: Replace=true
     metallb.universe.tf/loadBalancerIPs: 192.168.1.212
 spec:
   ports:
