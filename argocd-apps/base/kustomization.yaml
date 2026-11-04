@@ -22,7 +22,6 @@ resources:
 - ./apps/blocky
 - ./apps/router-cert
 - ./apps/unbound
-- ./apps/coredns-custom
 - ./apps/seerr
 - ./apps/sonarr-ru
 - ./apps/sonarr-lt
