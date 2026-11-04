@@ -2,7 +2,10 @@
 
 Source of truth for scripts used by Hermes cron jobs. Kustomize builds the
 `hermes-agent-scripts` ConfigMap from these files. The ConfigMap is mounted
-read-only at `/opt/data/scripts`, and a content change rolls the pod.
+read-only at `/opt/data/scripts`. It has a fixed name (no hash suffix) and
+`reloader.stakater.com/ignore`, so a script edit does not restart Hermes: the
+kubelet updates the mounted files within about a minute and the next cron run
+uses them. Adding a new job still needs `cron/jobs.yaml`, which does restart.
 Make changes through PRs.
 
 Credentials are never stored here. Scripts read `HA_URL` and `HA_TOKEN` from env (ExternalSecret).
