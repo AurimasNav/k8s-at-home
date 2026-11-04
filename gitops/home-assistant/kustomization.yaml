@@ -133,8 +133,8 @@ configMapGenerator:
 # https://github.com/yannik2480/hikvision_bridge/archive/refs/tags/v0.9.12.tar.gz
 - name: ha-hikvision-bridge
   # Server-side apply although it fits client-side today (~200 KB of the 256 KiB
-  # last-applied limit): upstream grows ~25 KB a week, and a re-vendor that
-  # crosses the limit would pass CI and then fail the Argo sync.
+  # last-applied limit): upstream grew ~27 KB in the 11 days to v0.9.12, and a
+  # re-vendor that crosses the limit would pass CI and then fail the Argo sync.
   options:
     annotations:
       argocd.argoproj.io/sync-options: ServerSideApply=true

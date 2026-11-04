@@ -53,7 +53,8 @@ by re-vendoring the files (below) on the same branch before merging.
    `kubectl.kubernetes.io/last-applied-configuration` annotation goes over the
    apiserver's 256 KiB annotation limit. Those generators carry
    `argocd.argoproj.io/sync-options: ServerSideApply=true` (mammotion,
-   byd_vehicle, hikvision_bridge top level, `brand/` and `frontend/`). Measure the
+   byd_vehicle, hikvision_bridge `brand/` and `frontend/`), plus ones close to
+   the limit that keep growing (hikvision_bridge top level). Measure the
    rendered objects after adding files. A component too big for 1 MiB ConfigMaps
    goes through the init-container installer instead (bambu_lab, `../values.yaml`).
 4. Check the component's `manifest.json` for a `requirements` key — those pip
