@@ -18,6 +18,22 @@ spec:
       labels:
         app: prowlarr
     spec:
+      # DNS through Blocky -> Unbound instead of the node's resolver (router -> ISP), which
+      # answers some tracker domains with the ISP block page. Blocky sends cluster.local back
+      # to CoreDNS (gitops/blocky/config.yml), so cluster names still resolve. No second
+      # nameserver: musl (Alpine) asks all of them at once and takes the first answer, so a
+      # CoreDNS fallback would let the block page win.
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+        - 192.168.1.152 # Blocky LoadBalancer (gitops/blocky)
+        searches:
+        - prowlarr.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+        options:
+        - name: ndots
+          value: "5"
       containers:
       - name: prowlarr
         image: ghcr.io/linuxserver/prowlarr:3.0.0-develop
