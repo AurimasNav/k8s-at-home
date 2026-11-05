@@ -3,6 +3,11 @@ kind: Application
 metadata:
   name: root-app
   namespace: argocd
+  annotations:
+    # Server-side diff + server-side apply (below): the pre/post-delete-finalizer.argocd.argoproj.io(/cleanup)
+    # finalizers the controller adds to child Applications with delete hooks are owned by another
+    # field manager, so they are not drift and a root sync keeps them (argoproj/argo-cd#17433).
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
@@ -19,5 +24,5 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-    # keep controller-managed pre/post-delete finalizers on child apps (see argocd-cm ignoreDifferences)
-    - RespectIgnoreDifferences=true
+    # required with ServerSideDiff: a client-side apply replaces metadata.finalizers and drops them
+    - ServerSideApply=true
