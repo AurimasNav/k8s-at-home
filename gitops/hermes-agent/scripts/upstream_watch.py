@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Weekly upstream watch for the k8s-at-home issue board. Driven by labels, nothing hard-coded.
+"""Daily upstream watch for the k8s-at-home issue board. Driven by labels, nothing hard-coded.
 
 The board is the set of open issues in AurimasNav/k8s-at-home that carry one status label:
   needs-review      waiting for Aurimas to read (a draft, or upstream moved)
