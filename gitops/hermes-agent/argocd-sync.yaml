@@ -5,10 +5,15 @@
 # whole object (spec, source repo, finalizers). The admission policy below narrows this
 # service account's writes to:
 #   - refresh: set the annotation argocd.argoproj.io/refresh to normal or hard;
-#   - sync: set .operation when none is pending, from the app's own source at its targetRevision
-#     (no source/manifests override, no force; prune only where the app already auto-prunes;
-#     sync options only from the app's own list);
-#   - ownership-only metadata.managedFields edits (e.g. dropping a stale argocd-server entry).
+#   - sync: set .operation when none is pending, on an app with auto-sync on that isn't being
+#     deleted, from the app's own source at its targetRevision (no source/manifests override, no
+#     force, no dry run, no resource subset; prune only where the app already auto-prunes; sync
+#     options exactly the app's own list);
+#   - metadata.managedFields edits that can't move ownership: argocd-controller's entry stays as
+#     it is, other entries may be dropped (e.g. a stale argocd-server entry), and a new or changed
+#     entry may own only the refresh annotation and .operation.
+# Patch with --field-manager=hermes-agent: kubectl's default manager (kubectl-patch) is shared
+# with manual kubectl edits, and rewriting an entry that owns other fields is denied.
 # spec, status, labels, finalizers, ownerReferences and other annotations must stay unchanged.
 # No create or delete. Other users and Argo's own controllers are not matched.
 # Lives here, not in gitops/argocd, because that app's namespace transformer would namespace
@@ -93,16 +98,18 @@ spec:
   - expression: >-
       !variables.startsSync || (
         !has(object.operation.sync.autoHealAttemptsCount) &&
+        !object.operation.sync.?dryRun.orValue(false) &&
         !has(object.operation.sync.resources) &&
         !object.operation.sync.?syncStrategy.?apply.hasValue() &&
         !has(object.operation.retry) &&
         !object.operation.?initiatedBy.?automated.orValue(false))
-    message: A sync can't set autoHealAttemptsCount, a resource subset, the apply strategy, a retry policy or initiatedBy.automated.
+    message: A sync can't be a dry run or set autoHealAttemptsCount, a resource subset, the apply strategy, a retry policy or initiatedBy.automated.
   - expression: >-
       !variables.startsSync || (
+        !has(oldObject.metadata.deletionTimestamp) &&
         object.spec.?syncPolicy.?automated.hasValue() &&
         object.spec.syncPolicy.automated.?enabled.orValue(true))
-    message: Only apps with auto-sync on can be synced; a paused app stays paused.
+    message: Only apps with auto-sync on that aren't being deleted can be synced; a paused app stays paused.
   - expression: >-
       variables.oldMF.all(m, m.manager != 'argocd-controller' || m in variables.newMF) &&
       variables.newMF.all(m, m in variables.oldMF || (
