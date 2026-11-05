@@ -71,3 +71,10 @@ jobs:
     script: cron_cleanup.py
     no_agent: true
     enabled: true
+  79941829a4d2:
+    name: Upstream watch (label-driven board)
+    schedule: 0 9 * * 1
+    deliver: telegram:-1004485564030:501
+    script: upstream_watch.py
+    no_agent: true
+    enabled: true
