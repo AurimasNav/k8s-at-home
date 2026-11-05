@@ -28,6 +28,7 @@ configMapGenerator:
   - scripts/anthropic_pool_watchdog.py
   - scripts/media_weekly.py
   - scripts/cron_cleanup.py
+  - scripts/upstream_watch.py
 - name: hermes-agent-patches
   files:
   - patches/apply.sh
