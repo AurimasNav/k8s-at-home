@@ -30,7 +30,7 @@ permissions:
 
 env:
   # renovate: datasource=github-releases depName=opentofu/opentofu
-  TOFU_VERSION: "1.13.2"
+  TOFU_VERSION: "1.13.9"
   # renovate: datasource=github-releases depName=terraform-linters/tflint
   TFLINT_VERSION: "0.65.0"
   TF_IN_AUTOMATION: "1"
