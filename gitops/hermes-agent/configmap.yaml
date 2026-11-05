@@ -21,10 +21,10 @@ data:
   SONARR_RU_URL: http://sonarr-ru.sonarr-ru.svc.cluster.local
   PROWLARR_URL: http://prowlarr.prowlarr.svc.cluster.local
   PLEX_URL: http://plex.plex.svc.cluster.local:32400
-  GIT_AUTHOR_NAME: hermes
-  GIT_AUTHOR_EMAIL: hermes@sync.lt
-  GIT_COMMITTER_NAME: hermes
-  GIT_COMMITTER_EMAIL: hermes@sync.lt
+  GIT_AUTHOR_NAME: Aurimas Navardauskas
+  GIT_AUTHOR_EMAIL: aurimas.navardauskas@outlook.com
+  GIT_COMMITTER_NAME: Aurimas Navardauskas
+  GIT_COMMITTER_EMAIL: aurimas.navardauskas@outlook.com
   # git push over https authenticates with HERMES_GITHUB_TOKEN via the gh wrapper
   GIT_CONFIG_COUNT: "1"
   GIT_CONFIG_KEY_0: credential.https://github.com.helper
