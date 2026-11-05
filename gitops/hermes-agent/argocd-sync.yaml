@@ -39,6 +39,10 @@ spec:
     expression: oldObject.metadata.?annotations.orValue({})
   - name: startsSync
     expression: has(object.operation) && !has(oldObject.operation)
+  - name: oldMF
+    expression: oldObject.metadata.?managedFields.orValue([])
+  - name: newMF
+    expression: object.metadata.?managedFields.orValue([])
   validations:
   - expression: request.operation == 'UPDATE'
     message: Only existing Applications can be patched (no create or delete).
@@ -82,9 +86,31 @@ spec:
       object.spec.?syncPolicy.?automated.?prune.orValue(false)
     message: Prune is only allowed on apps that already auto-prune.
   - expression: >-
-      !variables.startsSync ||
-      object.operation.sync.?syncOptions.orValue([]).all(o, o in object.spec.?syncPolicy.?syncOptions.orValue([]))
-    message: Sync options must come from the app's own syncPolicy.syncOptions.
+      !variables.startsSync || (
+        object.operation.sync.?syncOptions.orValue([]).all(o, o in object.spec.?syncPolicy.?syncOptions.orValue([])) &&
+        object.spec.?syncPolicy.?syncOptions.orValue([]).all(o, o in object.operation.sync.?syncOptions.orValue([])))
+    message: Sync options must be exactly the app's own syncPolicy.syncOptions.
+  - expression: >-
+      !variables.startsSync || (
+        !has(object.operation.sync.autoHealAttemptsCount) &&
+        !has(object.operation.sync.resources) &&
+        !object.operation.sync.?syncStrategy.?apply.hasValue() &&
+        !has(object.operation.retry) &&
+        !object.operation.?initiatedBy.?automated.orValue(false))
+    message: A sync can't set autoHealAttemptsCount, a resource subset, the apply strategy, a retry policy or initiatedBy.automated.
+  - expression: >-
+      !variables.startsSync || (
+        object.spec.?syncPolicy.?automated.hasValue() &&
+        object.spec.syncPolicy.automated.?enabled.orValue(true))
+    message: Only apps with auto-sync on can be synced; a paused app stays paused.
+  - expression: >-
+      variables.oldMF.all(m, m.manager != 'argocd-controller' || m in variables.newMF) &&
+      variables.newMF.all(m, m in variables.oldMF || (
+        m.manager != 'argocd-controller' &&
+        m.?fieldsV1.orValue({}).all(k, k in ['f:metadata', 'f:operation']) &&
+        m.?fieldsV1[?'f:metadata'].orValue({}).all(k, k == 'f:annotations') &&
+        m.?fieldsV1[?'f:metadata'][?'f:annotations'].orValue({}).all(k, k in ['.', 'f:argocd.argoproj.io/refresh'])))
+    message: managedFields edits may only drop entries other than argocd-controller's; a new or changed entry may only own the refresh annotation and .operation.
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicyBinding
