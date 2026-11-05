@@ -1,0 +1,51 @@
+name: Upstream board
+
+# Keeps the "Upstream board" project (https://github.com/users/AurimasNav/projects/1) in step
+# with the status labels on issues: needs-review, needs-decision, waiting-upstream; closed = Done.
+# Runs on a status label change, close or reopen, and by hand (re-syncs every card).
+# The board is one-way: dragging a card does not change the label, and the next run moves the
+# card back. GitHub has no event for card moves on a user project.
+#
+# The built-in workflow token cannot write to a user's project, so the job reads a personal
+# token (UPSTREAM_BOARD_TOKEN) from the "upstream-board" environment, which only main may use.
+# "issues" events always run the workflow from main, so a PR cannot change what runs with it.
+# Only the issue number reaches the script; titles and bodies are never read.
+
+on:
+  issues:
+    types: [labeled, unlabeled, closed, reopened]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: upstream-board-${{ github.event.issue.number || 'all' }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync the board
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.event.action == 'closed'
+      || github.event.action == 'reopened'
+      || contains(fromJSON('["needs-review","needs-decision","waiting-upstream"]'), github.event.label.name)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: upstream-board
+      deployment: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Move the card
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_BOARD_TOKEN }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          $params = @{}
+          if ($env:ISSUE) { $params.Issue = [int] $env:ISSUE }
+          .github/scripts/Sync-UpstreamBoard.ps1 @params
