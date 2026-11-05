@@ -6,9 +6,10 @@
 # service account's writes to:
 #   - refresh: set the annotation argocd.argoproj.io/refresh to normal or hard;
 #   - sync: set .operation when none is pending, on an app with auto-sync on that isn't being
-#     deleted, from the app's own source at its targetRevision (no source/manifests override, no
-#     force, no dry run, no resource subset; prune only where the app already auto-prunes; sync
-#     options exactly the app's own list);
+#     deleted, from the app's own source at its targetRevision. No source/manifests override,
+#     force, dry run, resource subset, apply strategy, retry, autoHealAttemptsCount or
+#     initiatedBy.automated; initiatedBy.username empty or hermes-agent; prune only where the app
+#     already auto-prunes; sync options exactly the app's own list;
 #   - metadata.managedFields edits that can't move ownership: argocd-controller's entry stays as
 #     it is, other entries may be dropped (e.g. a stale argocd-server entry), and a new or changed
 #     entry may own only the refresh annotation and .operation.
@@ -102,8 +103,9 @@ spec:
         !has(object.operation.sync.resources) &&
         !object.operation.sync.?syncStrategy.?apply.hasValue() &&
         !has(object.operation.retry) &&
-        !object.operation.?initiatedBy.?automated.orValue(false))
-    message: A sync can't be a dry run or set autoHealAttemptsCount, a resource subset, the apply strategy, a retry policy or initiatedBy.automated.
+        !object.operation.?initiatedBy.?automated.orValue(false) &&
+        object.operation.?initiatedBy.?username.orValue('') in ['', 'hermes-agent'])
+    message: A sync can't be a dry run or set autoHealAttemptsCount, a resource subset, the apply strategy, a retry policy or initiatedBy.automated, and initiatedBy.username must be empty or hermes-agent.
   - expression: >-
       !variables.startsSync || (
         !has(oldObject.metadata.deletionTimestamp) &&
