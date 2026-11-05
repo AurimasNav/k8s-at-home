@@ -1,0 +1,160 @@
+# Lets this service account refresh and sync Argo CD Applications from Git, and nothing else.
+# Permanent (Aurimas, 2026-11-05): replaces the manual refresh/sync clicks in the Argo CD UI.
+#
+# The Application CRD has no status subresource, so RBAC `patch` alone would allow editing the
+# whole object (spec, source repo, finalizers). The admission policy below narrows this
+# service account's writes to:
+#   - refresh: set the annotation argocd.argoproj.io/refresh to normal or hard;
+#   - sync: set .operation when none is pending, on an app with auto-sync on that isn't being
+#     deleted, from the app's own source at its targetRevision. No source/manifests override,
+#     force, dry run, resource subset, apply strategy, retry, autoHealAttemptsCount or
+#     initiatedBy.automated; initiatedBy.username empty or hermes-agent; prune only where the app
+#     already auto-prunes; sync options exactly the app's own list;
+#   - metadata.managedFields edits that can't move ownership: argocd-controller's entry stays as
+#     it is, other entries may be dropped (e.g. a stale argocd-server entry), and a new or changed
+#     entry may own only the refresh annotation and .operation.
+# Patch with --field-manager=hermes-agent: kubectl's default manager (kubectl-patch) is shared
+# with manual kubectl edits, and rewriting an entry that owns other fields is denied.
+# spec, status, labels, finalizers, ownerReferences and other annotations must stay unchanged.
+# No create or delete. Other users and Argo's own controllers are not matched.
+# Lives here, not in gitops/argocd, because that app's namespace transformer would namespace
+# the cluster-scoped policy objects. The policy syncs one wave before the Role.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: hermes-agent-app-sync-only
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["argoproj.io"]
+      apiVersions: ["*"]
+      operations: ["CREATE", "UPDATE", "DELETE"]
+      resources: ["applications"]
+  matchConditions:
+  - name: hermes-service-account
+    expression: request.userInfo.username == 'system:serviceaccount:hermes-agent:hermes-agent'
+  variables:
+  - name: refreshKey
+    expression: "'argocd.argoproj.io/refresh'"
+  - name: newAnn
+    expression: object.metadata.?annotations.orValue({})
+  - name: oldAnn
+    expression: oldObject.metadata.?annotations.orValue({})
+  - name: startsSync
+    expression: has(object.operation) && !has(oldObject.operation)
+  - name: oldMF
+    expression: oldObject.metadata.?managedFields.orValue([])
+  - name: newMF
+    expression: object.metadata.?managedFields.orValue([])
+  validations:
+  - expression: request.operation == 'UPDATE'
+    message: Only existing Applications can be patched (no create or delete).
+  - expression: object.spec == oldObject.spec
+    message: An Application's spec can't be changed.
+  - expression: object.?status.orValue({}) == oldObject.?status.orValue({})
+    message: An Application's status can't be changed.
+  - expression: >-
+      object.metadata.?labels.orValue({}) == oldObject.metadata.?labels.orValue({}) &&
+      object.metadata.?finalizers.orValue([]) == oldObject.metadata.?finalizers.orValue([]) &&
+      object.metadata.?ownerReferences.orValue([]) == oldObject.metadata.?ownerReferences.orValue([])
+    message: Labels, finalizers and ownerReferences can't be changed.
+  - expression: >-
+      variables.newAnn.all(k, k == variables.refreshKey || (k in variables.oldAnn && variables.oldAnn[k] == variables.newAnn[k])) &&
+      variables.oldAnn.all(k, k == variables.refreshKey || k in variables.newAnn)
+    message: Only the argocd.argoproj.io/refresh annotation can be changed.
+  - expression: >-
+      !(variables.refreshKey in variables.newAnn) ||
+      (variables.refreshKey in variables.oldAnn && variables.oldAnn[variables.refreshKey] == variables.newAnn[variables.refreshKey]) ||
+      variables.newAnn[variables.refreshKey] in ['normal', 'hard']
+    message: The refresh annotation must be normal or hard.
+  - expression: >-
+      has(oldObject.operation)
+      ? (has(object.operation) && object.operation == oldObject.operation)
+      : (!has(object.operation) || has(object.operation.sync))
+    message: A sync can only start when no operation is pending, and a pending one can't be changed or cancelled.
+  - expression: >-
+      !variables.startsSync || (
+        !has(object.operation.sync.source) && !has(object.operation.sync.sources) &&
+        !has(object.operation.sync.revisions) && !has(object.operation.sync.manifests) &&
+        (object.operation.sync.?revision.orValue('') == '' ||
+         object.operation.sync.?revision.orValue('') == object.spec.?source.?targetRevision.orValue('')))
+    message: A sync must use the app's own source at its targetRevision.
+  - expression: >-
+      !variables.startsSync || (
+        !object.operation.sync.?syncStrategy.?apply.?force.orValue(false) &&
+        !object.operation.sync.?syncStrategy.?hook.?force.orValue(false))
+    message: Forced syncs are not allowed.
+  - expression: >-
+      !variables.startsSync || !object.operation.sync.?prune.orValue(false) ||
+      object.spec.?syncPolicy.?automated.?prune.orValue(false)
+    message: Prune is only allowed on apps that already auto-prune.
+  - expression: >-
+      !variables.startsSync || (
+        object.operation.sync.?syncOptions.orValue([]).all(o, o in object.spec.?syncPolicy.?syncOptions.orValue([])) &&
+        object.spec.?syncPolicy.?syncOptions.orValue([]).all(o, o in object.operation.sync.?syncOptions.orValue([])))
+    message: Sync options must be exactly the app's own syncPolicy.syncOptions.
+  - expression: >-
+      !variables.startsSync || (
+        !has(object.operation.sync.autoHealAttemptsCount) &&
+        !object.operation.sync.?dryRun.orValue(false) &&
+        !has(object.operation.sync.resources) &&
+        !object.operation.sync.?syncStrategy.?apply.hasValue() &&
+        !has(object.operation.retry) &&
+        !object.operation.?initiatedBy.?automated.orValue(false) &&
+        object.operation.?initiatedBy.?username.orValue('') in ['', 'hermes-agent'])
+    message: A sync can't be a dry run or set autoHealAttemptsCount, a resource subset, the apply strategy, a retry policy or initiatedBy.automated, and initiatedBy.username must be empty or hermes-agent.
+  - expression: >-
+      !variables.startsSync || (
+        !has(oldObject.metadata.deletionTimestamp) &&
+        object.spec.?syncPolicy.?automated.hasValue() &&
+        object.spec.syncPolicy.automated.?enabled.orValue(true))
+    message: Only apps with auto-sync on that aren't being deleted can be synced; a paused app stays paused.
+  - expression: >-
+      variables.oldMF.all(m, m.manager != 'argocd-controller' || m in variables.newMF) &&
+      variables.newMF.all(m, m in variables.oldMF || (
+        m.manager != 'argocd-controller' &&
+        m.?fieldsV1.orValue({}).all(k, k in ['f:metadata', 'f:operation']) &&
+        m.?fieldsV1[?'f:metadata'].orValue({}).all(k, k == 'f:annotations') &&
+        m.?fieldsV1[?'f:metadata'][?'f:annotations'].orValue({}).all(k, k in ['.', 'f:argocd.argoproj.io/refresh'])))
+    message: managedFields edits may only drop entries other than argocd-controller's; a new or changed entry may only own the refresh annotation and .operation.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: hermes-agent-app-sync-only
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  policyName: hermes-agent-app-sync-only
+  validationActions: ["Deny"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hermes-agent-app-sync
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+rules:
+- apiGroups: ["argoproj.io"]
+  resources: ["applications"]
+  verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-agent-app-sync
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hermes-agent-app-sync
+subjects:
+- kind: ServiceAccount
+  name: hermes-agent
+  namespace: hermes-agent
