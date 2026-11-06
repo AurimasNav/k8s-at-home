@@ -37,34 +37,62 @@ spec:
     # The restart counter rose in the last 10 min and the last termination was an OOM kill. The
     # message says which container; Hermes being killed ends every session's running turn.
     # Alertmanager sends to Telegram itself, so this arrives even when Hermes is the one killed.
+    # All OOM rules use increase_prometheus: VictoriaMetrics' increase() counts the first sample of a
+    # new series as an increase from 0, so replacing node-exporter or kube-state-metrics (new pod
+    # label, counter already above 0) looked like fresh kills (Oct 10 22:06: "2 kills", none real).
     - alert: ContainerOOMKilled
       expr: |-
         (kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled"} == 1)
           and on (namespace, pod, container)
-        (increase(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[10m]) > 0)
+        (increase_prometheus(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[10m]) > 0)
       labels:
         severity: warning
       annotations:
         summary: "{{ $labels.namespace }}/{{ $labels.container }} was killed for running out of memory (OOMKilled) and restarted"
         dashboard: '{{ $externalURL }}/d/k8s_views_pods?orgId=1&var-namespace={{ $labels.namespace }}&var-pod={{ $labels.pod }}'
-    # Every other kernel OOM kill: a child process inside a container (a build or tool run in the
-    # Hermes pod) that the kernel kills while the container keeps running, or a process on the
-    # host. No container restarts, so ContainerOOMKilled stays quiet. cAdvisor's per-container
-    # container_oom_events_total stays 0 on this k3s, so the host counter is the only signal.
-    # `for: 2m` gives a container restart time to show up, so one kill sends one message.
+    # A process inside a container was OOM-killed and the container kept running: typically one of
+    # several child processes, e.g. one of FlareSolverr's per-challenge Chromes or a build in the
+    # Hermes pod, when the container reaches its memory limit (or the node runs out of RAM).
+    # cAdvisor's container_oom_events_total names the container. A kill that ends the container is
+    # ContainerOOMKilled's, so that container is excluded here.
     - alert: ProcessOOMKilled
       expr: |-
-        increase(node_vmstat_oom_kill{job="node-exporter"}[5m]) > 0
+        sum by (namespace, pod, container) (
+          increase_prometheus(container_oom_events_total{job="kubelet",metrics_path="/metrics/cadvisor",container!="",pod!=""}[5m])
+        ) > 0
+          unless on (namespace, pod, container)
+        ((kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled"} == 1)
+          and on (namespace, pod, container)
+        (increase_prometheus(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[10m]) > 0))
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: >-
+          The kernel killed {{ printf "%.0f" $value }} process(es) inside {{ $labels.namespace }}/{{ $labels.container }}
+          for running out of memory; the container kept running. Its memory against its limit is on the dashboard.
+        dashboard: '{{ $externalURL }}/d/k8s_views_pods?orgId=1&var-namespace={{ $labels.namespace }}&var-pod={{ $labels.pod }}'
+    # Kernel OOM kills beyond the ones counted inside containers: a process on the host (k3s,
+    # mergerfs, ...). Muted while a container is OOMKilled and restarted, because those kills (often
+    # several processes) are counted only on the host. `for: 2m` covers the scrape-time skew between
+    # node-exporter and cAdvisor and lets the container rules appear first.
+    - alert: HostOOMKilled
+      expr: |-
+        (
+          increase_prometheus(node_vmstat_oom_kill{job="node-exporter"}[5m])
+            - on () group_left ()
+          (sum(increase_prometheus(container_oom_events_total{job="kubelet",metrics_path="/metrics/cadvisor",container!="",pod!=""}[5m])) or vector(0))
+        ) > 0
           unless on ()
         ((kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",reason="OOMKilled"} == 1)
           and on (namespace, pod, container)
-        (increase(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[10m]) > 0))
+        (increase_prometheus(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[10m]) > 0))
       for: 2m
       labels:
         severity: warning
       annotations:
         summary: >-
           The kernel killed {{ printf "%.0f" $value }} process(es) on {{ $labels.instance }} for running out of
-          memory, and no container restarted: a process inside a container (a build, a tool run) or on the
-          host was killed. RAM per pod and namespace is on the dashboard.
+          memory outside any container, e.g. a host process such as k3s. RAM per pod and namespace is on the
+          dashboard.
         dashboard: '{{ $externalURL }}/d/home-pods?orgId=1'

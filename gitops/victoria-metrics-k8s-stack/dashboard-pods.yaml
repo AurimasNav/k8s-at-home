@@ -1,5 +1,5 @@
 # Grafana dashboard (sidecar ConfigMap): which pods and namespaces use the most RAM and CPU.
-# Linked from NodeMemoryPressure, NodeCPUPressure and ProcessOOMKilled (node-pressure.yaml).
+# Linked from NodeMemoryPressure, NodeCPUPressure and HostOOMKilled (node-pressure.yaml).
 # Cheap to keep open: no auto-refresh, the refresh picker starts at 1m, the "now" panels are
 # instant queries, and the graphs use a 1m minimum step with topk_max() (top N plus "other").
 apiVersion: v1
