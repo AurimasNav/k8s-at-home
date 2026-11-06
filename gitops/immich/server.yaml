@@ -30,7 +30,7 @@ spec:
       # Writes /config/immich.json = config/immich.json (git) + the Google OAuth client (Doppler).
       initContainers:
       - name: render-config
-        image: ghcr.io/immich-app/immich-server:v3.3.5
+        image: ghcr.io/immich-app/immich-server:v3.3.6
         command: ["node", "/config-template/render-config.js"]
         envFrom:
         - secretRef:
@@ -54,7 +54,7 @@ spec:
           mountPath: /config
       containers:
       - name: server
-        image: ghcr.io/immich-app/immich-server:v3.3.5
+        image: ghcr.io/immich-app/immich-server:v3.3.6
         ports:
         - containerPort: 2283
         env:
