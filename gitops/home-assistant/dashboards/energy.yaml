@@ -214,6 +214,120 @@ views:
       anything, since switching sources mid-history skews self-sufficiency and
       cost.
 
+- title: Grid check
+  path: grid-check
+  icon: mdi:scale-balance
+  cards:
+  - type: markdown
+    content: >-
+      Grid import and export per day from the utility meter (**ESO**, read via
+      Ignitis) next to the **iHomeManager** and the **inverter**. ESO is what
+      the bill uses, so it is the reference: a meter that drifts away from it is
+      missing something. ESO data lands around 10:30 for the previous day, so
+      today's ESO bar is always empty.
+
+  - type: statistics-graph
+    title: Imported from grid per day
+    chart_type: bar
+    period: day
+    days_to_show: 14
+    stat_types:
+    - change
+    entities:
+    - entity: eso:energy_consumed_153500
+      name: ESO meter
+    - entity: sensor.ihm_grid_import_energy
+      name: iHomeManager
+    - entity: sensor.total_imported_energy
+      name: Inverter
+
+  - type: statistics-graph
+    title: Exported to grid per day
+    chart_type: bar
+    period: day
+    days_to_show: 14
+    stat_types:
+    - change
+    entities:
+    - entity: eso:energy_returned_153500
+      name: ESO meter
+    - entity: sensor.ihm_grid_export_energy
+      name: iHomeManager
+    - entity: sensor.total_exported_energy
+      name: Inverter
+
+  - type: statistics-graph
+    title: Imported per month
+    chart_type: bar
+    period: month
+    days_to_show: 365
+    stat_types:
+    - change
+    entities:
+    - entity: eso:energy_consumed_153500
+      name: ESO meter
+    - entity: sensor.ihm_grid_import_energy
+      name: iHomeManager
+    - entity: sensor.total_imported_energy
+      name: Inverter
+
+  - type: statistics-graph
+    title: Exported per month
+    chart_type: bar
+    period: month
+    days_to_show: 365
+    stat_types:
+    - change
+    entities:
+    - entity: eso:energy_returned_153500
+      name: ESO meter
+    - entity: sensor.ihm_grid_export_energy
+      name: iHomeManager
+    - entity: sensor.total_exported_energy
+      name: Inverter
+
+  - type: entities
+    title: Price and net-metering balance
+    entities:
+    - entity: sensor.electricity_import_price
+      name: Grid kWh costs now
+    - entity: sensor.electricity_plan_price
+      name: Plan price (without stored energy)
+    - entity: sensor.nord_pool_lt_current_price
+      name: Nord Pool LT (excl. VAT)
+    - entity: input_number.net_metering_balance
+      name: Stored at ESO (net metering)
+
+  - type: history-graph
+    title: Price over 48 h
+    hours_to_show: 48
+    entities:
+    - entity: sensor.electricity_import_price
+      name: Grid kWh costs now
+    - entity: sensor.electricity_plan_price
+      name: Plan price
+
+  - type: markdown
+    title: How the price is worked out
+    content: |
+      **Plan price** is Ignitis *Išmanus - 15*: the Nord Pool LT price for the
+      current 15 minutes plus 21% VAT, plus a fixed 0.12514 EUR/kWh that covers
+      the Ignitis margin, ESO distribution (*Namai* tariff) and VIAP.
+
+      **Grid kWh costs now** is what the Energy dashboard charges per imported
+      kWh. While the ESO balance (energy exported earlier and stored on the
+      grid) is above zero, an imported kWh is taken back from it and costs
+      only ESO's take-back fee, 0.0726 EUR/kWh. Once the balance runs out it
+      costs the plan price. The balance is copied from the ESO data once a day,
+      at 11:00 and 15:00.
+
+      **Monthly fees** of 3.00 EUR (ESO) + 1.36 EUR (Ignitis) are not in the
+      Energy dashboard's cost, which only counts per-kWh prices.
+
+      The September 2026 bill matches this exactly: 542 kWh x 0.0726 + 4.36 =
+      43.71 EUR. The numbers come from that bill and ESO's 2026 tariffs; when
+      either changes, update `packages/energy_price.yaml`.
+
 - title: Heat pump
   path: heatpump
   icon: mdi:heat-pump

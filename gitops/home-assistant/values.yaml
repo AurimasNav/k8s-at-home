@@ -92,6 +92,7 @@ configuration:
         water_softener: !include package_water_softener.yaml
         lg_tv: !include package_lg_tv.yaml
         printer: !include package_printer.yaml
+        energy_price: !include package_energy_price.yaml
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
 securityContext:
@@ -227,6 +228,9 @@ additionalVolumes:
   - name: printer-package
     configMap:
       name: ha-printer-package
+  - name: energy-price-package
+    configMap:
+      name: ha-energy-price-package
   - name: energy-dashboard
     configMap:
       name: ha-energy-dashboard
@@ -349,6 +353,9 @@ additionalMounts:
   - name: printer-package
     mountPath: /config/package_printer.yaml
     subPath: printer.yaml
+  - name: energy-price-package
+    mountPath: /config/package_energy_price.yaml
+    subPath: energy_price.yaml
   - name: energy-dashboard
     mountPath: /config/dashboard_energy.yaml
     subPath: energy.yaml
