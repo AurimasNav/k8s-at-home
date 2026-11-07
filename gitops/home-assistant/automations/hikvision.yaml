@@ -9,10 +9,10 @@
   alias: Hikvision - Kiemas tamper/video loss alert
   triggers:
   - trigger: state
-    entity_id: binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_1_tamperdetection
+    entity_id: binary_sensor.parking_kiemas_tampering
     to: 'on'
   - trigger: state
-    entity_id: binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_1_videoloss
+    entity_id: binary_sensor.parking_kiemas_video_loss
     to: 'on'
   actions:
   - action: notify.send_message
@@ -32,16 +32,25 @@
   triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_1_videoloss
-    - binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_2_videoloss
-    - binary_sensor.ds_7604nxi_k1_4p0420230626ccrrac9772330wcvu_3_videoloss
+    - binary_sensor.parking_kiemas_video_loss
+    - binary_sensor.terrace_terasa_video_loss
+    - binary_sensor.walkway_sonas_video_loss
     to: 'on'
     for:
       minutes: 15
+  # video loss is a 5 s pulse per NVR event; the polled channel status stays off
+  - trigger: state
+    entity_id:
+    - binary_sensor.parking_kiemas_camera_connected
+    - binary_sensor.terrace_terasa_camera_connected
+    - binary_sensor.walkway_sonas_camera_connected
+    to: 'off'
+    for:
+      minutes: 15
   actions:
-  - action: hikvision_next.reboot
-    data:
-      config_entry_id: 01KZ9FA0AJ1B6BX7W5S0PXFX71
+  - action: button.press
+    target:
+      entity_id: button.network_video_recorder_restart
   - action: notify.send_message
     target:
       entity_id:
@@ -50,6 +59,7 @@
     data:
       title: NVR rebooted
       message: >-
-        {{ trigger.to_state.attributes.friendly_name }} has been lost for
-        15+ minutes - rebooted the NVR to try to recover it.
+        {{ trigger.to_state.attributes.friendly_name }} has been
+        {{ trigger.to_state.state }} for 15+ minutes - rebooted the NVR to try
+        to recover it.
   mode: single

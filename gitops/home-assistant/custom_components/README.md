@@ -10,12 +10,11 @@ upgrade is a clean replacement.
 
 | Component | Upstream |
 |---|---|
-| `hikvision_next` | [maciej-or/hikvision_next](https://github.com/maciej-or/hikvision_next) |
 | `bhyve` | [sebr/bhyve-home-assistant](https://github.com/sebr/bhyve-home-assistant) |
 | `mammotion` | [mikey0000/Mammotion-HA](https://github.com/mikey0000/Mammotion-HA) |
 | `byd_vehicle` | [jkaberg/hass-byd-vehicle](https://github.com/jkaberg/hass-byd-vehicle) (en.json only) |
 | `eso` | [algirdasc/hass-eso](https://github.com/algirdasc/hass-eso) (pinned to a commit: upstream has no tags; no `brand/`) |
-| `hikvision_bridge` | [yannik2480/hikvision_bridge](https://github.com/yannik2480/hikvision_bridge) (Apache-2.0, [licence](LICENSES/hikvision_bridge.txt); en.json only; runs next to `hikvision_next` until we pick one, see #1029) |
+| `hikvision_bridge` | [yannik2480/hikvision_bridge](https://github.com/yannik2480/hikvision_bridge) (Apache-2.0, [licence](LICENSES/hikvision_bridge.txt); en.json only; replaced `hikvision_next` on 2026-11-07, see #1029) |
 
 ## Version tracking
 
@@ -73,9 +72,7 @@ against the vendored release, applied from this directory:
 `git apply patches/<file>.diff`. Check that the repo copy still matches with
 `git apply --check -R patches/<file>.diff`.
 
-| Patch | Component | Why | Drop when |
-|---|---|---|---|
-| `hikvision_next-via-device-id.diff` | `hikvision_next` v1.1.1 | HA 2026.9 raises on a `via_device` key in `DeviceInfo`, so camera entities fail to load. Registers the NVR device first and links cameras with `via_device_id`. | [maciej-or/hikvision_next#369](https://github.com/maciej-or/hikvision_next/pull/369) is in a release |
+None at the moment.
 
 ## Known quirks
 

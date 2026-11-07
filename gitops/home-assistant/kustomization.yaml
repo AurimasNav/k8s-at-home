@@ -72,49 +72,8 @@ configMapGenerator:
 - name: ha-garden-dashboard
   files:
   - dashboards/garden.yaml
-# Vendored maciej-or/hikvision_next (HACS "Hikvision NVR / IP Camera"), split
-# into 3 ConfigMaps matching its directory layout — mounted at
-# /config/custom_components/hikvision_next (see values.yaml) so it's installed
-# without needing HACS itself. Renovate tracks the source tag:
-# https://github.com/maciej-or/hikvision_next/archive/refs/tags/v1.1.1.tar.gz
-# Local patch: custom_components/patches/hikvision_next-via-device-id.diff (HA 2026.9+;
-# re-apply after re-vendoring until upstream PR #369 ships, see custom_components/README.md)
-- name: ha-hikvision-next
-  files:
-  - custom_components/hikvision_next/__init__.py
-  - custom_components/hikvision_next/binary_sensor.py
-  - custom_components/hikvision_next/camera.py
-  - custom_components/hikvision_next/config_flow.py
-  - custom_components/hikvision_next/const.py
-  - custom_components/hikvision_next/coordinator.py
-  - custom_components/hikvision_next/diagnostics.py
-  - custom_components/hikvision_next/hikvision_device.py
-  - custom_components/hikvision_next/image.py
-  - custom_components/hikvision_next/manifest.json
-  - custom_components/hikvision_next/notifications.py
-  - custom_components/hikvision_next/sensor.py
-  - custom_components/hikvision_next/services.py
-  - custom_components/hikvision_next/services.yaml
-  - custom_components/hikvision_next/strings.json
-  - custom_components/hikvision_next/switch.py
-- name: ha-hikvision-next-isapi
-  files:
-  - custom_components/hikvision_next/isapi/__init__.py
-  - custom_components/hikvision_next/isapi/const.py
-  - custom_components/hikvision_next/isapi/isapi.py
-  - custom_components/hikvision_next/isapi/models.py
-  - custom_components/hikvision_next/isapi/utils.py
-- name: ha-hikvision-next-translations
-  files:
-  - custom_components/hikvision_next/translations/en.json
-  - custom_components/hikvision_next/translations/fr.json
-  - custom_components/hikvision_next/translations/it.json
-  - custom_components/hikvision_next/translations/pl.json
-  - custom_components/hikvision_next/translations/pt-BR.json
-  - custom_components/hikvision_next/translations/pt.json
-  - custom_components/hikvision_next/translations/ru.json
-# Vendored yannik2480/hikvision_bridge (Apache-2.0), installed ALONGSIDE hikvision_next
-# so both can be compared on the DS-7604NXI-K1 before switching (tracked in #1029).
+# Vendored yannik2480/hikvision_bridge (Apache-2.0) for the DS-7604NXI-K1 NVR. It replaced
+# hikvision_next (unlicensed, unmaintained) on 2026-11-07 (#1029).
 # Nothing is configured automatically: the integration is added in the HA UI.
 # One ConfigMap per upstream directory (ConfigMaps can't nest), mounted at
 # /config/custom_components/hikvision_bridge (see values.yaml).

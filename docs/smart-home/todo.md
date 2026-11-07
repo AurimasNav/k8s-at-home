@@ -161,9 +161,9 @@ catalogue, installed ~June 2023):
 
 - [ ] **Keep Frigate in mind — it is the answer if the Hikvision integration
       dies, and it fixes a gap we already have.** The problem is software, not
-      hardware: `hikvision_next` is dormant (last real commit 2024-12-15, 111
-      open issues) and warns it stops working in HA 2027.2. Replacing cameras
-      would fix nothing.
+      hardware: `hikvision_next` was dormant (last real commit 2024-12-15, 111
+      open issues), so HA moved to the maintained `hikvision_bridge` on
+      2026-11-07 (#1029). Replacing cameras would fix nothing.
 
       [Frigate](https://frigate.video) keeps the existing cameras (they do RTSP)
       and replaces the NVR's *software* role, running in this k3s cluster. It
