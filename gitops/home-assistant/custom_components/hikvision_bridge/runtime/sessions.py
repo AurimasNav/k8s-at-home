@@ -8,7 +8,8 @@ holds the wanted time and starts at the last key frame before it. Where the devi
 leaves out the part before that time itself; otherwise that part is dropped as fast as the
 device sends it, without ffmpeg. Devices that refuse both play the span over RTSP instead, in
 real time and without decryption. Devices that send recorded files only from their start
-play a time further into a file than they reach in SKIP_SECONDS over RTSP as well, if they can.
+play a time further into a file than they reach in READ_SECONDS over RTSP as well, if they can;
+a read that its pace shows will not reach the time in READ_SECONDS gives up after PACE_SECONDS.
 
 One session covers one stretch of contiguous recordings, so a position in the video maps to
 the recorded time exactly (start of the session plus the playing time). Cameras serve only
@@ -52,6 +53,11 @@ FIRST_SEGMENT_TIMEOUT = 25
 # Longest wait for the part of a recorded file before the wanted time; slower devices start
 # playing from the latest key frame they reached.
 SKIP_SECONDS = 30
+# Time a read of a recorded file runs before its pace tells whether it reaches the wanted time.
+PACE_SECONDS = 5
+# Longest read up to the wanted time while RTSP can play it instead: RTSP starts at the time
+# in a few seconds, however far into the file it lies.
+READ_SECONDS = 10
 # Download kept while no key frame was found yet; past it the file plays from its start.
 SKIP_SEARCH_BYTES = 8 * 1024 * 1024
 # From this far into a recorded file the device is asked to start it at the wanted time.
@@ -97,6 +103,17 @@ class _UseRtsp(Exception):
         self.lasting = lasting
         self.refused = refused
         self.far = far
+
+
+class _TooSlow(Exception):
+    """A recorded file is sent too slowly to reach the wanted time; ``reach`` is how far it gets.
+
+    ``reach`` is the playing time into the file reached in READ_SECONDS at the pace so far.
+    """
+
+    def __init__(self, reach: float) -> None:
+        super().__init__(reach)
+        self.reach = reach
 
 
 @dataclass(slots=True)
@@ -214,12 +231,14 @@ def played_seconds(playlist: str, fetched: int) -> float:
 
 
 async def skipped(
-    stream: ProgramStream, chunks: AsyncIterator[bytes], skip: float
+    stream: ProgramStream, chunks: AsyncIterator[bytes], skip: float, give_up: bool = False
 ) -> tuple[bytes, float]:
     """Read ``chunks`` up to ``skip`` seconds and drop what lies before the last key frame.
 
     Returns the bytes from that key frame on and its playing time. Stops at the latest key
     frame reached after SKIP_SECONDS; without any key frame the file plays from its start.
+    With ``give_up``, a read whose pace shows it cannot reach ``skip`` in READ_SECONDS raises
+    _TooSlow once PACE_SECONDS have passed, instead of waiting out SKIP_SECONDS.
     """
     began = time.monotonic()
     stream.key_frames = []
@@ -240,6 +259,13 @@ async def skipped(
                 break
         elif stream.seconds >= skip or time.monotonic() - began > SKIP_SECONDS:
             break
+        if give_up and stream.seconds > 0:
+            elapsed = time.monotonic() - began
+            if elapsed >= PACE_SECONDS:
+                pace = stream.seconds / elapsed
+                if elapsed + (skip - stream.seconds) / pace > READ_SECONDS:
+                    stream.key_frames = None
+                    raise _TooSlow(pace * READ_SECONDS)
     stream.key_frames = None
     if cut is None:
         _LOGGER.debug("No key frame in the recorded file, playing it from its start")
@@ -328,7 +354,8 @@ class SessionManager:
         self._by_file: WeakSet[IsapiLink] = WeakSet()
         # Devices that send recorded files only from their start.
         self._whole_files: WeakSet[IsapiLink] = WeakSet()
-        # Seconds into a recorded file a device reached in SKIP_SECONDS, if it fell short.
+        # Seconds into a recorded file a device reaches in READ_SECONDS (SKIP_SECONDS once it
+        # read on for lack of RTSP), if it fell short.
         self._reach: WeakKeyDictionary[IsapiLink, float] = WeakKeyDictionary()
         # Devices whose RTSP playback failed for a time beyond that reach.
         self._no_far_rtsp: WeakSet[IsapiLink] = WeakSet()
@@ -509,6 +536,9 @@ class SessionManager:
                 skip,
             )
             raise _UseRtsp(False, far=True)
+        # A read that is too slow to reach the time gives up for RTSP, unless RTSP was tried
+        # already for this device (then reading on is the only way left).
+        give_up = not far and source.link not in self._no_far_rtsp
         if skip >= LATER_START_SECONDS and source.link not in self._whole_files:
             wall = await recordings.wall_offset(source.link)
             if later := recordings.starting_at(recording.playback_uri, start, wall):
@@ -524,8 +554,11 @@ class SessionManager:
                         "the recorded file from the time",
                         skip,
                         recording.playback_uri,
+                        give_up,
                     )
                 except _UseRtsp as err:
+                    if err.far:
+                        raise
                     if err.refused:
                         self._whole_files.add(source.link)
         return await self._from_download(
@@ -538,6 +571,7 @@ class SessionManager:
             folder,
             "the recorded file",
             skip,
+            give_up=give_up,
         )
 
     async def _from_download(
@@ -552,13 +586,14 @@ class SessionManager:
         what: str,
         skip: float = 0.0,
         whole: str | None = None,
+        give_up: bool = False,
     ) -> Session:
         wait = FIRST_SEGMENT_TIMEOUT + (SKIP_SECONDS if skip > 0 else 0)
         for attempt in range(2):
             session = Session(secrets.token_urlsafe(16), key, start, end, quality, folder)
             ready: asyncio.Future[None] = self.hass.loop.create_future()
             session.pump = self.hass.async_create_background_task(
-                self._pump(session, source, uri, ready, skip, whole),
+                self._pump(session, source, uri, ready, skip, whole, give_up),
                 "hikvision_bridge playback download",
             )
             try:
@@ -566,6 +601,8 @@ class SessionManager:
             except BaseException as err:
                 # Ends ffmpeg too, should the download have started it.
                 await self._end(session)
+                if isinstance(err, _TooSlow):
+                    raise _UseRtsp(False, far=True) from err
                 if isinstance(err, RecordingEncrypted):
                     raise SessionError("playback_encrypted") from err
                 if isinstance(err, TimeoutError):
@@ -602,12 +639,14 @@ class SessionManager:
         ready: asyncio.Future[None],
         skip: float = 0.0,
         whole: str | None = None,
+        give_up: bool = False,
     ) -> None:
         """Download, decrypt and hand the span to ffmpeg, keeping READ_AHEAD in front.
 
         With ``skip`` the video starts at the last key frame before that many seconds, and
         the session start moves back to that frame. ``uri`` may ask the device to leave
         out the part before; ``whole`` is then the file from its start, to compare with.
+        ``give_up`` allows the read to stop early, as _TooSlow, when its pace is too slow.
         """
         stdin = None
         try:
@@ -629,9 +668,23 @@ class SessionManager:
                 cut = 0.0
                 if rest > 0:
                     began = time.monotonic()
-                    first, cut = await skipped(stream, chunks, rest)
+                    try:
+                        first, cut = await skipped(stream, chunks, rest, give_up)
+                    except _TooSlow as slow:
+                        self._reach[source.link] = device + slow.reach
+                        _LOGGER.debug(
+                            "Recorded file is sent too slowly to reach %.0f s in %s s: "
+                            "playing it over RTSP if it can",
+                            rest,
+                            READ_SECONDS,
+                        )
+                        raise
                     if cut < rest - 1 and time.monotonic() - began >= SKIP_SECONDS:
-                        self._reach[source.link] = device + stream.seconds
+                        # A read for lack of RTSP gets further than READ_SECONDS would.
+                        reached = device + stream.seconds
+                        self._reach[source.link] = min(
+                            self._reach.get(source.link, reached), reached
+                        )
                     chunks = _joined(recordings.file_header(head) + first, chunks)
                 else:
                     chunks = playback.headed(chunks)

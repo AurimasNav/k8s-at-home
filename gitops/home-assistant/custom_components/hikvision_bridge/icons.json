@@ -9,6 +9,7 @@
       "target_vehicle": { "default": "mdi:car" },
       "alarm_input": { "default": "mdi:electric-switch" },
       "event_link": { "default": "mdi:lan-connect" },
+      "illegal_login": { "default": "mdi:account-lock-outline", "state": { "on": "mdi:account-alert" } },
       "stream_encryption": { "default": "mdi:lock-alert-outline", "state": { "off": "mdi:lock-open-variant-outline" } },
       "cloud_online": { "default": "mdi:cloud-check-outline" },
       "cloud_stream_encryption": { "default": "mdi:lock-alert-outline" },

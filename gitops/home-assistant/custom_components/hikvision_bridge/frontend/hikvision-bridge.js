@@ -10,12 +10,17 @@ const HOUR = 3600e3;
 const DAY = 24 * HOUR;
 const ZOOMS = [DAY, 12 * HOUR, 6 * HOUR, 2 * HOUR, HOUR, 15 * 60e3];
 const HEVC = 'video/mp4; codecs="hvc1.1.6.L153.B0"';
+// Playback speeds of recordings, as the Hik-Connect app offers them.
+const SPEEDS = [1, 2, 4, 8];
+// Live WebRTC gives up after this long and the view falls back to HLS.
+const RTC_START_MS = 6000;
 
 // English texts; translations come from the integration (selector "ui").
 const TEXT = {
   live: "Live",
   playback: "Playback",
   quality: "Quality",
+  speed: "Speed",
   auto: "Auto",
   low: "Low (fast)",
   high: "High",
@@ -24,6 +29,7 @@ const TEXT = {
   cameras: "Cameras",
   no_cameras: "No cameras found.",
   no_recordings: "No recordings on this day.",
+  loading: "Loading recordings...",
   no_recording: "No recording from this time on.",
   playback_encrypted: "The recording is encrypted and the verification code does not fit. Enter it in the integration options.",
   playback_unreadable: "The video from the camera could not be read, often because of a weak connection (for example Wi-Fi). Try again or choose a lower quality. If the recordings are encrypted, check the verification code in the integration options.",
@@ -342,6 +348,9 @@ class Timeline {
     this.span = DAY;
     this.recordings = [];
     this.events = [];
+    // While the day's recordings are searched, the band says so instead of looking empty.
+    this.loading = false;
+    this.loadingText = "Loading recordings...";
     this.playhead = null;
     this.colors = {};
     this.kindName = (k) => k;
@@ -489,6 +498,13 @@ class Timeline {
       ctx.fillRect(a, recY, Math.max(2, b - a), recH);
     }
 
+    if (this.loading) {
+      ctx.fillStyle = muted;
+      ctx.font = "13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(this.loadingText, width / 2, recY + recH / 2 + 4);
+    }
+
     // Detections colour their part of the recordings, people and vehicles on top.
     const events = this.events
       .filter((ev) => x(ev.end) >= 0 && x(ev.start) <= width)
@@ -580,6 +596,7 @@ class Player {
     this.session = null;
     this.mode = "live";
     this.quality = "auto";
+    this.speed = 1; // playback speed of recordings; live always runs at 1x
     this.level = null; // quality actually playing: low/high (live), original/compatible (recordings)
     this.stalls = [];
     this.token = 0;
@@ -613,8 +630,8 @@ class Player {
       } else {
         this.hls = new Hls({
           lowLatencyMode: this.mode === "live",
-          // Recordings: load the first segment while the video element is still being set up.
-          startFragPrefetch: this.mode === "playback",
+          // Load the first segment while the video element is still being set up.
+          startFragPrefetch: true,
           backBufferLength: 120,
           manifestLoadingMaxRetry: 6,
           levelLoadingMaxRetry: 6,
@@ -642,12 +659,33 @@ class Player {
 
   _detach() {
     clearTimeout(this._upgradeTimer);
+    this._closeRtc();
     if (this.hls) {
       this.hls.destroy();
       this.hls = null;
     }
+    this.video.srcObject = null;
     this.video.removeAttribute("src");
     this.video.load();
+    // Loading resets the rate to the default one: set the speed again for the next source.
+    this._applySpeed();
+  }
+
+  // Recordings play at the chosen speed (muted, so no pitch to keep); live always at 1x.
+  _applySpeed() {
+    const rate = this.mode === "playback" ? this.speed : 1;
+    this.video.defaultPlaybackRate = rate;
+    this.video.playbackRate = rate;
+  }
+
+  setSpeed(speed) {
+    this.speed = speed;
+    this._applySpeed();
+  }
+
+  _closeRtc() {
+    if (this.rtc) this.rtc.close();
+    this.rtc = null;
   }
 
   async stop() {
@@ -670,16 +708,20 @@ class Player {
   async live(camera, quality) {
     this.mode = "live";
     this.quality = quality;
+    this.speed = 1;
     const level = quality === "auto" ? (camera.live.low ? "low" : "high") : quality;
     await this._live(camera, level);
   }
 
-  async _live(camera, level) {
+  // WebRTC first when Home Assistant offers it for the camera (the same signalling its own
+  // viewer uses), HLS otherwise or when WebRTC fails.
+  async _live(camera, level, hlsOnly = false) {
     const entity = camera.live[level] || camera.live.high || camera.live.low;
     const token = ++this.token;
     clearInterval(this._keepAlive);
     if (this.session) this.stop();
     this.token = token;
+    this._closeRtc();
     if (!entity) {
       this._detach();
       this.host.showError("live_unavailable");
@@ -687,15 +729,139 @@ class Player {
     }
     this.host.busy(true);
     try {
+      const shown = camera.live[level] ? level : camera.live.high ? "high" : "low";
+      if (!hlsOnly && (await this._webrtc(camera, level, entity, token))) {
+        if (token === this.token) {
+          this.level = shown;
+          this.camera = camera;
+          this.host.update();
+        }
+        return;
+      }
+      if (token !== this.token) return;
       const { url } = await this.host.hass.callWS({ type: "camera/stream", entity_id: entity, format: "hls" });
       if (token !== this.token) return;
-      this.level = camera.live[level] ? level : camera.live.high ? "high" : "low";
+      this.level = shown;
       this.camera = camera;
       await this._attach(url, token);
       this.host.update();
     } catch (err) {
       if (token === this.token) this.host.showError(err.code === "start_stream_failed" ? "live_encrypted" : "live_unavailable");
     }
+  }
+
+  /*
+   * Live picture over WebRTC through Home Assistant's camera signalling (the same messages
+   * its own player uses). Resolves true once the picture plays; false means use HLS: the
+   * camera has no WebRTC provider, the connection failed or it took too long.
+   */
+  async _webrtc(camera, level, entity, token) {
+    const hass = this.host.hass;
+    if (!window.RTCPeerConnection || !hass.connection) return false;
+    let types = [];
+    try {
+      ({ frontend_stream_types: types = [] } = await hass.callWS({ type: "camera/capabilities", entity_id: entity }));
+    } catch (_err) {
+      return false;
+    }
+    if (token !== this.token || !types.includes("web_rtc")) return false;
+    let configuration = {};
+    try {
+      ({ configuration = {} } = await hass.callWS({ type: "camera/webrtc/get_client_config", entity_id: entity }));
+    } catch (_err) {
+      /* no extra servers: the local network needs none */
+    }
+    if (token !== this.token) return false;
+
+    this._detach();
+    const video = this.video;
+    const pc = new RTCPeerConnection(configuration);
+    const stream = new MediaStream();
+    video.srcObject = stream;
+    video.muted = true;
+    let done = false;
+    let closed = false;
+    let session = null;
+    let unsubscribe = null;
+    const queued = [];
+
+    const send = (candidate) =>
+      hass.callWS({ type: "camera/webrtc/candidate", entity_id: entity, session_id: session, candidate }).catch(() => {});
+    const teardown = () => {
+      if (closed) return;
+      closed = true;
+      pc.close();
+      if (unsubscribe) unsubscribe();
+    };
+
+    return new Promise((resolve) => {
+      const finish = (ok) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        video.removeEventListener("playing", onPlaying);
+        if (!ok) teardown();
+        resolve(ok);
+      };
+      const onPlaying = () => finish(true);
+      const timer = setTimeout(() => finish(false), RTC_START_MS);
+      const rtc = {
+        close: () => {
+          finish(false);
+          teardown();
+        },
+      };
+      this.rtc = rtc;
+
+      const onMessage = (message) => {
+        if (closed) return;
+        if (message.type === "session") {
+          session = message.session_id;
+          queued.splice(0).forEach(send);
+        } else if (message.type === "answer") {
+          pc.setRemoteDescription({ type: "answer", sdp: message.answer }).catch(() => finish(false));
+        } else if (message.type === "candidate") {
+          pc.addIceCandidate(message.candidate).catch(() => {});
+        } else if (message.type === "error") {
+          finish(false);
+        }
+      };
+
+      pc.addTransceiver("video", { direction: "recvonly" });
+      pc.addTransceiver("audio", { direction: "recvonly" });
+      pc.ontrack = (event) => {
+        stream.addTrack(event.track);
+        video.play().catch(() => {});
+      };
+      pc.onicecandidate = (event) => {
+        if (!event.candidate) return;
+        const candidate = event.candidate.toJSON();
+        if (session) send(candidate);
+        else queued.push(candidate);
+      };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState !== "failed") return;
+        if (!done) finish(false);
+        // Lost after it played: continue with HLS.
+        else if (this.rtc === rtc && token === this.token) this._live(camera, level, true);
+      };
+      video.addEventListener("playing", onPlaying);
+
+      pc.createOffer()
+        .then((offer) => pc.setLocalDescription(offer))
+        .then(() =>
+          hass.connection.subscribeMessage(onMessage, {
+            type: "camera/webrtc/offer",
+            entity_id: entity,
+            offer: pc.localDescription.sdp,
+          }),
+        )
+        .then((stop) => {
+          if (closed) stop();
+          else unsubscribe = stop;
+        })
+        .catch(() => finish(false));
+    });
   }
 
   // ---- recordings
@@ -707,6 +873,7 @@ class Player {
     this.source = source;
     let level = quality === "auto" ? "original" : quality;
     if (quality === "auto" && camera.codec && camera.codec.includes("265") && !this.canHevc) level = "compatible";
+    this._applySpeed();
     await this._play(time, level);
   }
 
@@ -987,6 +1154,7 @@ class Viewer {
           <div class="group end">
             <select class="source" hidden></select>
             <select class="quality"></select>
+            <select class="speed" hidden></select>
             <button class="icon-button" data-action="download">${ICONS.download}</button>
             <button class="icon-button" data-action="fullscreen">${ICONS.fullscreen}</button>
           </div>
@@ -1013,6 +1181,7 @@ class Viewer {
     root.querySelector(".controls").addEventListener("click", (e) => this._click(e));
     root.querySelector(".day-bar").addEventListener("click", (e) => this._click(e));
     root.querySelector(".quality").addEventListener("change", (e) => this.setQuality(e.target.value));
+    root.querySelector(".speed").addEventListener("change", (e) => this.setSpeed(Number(e.target.value)));
     root.querySelector(".source").addEventListener("change", (e) => {
       this.source = e.target.value;
       this.loadTimeline();
@@ -1100,7 +1269,19 @@ class Viewer {
     this.timeline.kindName = (k) => this.t.kind(k);
     this.timeline.eventName = (k) => this.t.event(k);
     this._qualityOptions();
+    this._speedOptions();
     this._legend();
+  }
+
+  _speedOptions() {
+    const select = this.root.querySelector(".speed");
+    select.innerHTML = SPEEDS.map((s) => `<option value="${s}">${this.t.ui("speed")}: ${s}x</option>`).join("");
+    select.value = String(this.player.speed);
+  }
+
+  setSpeed(speed) {
+    this.player.setSpeed(speed);
+    this.update();
   }
 
   _qualityOptions() {
@@ -1190,6 +1371,19 @@ class Viewer {
     const day = this.day;
     if (this.timeline.dayStart !== day.getTime()) this.timeline.setDay(day);
     this._dateLabel();
+    const key = `${camera.entry_id}/${camera.channel_id}/${this.source}/${day.getTime()}`;
+    // A day not shown yet is loading until its search answers; the minute refresh of today
+    // keeps the recordings on screen meanwhile.
+    if (key !== this._timelineKey) {
+      this._timelineKey = key;
+      this.data = { recordings: [], events: [] };
+      this.timeline.recordings = [];
+      this.timeline.events = [];
+      this.timeline.loadingText = this.t.ui("loading");
+      this.timeline.loading = this.loading = true;
+      this.timeline.draw();
+      this._hint();
+    }
     try {
       const result = await this.hass.callWS({
         type: `${DOMAIN}/timeline`,
@@ -1199,12 +1393,14 @@ class Viewer {
         start: day.toISOString(),
         end: new Date(day.getTime() + DAY).toISOString(),
       });
-      if (camera !== this.camera || day !== this.day) return;
+      if (key !== this._timelineKey) return;
       const parse = (list) => list.map((i) => ({ ...i, start: new Date(i.start).getTime(), end: new Date(i.end).getTime() }));
       this.data = { recordings: parse(result.recordings), events: parse(result.events) };
     } catch (_err) {
+      if (key !== this._timelineKey) return;
       this.data = { recordings: [], events: [] };
     }
+    this.timeline.loading = this.loading = false;
     this.timeline.recordings = this.data.recordings;
     this.timeline.events = this.data.events;
     this.timeline.draw();
@@ -1216,6 +1412,7 @@ class Viewer {
     const hint = this.root.querySelector(".hint");
     let text = "";
     if (this.camera && !this.camera.sources.length) text = "";
+    else if (this.loading) text = this.t.ui("loading");
     else if (this.camera && !this.data.recordings.length) text = this.t.ui("no_recordings");
     else if (this.mode === "playback" && this.player.level === "original" && this.camera?.codec?.includes("265") && !this.player.canHevc)
       text = this.t.ui("hevc_hint");
@@ -1408,6 +1605,9 @@ class Viewer {
       this.root.querySelector(`[data-action="${action}"]`).disabled = !recorded;
     }
     this.root.querySelector('[data-action="forward"]').disabled = !recorded || live;
+    const speed = this.root.querySelector(".speed");
+    speed.hidden = live || !recorded;
+    speed.value = String(this.player.speed);
     const badges = [];
     if (live) badges.push(`<span class="badge live">${t("live")}</span>`);
     if (this.player.level) {

@@ -13,6 +13,7 @@ header; the codec field of search results is not reliable and is therefore not u
 
 from __future__ import annotations
 
+import asyncio
 from collections import deque
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -52,6 +53,14 @@ DAYS_PATH = "/ISAPI/ContentMgmt/record/tracks/{track}/dailyDistribution"
 PAGE_SIZE = 50
 # A day of ten-minute files on one track stays far below this; it only stops runaway paging.
 MAX_RESULTS = 2000
+# How long the results of a search are reused by ``recent_search``: spans long past change
+# no more, spans up to the present get new recordings.
+PAST_SEARCH_SECONDS = 600
+RECENT_SEARCH_SECONDS = 90
+SEARCHES_KEPT = 8
+# A fresh search of a span up to the present asks only for its last minutes while the whole
+# span was searched less than this long ago.
+FULL_SEARCH_SECONDS = 600
 HEADER_MAGIC = b"IMKH"
 PACK_START = b"\x00\x00\x01\xba"
 
@@ -136,8 +145,9 @@ _offsets: WeakKeyDictionary[IsapiLink, tuple[float, timedelta]] = WeakKeyDiction
 _utc_basis: WeakKeyDictionary[IsapiLink, bool] = WeakKeyDictionary()
 # The basis set in the device's options; it is not learned then.
 _fixed_basis: WeakKeyDictionary[IsapiLink, bool] = WeakKeyDictionary()
-# When the basis was last looked for.
+# When the basis was last looked for, and the look still running.
 _basis_tried: WeakKeyDictionary[IsapiLink, datetime] = WeakKeyDictionary()
+_basis_looking: WeakKeyDictionary[IsapiLink, asyncio.Task[None]] = WeakKeyDictionary()
 # When the device's events arrived (UTC, own clock), newest last.
 _events: WeakKeyDictionary[IsapiLink, deque[datetime]] = WeakKeyDictionary()
 
@@ -233,9 +243,14 @@ async def learn_basis(link: IsapiLink, track: str) -> None:
 
     Searches with literal times around both presents and the device's recent events, again
     every OFFSET_TTL seconds or after new events; while neither a recording in progress nor
-    the recordings of events tell, the last answer stays.
+    the recordings of events tell, the last answer stays. Searches meanwhile wait for a look
+    still running: before it they would take the wrong clock.
     """
     if link in _fixed_basis:
+        return
+    looking = _basis_looking.get(link)
+    if looking is not None and not looking.done():
+        await asyncio.shield(looking)
         return
     now = datetime.now(UTC)
     events = [moment for moment in _events.get(link, ()) if now - moment <= EVENTS_SPAN]
@@ -247,6 +262,14 @@ async def learn_basis(link: IsapiLink, track: str) -> None:
     ):
         return
     _basis_tried[link] = now
+    looking = asyncio.ensure_future(_look_for_basis(link, track, now, events))
+    _basis_looking[link] = looking
+    await asyncio.shield(looking)
+
+
+async def _look_for_basis(
+    link: IsapiLink, track: str, now: datetime, events: list[datetime]
+) -> None:
     wall = await clock_offset(link)
     if abs(wall) <= 2 * NOW_TOLERANCE:
         return
@@ -373,7 +396,135 @@ async def search(link: IsapiLink, track: str, start: datetime, end: datetime) ->
     MORE; paging stops as soon as a page brings nothing new.
     """
     await learn_basis(link, track)
-    return await _search(link, track, start, end, await wall_offset(link))
+    began = time.monotonic()
+    found = await _search(link, track, start, end, await wall_offset(link))
+    _LOGGER.debug(
+        "Recordings of %s: %d found in %.1f s",
+        link.endpoint.host,
+        len(found),
+        time.monotonic() - began,
+    )
+    return found
+
+
+@dataclass(slots=True)
+class _Searched:
+    """A search of the panel, running or done; ``at`` is when it began (UTC).
+
+    ``full`` is when the whole span was last searched (monotonic), ``began`` for one that was.
+    """
+
+    track: str
+    start: datetime
+    end: datetime
+    wall: timedelta
+    at: datetime
+    began: float
+    full: float
+    task: asyncio.Task[list[Recording]]
+
+    @property
+    def recent(self) -> bool:
+        """Whether the span reaches up to the present of the search."""
+        return self.end >= self.at - NOW_TOLERANCE
+
+    def covers(self, track: str, start: datetime, end: datetime, wall: timedelta) -> bool:
+        # A span reaching past the time of the search holds nothing newer than its results.
+        until = self.end if self.end < self.at else datetime.max.replace(tzinfo=UTC)
+        return self.track == track and self.wall == wall and self.start <= start and end <= until
+
+
+_searched: WeakKeyDictionary[IsapiLink, list[_Searched]] = WeakKeyDictionary()
+
+
+async def recent_search(
+    link: IsapiLink, track: str, start: datetime, end: datetime, fresh: bool = False
+) -> list[Recording]:
+    """``search``, answered from a search of the span still running or done shortly before.
+
+    The panel searches the day for its timeline and, on every seek, the hours around the
+    time; over a slow link each search takes seconds. Results of spans long past are kept
+    for PAST_SEARCH_SECONDS, of spans up to the present for RECENT_SEARCH_SECONDS. ``fresh``
+    always asks the device, and its results serve the searches after it. The timeline of today
+    is searched fresh every minute: while the whole day was searched less than
+    FULL_SEARCH_SECONDS ago, only its last minutes are asked for and added.
+
+    Searches of a device are planned one after the other, so that one asked for while
+    another still sets out (looks for the clock) joins it instead of searching as well. A
+    fresh search joins one of the span still running: its results are as new.
+    """
+    async with _planning.setdefault(link, asyncio.Lock()):
+        task = await _planned(link, track, start, end, fresh)
+    found = await asyncio.shield(task)
+    return [r for r in found if r.end > start and r.start < end]
+
+
+_planning: WeakKeyDictionary[IsapiLink, asyncio.Lock] = WeakKeyDictionary()
+
+
+async def _planned(
+    link: IsapiLink, track: str, start: datetime, end: datetime, fresh: bool
+) -> asyncio.Task[list[Recording]]:
+    """The search ``recent_search`` waits for: one kept, or a new one."""
+    await learn_basis(link, track)
+    wall = await wall_offset(link)
+    now = time.monotonic()
+    kept = [
+        s
+        for s in _searched.get(link, [])
+        if not (s.task.done() and (s.task.cancelled() or s.task.exception()))
+        and now - s.began < PAST_SEARCH_SECONDS
+    ]
+    for searched in reversed(kept):
+        if fresh:
+            reuse = not searched.task.done()
+        else:
+            age = RECENT_SEARCH_SECONDS if searched.recent else PAST_SEARCH_SECONDS
+            reuse = now - searched.began < age
+        if reuse and searched.covers(track, start, end, wall):
+            return searched.task
+    at = datetime.now(UTC)
+    base = next(
+        (
+            s
+            for s in reversed(kept)
+            if s.task.done()
+            and s.recent
+            and (s.track, s.start, s.end, s.wall) == (track, start, end, wall)
+            and now - s.full < FULL_SEARCH_SECONDS
+        ),
+        None,
+    )
+    if fresh and base is not None and end >= at - NOW_TOLERANCE:
+        since = max(start, base.at - NOW_TOLERANCE)
+        task = asyncio.ensure_future(_added(link, track, start, end, base.task.result(), since))
+        full = base.full
+    else:
+        task = asyncio.ensure_future(search(link, track, start, end))
+        full = now
+    kept.append(_Searched(track, start, end, wall, at, now, full, task))
+    _searched[link] = kept[-SEARCHES_KEPT:]
+    return task
+
+
+async def _added(
+    link: IsapiLink,
+    track: str,
+    start: datetime,
+    end: datetime,
+    known: list[Recording],
+    since: datetime,
+) -> list[Recording]:
+    """``known`` with the recordings from ``since`` on searched again (also those in progress)."""
+
+    def key(item: Recording) -> tuple[str, datetime, str]:
+        return item.track, item.start, item.name or item.playback_uri
+
+    merged = {key(r): r for r in known}
+    merged.update((key(r), r) for r in await search(link, track, since, end))
+    return sorted(
+        (r for r in merged.values() if r.end > start and r.start < end), key=lambda r: r.start
+    )
 
 
 async def _search(
