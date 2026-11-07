@@ -1,0 +1,99 @@
+# YAML dashboard (values.yaml -> lovelace.dashboards): Bambu Lab P2S + AMS 2 Pro; custom cards ship with bambu_lab.
+title: 3D Printer
+views:
+- title: P2S
+  path: p2s
+  icon: mdi:printer-3d
+  cards:
+  - type: custom:ha-bambulab-print_status-card
+    printer: 10c31f9850dd5a30df972128656558a2
+    style: simple
+
+  - type: picture-entity
+    entity: camera.gaming_p2s_camera
+    camera_view: live
+    show_name: false
+    show_state: false
+
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+    - type: tile
+      entity: sensor.gaming_p2s_print_status
+      name: Status
+    - type: tile
+      entity: sensor.gaming_p2s_current_stage
+      name: Stage
+    - type: tile
+      entity: sensor.gaming_p2s_print_progress
+      name: Progress
+    - type: tile
+      entity: sensor.gaming_p2s_remaining_time
+      name: Remaining
+    - type: tile
+      entity: sensor.gaming_p2s_end_time
+      name: Finishes
+    - type: tile
+      entity: sensor.gaming_p2s_current_layer
+      name: Layer
+    - type: tile
+      entity: sensor.gaming_p2s_total_layer_count
+      name: Layers
+    - type: tile
+      entity: sensor.gaming_p2s_print_weight
+      name: Weight
+
+  - type: custom:ha-bambulab-print_control-card
+    printer: 10c31f9850dd5a30df972128656558a2
+
+  - type: history-graph
+    title: Temperatures (12 h)
+    hours_to_show: 12
+    entities:
+    - entity: sensor.gaming_p2s_nozzle_temperature
+      name: Nozzle
+    - entity: sensor.gaming_p2s_bed_temperature
+      name: Bed
+    - entity: sensor.gaming_p2s_chamber_temperature
+      name: Chamber
+
+  - type: custom:ha-bambulab-ams-card
+    ams: e4d5064014e55be3ab752d1a6573cffc
+    style: vector
+    subtitle: AMS 2 Pro
+    show_info_bar: true
+    show_type: true
+
+  - type: custom:ha-bambulab-spool-card
+    spool: ed5b9634da19088c6840a5e03f7f0fad
+    subtitle: External spool
+    show_info_bar: true
+    show_type: true
+
+  - type: history-graph
+    title: AMS humidity (7 days)
+    hours_to_show: 168
+    entities:
+    - entity: sensor.gaming_ams_2_pro_humidity
+      name: Humidity
+
+  - type: entities
+    title: Status
+    entities:
+    - entity: light.gaming_p2s_chamber_light
+      name: Chamber light
+    - entity: binary_sensor.gaming_p2s_online
+      name: Online
+    - entity: binary_sensor.gaming_p2s_door
+      name: Door
+    - entity: binary_sensor.gaming_p2s_print_error
+      name: Print error
+    - entity: binary_sensor.gaming_p2s_hms_errors
+      name: HMS errors
+    - entity: binary_sensor.gaming_ams_2_pro_drying
+      name: AMS drying
+    - entity: input_boolean.printer_ventilation_boost
+      name: Ventilation boost (printer)
+    - entity: sensor.gaming_p2s_wi_fi_signal
+      name: Wi-Fi signal

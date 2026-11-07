@@ -89,6 +89,16 @@ data:
     sensor.byd_atto_2_range
     binary_sensor.byd_atto_2_charging
     binary_sensor.byd_atto_2_plug
+    # 3D printer (status only, no controls)
+    sensor.gaming_p2s_print_status
+    sensor.gaming_p2s_current_stage
+    sensor.gaming_p2s_print_progress
+    sensor.gaming_p2s_remaining_time
+    sensor.gaming_p2s_end_time
+    sensor.gaming_p2s_task_name
+    binary_sensor.gaming_p2s_print_error
+    binary_sensor.gaming_p2s_hms_errors
+    sensor.gaming_ams_2_pro_humidity
     # weather
     weather.forecast_home
     # shopping list
