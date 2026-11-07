@@ -48,7 +48,16 @@ Open work, newest context first. Decisions live in [decisions/](decisions/).
       few days and pick whichever matches the meter, rather than choosing on
       principle. Data is previous-day only, so allow a couple of days. It also
       exposes the **kaupimas storage-bank balance**, which is not derivable from
-      any local measurement.
+      any local measurement. ESO connected 2026-11-07; the three sources sit side
+      by side per day and per month on **Energy+ → Grid check**.
+- [x] ~~Electricity cost tracking~~ **Done 2026-11-07.** `packages/energy_price.yaml`
+      prices a grid kWh at the ESO take-back fee (0.0726) while the kaupimas
+      balance lasts, else Nord Pool + VAT + the Išmanus-15 adder (0.12514); both
+      checked against the Sept 2026 bill. `sensor.electricity_import_price` is the
+      Energy dashboard's grid price entity. The Ignitis path has no stored-bank
+      sensor (`sensor.eso_stored_energy_153500` stays unknown), so an automation
+      copies the `eso:energy_export_balance_153500` statistic into
+      `input_number.net_metering_balance` daily. Monthly fees (4.36 EUR) are not counted.
 - [ ] **Decide where grid import/export should come from.** Now actionable: the
       iHM serves the meter's lifetime counters (`8175/8177`, e.g. 7937.0 kWh
       import / 5664.7 kWh export on 2026-08-14) as

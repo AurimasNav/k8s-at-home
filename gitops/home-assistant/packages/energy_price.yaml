@@ -1,0 +1,67 @@
+# Ignitis "Išmanus - 15" + ESO "Namai", net metering; EUR incl. VAT, matches the Sept 2026 bill
+
+# the Ignitis path of the eso integration only reports the balance as a statistic
+input_number:
+  net_metering_balance:
+    name: Net-metering balance
+    unit_of_measurement: kWh
+    min: -100000
+    max: 100000
+    step: 0.001
+    mode: box
+    icon: mdi:bank
+
+template:
+  - sensor:
+      # Nord Pool LT is quoted without VAT; 0.12514 covers supplier margin, ESO distribution and VIAP
+      - name: Electricity plan price
+        unique_id: electricity_plan_price
+        unit_of_measurement: EUR/kWh
+        state_class: measurement
+        icon: mdi:cash
+        availability: "{{ has_value('sensor.nord_pool_lt_current_price') }}"
+        state: "{{ (states('sensor.nord_pool_lt_current_price') | float * 1.21 + 0.12514) | round(5) }}"
+      # what a grid kWh costs now: the ESO take-back fee while the stored balance lasts
+      - name: Electricity import price
+        unique_id: electricity_import_price
+        unit_of_measurement: EUR/kWh
+        state_class: measurement
+        icon: mdi:cash-check
+        availability: >-
+          {{ states('input_number.net_metering_balance') | float(0) > 0
+             or has_value('sensor.electricity_plan_price') }}
+        state: >-
+          {{ 0.0726 if states('input_number.net_metering_balance') | float(0) > 0
+             else states('sensor.electricity_plan_price') | float }}
+
+automation:
+- id: net_metering_balance_sync
+  alias: Energy - copy the net-metering balance from ESO
+  triggers:
+  # the eso integration imports at 10:30 and retries for a while
+  - trigger: time
+    at:
+    - "11:00:00"
+    - "15:00:00"
+  - trigger: homeassistant
+    event: start
+  actions:
+  - action: recorder.get_statistics
+    data:
+      statistic_ids:
+      - eso:energy_export_balance_153500
+      start_time: "{{ (now() - timedelta(days=30)).isoformat() }}"
+      period: hour
+      types:
+      - state
+    response_variable: stats
+  - variables:
+      rows: "{{ stats.statistics.get('eso:energy_export_balance_153500', []) }}"
+  - condition: template
+    value_template: "{{ rows | count > 0 and rows[-1].state is number }}"
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.net_metering_balance
+    data:
+      value: "{{ rows[-1].state }}"
+  mode: single
