@@ -114,7 +114,7 @@ class StorageUnit:
 class CloudLinkState:
     enabled: bool
     registered: bool
-    stream_encrypted: bool
+    stream_encrypted: bool | None
 
 
 @dataclass(slots=True)

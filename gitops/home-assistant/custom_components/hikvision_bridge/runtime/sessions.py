@@ -10,6 +10,7 @@ device sends it, without ffmpeg. Devices that refuse both play the span over RTS
 real time and without decryption. Devices that send recorded files only from their start
 play a time further into a file than they reach in READ_SECONDS over RTSP as well, if they can;
 a read that its pace shows will not reach the time in READ_SECONDS gives up after PACE_SECONDS.
+Where RTSP takes longer than READ_SECONDS to start on a device, the read may take that long.
 
 One session covers one stretch of contiguous recordings, so a position in the video maps to
 the recorded time exactly (start of the session plus the playing time). Cameras serve only
@@ -30,8 +31,10 @@ import secrets
 import shutil
 import tempfile
 import time
+from urllib.parse import urlsplit
 from weakref import WeakKeyDictionary, WeakSet
 
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.event import async_track_time_interval
 
@@ -41,6 +44,7 @@ from ..wire.faults import DeviceRejected, Unsupported, detail
 from ..wire.link import IsapiLink
 from ..wire.scrub import scrub_text, scrubbed_logger
 from . import playback
+from .live import LiveRelay
 from .playback import NoRecording, PlaybackSource, RecordingEncrypted
 
 _LOGGER = scrubbed_logger(__name__)
@@ -70,6 +74,8 @@ RTSP_TIMEOUT = 10_000_000
 BUSY_PAUSE = 2.0
 IDLE_SECONDS = 45
 MAX_SESSIONS = 4
+# Longest a session may live, however busy; its URL is a bearer token.
+MAX_LIFETIME = 4 * 3600.0
 # Video prepared beyond the last segment the player fetched (players buffer ahead too).
 READ_AHEAD = 60
 # Recordings closer than this count as one stretch.
@@ -231,15 +237,22 @@ def played_seconds(playlist: str, fetched: int) -> float:
 
 
 async def skipped(
-    stream: ProgramStream, chunks: AsyncIterator[bytes], skip: float, give_up: bool = False
+    stream: ProgramStream,
+    chunks: AsyncIterator[bytes],
+    skip: float,
+    give_up: bool = False,
+    within: float | None = None,
 ) -> tuple[bytes, float]:
     """Read ``chunks`` up to ``skip`` seconds and drop what lies before the last key frame.
 
     Returns the bytes from that key frame on and its playing time. Stops at the latest key
     frame reached after SKIP_SECONDS; without any key frame the file plays from its start.
-    With ``give_up``, a read whose pace shows it cannot reach ``skip`` in READ_SECONDS raises
-    _TooSlow once PACE_SECONDS have passed, instead of waiting out SKIP_SECONDS.
+    With ``give_up``, a read whose pace shows it cannot reach ``skip`` in ``within`` seconds
+    (READ_SECONDS if not given) raises _TooSlow once PACE_SECONDS have passed, instead of
+    waiting out SKIP_SECONDS.
     """
+    if within is None:
+        within = READ_SECONDS
     began = time.monotonic()
     stream.key_frames = []
     kept = bytearray()
@@ -263,7 +276,7 @@ async def skipped(
             elapsed = time.monotonic() - began
             if elapsed >= PACE_SECONDS:
                 pace = stream.seconds / elapsed
-                if elapsed + (skip - stream.seconds) / pace > READ_SECONDS:
+                if elapsed + (skip - stream.seconds) / pace > within:
                     stream.key_frames = None
                     raise _TooSlow(pace * READ_SECONDS)
     stream.key_frames = None
@@ -329,9 +342,13 @@ class Session:
     folder: Path
     process: asyncio.subprocess.Process | None = None
     pump: asyncio.Task | None = None
+    relay: LiveRelay | None = None
     last_access: float = field(default_factory=time.monotonic)
     fetched: int = -1  # highest segment number the player asked for
     scrambled: bool = False  # the download was encrypted
+    entry_id: str = ""
+    owner: str | None = None  # id of the Home Assistant user who started it
+    created: float = field(default_factory=time.monotonic)
 
     @property
     def url(self) -> str:
@@ -359,6 +376,8 @@ class SessionManager:
         self._reach: WeakKeyDictionary[IsapiLink, float] = WeakKeyDictionary()
         # Devices whose RTSP playback failed for a time beyond that reach.
         self._no_far_rtsp: WeakSet[IsapiLink] = WeakSet()
+        # Seconds RTSP playback of a device took to start, averaged with the times before.
+        self._rtsp_seconds: WeakKeyDictionary[IsapiLink, float] = WeakKeyDictionary()
         # Starts still running, by camera; a newer one for the camera cancels them.
         self._starting: dict[tuple[str, str, str], asyncio.Task[Session]] = {}
         # Latest start asked for, by camera.
@@ -376,8 +395,15 @@ class SessionManager:
             pending.cancel()
         return ticket
 
+    def _read_budget(self, link: IsapiLink) -> float:
+        """Seconds a read up to the time may take: READ_SECONDS, or as long as RTSP takes."""
+        return min(max(READ_SECONDS, self._rtsp_seconds.get(link, 0.0)), SKIP_SECONDS)
+
     def get(self, session_id: str, name: str | None = None) -> Session | None:
         session = self.sessions.get(session_id)
+        if session is not None and time.monotonic() - session.created > MAX_LIFETIME:
+            self.hass.async_create_task(self.stop(session_id))
+            return None
         if session is not None:
             session.touch(name)
         return session
@@ -393,6 +419,7 @@ class SessionManager:
         replace: str | None = None,
         found: list[recordings.Recording] | None = None,
         ticket: int | None = None,
+        owner: str | None = None,
     ) -> Session:
         """Play from ``start``; ``found`` are the recorded files around it.
 
@@ -404,7 +431,7 @@ class SessionManager:
         if (pending := self._starting.get(key)) is not None:
             pending.cancel()
         task = asyncio.ensure_future(
-            self._start(source, key, start, end, quality, codec, replace, found)
+            self._start(source, key, start, end, quality, codec, replace, found, owner)
         )
         self._starting[key] = task
         try:
@@ -428,6 +455,7 @@ class SessionManager:
         codec: str | None,
         replace: str | None,
         found: list[recordings.Recording] | None,
+        owner: str | None = None,
     ) -> Session:
         async with self._lock:
             if replace:
@@ -454,8 +482,7 @@ class SessionManager:
                             self._rtsp_only.add(source.link)
                         far = err.far
                     else:
-                        self.sessions[session.session_id] = session
-                        self._watch()
+                        self._register(session, key, owner)
                         return session
                 try:
                     session = await self._from_rtsp(
@@ -477,9 +504,20 @@ class SessionManager:
             except BaseException:
                 await self.hass.async_add_executor_job(shutil.rmtree, folder, True)
                 raise
-            self.sessions[session.session_id] = session
-            self._watch()
+            self._register(session, key, owner)
             return session
+
+    def _register(self, session: Session, key: tuple[str, str, str], owner: str | None) -> None:
+        session.entry_id = key[0]
+        session.owner = owner
+        self.sessions[session.session_id] = session
+        self._watch()
+
+    async def stop_entry(self, entry_id: str) -> None:
+        """End the sessions of a config entry (it is unloading)."""
+        async with self._lock:
+            for session in [s for s in self.sessions.values() if s.entry_id == entry_id]:
+                await self._stop(session.session_id)
 
     # ------------------------------------------------------------- download
 
@@ -528,14 +566,19 @@ class SessionManager:
             not far
             and source.link in self._whole_files
             and source.link not in self._no_far_rtsp
-            and skip > self._reach.get(source.link, skip)
+            and source.link in self._reach
         ):
-            _LOGGER.debug(
-                "Recorded file reaches %.0f s in time, not %.0f s: playing over RTSP",
-                self._reach[source.link],
-                skip,
-            )
-            raise _UseRtsp(False, far=True)
+            # The reach is for READ_SECONDS; on a device slow to start RTSP a read may take longer.
+            budget = self._read_budget(source.link)
+            reach = self._reach[source.link] * budget / READ_SECONDS
+            if skip > reach:
+                _LOGGER.debug(
+                    "Recorded file reaches %.1f s in %.1f s, not %.1f s: playing over RTSP",
+                    reach,
+                    budget,
+                    skip,
+                )
+                raise _UseRtsp(False, far=True)
         # A read that is too slow to reach the time gives up for RTSP, unless RTSP was tried
         # already for this device (then reading on is the only way left).
         give_up = not far and source.link not in self._no_far_rtsp
@@ -668,15 +711,16 @@ class SessionManager:
                 cut = 0.0
                 if rest > 0:
                     began = time.monotonic()
+                    budget = self._read_budget(source.link)
                     try:
-                        first, cut = await skipped(stream, chunks, rest, give_up)
+                        first, cut = await skipped(stream, chunks, rest, give_up, budget)
                     except _TooSlow as slow:
                         self._reach[source.link] = device + slow.reach
                         _LOGGER.debug(
-                            "Recorded file is sent too slowly to reach %.0f s in %s s: "
+                            "Recorded file is sent too slowly to reach %.1f s in %.1f s: "
                             "playing it over RTSP if it can",
                             rest,
-                            READ_SECONDS,
+                            budget,
                         )
                         raise
                     if cut < rest - 1 and time.monotonic() - began >= SKIP_SECONDS:
@@ -743,15 +787,32 @@ class SessionManager:
         reason = "playback_failed"
         for attempt in range(2):
             session = Session(secrets.token_urlsafe(16), key, start, end, quality, folder)
+            began = time.monotonic()
             try:
+                if source.code and codec and codec.lower().replace(".", "") == "h264":
+                    parts = urlsplit(uri)
+                    resource = parts.path + (f"?{parts.query}" if parts.query else "")
+                    session.relay = LiveRelay(
+                        source.link.endpoint.host,
+                        source.rtsp_port,
+                        source.track,
+                        source.credentials[CONF_USERNAME],
+                        source.credentials[CONF_PASSWORD],
+                        source.code,
+                        resource_path=resource,
+                    )
+                    url = await session.relay.start()
                 await self._spawn(session, hls_args(url, quality, codec, folder), False)
-            except asyncio.CancelledError:
-                # A newer start: the camera serves one playback, this one must not linger.
+            except BaseException:
+                # A newer start or failed spawn must not leave a playback relay behind.
                 await self._end(session)
                 raise
             reason = await self._first_segment(session, "RTSP")
             if reason is None:
-                _LOGGER.debug("Playing over RTSP")
+                took = time.monotonic() - began
+                last = self._rtsp_seconds.get(source.link)
+                self._rtsp_seconds[source.link] = took if last is None else (last + took) / 2
+                _LOGGER.debug("Playing over RTSP, started in %.1f s", took)
                 return session
             if reason not in ("playback_busy", "playback_unreadable") or attempt:
                 break
@@ -809,9 +870,13 @@ class SessionManager:
         return _reason(errors, session.scrambled) if errors else "playback_failed"
 
     async def _end(self, session: Session) -> None:
-        await _cancel(session.pump)
-        if session.process is not None:
-            await _end(session.process)
+        try:
+            await _cancel(session.pump)
+            if session.process is not None:
+                await _end(session.process)
+        finally:
+            if session.relay is not None:
+                await session.relay.close()
 
     async def stop(self, session_id: str) -> None:
         async with self._lock:
@@ -842,6 +907,7 @@ class SessionManager:
             s.session_id
             for s in self.sessions.values()
             if time.monotonic() - s.last_access > IDLE_SECONDS
+            or time.monotonic() - s.created > MAX_LIFETIME
         ]
         for session_id in idle:
             self.hass.async_create_task(self.stop(session_id))

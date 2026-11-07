@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ...wire.link import IsapiLink
 from ...wire.xmlview import RawDocument, XmlNode, parse
+from ..ids import seg, token_id
 from ..inventory import TriggerLink
 from ..vocabulary import canonical
 from . import VerifyMismatch
@@ -23,7 +24,7 @@ def parse_triggers(document: XmlNode | None) -> list[TriggerLink]:
     links: list[TriggerLink] = []
     for node in document.walk("EventTrigger"):
         raw_type = node.text("eventType")
-        trigger_id = node.text("id")
+        trigger_id = token_id(node.text("id"))
         if not raw_type or not trigger_id:
             continue
         channel = (
@@ -65,7 +66,7 @@ def add_center(document_text: str) -> str | None:
 
 async def ensure_center(link: IsapiLink, trigger_id: str, *, dry_run: bool) -> bool:
     """Add the center linkage to one trigger. Returns True when a change is (or would be) made."""
-    path = f"{LIST_PATH}/{trigger_id}"
+    path = f"{LIST_PATH}/{seg(trigger_id)}"
     current = (await link.call("GET", path)).text
     updated = add_center(current)
     if updated is None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass, field
 import hashlib
+import re
 import secrets
 import time
 from typing import Any
@@ -16,6 +17,10 @@ from ..wire.scrub import LOG_SCRUBBER, scrubbed_logger
 _LOGGER = scrubbed_logger(__name__)
 
 DEFAULT_HOST = "api.hik-connect.com"
+# Region hosts the login may redirect to (apiieu., apiirus., ... of the Hik-Connect API) sit in
+# the default host's domain; any other host would receive the account password hash.
+TRUSTED_DOMAINS = ("hik-connect.com", "hikconnect.com")
+_HOST = re.compile(r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+")
 CLIENT_NAME = "Home Assistant"
 SESSION_LIFETIME = 25 * 60  # renew well before the server-side expiry
 
@@ -48,6 +53,18 @@ class CloudSession:
     @property
     def stale(self) -> bool:
         return time.monotonic() - self.issued > SESSION_LIFETIME
+
+
+def trusted_region_host(host: object) -> str | None:
+    """The host in lower case when it is a bare name inside a Hik-Connect API domain."""
+    if not isinstance(host, str):
+        return None
+    name = host.strip().lower()
+    if not _HOST.fullmatch(name):
+        return None
+    if any(name == domain or name.endswith(f".{domain}") for domain in TRUSTED_DOMAINS):
+        return name
+    return None
 
 
 def _code(payload: dict[str, Any]) -> int | None:
@@ -90,7 +107,7 @@ class CloudAccount:
         self._http = session
         self._account = account
         self._password = password
-        self.region_host = region_host or DEFAULT_HOST
+        self.region_host = trusted_region_host(region_host) or DEFAULT_HOST
         self._feature = secrets.token_hex(16)
         self._session: CloudSession | None = None
         self.account_id: str = hashlib.sha256(account.strip().lower().encode()).hexdigest()[:16]
@@ -164,15 +181,20 @@ class CloudAccount:
             code = _code(payload)
             area = payload.get("loginArea") or {}
             domain = area.get("apiDomain") if isinstance(area, dict) else None
+            if domain:
+                trusted = trusted_region_host(domain)
+                if trusted is None:
+                    raise CloudError("cloud_changed", "login area outside the Hik-Connect domain")
+                domain = trusted
             if code in _REDIRECT and domain and domain != self.region_host:
-                self.region_host = str(domain)
+                self.region_host = domain
                 continue
             if code in _OK:
                 session = payload.get("loginSession") or {}
                 if not isinstance(session, dict) or not session.get("sessionId"):
                     raise CloudError("cloud_changed", "no session in login response")
                 if domain:
-                    self.region_host = str(domain)
+                    self.region_host = domain
                 self._session = CloudSession(session["sessionId"], session.get("rfSessionId"))
                 LOG_SCRUBBER.remember(session["sessionId"], session.get("rfSessionId") or "")
                 user = payload.get("loginUser") or {}

@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from ...wire.link import IsapiLink
+from ..ids import seg
 from . import patch_json_and_verify
 from .image import ImageCapability, ImageSetting, ImageValue
 
@@ -142,7 +143,9 @@ def _caps_path(path: str) -> str:
 
 
 async def read_strobe_capabilities(link: IsapiLink, channel_id: str) -> dict[str, ImageCapability]:
-    document = await link.read_json(_caps_path(STROBE_PATH.format(ch=channel_id)), optional=True)
+    document = await link.read_json(
+        _caps_path(STROBE_PATH.format(ch=seg(channel_id))), optional=True
+    )
     return parse_strobe_capabilities(document)
 
 
@@ -153,7 +156,7 @@ async def read_siren_capabilities(link: IsapiLink, channel_id: str) -> dict[str,
 async def read_strobe_values(
     link: IsapiLink, channel_id: str, keys: set[str] | None = None
 ) -> dict[str, ImageValue] | None:
-    document = await link.read_json(STROBE_PATH.format(ch=channel_id) + JSON, optional=True)
+    document = await link.read_json(STROBE_PATH.format(ch=seg(channel_id)) + JSON, optional=True)
     return parse_values(document, "WhiteLightAlarm", STROBE, keys) if document else None
 
 
@@ -171,7 +174,7 @@ def _typed(key: str, value: str) -> Any:
 async def write_strobe(link: IsapiLink, channel_id: str, key: str, field: str, value: str) -> None:
     await patch_json_and_verify(
         link,
-        STROBE_PATH.format(ch=channel_id) + JSON,
+        STROBE_PATH.format(ch=seg(channel_id)) + JSON,
         "WhiteLightAlarm",
         {field: _typed(key, value)},
     )

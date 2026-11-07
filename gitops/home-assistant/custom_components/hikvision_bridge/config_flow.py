@@ -147,6 +147,7 @@ def _error_key(err: faults.BridgeFault) -> str:
         faults.LockedOut: "locked_out",
         faults.NameNotResolved: "name_not_resolved",
         faults.TlsUntrusted: "tls_untrusted",
+        faults.InsecureAuth: "insecure_auth",
         faults.Unreachable: "cannot_connect",
         faults.NotIsapi: "not_isapi",
         faults.Forbidden: "forbidden",
@@ -193,6 +194,7 @@ async def probe_device(
     """Connect once per candidate scheme and read the identity.
 
     With "auto" HTTPS is tried first; HTTP is only tried when HTTPS cannot connect at all.
+    An untrusted certificate ends the attempt: it may come from an impostor.
     An authentication failure ends the attempt immediately (lockout protection).
     """
     connection = data.get(CONF_CONNECTION, CONNECTION_AUTO)
@@ -210,9 +212,10 @@ async def probe_device(
         )
         try:
             identity = await read_identity_only(link)
+        except faults.TlsUntrusted:
+            # An untrusted certificate may be an impostor: never retry it over plain HTTP.
+            raise
         except (faults.Unreachable, faults.NotIsapi) as err:
-            if isinstance(err, faults.TlsUntrusted) and connection != CONNECTION_AUTO:
-                raise
             last = err
             continue
         resolved = {
@@ -694,6 +697,17 @@ class BridgeOptionsFlow(OptionsFlowWithReload):
         )
 
 
+def _recorder_vouches_for(host: str, channel: Any, recorder_host: str) -> bool:
+    """Whether the recorder itself names this address for the channel.
+
+    The recorder's credentials are only sent to the camera address the recorder reports, or
+    to the recorder's own address (port forwarding to the camera); never to an address
+    typed in for a device that has not proven its identity yet.
+    """
+    wanted = host.strip().lower()
+    return wanted in {a.strip().lower() for a in (channel.camera_address, recorder_host) if a}
+
+
 class ChannelLinkFlow(ConfigSubentryFlow):
     """Attach a direct connection (own address and credentials) to a recorder channel."""
 
@@ -733,18 +747,18 @@ class ChannelLinkFlow(ConfigSubentryFlow):
             channel = profile.channels[user_input[CONF_CHANNEL_ID]]
             data, rtsp_port = with_address(user_input)
             if data.pop(CONF_REUSE, False):
+                if not _recorder_vouches_for(data[CONF_HOST], channel, entry.data[CONF_HOST]):
+                    errors["base"] = "reuse_unknown_address"
                 data[CONF_USERNAME] = entry.data[CONF_USERNAME]
                 data[CONF_PASSWORD] = entry.data[CONF_PASSWORD]
+        if user_input is not None and not errors:
             try:
                 resolved, identity = await probe_device(self.hass, data)
             except faults.BridgeFault as err:
                 errors["base"] = _error_key(err)
             else:
-                if (
-                    channel.camera_serial
-                    and identity.serial
-                    and identity.serial != channel.camera_serial
-                ):
+                # A camera that reports no serial cannot prove it is the channel's camera.
+                if channel.camera_serial and identity.serial != channel.camera_serial:
                     errors["base"] = "wrong_camera"
                 else:
                     payload = {

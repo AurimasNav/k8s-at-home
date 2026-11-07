@@ -151,6 +151,7 @@ configMapGenerator:
   - custom_components/hikvision_bridge/model/__init__.py
   - custom_components/hikvision_bridge/model/audit.py
   - custom_components/hikvision_bridge/model/discover.py
+  - custom_components/hikvision_bridge/model/ids.py
   - custom_components/hikvision_bridge/model/inventory.py
   - custom_components/hikvision_bridge/model/vocabulary.py
 - name: ha-hikvision-bridge-model-features
@@ -176,6 +177,7 @@ configMapGenerator:
   - custom_components/hikvision_bridge/runtime/bridge.py
   - custom_components/hikvision_bridge/runtime/hookin.py
   - custom_components/hikvision_bridge/runtime/identity.py
+  - custom_components/hikvision_bridge/runtime/live.py
   - custom_components/hikvision_bridge/runtime/playback.py
   - custom_components/hikvision_bridge/runtime/refresh.py
   - custom_components/hikvision_bridge/runtime/router.py

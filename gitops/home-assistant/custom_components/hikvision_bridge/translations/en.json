@@ -90,6 +90,7 @@
       "locked_out": "The device or account is temporarily locked after failed logins. Wait before trying again.",
       "name_not_resolved": "The host name could not be resolved.",
       "tls_untrusted": "The HTTPS certificate is not trusted. Disable certificate verification or use HTTP.",
+      "insecure_auth": "The device only offers Basic login over plain HTTP, which would send the password unencrypted. Use HTTPS or set the device's web authentication to digest.",
       "cannot_connect": "Cannot connect.",
       "not_isapi": "The address answers, but not like a Hikvision ISAPI device.",
       "forbidden": "The user lacks the required rights.",
@@ -123,7 +124,7 @@
           "target_sensors": "Separate sensors for people and vehicles",
           "playback": "Playback in the media browser",
           "recording_clock": "Recording times",
-          "stream_key": "Verification code (encrypted recordings)",
+          "stream_key": "Verification code (encrypted video)",
           "sidebar_panel": "Show the Hikvision panel in the sidebar",
           "panel_admin_only": "Only administrators see the panel",
           "try_encrypted_stream": "Try the live stream even with encryption on"
@@ -133,7 +134,7 @@
           "hold_seconds": "Devices only report the start of many detections; the sensor stays on this long after the last report.",
           "playback": "Recordings are H.265 or H.264. 'MP4 as recorded' starts at once, but browsers play H.265 only with hardware support. 'Convert to H.264' plays everywhere and needs a lot of CPU. 'Stream from the device' lets the device play the recording over RTSP.",
           "recording_clock": "The clock the device gives its recording times on. 'Automatic' finds it out. If the timeline and the recording played are off by your time zone's offset, choose the other clock.",
-          "stream_key": "Recordings made with stream encryption are decrypted with the device's verification code, which is read from the device. Enter it here only if the device does not report it (many cameras don't).",
+          "stream_key": "Used to decrypt recordings and local H.264 live video while keeping stream encryption enabled. Enter the device's verification code here to enable live decryption; audio and encrypted H.265 live video are not supported. Recordings can also use the code read from the device.",
           "sidebar_panel": "Applies to all devices and accounts of this integration. The dashboard card stays available.",
           "panel_admin_only": "Users without administrator rights no longer see the panel. Applies to all devices and accounts.",
           "try_encrypted_stream": "Try playing local RTSP live video even if the device reports Hik-Connect stream encryption as enabled. Many recorders only encrypt cloud streams, leaving local RTSP streams unencrypted."
@@ -208,11 +209,13 @@
         "locked_out": "The device or account is temporarily locked after failed logins. Wait before trying again.",
         "name_not_resolved": "The host name could not be resolved.",
         "tls_untrusted": "The HTTPS certificate is not trusted. Disable certificate verification or use HTTP.",
+        "insecure_auth": "The device only offers Basic login over plain HTTP, which would send the password unencrypted. Use HTTPS or set the device's web authentication to digest.",
         "cannot_connect": "Cannot connect.",
         "not_isapi": "The address answers, but not like a Hikvision ISAPI device.",
         "forbidden": "The user lacks the required rights.",
         "unknown": "Unexpected error.",
         "wrong_camera": "This address belongs to a different camera than the one on the selected channel.",
+        "reuse_unknown_address": "Recorder credentials are only sent to the camera address the recorder reports, or to the recorder's own address. Enter the camera's own credentials for this address.",
         "captcha_required": "Hik-Connect asks for a verification code.",
         "cloud_unavailable": "Hik-Connect is currently unavailable.",
         "cloud_changed": "Hik-Connect answered in an unexpected format.",
@@ -770,6 +773,10 @@
     "clock_skew": {
       "title": "{device}: clock off by {detail} s",
       "description": "The device clock differs noticeably from Home Assistant. Event times are corrected, but recordings carry the wrong time. Configure NTP on the device."
+    },
+    "live_decryption_failed": {
+      "title": "{device}: live video cannot be decrypted",
+      "description": "The device rejected the live stream login, offered only unencrypted Basic authentication, or the verification code does not fit the stream. Live video stays off to avoid a login lockout. Check the verification code in the options and the device's credentials, then reload the integration."
     }
   },
   "exceptions": {

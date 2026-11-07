@@ -178,13 +178,13 @@ class ThumbnailView(HomeAssistantView):
     ) -> web.Response:
         hass = request.app[KEY_HASS]
         key = f"{entry_id}/{channel_id}/{source}/{token}"
-        if (cached := self._cache.get(key)) is not None:
-            self._cache.move_to_end(key)
-            return web.Response(body=cached, content_type="image/jpeg")
         uri = decode_token(token)
         found = _find_source(hass, entry_id, channel_id, source)
         if uri is None or found is None:
             return web.Response(status=404)
+        if (cached := self._cache.get(key)) is not None:
+            self._cache.move_to_end(key)
+            return web.Response(body=cached, content_type="image/jpeg")
         _, playback = found
         try:
             async with self._gate, open_recording(playback, uri) as (_, chunks):
@@ -218,8 +218,14 @@ class SessionView(HomeAssistantView):
     async def get(self, request: web.Request, session_id: str, name: str) -> web.StreamResponse:
         if not sessions.FILE_NAME.match(name):
             return web.Response(status=404)
-        session = sessions.manager(request.app[KEY_HASS]).get(session_id, name)
+        hass = request.app[KEY_HASS]
+        session = sessions.manager(hass).get(session_id, name)
         if session is None:
+            return web.Response(status=404)
+        # The URL is the token, but it dies with the user who started the session.
+        owner = await hass.auth.async_get_user(session.owner) if session.owner else None
+        if owner is None or not owner.is_active:
+            hass.async_create_task(sessions.manager(hass).stop(session_id))
             return web.Response(status=404)
         path = session.folder / name
         if not await request.app[KEY_HASS].async_add_executor_job(path.is_file):

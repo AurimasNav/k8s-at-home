@@ -10,6 +10,7 @@ from ..wire.link import IsapiLink
 from ..wire.scrub import scrubbed_logger
 from ..wire.xmlview import XmlNode
 from .features import detection, intercom, io, linkage, storage
+from .ids import numeric_id
 from .inventory import (
     ChannelProfile,
     ChannelSource,
@@ -55,7 +56,7 @@ def _proxy_channels(listing: XmlNode | None, status: XmlNode | None) -> dict[str
     if listing is None:
         return channels
     for node in listing.children("InputProxyChannel"):
-        channel_id = node.text("id")
+        channel_id = numeric_id(node.text("id"))
         if not channel_id:
             continue
         source = node.first("sourceInputPortDescriptor")
@@ -81,7 +82,7 @@ def _local_channels(listing: XmlNode | None) -> dict[str, ChannelProfile]:
     if listing is None:
         return channels
     for node in listing.children("VideoInputChannel"):
-        channel_id = node.text("id")
+        channel_id = numeric_id(node.text("id"))
         if channel_id:
             channels[channel_id] = ChannelProfile(
                 channel_id=channel_id,
@@ -98,8 +99,8 @@ def _streams(listing: XmlNode | None) -> dict[str, list[StreamSpec]]:
         return by_channel
     nodes = [listing] if listing.name == "StreamingChannel" else listing.all("StreamingChannel")
     for node in nodes:
-        stream_id = node.text("id")
-        if not stream_id or not stream_id.isdigit() or len(stream_id) < 3:
+        stream_id = numeric_id(node.text("id"))
+        if not stream_id or len(stream_id) < 3:
             continue
         if node.flag("enabled") is False:
             continue
@@ -120,7 +121,7 @@ def _channel_kinds(document: XmlNode | None) -> dict[str, set[str]]:
     if document is None:
         return result
     for node in document.children("ChannelEventCap"):
-        channel_id = node.text("channelID")
+        channel_id = numeric_id(node.text("channelID"))
         if channel_id:
             result[channel_id] = set(node.options("eventType"))
     return result
@@ -150,11 +151,13 @@ def read_cloud_state(cloud: XmlNode | None) -> CloudLinkState | None:
     """Hik-Connect platform access settings, including stream encryption."""
     if cloud is None:
         return None
+    # Older DVRs omit both flags; absence does not mean encryption is off.
+    flags = (cloud.flag("streamEncrypteEnabled"), cloud.flag("streamEncryptEnabled"))
+    encrypted = any(flags) if any(value is not None for value in flags) else None
     return CloudLinkState(
         enabled=bool(cloud.flag("enabled", False)),
         registered=bool(cloud.flag("registerStatus", False)),
-        stream_encrypted=bool(cloud.flag("streamEncrypteEnabled", False))
-        or bool(cloud.flag("streamEncryptEnabled", False)),
+        stream_encrypted=encrypted,
     )
 
 

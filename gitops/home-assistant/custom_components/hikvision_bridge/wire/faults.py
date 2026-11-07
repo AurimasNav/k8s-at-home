@@ -41,6 +41,16 @@ class NotIsapi(BridgeFault):
     translation_key = "not_isapi"
 
 
+class InsecureAuth(BridgeFault):
+    """The device asks for an authentication that would expose the password.
+
+    Basic over plain HTTP sends the password readable to everyone on the path, and a
+    link that already proved digest never falls back to a weaker scheme.
+    """
+
+    translation_key = "insecure_auth"
+
+
 class BadCredentials(BridgeFault):
     """The device rejected the credentials after a fresh challenge."""
 

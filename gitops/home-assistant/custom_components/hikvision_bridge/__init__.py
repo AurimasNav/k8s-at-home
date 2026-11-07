@@ -26,6 +26,7 @@ from .const import (
 from .model.discover import discover
 from .model.features import recordings
 from .panel import async_register_frontend
+from .runtime import sessions
 from .runtime.bridge import DeviceBridge, build_link
 from .runtime.hookin import async_register_webhook, async_unregister_webhook
 from .services import async_register_services
@@ -176,12 +177,26 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return await async_unload_cloud_entry(hass, entry, CLOUD_PLATFORMS)
     bridge: DeviceBridge = entry.runtime_data
     async_unregister_webhook(hass, entry)
+    await sessions.manager(hass).stop_entry(entry.entry_id)
     await bridge.async_shutdown()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
+def _entry_strings(entry: ConfigEntry) -> set[str]:
+    """String values of an entry and its channel links (credentials among them)."""
+    values = [*entry.data.values()]
+    for subentry in entry.subentries.values():
+        values.extend(subentry.data.values())
+    return {v for v in values if isinstance(v, str)}
+
+
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    LOG_SCRUBBER.forget(*(v for v in entry.data.values() if isinstance(v, str)))
+    # A literal another entry still uses (shared password) must stay masked.
+    in_use: set[str] = set()
+    for other in hass.config_entries.async_entries(DOMAIN):
+        if other.entry_id != entry.entry_id:
+            in_use |= _entry_strings(other)
+    LOG_SCRUBBER.forget(*(_entry_strings(entry) - in_use))
 
 
 async def async_remove_config_entry_device(

@@ -5,13 +5,15 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import ATTR_DEVICE_ID
+from homeassistant.const import ATTR_DEVICE_ID, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.network import NoURLAvailableError, get_url
+from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.util import dt as dt_util, slugify
 import voluptuous as vol
 from yarl import URL
@@ -106,25 +108,44 @@ async def _add_center_links(call: ServiceCall) -> ServiceResponse:
     return {"dry_run": dry_run, "triggers": changed}
 
 
+def _escapes_isapi(path: str) -> bool:
+    """True for dot segments (also percent-encoded) that could leave the /ISAPI/ tree."""
+    route = unquote(path.split("?", maxsplit=1)[0]).replace("\\", "/")
+    return any(part in (".", "..") for part in route.split("/"))
+
+
 async def _isapi_request(call: ServiceCall) -> ServiceResponse:
     bridge, _ = _target_of(call.hass, call.data[ATTR_DEVICE_ID])
     method = call.data[FIELD_METHOD]
     path = call.data[FIELD_PATH]
-    if not path.startswith("/ISAPI/"):
+    if not path.startswith("/ISAPI/") or _escapes_isapi(path):
         raise ServiceValidationError(translation_domain=DOMAIN, translation_key="bad_path")
     if method != "GET" and not call.data.get(FIELD_CONFIRM):
         raise ServiceValidationError(translation_domain=DOMAIN, translation_key="confirm_needed")
+    # The device may echo its own credentials (user lists, FTP or e-mail settings).
+    secrets = _credentials_of(bridge.entry)
     try:
         reply = await bridge.link.call(method, path, body=call.data.get(FIELD_BODY))
     except BridgeFault as err:
-        return {"ok": False, "error": type(err).__name__, "detail": scrub_text(str(err))}
+        return {"ok": False, "error": type(err).__name__, "detail": scrub_text(str(err), secrets)}
     text = reply.text if not reply.content_type.startswith("image/") else "<binary>"
     return {
         "ok": True,
         "status": reply.status,
         "content_type": reply.content_type,
-        "body": scrub_text(text[:MAX_RESPONSE]),
+        "body": scrub_text(text, secrets)[:MAX_RESPONSE],
     }
+
+
+def _credentials_of(entry: Any) -> list[str]:
+    """Usernames and passwords of an entry and its channel links."""
+    datas = [entry.data, *(sub.data for sub in entry.subentries.values())]
+    return [
+        value
+        for data in datas
+        for key in (CONF_USERNAME, CONF_PASSWORD)
+        if isinstance(value := data.get(key), str) and len(value) >= 3
+    ]
 
 
 async def _ptz_move(call: ServiceCall) -> None:
@@ -409,7 +430,8 @@ async def _cloud_delete_area(call: ServiceCall) -> None:
 
 
 def async_register_services(hass: HomeAssistant) -> None:
-    hass.services.async_register(
+    async_register_admin_service(
+        hass,
         DOMAIN,
         "add_center_links",
         _add_center_links,
@@ -423,7 +445,8 @@ def async_register_services(hass: HomeAssistant) -> None:
         ),
         supports_response=SupportsResponse.OPTIONAL,
     )
-    hass.services.async_register(
+    async_register_admin_service(
+        hass,
         DOMAIN,
         "isapi_request",
         _isapi_request,
@@ -460,7 +483,8 @@ def async_register_services(hass: HomeAssistant) -> None:
             {vol.Required(FIELD_PRESET): vol.All(vol.Coerce(int), vol.Range(1, 300))}
         ),
     )
-    hass.services.async_register(
+    async_register_admin_service(
+        hass,
         DOMAIN,
         "set_notification_host",
         _set_notification_host,
@@ -504,7 +528,8 @@ def async_register_services(hass: HomeAssistant) -> None:
         vol.Optional(ATTR_DEVICE_ID): cv.string,
         vol.Optional(FIELD_SERIAL): cv.string,
     }
-    hass.services.async_register(
+    async_register_admin_service(
+        hass,
         DOMAIN,
         "cloud_create_area",
         _cloud_create_area,
@@ -517,7 +542,8 @@ def async_register_services(hass: HomeAssistant) -> None:
         ),
         supports_response=SupportsResponse.OPTIONAL,
     )
-    hass.services.async_register(
+    async_register_admin_service(
+        hass,
         DOMAIN,
         "cloud_update_area",
         _cloud_update_area,
@@ -531,7 +557,8 @@ def async_register_services(hass: HomeAssistant) -> None:
         ),
         supports_response=SupportsResponse.OPTIONAL,
     )
-    hass.services.async_register(
+    async_register_admin_service(
+        hass,
         DOMAIN,
         "cloud_delete_area",
         _cloud_delete_area,

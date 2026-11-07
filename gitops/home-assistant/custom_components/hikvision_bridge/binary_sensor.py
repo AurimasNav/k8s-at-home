@@ -155,6 +155,7 @@ class StorageProblemSensor(PolledEntity, BinarySensorEntity):
 class IllegalLoginSensor(PushEntity, BinarySensorEntity):
     """On for the hold time after the device reports an illegal (failed) login."""
 
+    _attr_device_class = BinarySensorDeviceClass.SAFETY
     _attr_translation_key = "illegal_login"
 
     def __init__(self, bridge: DeviceBridge) -> None:
@@ -176,9 +177,9 @@ class StreamEncryptionSensor(PolledEntity, BinarySensorEntity):
         super().__init__(bridge, None, "stream_encryption")
 
     @property
-    def is_on(self) -> bool:
+    def is_on(self) -> bool | None:
         cloud = self.bridge.profile.cloud
-        return bool(cloud and cloud.stream_encrypted)
+        return cloud.stream_encrypted if cloud else False
 
 
 class EventLinkSensor(PushEntity, BinarySensorEntity):

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ...wire.link import IsapiLink
 from ...wire.xmlview import XmlNode
+from ..ids import numeric_id, seg
 from ..inventory import IoPort
 from . import patch_and_verify
 
@@ -20,7 +21,7 @@ def parse_ports(document: XmlNode | None, *, output: bool) -> dict[str, IoPort]:
     element = "IOOutputPort" if output else "IOInputPort"
     ports: dict[str, IoPort] = {}
     for node in document.children(element):
-        port_id = node.text("id")
+        port_id = numeric_id(node.text("id"))
         if not port_id:
             continue
         proxied = node.first("IODescriptor") is not None or (node.text("IOType") or "").lower() == (
@@ -41,7 +42,7 @@ def parse_ports(document: XmlNode | None, *, output: bool) -> dict[str, IoPort]:
 
 def _status_path(port: IoPort) -> str:
     direction = "outputs" if port.output else "inputs"
-    return f"/ISAPI/System/IO/{direction}/{port.port_id}/status"
+    return f"/ISAPI/System/IO/{direction}/{seg(port.port_id)}/status"
 
 
 async def read_state(link: IsapiLink, port: IoPort) -> bool | None:
@@ -65,7 +66,7 @@ def parse_armed(document: XmlNode | None) -> dict[str, bool]:
         return {}
     armed: dict[str, bool] = {}
     for node in document.children("IOInputPort"):
-        port_id = node.text("id")
+        port_id = numeric_id(node.text("id"))
         enabled = node.flag("enabled")
         if port_id and enabled is not None:
             armed[port_id] = enabled
@@ -79,11 +80,13 @@ async def read_armed(link: IsapiLink) -> dict[str, bool] | None:
 
 async def set_armed(link: IsapiLink, port_id: str, on: bool) -> None:
     """Arm or disarm one input; only its ``enabled`` flag changes."""
-    await patch_and_verify(link, f"{INPUTS_PATH}/{port_id}", {"enabled": "true" if on else "false"})
+    await patch_and_verify(
+        link, f"{INPUTS_PATH}/{seg(port_id)}", {"enabled": "true" if on else "false"}
+    )
 
 
 async def set_output(link: IsapiLink, port: IoPort, on: bool) -> None:
     await link.write_xml(
-        f"/ISAPI/System/IO/outputs/{port.port_id}/trigger",
+        f"/ISAPI/System/IO/outputs/{seg(port.port_id)}/trigger",
         _OUTPUT_COMMAND.format(state="high" if on else "low"),
     )

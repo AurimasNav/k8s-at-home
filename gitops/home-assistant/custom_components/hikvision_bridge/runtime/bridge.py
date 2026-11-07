@@ -44,6 +44,7 @@ from ..wire.feed import AlarmFeed
 from ..wire.link import Endpoint, IsapiLink
 from ..wire.scrub import scrubbed_logger
 from . import identity
+from .live import LiveRelay
 from .refresh import StatusRefresher
 from .router import EventRouter, Origin
 
@@ -101,6 +102,7 @@ class DeviceBridge:
     router: EventRouter = field(init=False)
     routes: dict[str, ChannelRoute] = field(default_factory=dict)
     feeds: dict[str, AlarmFeed] = field(default_factory=dict)
+    live_relays: dict[str, LiveRelay] = field(default_factory=dict)
     report: audit.AuditReport | None = None
     device_ids: dict[str | None, str] = field(default_factory=dict)
     _unsubs: list[CALLBACK_TYPE] = field(default_factory=list)
@@ -176,7 +178,7 @@ class DeviceBridge:
                 self.report_channel_fault(channel_id, err)
                 continue
             expected = data.get(CONF_CAMERA_SERIAL)
-            if expected and found.serial and found.serial != expected:
+            if expected and found.serial != expected:
                 route.healthy = False
                 self._issue(
                     f"channel_mismatch_{channel_id}",
@@ -406,6 +408,9 @@ class DeviceBridge:
                 ir.async_delete_issue(self.hass, DOMAIN, issue_id)
 
     async def async_shutdown(self) -> None:
+        for relay in self.live_relays.values():
+            await relay.close()
+        self.live_relays.clear()
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
@@ -451,6 +456,19 @@ class DeviceBridge:
     def report_lockout(self, err: LockedOut) -> None:
         minutes = str(round((err.retry_after or 1800) / 60))
         self._issue("locked", "locked_out", {"minutes": minutes}, severity=ir.IssueSeverity.ERROR)
+
+    @callback
+    def clear_lockout(self) -> None:
+        ir.async_delete_issue(self.hass, DOMAIN, self._issue_id("locked"))
+
+    @callback
+    def report_live_failure(self) -> None:
+        """The decrypting live relay was refused (code, login or Basic-only RTSP)."""
+        self._issue("live_decryption", "live_decryption_failed", {})
+
+    @callback
+    def clear_live_failure(self) -> None:
+        ir.async_delete_issue(self.hass, DOMAIN, self._issue_id("live_decryption"))
 
     @callback
     def report_channel_fault(self, channel_id: str, err: BaseException) -> None:
