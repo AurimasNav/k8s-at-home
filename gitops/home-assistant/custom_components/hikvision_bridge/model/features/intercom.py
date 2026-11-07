@@ -7,6 +7,7 @@ import json
 
 from ...wire.link import IsapiLink
 from ...wire.xmlview import XmlNode
+from ..ids import seg
 
 _DOOR_CONTROL_CMD = (
     '<?xml version="1.0" encoding="UTF-8"?>'
@@ -77,6 +78,6 @@ async def read_call_status(link: IsapiLink) -> str | None:
 
 async def remote_open_door(link: IsapiLink, door_no: int = 1) -> None:
     await link.write_xml(
-        f"/ISAPI/AccessControl/RemoteControl/door/{door_no}",
+        f"/ISAPI/AccessControl/RemoteControl/door/{seg(str(door_no))}",
         _DOOR_CONTROL_CMD.format(cmd="open"),
     )

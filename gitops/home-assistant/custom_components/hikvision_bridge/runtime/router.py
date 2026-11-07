@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from .bridge import DeviceBridge
 
 RECENT_PER_CHANNEL = 10
+MAX_UNKNOWN_CHANNELS = 32
 DEVICE_SCOPE = "device"
 
 
@@ -119,6 +120,7 @@ class EventRouter:
     @callback
     def _intake(self, origin: Origin, frame: FeedFrame) -> None:
         kind = canonical(frame.raw_type)
+        known = True
         channel = origin.place(frame)
         if channel is not None and channel in origin.exclusive_channels:
             return  # another feed (direct camera link) owns this channel's events
@@ -132,19 +134,23 @@ class EventRouter:
             scope = channel
             key = kind.value
             if channel not in self._bridge.profile.channels:
-                self.unknown_channels[channel] = self.unknown_channels.get(channel, 0) + 1
+                self._note_unknown(channel)
+                known = False
 
         if frame.device_time is not None:
             self.latency_ms = round((frame.received - frame.device_time).total_seconds() * 1000)
-        self._remember(scope, kind, frame)
+        if known:
+            self._remember(scope, kind, frame)
         if scope != DEVICE_SCOPE and origin.channel_map is None:
             # Recordings the device's own events start show which clock it searches on.
             recordings.note_event(self._bridge.link, frame.received)
 
-        if kind == Kind.ANPR and frame.plate is not None and frame.is_active:
+        if known and kind == Kind.ANPR and frame.plate is not None and frame.is_active:
             self.last_plate[scope] = frame
 
-        if frame.is_active:
+        if frame.is_active and not known:
+            pass  # a device-made channel id gets no state of its own
+        elif frame.is_active:
             if kind == Kind.DOORBELL and self.is_active(scope, key):
                 return
             self._activate((scope, key))
@@ -160,6 +166,13 @@ class EventRouter:
             self._bridge.refresher.request_full()
         self._fire_bus_event(scope, kind, frame)
         async_dispatcher_send(self.hass, signal_state(self._bridge.entry.entry_id), (scope, key))
+
+    def _note_unknown(self, channel: str) -> None:
+        """Count an event of a channel the device never listed; the table stays small."""
+        counts = self.unknown_channels
+        if channel not in counts and len(counts) >= MAX_UNKNOWN_CHANNELS:
+            del counts[next(iter(counts))]
+        counts[channel] = counts.get(channel, 0) + 1
 
     def _activate(self, slot: tuple[str, str]) -> None:
         self._active[slot] = time.monotonic() + self._hold

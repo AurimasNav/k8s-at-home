@@ -15,6 +15,7 @@ from typing import Literal
 
 from ...wire.link import IsapiLink
 from ...wire.xmlview import XmlNode
+from ..ids import seg
 from . import patch_and_verify
 
 Platform = Literal["select", "number", "switch"]
@@ -230,13 +231,15 @@ def parse_values(document: XmlNode | None, keys: set[str] | None = None) -> dict
 
 
 async def read_capabilities(link: IsapiLink, channel_id: str) -> dict[str, ImageCapability]:
-    return parse_capabilities(await link.read_xml(CAPS_PATH.format(ch=channel_id), optional=True))
+    return parse_capabilities(
+        await link.read_xml(CAPS_PATH.format(ch=seg(channel_id)), optional=True)
+    )
 
 
 async def read_values(
     link: IsapiLink, channel_id: str, keys: set[str] | None = None
 ) -> dict[str, ImageValue] | None:
-    document = await link.read_xml(IMAGE_PATH.format(ch=channel_id), optional=True)
+    document = await link.read_xml(IMAGE_PATH.format(ch=seg(channel_id)), optional=True)
     return parse_values(document, keys) if document is not None else None
 
 
@@ -245,6 +248,6 @@ async def write(link: IsapiLink, channel_id: str, key: str, field: str, value: s
     setting = BY_KEY[key]
     await patch_and_verify(
         link,
-        f"{IMAGE_PATH.format(ch=channel_id)}/{setting.resource}",
+        f"{IMAGE_PATH.format(ch=seg(channel_id))}/{setting.resource}",
         {field: value},
     )

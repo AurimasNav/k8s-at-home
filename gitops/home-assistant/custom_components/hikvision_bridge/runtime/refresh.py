@@ -135,6 +135,7 @@ class StatusRefresher(DataUpdateCoordinator[Snapshot]):
             raise UpdateFailed("device locked the account") from err
         except BridgeFault as err:
             return self._tolerate(err, previous)
+        self._bridge.clear_lockout()
         self._failures = 0
         self._last_success = time.monotonic()
         return snapshot

@@ -42,6 +42,21 @@ SENSITIVE_NAMES: frozenset[str] = frozenset(
     }
 )
 
+# Compound names (ftpPassword, wpaKey, smtpPwd, ...) carry secrets as well.
+_SENSITIVE_PART = re.compile(r"passw|passwd|pwd|passphrase|secret|psk|credential", re.IGNORECASE)
+_SENSITIVE_SUFFIX = ("key", "token", "sessionid", "username")
+
+
+def is_sensitive_name(name: str) -> bool:
+    """True for element or key names whose value must never leave unmasked."""
+    lowered = name.lower()
+    return (
+        lowered in SENSITIVE_NAMES
+        or _SENSITIVE_PART.search(lowered) is not None
+        or lowered.endswith(_SENSITIVE_SUFFIX)
+    )
+
+
 _URL_USERINFO = re.compile(r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*://)[^/@\s\"'<>]+@")
 _XML_ELEMENT = re.compile(r"<(?P<tag>[A-Za-z_][\w.-]*)(?P<attrs>[^<>]*?)>(?P<val>[^<]+)</(?P=tag)>")
 _JSON_PAIR = re.compile(r'"(?P<key>[A-Za-z_][\w-]*)"\s*:\s*"(?P<val>[^"]*)"')
@@ -61,13 +76,13 @@ def scrub_text(text: str, secrets: Iterable[str] = ()) -> str:
 
 
 def _mask_xml(match: re.Match[str]) -> str:
-    if match["tag"].lower() in SENSITIVE_NAMES:
+    if is_sensitive_name(match["tag"]):
         return f"<{match['tag']}{match['attrs']}>{MASK}</{match['tag']}>"
     return match[0]
 
 
 def _mask_json(match: re.Match[str]) -> str:
-    if match["key"].lower() in SENSITIVE_NAMES and match["val"]:
+    if is_sensitive_name(match["key"]) and match["val"]:
         return f'"{match["key"]}": "{MASK}"'
     return match[0]
 

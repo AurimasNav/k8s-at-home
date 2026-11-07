@@ -21,6 +21,7 @@ from .faults import (
     DeviceRejected,
     DeviceStatus,
     Forbidden,
+    InsecureAuth,
     LockedOut,
     NameNotResolved,
     NotIsapi,
@@ -46,6 +47,8 @@ MAX_PARALLEL = 1
 # change costs at most three failed logins, below the device's login lock.
 HICCUPS_BEFORE_BLOCK = 2
 HICCUP_PAUSE = 20.0
+# Seconds a lockout holds when the device does not say how long.
+LOCK_FALLBACK = 1800.0
 
 
 def _describe_challenges(headers: list[str]) -> str:
@@ -153,8 +156,12 @@ class IsapiLink:
         self._username = username
         self._password = password
         self._signer: Signer | None = None
+        # Scheme of the first accepted signature; a later challenge may not weaken it.
+        self._pinned: str | None = None
         self._auth_checked = False
         self._blocked: BridgeFault | None = None
+        # Monotonic time a lockout lifts (None: the block is permanent, like bad credentials).
+        self._blocked_until: float | None = None
         self._worked = trusted
         self._hiccups = 0
         self._quiet_until = 0.0
@@ -187,16 +194,36 @@ class IsapiLink:
         self._username = username
         self._password = password
         self._signer = None
+        self._pinned = None
         self._auth_checked = False
         self._blocked = None
+        self._blocked_until = None
         self._worked = False
         self._hiccups = 0
         self._quiet_until = 0.0
 
+    def _lock(self, fault: LockedOut) -> LockedOut:
+        """Block the link until the lockout should have lifted."""
+        wait = fault.retry_after if fault.retry_after and fault.retry_after > 0 else LOCK_FALLBACK
+        self._blocked = fault
+        self._blocked_until = time.monotonic() + wait
+        return fault
+
+    def _raise_if_blocked(self) -> None:
+        """Raise the standing block; an expired lockout is cleared for one new attempt."""
+        if self._blocked is None:
+            return
+        if self._blocked_until is not None and time.monotonic() >= self._blocked_until:
+            self._blocked = None
+            self._blocked_until = None
+            self._signer = None
+            self._auth_checked = False
+            return
+        raise self._blocked
+
     def _check_open(self) -> None:
         """Raise instead of sending while the link is blocked or pausing after a refusal."""
-        if self._blocked is not None:
-            raise self._blocked
+        self._raise_if_blocked()
         if time.monotonic() < self._quiet_until:
             raise AuthHiccup("pausing after a refused request")
 
@@ -232,7 +259,9 @@ class IsapiLink:
         except aiohttp.ClientConnectorCertificateError as err:
             raise TlsUntrusted(str(err)) from err
         except aiohttp.ClientSSLError as err:
-            raise TlsUntrusted(str(err)) from err
+            # A handshake failure without a certificate verdict (e.g. HTTPS sent to an HTTP
+            # port) says nothing about trust: the address does not speak TLS.
+            raise Unreachable(f"TLS handshake failed: {err}") from err
         except aiohttp.ClientConnectorDNSError as err:
             raise NameNotResolved(self.endpoint.host) from err
         except (aiohttp.ClientError, TimeoutError, OSError) as err:
@@ -261,11 +290,11 @@ class IsapiLink:
                 if chosen is None:
                     status_block = read_status(decode(payload))
                     if is_lock(status_block):
-                        self._blocked = LockedOut(
-                            "device reports a lock", status_block.unlock_seconds
+                        raise self._lock(
+                            LockedOut("device reports a lock", status_block.unlock_seconds)
                         )
-                        raise self._blocked
                     raise NotIsapi("no usable authentication challenge")
+                self._refuse_weak(chosen.scheme)
                 self._signer = build_signer(self._username, self._password, chosen)
             elif status in (301, 302, 307, 308):
                 raise NotIsapi("redirected; try HTTPS")
@@ -274,6 +303,23 @@ class IsapiLink:
             else:
                 raise Unreachable(f"HTTP {status} during authentication probe")
             self._auth_checked = True
+
+    def _refuse_weak(self, scheme: str) -> None:
+        """Never send the password readable: no basic over HTTP, no downgrade after digest."""
+        if self._pinned == "digest" and scheme != "digest":
+            _LOGGER.warning(
+                "%s now asks for %s although digest worked before; not sending the password",
+                self.endpoint.host,
+                scheme,
+            )
+            raise InsecureAuth(f"{scheme} offered after digest worked")
+        if scheme == "basic" and self.endpoint.scheme != "https":
+            _LOGGER.warning(
+                "%s only offers basic authentication over plain HTTP, which would send the "
+                "password unencrypted; use HTTPS or set the device's web authentication to digest",
+                self.endpoint.host,
+            )
+            raise InsecureAuth("basic authentication over plain HTTP")
 
     async def call(
         self,
@@ -284,8 +330,7 @@ class IsapiLink:
         content_type: str = "application/xml; charset=UTF-8",
     ) -> Reply:
         """Send one request, handling digest nonce refresh. Raises a BridgeFault on errors."""
-        if self._blocked is not None:
-            raise self._blocked
+        self._raise_if_blocked()
         payload = body.encode("utf-8") if isinstance(body, str) else body
         writing = method != "GET"
         timeout = self._write_timeout if writing else self._read_timeout
@@ -352,6 +397,7 @@ class IsapiLink:
             return
         self._worked = True
         self._hiccups = 0
+        self._pinned = self._pinned or signer.scheme
         # A reply to a request signed with an older nonce says nothing about the current one.
         if (
             isinstance(signer, DigestSigner)
@@ -371,8 +417,7 @@ class IsapiLink:
         """Decide after a 401: None means one more attempt is safe, else the fault to raise."""
         status = read_status(decode(data))
         if is_lock(status):
-            self._blocked = LockedOut("device reports a lock", status.unlock_seconds)
-            return self._blocked
+            return self._lock(LockedOut("device reports a lock", status.unlock_seconds))
         fresh = pick(parse_challenges(challenges))
         signer = self._signer
         if attempt == 0 and isinstance(signer, DigestSigner) and signed is not None:
@@ -381,7 +426,11 @@ class IsapiLink:
                 # Another request already adopted a newer nonce; sign again with it.
                 return None
             trusted = self._worked and self._hiccups == 0
-            if fresh is not None and (fresh.stale or was_proven or trusted):
+            if (
+                fresh is not None
+                and fresh.scheme == "digest"
+                and (fresh.stale or was_proven or trusted)
+            ):
                 # The nonce expired or was replaced; the credentials are known to work.
                 # Exactly one retry with the fresh challenge.
                 signer.accept(fresh)
@@ -428,7 +477,7 @@ class IsapiLink:
             elif path != base:
                 self.unsupported.add(path)
         if isinstance(fault, LockedOut):
-            self._blocked = fault
+            self._lock(fault)
         raise fault
 
     # ------------------------------------------------------------ helpers
@@ -517,8 +566,7 @@ class IsapiLink:
 
         The request slot is held only until the response headers arrive.
         """
-        if self._blocked is not None:
-            raise self._blocked
+        self._raise_if_blocked()
         payload = body.encode("utf-8") if body is not None else None
         timeout = aiohttp.ClientTimeout(total=None, sock_connect=self._connect_timeout)
         for attempt in range(2):

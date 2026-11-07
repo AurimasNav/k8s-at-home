@@ -240,6 +240,14 @@ async def ws_days(
     connection.send_result(msg["id"], {"days": days})
 
 
+def _may_stop(
+    manager: sessions.SessionManager, connection: websocket_api.ActiveConnection, session_id: str
+) -> bool:
+    """Only the user who started a session, or an admin, may end it."""
+    session = manager.sessions.get(session_id)
+    return session is None or connection.user.is_admin or session.owner == connection.user.id
+
+
 @websocket_api.websocket_command(
     {
         vol.Required("type"): f"{DOMAIN}/playback/start",
@@ -260,6 +268,9 @@ async def ws_playback_start(
         connection.send_error(msg["id"], "not_found", "Unknown camera or recording source")
         return
     manager = sessions.manager(hass)
+    if (replace := msg.get("replace")) and not _may_stop(manager, connection, replace):
+        connection.send_error(msg["id"], "unauthorized", "Not your session")
+        return
     key = (bridge.entry.entry_id, channel_id, source.key)
     # Claimed before the search: over a slow link an older search may finish later.
     ticket = manager.claim(key)
@@ -291,6 +302,7 @@ async def ws_playback_start(
             msg.get("replace"),
             found,
             ticket,
+            connection.user.id,
         )
     except sessions.SessionError as err:
         connection.send_error(msg["id"], err.reason, err.reason)
@@ -317,5 +329,9 @@ async def ws_playback_start(
 async def ws_playback_stop(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
-    await sessions.manager(hass).stop(msg["session_id"])
+    manager = sessions.manager(hass)
+    if not _may_stop(manager, connection, msg["session_id"]):
+        connection.send_error(msg["id"], "unauthorized", "Not your session")
+        return
+    await manager.stop(msg["session_id"])
     connection.send_result(msg["id"], {})

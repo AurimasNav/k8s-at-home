@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from ...wire.link import IsapiLink
 from ...wire.xmlview import XmlNode
+from ..ids import seg
 from . import patch_and_verify, ptz
 from .image import ImageCapability, ImageSetting, ImageValue, Platform
 
@@ -121,12 +122,12 @@ def action_numbers(
 
 async def _number_for(link: IsapiLink, channel_id: str, action_type: str) -> dict[str, str]:
     """Number to send with a new action type: the current one if it fits, else the first."""
-    path = PARK_PATH.format(ch=channel_id)
+    path = PARK_PATH.format(ch=seg(channel_id))
     document = await link.read_xml(path, optional=True)
     if document is None or document.first(NUMBER_FIELD) is None:
         return {}
     caps = await link.read_xml(f"{path}/capabilities", optional=True)
-    presets = await link.read_xml(f"{ptz.BASE.format(channel_id)}/presets", optional=True)
+    presets = await link.read_xml(f"{ptz.BASE.format(seg(channel_id))}/presets", optional=True)
     numbers = action_numbers(
         action_type,
         _span(caps.first(NUMBER_FIELD) if caps else None, DEFAULT_NUMBER),
@@ -139,7 +140,7 @@ async def _number_for(link: IsapiLink, channel_id: str, action_type: str) -> dic
 
 
 async def read_capabilities(link: IsapiLink, channel_id: str) -> dict[str, ImageCapability]:
-    path = PARK_PATH.format(ch=channel_id)
+    path = PARK_PATH.format(ch=seg(channel_id))
     document = await link.read_xml(path, optional=True)
     if document is None:
         return {}
@@ -150,7 +151,7 @@ async def read_capabilities(link: IsapiLink, channel_id: str) -> dict[str, Image
 async def read_values(
     link: IsapiLink, channel_id: str, keys: set[str] | None = None
 ) -> dict[str, ImageValue] | None:
-    document = await link.read_xml(PARK_PATH.format(ch=channel_id), optional=True)
+    document = await link.read_xml(PARK_PATH.format(ch=seg(channel_id)), optional=True)
     return parse_values(document, keys) if document is not None else None
 
 
@@ -158,4 +159,4 @@ async def write(link: IsapiLink, channel_id: str, key: str, field: str, value: s
     edits = {field: value}
     if key == "park_action_type":
         edits.update(await _number_for(link, channel_id, value))
-    await patch_and_verify(link, PARK_PATH.format(ch=channel_id), edits)
+    await patch_and_verify(link, PARK_PATH.format(ch=seg(channel_id)), edits)

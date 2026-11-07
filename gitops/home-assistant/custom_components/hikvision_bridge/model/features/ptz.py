@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from ...wire.faults import BridgeFault
 from ...wire.link import IsapiLink
 from ...wire.xmlview import XmlNode
+from ..ids import numeric_id, seg
 
 BASE = "/ISAPI/PTZCtrl/channels/{}"
 MOVE = "<PTZData><pan>{p}</pan><tilt>{t}</tilt><zoom>{z}</zoom></PTZData>"
@@ -48,7 +49,7 @@ def parse_presets(document: XmlNode | None) -> dict[str, str]:
     if document is None:
         return presets
     for node in document.children("PTZPreset"):
-        preset_id = node.text("id")
+        preset_id = numeric_id(node.text("id"))
         if not preset_id or node.flag("enabled", True) is False:
             continue
         name = node.text("presetName") or f"Preset {preset_id}"
@@ -89,7 +90,7 @@ def parse_capabilities(
 
 
 async def read_capabilities(link: IsapiLink, channel_id: str) -> PtzCapability | None:
-    base = BASE.format(channel_id)
+    base = BASE.format(seg(channel_id))
     caps = await link.read_xml(f"{base}/capabilities", optional=True)
     if caps is None:
         return None
@@ -102,7 +103,7 @@ async def move(
     link: IsapiLink, channel_id: str, pan: int, tilt: int, zoom: int, seconds: float
 ) -> None:
     """Move continuously for ``seconds``, then stop (also when the move fails)."""
-    path = f"{BASE.format(channel_id)}/continuous"
+    path = f"{BASE.format(seg(channel_id))}/continuous"
     try:
         await link.write_xml(path, MOVE.format(p=pan, t=tilt, z=zoom))
         await asyncio.sleep(seconds)
@@ -124,4 +125,4 @@ async def step(link: IsapiLink, channel_id: str, direction: str) -> None:
 
 
 async def goto_preset(link: IsapiLink, channel_id: str, preset_id: str) -> None:
-    await link.write_xml(f"{BASE.format(channel_id)}/presets/{preset_id}/goto", "")
+    await link.write_xml(f"{BASE.format(seg(channel_id))}/presets/{seg(preset_id)}/goto", "")

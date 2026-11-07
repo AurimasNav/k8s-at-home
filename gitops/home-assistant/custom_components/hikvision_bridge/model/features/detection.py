@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from ...wire.link import IsapiLink
 from ...wire.xmlview import XmlNode, parse
+from ..ids import seg
 from ..vocabulary import Kind
 from . import patch_and_verify
 
@@ -33,7 +34,7 @@ class DetectionState:
 
 def config_path(kind: Kind, channel_id: str) -> str | None:
     template = _PATHS.get(kind)
-    return template.format(ch=channel_id) if template else None
+    return template.format(ch=seg(channel_id)) if template else None
 
 
 def _has_points(nodes: list[XmlNode]) -> bool:

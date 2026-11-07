@@ -96,7 +96,7 @@ configMapGenerator:
 # ConfigMap keys can't contain '@', so brand/'s icon@2x.png and logo@2x.png are stored
 # as icon-2x.png / logo-2x.png and renamed back by the volume's items (values.yaml).
 # Renovate tracks the source tag:
-# https://github.com/yannik2480/hikvision_bridge/archive/refs/tags/v0.9.17.tar.gz
+# https://github.com/yannik2480/hikvision_bridge/archive/refs/tags/v0.9.19.tar.gz
 - name: ha-hikvision-bridge
   # Server-side apply although it fits client-side today (~200 KB of the 256 KiB
   # last-applied limit): upstream grew ~27 KB in the 11 days to v0.9.12, and a
@@ -158,6 +158,7 @@ configMapGenerator:
   - custom_components/hikvision_bridge/model/__init__.py
   - custom_components/hikvision_bridge/model/audit.py
   - custom_components/hikvision_bridge/model/discover.py
+  - custom_components/hikvision_bridge/model/ids.py
   - custom_components/hikvision_bridge/model/inventory.py
   - custom_components/hikvision_bridge/model/vocabulary.py
 - name: ha-hikvision-bridge-model-features
@@ -183,6 +184,7 @@ configMapGenerator:
   - custom_components/hikvision_bridge/runtime/bridge.py
   - custom_components/hikvision_bridge/runtime/hookin.py
   - custom_components/hikvision_bridge/runtime/identity.py
+  - custom_components/hikvision_bridge/runtime/live.py
   - custom_components/hikvision_bridge/runtime/playback.py
   - custom_components/hikvision_bridge/runtime/refresh.py
   - custom_components/hikvision_bridge/runtime/router.py

@@ -91,6 +91,14 @@ class MultipartSplitter:
             return None
         return line_end + 1
 
+    def _drop_if_oversized(self, start: int) -> None:
+        """Give up on an unfinished part that outgrew the cap and resync to the next boundary."""
+        if len(self._buffer) - start <= MAX_PART_BYTES:
+            return None
+        nxt = self._buffer.find(self._boundary, 1) if self._boundary else -1
+        del self._buffer[: nxt if nxt != -1 else len(self._buffer)]
+        return None
+
     def _next(self) -> Part | None:
         start = self._boundary_at_start()
         if start is None:
@@ -103,7 +111,7 @@ class MultipartSplitter:
             header_end = self._buffer.find(b"\n\n", start)
             sep = 2
         if header_end == -1:
-            return None
+            return self._drop_if_oversized(start)
         headers: dict[str, str] = {}
         for line in decode(bytes(self._buffer[start:header_end])).splitlines():
             key, _, value = line.partition(":")
@@ -125,10 +133,10 @@ class MultipartSplitter:
             del self._buffer[: body_start + size]
             return Part(headers, body)
         if self._boundary is None:
-            return None
+            return self._drop_if_oversized(body_start)
         end = self._buffer.find(self._boundary, body_start)
         if end == -1:
-            return None
+            return self._drop_if_oversized(body_start)
         body = bytes(self._buffer[body_start:end]).rstrip(b"\r\n")
         del self._buffer[:end]
         return Part(headers, body)

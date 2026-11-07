@@ -13,6 +13,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .const import (
     OPT_RTSP_PORT,
     OPT_RTSP_TRANSPORT,
+    OPT_STREAM_KEY,
     OPT_TRY_ENCRYPTED_STREAM,
     RTSP_PORT_DEFAULT,
     RTSP_TCP,
@@ -21,6 +22,7 @@ from .const import (
 from .entity import BridgeEntity, add_entities
 from .model.inventory import StreamSpec
 from .runtime.bridge import DeviceBridge
+from .runtime.live import LiveRelay
 from .wire.faults import BridgeFault, DeviceRejected, Unsupported, detail
 from .wire.link import IsapiLink
 from .wire.scrub import scrubbed_logger
@@ -60,13 +62,19 @@ class ChannelCamera(BridgeEntity, Camera):
         self._was_playable = self._playable
 
     @property
+    def _decryption_code(self) -> str | None:
+        """Only an explicit code for a known H.264 stream opts into decryption."""
+        codec = (self._stream.codec or "").lower().replace(".", "")
+        return self.bridge.entry.options.get(OPT_STREAM_KEY) if codec == "h264" else None
+
+    @property
     def _blocked_by_encryption(self) -> bool:
         """Hik-Connect stream encryption is on and no direct camera link avoids it.
 
-        A direct link that leaves the live stream on the recorder, or the option to try the
-        live stream anyway, is an explicit choice to try the recorder's stream.
+        A saved verification code enables the local H.264 decryption relay. Direct
+        camera links and the explicit live-stream override retain their usual behavior.
         """
-        if self.bridge.entry.options.get(OPT_TRY_ENCRYPTED_STREAM, False):
+        if self._decryption_code or self.bridge.entry.options.get(OPT_TRY_ENCRYPTED_STREAM, False):
             return False
         cloud = self.bridge.profile.cloud
         route = self.bridge.routes.get(self.channel_id)
@@ -88,7 +96,7 @@ class ChannelCamera(BridgeEntity, Camera):
         return {
             "codec": stream.codec,
             "resolution": f"{stream.width}x{stream.height}" if stream.width else None,
-            "stream_encrypted": bool(cloud and cloud.stream_encrypted),
+            "stream_encrypted": cloud.stream_encrypted if cloud else False,
         }
 
     async def async_added_to_hass(self) -> None:
@@ -139,6 +147,32 @@ class ChannelCamera(BridgeEntity, Camera):
             )
         else:
             port = self.bridge.routes[self.channel_id].rtsp_port
+        cloud = self.bridge.profile.cloud
+        code = self._decryption_code
+        if (
+            link is self.bridge.link
+            and code
+            and (cloud is None or cloud.stream_encrypted is not False)
+        ):
+            # The relay only accepts TCP, irrespective of the normal RTSP preference.
+            self.stream_options["rtsp_transport"] = RTSP_TCP
+            relay = self.bridge.live_relays.get(stream_id)
+            if relay is None:
+                # A fresh relay (after a reload) gets a fresh chance; drop the old repair.
+                self.bridge.clear_live_failure()
+                relay = LiveRelay(
+                    link.endpoint.host,
+                    int(port),
+                    stream_id,
+                    data[CONF_USERNAME],
+                    data[CONF_PASSWORD],
+                    code,
+                    on_failure=self.bridge.report_live_failure,
+                )
+                self.bridge.live_relays[stream_id] = relay
+            if relay.failure:
+                return None  # Rejected code or login: no reconnect loop until a reload.
+            return await relay.start()
         user = quote(data[CONF_USERNAME], safe="")
         password = quote(data[CONF_PASSWORD], safe="")
         host = link.endpoint.base.split("://", 1)[1].rsplit(":", 1)[0]
