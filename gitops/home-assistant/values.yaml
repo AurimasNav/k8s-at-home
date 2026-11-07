@@ -172,10 +172,8 @@ initContainers:
 # templateConfig include (packages/modbus_sungrow.yaml) can resolve it. The Flexit
 # and lights automations ConfigMaps are each mounted as a single file (via subPath)
 # so they don't collide with the UI-managed automations.yaml on the persistent volume.
-# The hikvision_next custom component (3 ConfigMaps, matching its own directory
-# layout) is mounted straight into custom_components/ so HA picks it up as an
-# installed integration without needing HACS itself. hikvision_bridge (9 ConfigMaps,
-# one per upstream directory) is mounted the same way, next to hikvision_next.
+# The hikvision_bridge custom component (9 ConfigMaps, one per upstream directory) is
+# mounted straight into custom_components/ so HA picks it up without needing HACS itself.
 additionalVolumes:
   - name: sungrow-package
     configMap:
@@ -225,15 +223,6 @@ additionalVolumes:
   - name: garden-dashboard
     configMap:
       name: ha-garden-dashboard
-  - name: hikvision-next
-    configMap:
-      name: ha-hikvision-next
-  - name: hikvision-next-isapi
-    configMap:
-      name: ha-hikvision-next-isapi
-  - name: hikvision-next-translations
-    configMap:
-      name: ha-hikvision-next-translations
   - name: hikvision-bridge
     configMap:
       name: ha-hikvision-bridge
@@ -350,12 +339,6 @@ additionalMounts:
   - name: garden-dashboard
     mountPath: /config/dashboard_garden.yaml
     subPath: garden.yaml
-  - name: hikvision-next
-    mountPath: /config/custom_components/hikvision_next
-  - name: hikvision-next-isapi
-    mountPath: /config/custom_components/hikvision_next/isapi
-  - name: hikvision-next-translations
-    mountPath: /config/custom_components/hikvision_next/translations
   - name: hikvision-bridge
     mountPath: /config/custom_components/hikvision_bridge
   - name: hikvision-bridge-brand
