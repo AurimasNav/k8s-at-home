@@ -66,12 +66,19 @@ configMapGenerator:
 - name: ha-lg-tv-package
   files:
   - packages/lg_tv.yaml
+# package: Bambu Lab P2S alerts and fume ventilation (input_boolean helper)
+- name: ha-printer-package
+  files:
+  - packages/printer.yaml
 - name: ha-energy-dashboard
   files:
   - dashboards/energy.yaml
 - name: ha-garden-dashboard
   files:
   - dashboards/garden.yaml
+- name: ha-printer-dashboard
+  files:
+  - dashboards/printer.yaml
 # Vendored yannik2480/hikvision_bridge (Apache-2.0) for the DS-7604NXI-K1 NVR. It replaced
 # hikvision_next (unlicensed, unmaintained) on 2026-11-07 (#1029).
 # Nothing is configured automatically: the integration is added in the HA UI.

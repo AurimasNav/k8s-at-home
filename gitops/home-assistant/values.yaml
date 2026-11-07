@@ -59,6 +59,12 @@ configuration:
           icon: mdi:watering-can
           show_in_sidebar: true
           filename: dashboard_garden.yaml
+        printer-plus:
+          mode: yaml
+          title: 3D Printer
+          icon: mdi:printer-3d
+          show_in_sidebar: true
+          filename: dashboard_printer.yaml
     automation ui: !include automations.yaml
     automation flexit: !include automations_flexit.yaml
     automation lights: !include automations_lights.yaml
@@ -85,6 +91,7 @@ configuration:
         bhyve_winterize: !include package_bhyve_winterize.yaml
         water_softener: !include package_water_softener.yaml
         lg_tv: !include package_lg_tv.yaml
+        printer: !include package_printer.yaml
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
 securityContext:
@@ -217,12 +224,18 @@ additionalVolumes:
   - name: lg-tv-package
     configMap:
       name: ha-lg-tv-package
+  - name: printer-package
+    configMap:
+      name: ha-printer-package
   - name: energy-dashboard
     configMap:
       name: ha-energy-dashboard
   - name: garden-dashboard
     configMap:
       name: ha-garden-dashboard
+  - name: printer-dashboard
+    configMap:
+      name: ha-printer-dashboard
   - name: hikvision-bridge
     configMap:
       name: ha-hikvision-bridge
@@ -333,12 +346,18 @@ additionalMounts:
   - name: lg-tv-package
     mountPath: /config/package_lg_tv.yaml
     subPath: lg_tv.yaml
+  - name: printer-package
+    mountPath: /config/package_printer.yaml
+    subPath: printer.yaml
   - name: energy-dashboard
     mountPath: /config/dashboard_energy.yaml
     subPath: energy.yaml
   - name: garden-dashboard
     mountPath: /config/dashboard_garden.yaml
     subPath: garden.yaml
+  - name: printer-dashboard
+    mountPath: /config/dashboard_printer.yaml
+    subPath: printer.yaml
   - name: hikvision-bridge
     mountPath: /config/custom_components/hikvision_bridge
   - name: hikvision-bridge-brand

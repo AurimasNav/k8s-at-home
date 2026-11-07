@@ -94,6 +94,13 @@
     - fireplace
     - high
     to: home
+  # the printer's own boost (packages/printer.yaml) ends quietly
+  conditions:
+  - condition: template
+    value_template: >-
+      {{ is_state('input_boolean.printer_ventilation_boost', 'off')
+         and now() - states.input_boolean.printer_ventilation_boost.last_changed
+             > timedelta(minutes=5) }}
   actions:
   - action: notify.send_message
     target:

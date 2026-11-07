@@ -1,0 +1,170 @@
+# Bambu Lab P2S + AMS 2 Pro (gaming room): alerts and fume ventilation.
+
+input_boolean:
+  printer_ventilation_boost:
+    name: Printer ventilation boost
+    icon: mdi:fan-plus
+
+automation:
+- id: printer_grid_lost_during_print
+  alias: Printer - grid lost during a print
+  triggers:
+  - trigger: state
+    entity_id: sensor.running_state_raw
+    to: '4096'
+    for:
+      seconds: 15
+  conditions:
+  - condition: state
+    entity_id: sensor.gaming_p2s_print_status
+    state:
+    - prepare
+    - running
+    - pause
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: 🖨️ Grid lost during a print
+      message: >-
+        {{ states('sensor.gaming_p2s_task_name') }} is
+        {{ states('sensor.gaming_p2s_print_progress') }}% done,
+        {{ (states('sensor.gaming_p2s_remaining_time') | float(0) * 60) | round }} min
+        left. Battery {{ states('sensor.battery_level') }}%. Pause it in Bambu
+        Handy if the outage looks long.
+  mode: single
+
+- id: printer_ventilation_boost_on
+  alias: Printer - boost ventilation for ABS/ASA/PC/PA prints
+  triggers:
+  - trigger: state
+    entity_id: sensor.gaming_p2s_print_status
+    to: running
+  conditions:
+  - condition: template
+    value_template: >-
+      {{ state_attr('sensor.gaming_p2s_active_tray', 'type') | default('', true)
+         | regex_match('^(ABS|ASA|PC|PA)') }}
+  - condition: state
+    entity_id: climate.flexit_nordic
+    attribute: preset_mode
+    state:
+    - home
+    - away
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.printer_ventilation_boost
+  - action: climate.set_preset_mode
+    target:
+      entity_id: climate.flexit_nordic
+    data:
+      preset_mode: high
+  mode: single
+
+# polls so the 15 min after-print airing survives an HA restart
+- id: printer_ventilation_boost_off
+  alias: Printer - end the ventilation boost 15 min after the print
+  triggers:
+  - trigger: time_pattern
+    minutes: /5
+  conditions:
+  - condition: state
+    entity_id: input_boolean.printer_ventilation_boost
+    state: 'on'
+  - condition: template
+    value_template: >-
+      {{ states('sensor.gaming_p2s_print_status') in ['finish', 'failed', 'idle', 'offline']
+         and now() - states.sensor.gaming_p2s_print_status.last_changed > timedelta(minutes=15) }}
+  actions:
+  - if:
+    - condition: state
+      entity_id: climate.flexit_nordic
+      attribute: preset_mode
+      state: high
+    then:
+    - action: climate.set_preset_mode
+      target:
+        entity_id: climate.flexit_nordic
+      data:
+        preset_mode: home
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.printer_ventilation_boost
+  mode: single
+
+- id: printer_door_opened_during_print
+  alias: Printer - door opened during a print
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.gaming_p2s_door
+    from: 'off'
+    to: 'on'
+  conditions:
+  - condition: state
+    entity_id: sensor.gaming_p2s_print_status
+    state: running
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: 🖨️ Printer door opened
+      message: >-
+        The P2S door opened while printing
+        {{ states('sensor.gaming_p2s_task_name') }}
+        ({{ states('sensor.gaming_p2s_print_progress') }}% done).
+  # the delay mutes repeat alerts for 5 min
+  - delay:
+      minutes: 5
+  mode: single
+  max_exceeded: silent
+
+- id: printer_ams_humid
+  alias: Printer - AMS filament getting humid
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.gaming_ams_2_pro_humidity
+    above: 40
+    for:
+      hours: 2
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.gaming_ams_2_pro_drying
+    state: 'off'
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: 🖨️ AMS humidity {{ states('sensor.gaming_ams_2_pro_humidity') }}%
+      message: >-
+        The AMS 2 Pro has been above 40% humidity for 2 h. Start a drying
+        cycle from the printer or Bambu Handy.
+  mode: single
+
+- id: printer_ams_drying_finished
+  alias: Printer - AMS drying finished
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.gaming_ams_2_pro_drying
+    from: 'on'
+    to: 'off'
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.iphone
+      - notify.xiaomi
+    data:
+      title: 🖨️ AMS drying finished
+      message: >-
+        AMS 2 Pro humidity is now {{ states('sensor.gaming_ams_2_pro_humidity') }}%.
+  mode: single
