@@ -5,7 +5,7 @@ input_number:
   net_metering_balance:
     name: Net-metering balance
     unit_of_measurement: kWh
-    min: -100000
+    min: 0
     max: 100000
     step: 0.001
     mode: box
