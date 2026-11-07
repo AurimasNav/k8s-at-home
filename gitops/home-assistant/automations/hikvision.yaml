@@ -27,8 +27,8 @@
         Kiemas camera.
   mode: single
 
-- id: hikvision_nvr_reboot_on_sustained_videoloss
-  alias: Hikvision - reboot NVR on sustained video loss
+- id: hikvision_camera_offline_alert
+  alias: Hikvision - camera offline for 15 minutes
   triggers:
   - trigger: state
     entity_id:
@@ -48,18 +48,15 @@
     for:
       minutes: 15
   actions:
-  - action: button.press
-    target:
-      entity_id: button.network_video_recorder_restart
   - action: notify.send_message
     target:
       entity_id:
       - notify.iphone
       - notify.xiaomi
     data:
-      title: NVR rebooted
+      title: Camera offline
       message: >-
         {{ trigger.to_state.attributes.friendly_name }} has been
-        {{ trigger.to_state.state }} for 15+ minutes - rebooted the NVR to try
-        to recover it.
+        {{ trigger.to_state.state }} for 15+ minutes. If it doesn't come back,
+        reboot the NVR from its web interface (Maintenance - Reboot).
   mode: single
