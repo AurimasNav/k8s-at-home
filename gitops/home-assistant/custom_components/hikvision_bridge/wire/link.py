@@ -20,6 +20,7 @@ from .faults import (
     BridgeFault,
     DeviceRejected,
     DeviceStatus,
+    Forbidden,
     LockedOut,
     NameNotResolved,
     NotIsapi,
@@ -441,7 +442,7 @@ class IsapiLink:
         return optional and path.split("?", maxsplit=1)[0] not in self.served
 
     async def read_xml(self, path: str, *, optional: bool = False) -> XmlNode | None:
-        """GET an XML document. With ``optional`` unsupported resources return None.
+        """GET an XML document. With ``optional`` unsupported or forbidden resources return None.
 
         A path that answered before is not taken for unsupported later: its errors are raised.
         """
@@ -452,6 +453,11 @@ class IsapiLink:
             return reply.xml()
         except Unsupported:
             if self._absent(path, optional):
+                return None
+            raise
+        except Forbidden:
+            if self._absent(path, optional):
+                self.unsupported.add(path.split("?", maxsplit=1)[0])
                 return None
             raise
         except DeviceRejected as err:
@@ -471,6 +477,11 @@ class IsapiLink:
             return (await self.call("GET", path)).text
         except Unsupported:
             if self._absent(path, optional):
+                return None
+            raise
+        except Forbidden:
+            if self._absent(path, optional):
+                self.unsupported.add(path.split("?", maxsplit=1)[0])
                 return None
             raise
 

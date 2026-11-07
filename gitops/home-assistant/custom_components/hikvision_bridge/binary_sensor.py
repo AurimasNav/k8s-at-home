@@ -67,6 +67,8 @@ async def async_setup_entry(
     entities.extend(AlarmInputSensor(bridge, port) for port in profile.inputs.values())
     if profile.storage:
         entities.append(StorageProblemSensor(bridge))
+    if any(trigger.kind == Kind.ILLEGAL_ACCESS for trigger in profile.triggers):
+        entities.append(IllegalLoginSensor(bridge))
     if profile.cloud is not None:
         entities.append(StreamEncryptionSensor(bridge))
     if profile.intercom and profile.intercom.has_call_status:
@@ -148,6 +150,19 @@ class StorageProblemSensor(PolledEntity, BinarySensorEntity):
         if self.bridge.router.is_active(DEVICE_SCOPE, Kind.STORAGE.value):
             return True
         return any(unit.status not in HEALTHY for unit in self.coordinator.data.storage)
+
+
+class IllegalLoginSensor(PushEntity, BinarySensorEntity):
+    """On for the hold time after the device reports an illegal (failed) login."""
+
+    _attr_translation_key = "illegal_login"
+
+    def __init__(self, bridge: DeviceBridge) -> None:
+        super().__init__(bridge, None, "illegal_login")
+
+    @property
+    def is_on(self) -> bool:
+        return self.bridge.router.is_active(DEVICE_SCOPE, Kind.ILLEGAL_ACCESS.value)
 
 
 class StreamEncryptionSensor(PolledEntity, BinarySensorEntity):

@@ -185,7 +185,9 @@ async def ws_timeline(
     source = pick_source(bridge, msg["channel_id"], msg["source"])
     if source is not None:
         try:
-            found = await recordings.search(source.link, source.track, start, end)
+            found = await recordings.recent_search(
+                source.link, source.track, start, end, fresh=True
+            )
         except BridgeFault as err:
             error = type(err).__name__
             _LOGGER.debug("No recordings list from the %s: %s", source.key, detail(err))
@@ -263,7 +265,8 @@ async def ws_playback_start(
     ticket = manager.claim(key)
     try:
         moment = _time(msg["time"])
-        found = await recordings.search(
+        # Usually answered by the search of the timeline the time was picked on.
+        found = await recordings.recent_search(
             source.link, source.track, moment - LOOK_BACK, moment + LOOK_AHEAD
         )
     except vol.Invalid:

@@ -278,6 +278,9 @@
       "storage_problem": {
         "name": "Storage problem"
       },
+      "illegal_login": {
+        "name": "Illegal login"
+      },
       "event_link": {
         "name": "Event connection"
       },
@@ -718,6 +721,14 @@
       "title": "{device}: {kind} on {channel} is not reported",
       "fix_flow": {
         "step": {
+          "init": {
+            "title": "Reporting linkage",
+            "description": "The device detects {kind} but does not send it to the event stream, because the linkage 'Notify surveillance center' is off. Confirm to switch on only that linkage (trigger {trigger}); nothing else changes. {reason}",
+            "menu_options": {
+              "confirm": "Enable reporting",
+              "ignore": "Ignore"
+            }
+          },
           "confirm": {
             "title": "Enable reporting",
             "description": "The device detects {kind} but does not send it to the event stream, because the linkage 'Notify surveillance center' is off. Confirm to switch on only that linkage (trigger {trigger}); nothing else changes. {reason}"
@@ -727,7 +738,8 @@
           "write_failed": "The device did not accept the change."
         },
         "abort": {
-          "not_loaded": "The device is not loaded."
+          "not_loaded": "The device is not loaded.",
+          "issue_ignored": "Ignored. To show it again, open Repairs and choose 'Show ignored'."
         }
       }
     },
@@ -915,6 +927,7 @@
         "live": "Live",
         "playback": "Playback",
         "quality": "Quality",
+        "speed": "Speed",
         "auto": "Auto",
         "low": "Low (fast)",
         "high": "High",
