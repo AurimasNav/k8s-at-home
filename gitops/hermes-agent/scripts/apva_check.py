@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Read-only: APVA open (APVIS) and planned calls, printed as the finished APVA topic report.
 
-Runs as a no_agent cron job: stdout is posted to Telegram as is, with no LLM step, so the
-same pages always give the same message. Open calls come only from the APVIS
+Runs as a no_agent cron job: the scheduler delivers stdout as the message body (inside its
+usual "Cronjob Response" header and footer) with no LLM turn, so the same pages always give
+the same message. Open calls come only from the APVIS
 "Fiziniams asmenims" tab. Forests, invasive species, farm machinery, biomethane and calls
 for business use are left out. Planned calls are kept when individuals can apply. The
 first line says whether a household battery storage call is open.
@@ -27,7 +28,7 @@ PLANNED_URL = "https://apva.lrv.lt/lt/aktualus-kvietimai/"
 TODAY = datetime.now(ZoneInfo("Europe/Vilnius")).date()
 
 # Header text (lowercase substring) -> field. Every field must be found, or the layout changed.
-APVIS_COLUMNS = {"name": "pavadinimas", "remaining": "likutis", "left": "iki"}
+APVIS_COLUMNS = {"name": "pavadinimas", "remaining": "likutis", "left": "priimamos iki"}
 PLANNED_COLUMNS = {"name": "pavadinimas", "start": "skelbti", "budget": "suma", "who": "pareišk"}
 EMPTY_TAB = "nėra aktyvių kvietimų"
 
@@ -87,8 +88,15 @@ def table(table_html, columns, what):
     return out
 
 
+def is_storage(name):
+    """Electricity storage; heat storage ('šilumos kaupimo talpos') doesn't count."""
+    return has(re.sub(r"šilumos kaup\w*", "", name.lower()), STORAGE)
+
+
 def icon(text):
-    return next((i for words, i in ICONS if has(text, words)), "•")
+    if is_storage(text):
+        return "🔋"
+    return next((i for words, i in ICONS[1:] if has(text, words)), "•")
 
 
 def eur(raw):
@@ -106,8 +114,9 @@ def ends(left):
     m = re.search(r"Liko (\d+) d", left)
     if m:
         return f"pabaiga ~{TODAY + timedelta(days=int(m.group(1)))}"
-    if re.search(r"Liko \d+ val", left):
-        return "baigiasi šiandien"
+    m = re.search(r"Liko (\d+) val", left)
+    if m:
+        return f"baigiasi per {m.group(1)} val."
     return left or "pabaiga nežinoma"
 
 
@@ -117,8 +126,7 @@ def published_calls():
     start = re.search(r'<div[^>]*\bid="individual"[^>]*>', page)
     if not start:
         raise ValueError("nerastas skirtukas „Fiziniams asmenims“")
-    nxt = re.search(r'<div[^>]*class="[^"]*\btab-pane\b', page[start.end():])
-    pane = page[start.end():start.end() + nxt.start()] if nxt else page[start.end():]
+    pane = div_body(page, start.end())
     tab = re.search(r"(?s)<table.*?</table>", pane)
     if not tab:
         if EMPTY_TAB in clean(pane).lower():
@@ -135,6 +143,16 @@ def published_calls():
     return calls
 
 
+def div_body(page, pos):
+    """Inner HTML of the <div> whose opening tag ends at pos, up to its own closing </div>."""
+    depth = 1
+    for m in re.finditer(r"(?i)<div\b|</div\s*>", page[pos:]):
+        depth += -1 if m.group(0).startswith("</") else 1
+        if depth == 0:
+            return page[pos:pos + m.start()]
+    raise ValueError("skirtuko „Fiziniams asmenims“ pabaiga nerasta")
+
+
 def planned_calls():
     """apva.lrv.lt 'Planuojami kvietimai' table."""
     page = get(PLANNED_URL)
@@ -148,10 +166,13 @@ def planned_calls():
     return calls, upd.group(1) if upd else None
 
 
-def for_business(name):
-    """'... juridiniams asmenims (ir fiziniams, kurie ... ūkinei veiklai)' is business use."""
-    n = name.lower()
-    return "juridiniams asmenims" in n and "fiziniams ir juridiniams" not in n
+def for_business(text):
+    """Legal entities only, or individuals only for business use ('... ūkinei veiklai').
+
+    Calls for both ('fiziniams ir/bei juridiniams asmenims', either order) are kept.
+    """
+    t = text.lower()
+    return "juridin" in t and ("ūkin" in t or "fizini" not in t)
 
 
 def open_for_households(call):
@@ -159,7 +180,8 @@ def open_for_households(call):
 
 
 def planned_for_households(call):
-    return has(call["who"], INDIVIDUALS) and not has(call["name"], OFF_TOPIC)
+    who = call["who"]
+    return has(who, INDIVIDUALS) and not for_business(who) and not has(call["name"], OFF_TOPIC)
 
 
 def raw(published, planned, updated, errors):
@@ -181,7 +203,7 @@ def report(published, planned, updated, errors):
         out = ["🔋 **Namų kaupiklių kvietimas: NEŽINOMA** (APVIS nepavyko nuskaityti)"]
     else:
         mine = [c for c in published if open_for_households(c)]
-        storage = any(has(c["name"], STORAGE) for c in mine)
+        storage = any(is_storage(c["name"]) for c in mine)
         out = ["🔋 **Namų kaupiklių kvietimas: " + ("TAIP** ✅" if storage else "NE** (šiuo metu neatidarytas)")]
         out.append("\n✅ **Aktyvūs kvietimai fiziniams asmenims:**")
         out += [f"- {icon(c['name'])} {c['name']}: liko {eur(c['remaining'])}, {ends(c['left'])}"
