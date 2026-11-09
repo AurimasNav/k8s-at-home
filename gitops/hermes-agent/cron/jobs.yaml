@@ -3,7 +3,8 @@
 # Keys are job ids. Authored fields here win; scheduler state (next run, history) stays on the PVC.
 # Jobs not listed here (ad-hoc reminders made in chat) are left untouched.
 # deliver: telegram:<chat_id>:<thread_id>  (241 = Šildymas, 245 = APVA, 501 = Home server, 1128 = Media)
-# script: file name in ../scripts (mounted at /opt/data/scripts); its stdout is injected into the prompt.
+# script: file name in ../scripts (mounted at /opt/data/scripts); its stdout is injected into the prompt,
+#   or with no_agent: true it is the whole message (no LLM turn).
 jobs:
   03b0d43625b1:
     name: NIBE dienos ataskaita
