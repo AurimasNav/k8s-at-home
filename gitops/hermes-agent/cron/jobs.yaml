@@ -18,9 +18,10 @@ jobs:
     schedule: 0 9 * * *
     deliver: telegram:-1004485564030:245
     script: apva_check.py
+    no_agent: true
     enabled: true
     prompt: |
-      Parašyk lietuviškai LABAI trumpą APVA paramos būklės pranešimą (iki ~10 eilučių) namų savininkui, turinčiam saulės elektrinę ir besidominčiam namų baterijų (kaupiklių) parama. Pagrindinis šaltinis – aukščiau pateikta skripto apva_check.py išvestis (APVIS aktyvūs kvietimai ir apva.lrv.lt planuojami kvietimai). Jei skripto išvestyje yra KLAIDA, papildomai patikrink oficialius APVA šaltinius web paieška. Pirma eilutė: ar šiuo metu atidarytas kvietimas namų kaupikliams (TAIP/NE). Tada pateik TIK: 1) AKTYVIUS kvietimus, aktualius fiziniams asmenims (pavadinimas, likusi suma, pabaiga); 2) PLANUOJAMUS kvietimus, aktualius fiziniams asmenims arba energetikai (pavadinimas, numatoma pradžia, suma). Juridiniams asmenims skirtų, miškų, invazinių rūšių ir pan. kvietimų neminėk. Ankstesni (uždaryti) kvietimai nėra aktyvūs. NEPATEIKIK instrukcijų, kaip pildyti paraišką ar ką daryti. Gale 1–2 nuorodos. Nieko nespėliok. Formatas: trumpi sąrašai su emoji, be lentelių.
+      no_agent job: apva_check.py reads APVIS open calls and the apva.lrv.lt planned calls and prints the finished Lithuanian APVA report (household storage call open or not, open and planned calls for households, links). The scheduler posts it as is.
   c4a472c22bee:
     name: Renovate auto-merge
     schedule: 0 10 * * *
