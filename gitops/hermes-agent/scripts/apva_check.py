@@ -90,7 +90,8 @@ def table(table_html, columns, what):
 
 def is_storage(name):
     """Electricity storage; heat storage ('šilumos kaupimo talpos') doesn't count."""
-    return has(re.sub(r"šilumos kaup\w*", "", name.lower()), STORAGE)
+    heat = r"(?<!elektros ir )(?<!energijos ir )šilumos (?:energijos )?kaup\w*"
+    return has(re.sub(heat, "", name.lower()), STORAGE)
 
 
 def icon(text):
@@ -127,6 +128,8 @@ def published_calls():
     if not start:
         raise ValueError("nerastas skirtukas „Fiziniams asmenims“")
     pane = div_body(page, start.end())
+    if re.search(r'\bid="(?:legal|investment-plans)"', pane):  # depth thrown off by a comment/script/<div/>
+        raise ValueError("skirtuko „Fiziniams asmenims“ ribos neaiškios")
     tab = re.search(r"(?s)<table.*?</table>", pane)
     if not tab:
         if EMPTY_TAB in clean(pane).lower():
@@ -172,7 +175,7 @@ def for_business(text):
     Calls for both ('fiziniams ir/bei juridiniams asmenims', either order) are kept.
     """
     t = text.lower()
-    return "juridin" in t and ("ūkin" in t or "fizini" not in t)
+    return "juridin" in t and (bool(re.search(r"ūkin\w* veikl", t)) or not has(t, INDIVIDUALS))
 
 
 def open_for_households(call):
