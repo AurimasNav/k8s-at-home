@@ -81,6 +81,8 @@ class PlaybackSource:
     rtsp_port: int
     # Verification code entered in the options, tried before the one the device reports.
     code: str | None = None
+    # False if the channel records no audio: RTSP playback then leaves the audio track out.
+    audio: bool | None = None
 
 
 def sources(bridge: DeviceBridge, channel_id: str) -> list[PlaybackSource]:
@@ -92,6 +94,9 @@ def sources(bridge: DeviceBridge, channel_id: str) -> list[PlaybackSource]:
         bridge.entry.options.get(OPT_RTSP_PORT) or profile.rtsp_port or RTSP_PORT_DEFAULT
     )
     code = bridge.entry.options.get(OPT_STREAM_KEY) or None
+    channel = profile.channels.get(channel_id)
+    main = channel.main_stream if channel is not None else None
+    audio = main.audio if main is not None else None
     if profile.shape.records:
         found.append(
             PlaybackSource(
@@ -101,10 +106,10 @@ def sources(bridge: DeviceBridge, channel_id: str) -> list[PlaybackSource]:
                 entry_data,
                 main_port,
                 code,
+                audio,
             )
         )
         route = bridge.routes.get(channel_id)
-        channel = profile.channels.get(channel_id)
         if route is not None and route.healthy and channel is not None and channel.storage:
             sub = bridge.entry.subentries.get(route.subentry_id)
             if sub is not None and sub.subentry_type == SUBENTRY_CHANNEL_LINK:
@@ -126,6 +131,7 @@ def sources(bridge: DeviceBridge, channel_id: str) -> list[PlaybackSource]:
                 entry_data,
                 main_port,
                 code,
+                audio,
             )
         )
     return found

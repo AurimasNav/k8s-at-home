@@ -12,6 +12,7 @@ import time
 from typing import Any
 
 import aiohttp
+from aiohttp.http_exceptions import BadStatusLine
 from yarl import URL
 
 from .faults import (
@@ -49,6 +50,21 @@ HICCUPS_BEFORE_BLOCK = 2
 HICCUP_PAUSE = 20.0
 # Seconds a lockout holds when the device does not say how long.
 LOCK_FALLBACK = 1800.0
+
+
+def _unparsable(err: aiohttp.ClientResponseError) -> BridgeFault:
+    """A reply aiohttp could not parse; only a bad status line is the device refusing.
+
+    Old firmwares answer what they do not support with ``HTTP/1.1 -1 Custom error``. Other
+    parse errors (broken headers, ...) say nothing about the request and stay Unreachable.
+    aiohttp wraps the parser's error in a copy, so the cause chain is searched.
+    """
+    cause = err.__cause__
+    while cause is not None:
+        if isinstance(cause, BadStatusLine):
+            return DeviceRejected("bad status line", err.status)
+        cause = cause.__cause__
+    return Unreachable(f"{type(err).__name__}: {err}")
 
 
 def _describe_challenges(headers: list[str]) -> str:
@@ -264,6 +280,8 @@ class IsapiLink:
             raise Unreachable(f"TLS handshake failed: {err}") from err
         except aiohttp.ClientConnectorDNSError as err:
             raise NameNotResolved(self.endpoint.host) from err
+        except aiohttp.ClientResponseError as err:
+            raise _unparsable(err) from err
         except (aiohttp.ClientError, TimeoutError, OSError) as err:
             raise Unreachable(f"{type(err).__name__}: {err}") from err
 
@@ -591,6 +609,8 @@ class IsapiLink:
                     )
                 except aiohttp.ClientConnectorCertificateError as err:
                     raise TlsUntrusted(str(err)) from err
+                except aiohttp.ClientResponseError as err:
+                    raise _unparsable(err) from err
                 except (aiohttp.ClientError, TimeoutError, OSError) as err:
                     raise Unreachable(f"{type(err).__name__}: {err}") from err
                 if response.status == 401:

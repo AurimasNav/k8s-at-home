@@ -29,6 +29,7 @@ from .const import (
     KIND_CLOUD,
     OPT_PLAYBACK,
     OPT_RTSP_TRANSPORT,
+    PLAYBACK_SEEKABLE,
     PLAYBACK_STREAM,
     RTSP_TCP,
 )
@@ -54,6 +55,8 @@ MAX_DAYS = 62
 ALL = "all"
 # Thumbnails cost one download each; continuous recording days have too many files.
 MAX_THUMBNAILS = 60
+# Home Assistant's browser player only plays HLS announced exactly as this type.
+PLAY_HLS = "application/x-mpegURL"
 
 
 async def async_get_media_source(hass: HomeAssistant) -> MediaSource:
@@ -288,6 +291,8 @@ class BridgeMediaSource(MediaSource):
         if uri is None or source is None:
             raise Unresolvable("Unknown recording")
         mode = bridge.entry.options.get(OPT_PLAYBACK, FORMAT_MP4)
+        if mode == PLAYBACK_SEEKABLE:
+            return PlayMedia(recording_url(entry_id, channel_id, source.key, mode, uri), PLAY_HLS)
         if mode == PLAYBACK_STREAM:
             try:
                 return await self._stream(bridge, source, uri)
@@ -323,7 +328,7 @@ class BridgeMediaSource(MediaSource):
         )
         stream.add_provider(HLS_PROVIDER)
         await stream.start()
-        return PlayMedia(stream.endpoint_url(HLS_PROVIDER), "application/vnd.apple.mpegurl")
+        return PlayMedia(stream.endpoint_url(HLS_PROVIDER), PLAY_HLS)
 
 
 def _midnight(day: date) -> datetime:

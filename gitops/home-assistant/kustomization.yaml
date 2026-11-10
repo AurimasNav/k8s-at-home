@@ -193,6 +193,7 @@ configMapGenerator:
   - custom_components/hikvision_bridge/runtime/refresh.py
   - custom_components/hikvision_bridge/runtime/router.py
   - custom_components/hikvision_bridge/runtime/sessions.py
+  - custom_components/hikvision_bridge/runtime/vod.py
 - name: ha-hikvision-bridge-translations
   files:
   - custom_components/hikvision_bridge/translations/en.json
