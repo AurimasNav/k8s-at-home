@@ -33,7 +33,7 @@ spec:
           mountPath: /data
       containers:
       - name: radarr-lt
-        image: ghcr.io/linuxserver/radarr:7.0.1-develop
+        image: ghcr.io/linuxserver/radarr:7.0.2-develop
         imagePullPolicy: Always
         ports:
         - containerPort: 7878
