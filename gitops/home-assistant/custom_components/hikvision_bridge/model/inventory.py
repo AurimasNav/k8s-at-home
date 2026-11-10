@@ -56,6 +56,8 @@ class StreamSpec:
     codec: str | None = None
     width: int | None = None
     height: int | None = None
+    # False if the stream carries no audio (its <Audio><enabled>); None if not stated.
+    audio: bool | None = None
 
     @property
     def rank(self) -> int:

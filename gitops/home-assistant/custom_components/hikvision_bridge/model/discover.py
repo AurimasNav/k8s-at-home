@@ -105,12 +105,14 @@ def _streams(listing: XmlNode | None) -> dict[str, list[StreamSpec]]:
         if node.flag("enabled") is False:
             continue
         video = node.first("Video")
+        audio = node.first("Audio")
         by_channel[str(int(stream_id) // 100)].append(
             StreamSpec(
                 stream_id=stream_id,
                 codec=video.text("videoCodecType") if video else None,
                 width=video.numeric("videoResolutionWidth") if video else None,
                 height=video.numeric("videoResolutionHeight") if video else None,
+                audio=audio.flag("enabled") if audio else None,
             )
         )
     return by_channel

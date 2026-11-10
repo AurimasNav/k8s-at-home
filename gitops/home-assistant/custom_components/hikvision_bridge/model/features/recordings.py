@@ -284,18 +284,18 @@ async def _look_for_basis(
         utc = basis_from_events(found, events, wall)
     if utc is not None and _utc_basis.get(link) != utc:
         _LOGGER.debug(
-            "Recording times of %s are %s (clock %s ahead of UTC, %d events)",
+            "Recording times of %s are %s (clock UTC%+g h, %d events)",
             link.endpoint.host,
             "real UTC" if utc else "on the device's clock",
-            wall,
+            wall.total_seconds() / 3600,
             len(events),
         )
     elif utc is None and link not in _utc_basis:
         _LOGGER.debug(
             "Recording times of %s: clock not found out yet, taken as the device's "
-            "(%s ahead of UTC, %d events)",
+            "(clock UTC%+g h, %d events)",
             link.endpoint.host,
-            wall,
+            wall.total_seconds() / 3600,
             len(events),
         )
     if utc is not None:

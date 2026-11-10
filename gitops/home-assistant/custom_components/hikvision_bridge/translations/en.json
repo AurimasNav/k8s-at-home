@@ -132,7 +132,7 @@
         "data_description": {
           "event_path": "The event stream needs no device change. The webhook requires the device to send to Home Assistant.",
           "hold_seconds": "Devices only report the start of many detections; the sensor stays on this long after the last report.",
-          "playback": "Recordings are H.265 or H.264. 'MP4 as recorded' starts at once, but browsers play H.265 only with hardware support. 'Convert to H.264' plays everywhere and needs a lot of CPU. 'Stream from the device' lets the device play the recording over RTSP.",
+          "playback": "Recordings are H.265 or H.264. 'Seekable' shows the whole length of the recording and seeks anywhere in it, like the panel. 'MP4 as recorded' starts at once, but browsers play H.265 only with hardware support. 'Convert to H.264' plays everywhere and needs a lot of CPU. 'Stream from the device' lets the device play the recording over RTSP.",
           "recording_clock": "The clock the device gives its recording times on. 'Automatic' finds it out. If the timeline and the recording played are off by your time zone's offset, choose the other clock.",
           "stream_key": "Used to decrypt recordings and local H.264 live video while keeping stream encryption enabled. Enter the device's verification code here to enable live decryption; audio and encrypted H.265 live video are not supported. Recordings can also use the code read from the device.",
           "sidebar_panel": "Applies to all devices and accounts of this integration. The dashboard card stays available.",
@@ -891,7 +891,8 @@
     },
     "playback": {
       "options": {
-        "mp4": "MP4 as recorded (recommended)",
+        "seekable": "Seekable (recommended)",
+        "mp4": "MP4 as recorded",
         "h264": "Convert to H.264 (works everywhere, high CPU load)",
         "stream": "Stream from the device (RTSP to HLS)"
       }

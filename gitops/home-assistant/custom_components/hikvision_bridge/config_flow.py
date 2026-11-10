@@ -64,6 +64,7 @@ from .const import (
     OPT_WEBHOOK_ID,
     PLAYBACK_H264,
     PLAYBACK_MP4,
+    PLAYBACK_SEEKABLE,
     PLAYBACK_STREAM,
     RECORDING_CLOCK_AUTO,
     RECORDING_CLOCK_DEVICE,
@@ -395,7 +396,8 @@ class BridgeConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_SERIAL: self._identity.serial,
                 CONF_MAC: self._identity.mac,
             },
-            options=_rtsp_option(self._rtsp_port),
+            # New entries play recordings seekable; older ones keep MP4 unless changed.
+            options={OPT_PLAYBACK: PLAYBACK_SEEKABLE, **_rtsp_option(self._rtsp_port)},
         )
 
     # --------------------------------------------------------------- reauth
@@ -656,7 +658,7 @@ class BridgeOptionsFlow(OptionsFlowWithReload):
                     OPT_PLAYBACK, default=options.get(OPT_PLAYBACK, PLAYBACK_MP4)
                 ): selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=[PLAYBACK_MP4, PLAYBACK_H264, PLAYBACK_STREAM],
+                        options=[PLAYBACK_SEEKABLE, PLAYBACK_MP4, PLAYBACK_H264, PLAYBACK_STREAM],
                         translation_key="playback",
                     )
                 ),

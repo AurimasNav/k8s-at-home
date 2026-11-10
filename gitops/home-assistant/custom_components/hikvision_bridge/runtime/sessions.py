@@ -53,6 +53,8 @@ QUALITY_ORIGINAL = "original"
 QUALITY_COMPATIBLE = "compatible"
 QUALITIES = (QUALITY_ORIGINAL, QUALITY_COMPATIBLE)
 SEGMENT_SECONDS = 2
+# Video on demand is cut at the first key frame after this long (so at about every one).
+VOD_CUT_SECONDS = 1
 FIRST_SEGMENT_TIMEOUT = 25
 # Longest wait for the part of a recorded file before the wanted time; slower devices start
 # playing from the latest key frame they reached.
@@ -170,13 +172,29 @@ def playback_uri(
     )
 
 
-def hls_args(url: str, quality: str, codec: str | None, target: Path) -> list[str]:
-    """ffmpeg arguments; ``url`` is an RTSP address or PIPE for a program stream on stdin."""
+def hls_args(
+    url: str,
+    quality: str,
+    codec: str | None,
+    target: Path,
+    audio: bool | None = None,
+    *,
+    offset: float | None = None,
+) -> list[str]:
+    """ffmpeg arguments; ``url`` is an RTSP address or PIPE for a program stream on stdin.
+
+    ``audio`` False leaves the RTSP audio track out: recorders announce one even for channels
+    with audio off, and ffmpeg then holds back all video waiting for audio that never comes.
+    ``offset`` (seconds) is where the video starts in its recorded file, for video on demand:
+    its time stamps then count from the file start, and it is cut at every key frame.
+    """
     args = ["-hide_banner", "-loglevel", "error"]
     if url == PIPE:
         args += ["-f", "mpeg"]
     else:
         args += ["-rtsp_transport", "tcp", "-timeout", str(RTSP_TIMEOUT)]
+        if audio is False:
+            args += ["-allowed_media_types", "video"]
     # The streams are known after the first key frame; the default waits five seconds.
     args += ["-analyzeduration", "2000000", "-i", url, "-map", "0:v:0", "-map", "0:a:0?"]
     if quality == QUALITY_COMPATIBLE:
@@ -201,11 +219,23 @@ def hls_args(url: str, quality: str, codec: str | None, target: Path) -> list[st
         if codec and ("265" in codec or codec == "hevc"):
             args += ["-tag:v", "hvc1"]
     args += ["-c:a", "aac", "-b:a", "64k"]
+    if offset is not None:
+        # frag_discont writes the time stamps into the fragments themselves; without it they
+        # go into the edit list of the init section. That has to be the same for all sessions
+        # of the file, so it leaves out the metadata too (RTSP names the server in it).
+        args += [
+            "-output_ts_offset",
+            f"{offset:.3f}",
+            "-hls_segment_options",
+            "movflags=+frag_discont",
+            "-map_metadata",
+            "-1",
+        ]
     args += [
         "-f",
         "hls",
         "-hls_time",
-        str(SEGMENT_SECONDS),
+        str(SEGMENT_SECONDS if offset is None else VOD_CUT_SECONDS),
         "-hls_list_size",
         "0",
         "-hls_segment_type",
@@ -349,6 +379,19 @@ class Session:
     entry_id: str = ""
     owner: str | None = None  # id of the Home Assistant user who started it
     created: float = field(default_factory=time.monotonic)
+    origin: datetime | None = None  # start of the recorded file, for video on demand
+
+    @property
+    def offset(self) -> float | None:
+        """Seconds into the recorded file the video starts, for video on demand.
+
+        Never below 0: a session at the start of a file listed from midnight begins at the key
+        frame before it, and ffmpeg shifts negative time stamps to 0 anyway (fragments have no
+        negative times); so the parts of that session come up to one key frame interval late.
+        """
+        if self.origin is None:
+            return None
+        return max(0.0, (self.start - self.origin).total_seconds())
 
     @property
     def url(self) -> str:
@@ -420,18 +463,20 @@ class SessionManager:
         found: list[recordings.Recording] | None = None,
         ticket: int | None = None,
         owner: str | None = None,
+        origin: datetime | None = None,
     ) -> Session:
         """Play from ``start``; ``found`` are the recorded files around it.
 
         Raises SessionError("playback_replaced") if a newer start for the camera came in;
-        ``ticket`` from ``claim`` dates this one to when it was asked for.
+        ``ticket`` from ``claim`` dates this one to when it was asked for. ``origin``, the
+        start of the recorded file, makes video on demand (see ``hls_args``).
         """
         if ticket is not None and ticket != self._claims.get(key):
             raise SessionError("playback_replaced")
         if (pending := self._starting.get(key)) is not None:
             pending.cancel()
         task = asyncio.ensure_future(
-            self._start(source, key, start, end, quality, codec, replace, found, owner)
+            self._start(source, key, start, end, quality, codec, replace, found, owner, origin)
         )
         self._starting[key] = task
         try:
@@ -456,6 +501,7 @@ class SessionManager:
         replace: str | None,
         found: list[recordings.Recording] | None,
         owner: str | None = None,
+        origin: datetime | None = None,
     ) -> Session:
         async with self._lock:
             if replace:
@@ -475,7 +521,7 @@ class SessionManager:
                 if source.link not in self._rtsp_only:
                     try:
                         session = await self._download(
-                            source, key, start, end, uri, quality, folder, found or []
+                            source, key, start, end, uri, quality, folder, found or [], origin
                         )
                     except _UseRtsp as err:
                         if err.lasting:
@@ -486,7 +532,7 @@ class SessionManager:
                         return session
                 try:
                     session = await self._from_rtsp(
-                        source, key, start, end, uri, quality, codec, folder
+                        source, key, start, end, uri, quality, codec, folder, origin
                     )
                 except SessionError as err:
                     if not far:
@@ -497,7 +543,16 @@ class SessionManager:
                         self._no_far_rtsp.add(source.link)
                     try:
                         session = await self._download(
-                            source, key, start, end, uri, quality, folder, found or [], far=True
+                            source,
+                            key,
+                            start,
+                            end,
+                            uri,
+                            quality,
+                            folder,
+                            found or [],
+                            origin,
+                            far=True,
                         )
                     except _UseRtsp:
                         raise err from None
@@ -531,6 +586,7 @@ class SessionManager:
         quality: str,
         folder: Path,
         found: list[recordings.Recording],
+        origin: datetime | None = None,
         far: bool = False,
     ) -> Session:
         """A session from the download of the span, else of the recorded file at ``start``.
@@ -541,7 +597,7 @@ class SessionManager:
         if source.link not in self._by_file:
             try:
                 return await self._from_download(
-                    source, key, start, end, uri, quality, folder, "the time span"
+                    source, key, start, end, uri, quality, folder, "the time span", origin=origin
                 )
             except _UseRtsp as err:
                 if not err.refused or recording is None:
@@ -598,6 +654,7 @@ class SessionManager:
                         skip,
                         recording.playback_uri,
                         give_up,
+                        origin,
                     )
                 except _UseRtsp as err:
                     if err.far:
@@ -615,6 +672,7 @@ class SessionManager:
             "the recorded file",
             skip,
             give_up=give_up,
+            origin=origin,
         )
 
     async def _from_download(
@@ -630,10 +688,13 @@ class SessionManager:
         skip: float = 0.0,
         whole: str | None = None,
         give_up: bool = False,
+        origin: datetime | None = None,
     ) -> Session:
         wait = FIRST_SEGMENT_TIMEOUT + (SKIP_SECONDS if skip > 0 else 0)
         for attempt in range(2):
-            session = Session(secrets.token_urlsafe(16), key, start, end, quality, folder)
+            session = Session(
+                secrets.token_urlsafe(16), key, start, end, quality, folder, origin=origin
+            )
             ready: asyncio.Future[None] = self.hass.loop.create_future()
             session.pump = self.hass.async_create_background_task(
                 self._pump(session, source, uri, ready, skip, whole, give_up),
@@ -734,7 +795,11 @@ class SessionManager:
                     chunks = playback.headed(chunks)
                 session.start -= timedelta(seconds=rest - cut)
                 session.process = await self._spawn(
-                    session, hls_args(PIPE, session.quality, info.codec, session.folder), True
+                    session,
+                    hls_args(
+                        PIPE, session.quality, info.codec, session.folder, offset=session.offset
+                    ),
+                    True,
                 )
                 stdin = session.process.stdin
                 assert stdin is not None
@@ -782,11 +847,14 @@ class SessionManager:
         quality: str,
         codec: str | None,
         folder: Path,
+        origin: datetime | None = None,
     ) -> Session:
         url = playback.rtsp_url(source, uri)
         reason = "playback_failed"
         for attempt in range(2):
-            session = Session(secrets.token_urlsafe(16), key, start, end, quality, folder)
+            session = Session(
+                secrets.token_urlsafe(16), key, start, end, quality, folder, origin=origin
+            )
             began = time.monotonic()
             try:
                 if source.code and codec and codec.lower().replace(".", "") == "h264":
@@ -802,7 +870,11 @@ class SessionManager:
                         resource_path=resource,
                     )
                     url = await session.relay.start()
-                await self._spawn(session, hls_args(url, quality, codec, folder), False)
+                await self._spawn(
+                    session,
+                    hls_args(url, quality, codec, folder, source.audio, offset=session.offset),
+                    False,
+                )
             except BaseException:
                 # A newer start or failed spawn must not leave a playback relay behind.
                 await self._end(session)
