@@ -137,9 +137,9 @@ initContainers:
         value: bambu_lab.zip
       # renovate: datasource=github-release-attachments depName=greghesp/ha-bambulab asset=bambu_lab.zip
       - name: VERSION
-        value: "v2.2.26"
+        value: "v2.3.0"
       - name: SHA256
-        value: "fc72606c55f76e5d0401b98723fe67a637faf01cdc16494572bcc228ca83cdcd"
+        value: "bf85e7c529f5a39804e4ac7bf43ebe0826bf064f5ad70110f0c991a61ad95b91"
     volumeMounts:
       - name: home-assistant
         mountPath: /config
