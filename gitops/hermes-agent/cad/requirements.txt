@@ -3,6 +3,6 @@
 # Top-level pins only; Renovate (pip_requirements) opens a PR per bump.
 # build123d needs Python <3.15; the venv uses the Hermes image's python3.
 build123d==0.13.0
-manifold3d==3.5.4
+manifold3d==3.5.5
 matplotlib==3.11.2
 trimesh==5.2.0
