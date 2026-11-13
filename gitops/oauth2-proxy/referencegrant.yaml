@@ -30,7 +30,7 @@ spec:
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: prowlarr
-  # temporary: test Prowlarr with PR #2765 (gitops/prowlarr-test)
+  # test Prowlarr for upstream contributions (gitops/prowlarr-test, parked while unused)
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     namespace: prowlarr-test

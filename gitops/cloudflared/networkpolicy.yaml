@@ -114,7 +114,7 @@ spec:
     - ports:
       - port: "9696"
         protocol: TCP
-  # prowlarr-test.sync.lt (temporary, gitops/prowlarr-test)
+  # prowlarr-test.sync.lt (gitops/prowlarr-test, parked while unused)
   - toEndpoints:
     - matchLabels:
         k8s:io.kubernetes.pod.namespace: prowlarr-test
