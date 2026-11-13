@@ -21,7 +21,7 @@ locals {
     login      = "gitops/oauth2-proxy"
     photos     = "gitops/immich"
     prowlarr   = "gitops/prowlarr"
-    # temporary: test Prowlarr with Prowlarr PR #2765 (remove together with gitops/prowlarr-test)
+    # test Prowlarr for upstream contributions, parked while unused (remove together with gitops/prowlarr-test)
     prowlarr-test = "gitops/prowlarr-test"
     qbittorrent   = "gitops/qbittorrent"
     radarr        = "gitops/radarr"
