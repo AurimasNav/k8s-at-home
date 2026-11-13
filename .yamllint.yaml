@@ -3,7 +3,6 @@
 extends: default
 ignore: |
   **/charts/
-  gitops/home-assistant/custom_components/
 rules:
   line-length: disable
   document-start: disable

@@ -93,6 +93,19 @@ configuration:
         lg_tv: !include package_lg_tv.yaml
         printer: !include package_printer.yaml
         energy_price: !include package_energy_price.yaml
+# Our image: the official Home Assistant image plus every custom integration
+# (bambu_lab, bhyve, byd_vehicle, eso, hikvision_bridge, mammotion, petkit) and
+# their Python packages, built in the private repo AurimasNav/home-assistant-image.
+# A restart needs neither GitHub nor PyPI. A startup step in the image copies the
+# integrations to /config/custom_components; Renovate there bumps Home Assistant
+# and the integrations, Renovate here bumps this tag. Private because two of the
+# integrations have no licence, so the pull uses ghcr-pull-secret (Doppler
+# GHCR_PULL_SECRET, read:packages, same token as hairsera).
+image:
+  repository: ghcr.io/aurimasnav/home-assistant-image
+  # tag and digest pinned in kustomization.yaml images: (Renovate tracks them there)
+imagePullSecrets:
+  - name: ghcr-pull-secret
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
 securityContext:
@@ -117,71 +130,10 @@ startupProbe:
   timeoutSeconds: 5
   failureThreshold: 60
 
-# Bambu Lab (greghesp/ha-bambulab) for the P2S printer. Too big for the ConfigMap
-# vendoring below (a 3 MB frontend card; ConfigMaps max out at 1 MiB), so this init
-# container installs the pinned release zip into /config/custom_components/bambu_lab
-# on the HA volume, checking its sha256. It skips the download when that version is
-# already there and never blocks HA: on failure the previous install stays.
-# Renovate bumps VERSION and SHA256 together (github-release-attachments).
-initContainers:
-  - name: bambu-lab
-    # tag pinned in kustomization.yaml images: (Renovate tracks it there)
-    image: python
-    command: ["python3", "/scripts/install_release_component.py"]
-    env:
-      - name: COMPONENT
-        value: bambu_lab
-      - name: REPO
-        value: greghesp/ha-bambulab
-      - name: ASSET
-        value: bambu_lab.zip
-      # renovate: datasource=github-release-attachments depName=greghesp/ha-bambulab asset=bambu_lab.zip
-      - name: VERSION
-        value: "v2.3.0"
-      - name: SHA256
-        value: "bf85e7c529f5a39804e4ac7bf43ebe0826bf064f5ad70110f0c991a61ad95b91"
-    volumeMounts:
-      - name: home-assistant
-        mountPath: /config
-      - name: custom-component-installer
-        mountPath: /scripts
-        readOnly: true
-  # PetKit (Jezza34000/homeassistant_petkit) for the Pura Max litter box (cloud
-  # polling + PetKit MQTT). Same installer as bambu_lab: the release zip is 3.4 MB
-  # (images), too big for ConfigMap vendoring. HA pip-installs pypetkitapi and
-  # friends from manifest.json on boot. Account is added in the UI with a SECOND
-  # PetKit account shared into the main account's Family: PetKit allows one
-  # session per account, so using the phone app's account logs the app out.
-  # Region is auto-detected (override under Advanced).
-  - name: petkit
-    # tag pinned in kustomization.yaml images: (Renovate tracks it there)
-    image: python
-    command: ["python3", "/scripts/install_release_component.py"]
-    env:
-      - name: COMPONENT
-        value: petkit
-      - name: REPO
-        value: Jezza34000/homeassistant_petkit
-      - name: ASSET
-        value: petkit.zip
-      # renovate: datasource=github-release-attachments depName=Jezza34000/homeassistant_petkit asset=petkit.zip
-      - name: VERSION
-        value: "1.29.0"
-      - name: SHA256
-        value: "532fca4941fde48add23ee4c44c6b365f1a05a0ac99d5a7d830d7a8e0b5e15d5"
-    volumeMounts:
-      - name: home-assistant
-        mountPath: /config
-      - name: custom-component-installer
-        mountPath: /scripts
-        readOnly: true
-
 # Mount the vendored mkaiser Sungrow package (ConfigMap) at /config/packages so the
 # templateConfig include (packages/modbus_sungrow.yaml) can resolve it. The Flexit
 # and lights automations ConfigMaps are each mounted as a single file (via subPath)
 # so they don't collide with the UI-managed automations.yaml on the persistent volume.
-# The hikvision_bridge custom component (9 ConfigMaps, one per upstream directory) is
-# mounted straight into custom_components/ so HA picks it up without needing HACS itself.
 additionalVolumes:
   - name: sungrow-package
     configMap:
@@ -240,74 +192,6 @@ additionalVolumes:
   - name: printer-dashboard
     configMap:
       name: ha-printer-dashboard
-  - name: hikvision-bridge
-    configMap:
-      name: ha-hikvision-bridge
-  # ConfigMap keys can't contain '@' (kustomization.yaml renames them);
-  # items maps them back to the upstream file names HA's brands view serves
-  - name: hikvision-bridge-brand
-    configMap:
-      name: ha-hikvision-bridge-brand
-      items:
-      - key: icon.png
-        path: icon.png
-      - key: icon-2x.png
-        path: icon@2x.png
-      - key: logo.png
-        path: logo.png
-      - key: logo-2x.png
-        path: logo@2x.png
-  - name: hikvision-bridge-cloud
-    configMap:
-      name: ha-hikvision-bridge-cloud
-  - name: hikvision-bridge-frontend
-    configMap:
-      name: ha-hikvision-bridge-frontend
-  - name: hikvision-bridge-model
-    configMap:
-      name: ha-hikvision-bridge-model
-  - name: hikvision-bridge-model-features
-    configMap:
-      name: ha-hikvision-bridge-model-features
-  - name: hikvision-bridge-runtime
-    configMap:
-      name: ha-hikvision-bridge-runtime
-  - name: hikvision-bridge-translations
-    configMap:
-      name: ha-hikvision-bridge-translations
-  - name: hikvision-bridge-wire
-    configMap:
-      name: ha-hikvision-bridge-wire
-  - name: bhyve
-    configMap:
-      name: ha-bhyve
-  - name: bhyve-pybhyve
-    configMap:
-      name: ha-bhyve-pybhyve
-  - name: bhyve-translations
-    configMap:
-      name: ha-bhyve-translations
-  - name: mammotion
-    configMap:
-      name: ha-mammotion
-  - name: mammotion-translations
-    configMap:
-      name: ha-mammotion-translations
-  - name: byd-vehicle
-    configMap:
-      name: ha-byd-vehicle
-  - name: byd-vehicle-translations
-    configMap:
-      name: ha-byd-vehicle-translations
-  - name: eso
-    configMap:
-      name: ha-eso
-  - name: eso-translations
-    configMap:
-      name: ha-eso-translations
-  - name: custom-component-installer
-    configMap:
-      name: ha-custom-component-installer
 additionalMounts:
   - name: sungrow-package
     mountPath: /config/packages
@@ -365,42 +249,6 @@ additionalMounts:
   - name: printer-dashboard
     mountPath: /config/dashboard_printer.yaml
     subPath: printer.yaml
-  - name: hikvision-bridge
-    mountPath: /config/custom_components/hikvision_bridge
-  - name: hikvision-bridge-brand
-    mountPath: /config/custom_components/hikvision_bridge/brand
-  - name: hikvision-bridge-cloud
-    mountPath: /config/custom_components/hikvision_bridge/cloud
-  - name: hikvision-bridge-frontend
-    mountPath: /config/custom_components/hikvision_bridge/frontend
-  - name: hikvision-bridge-model
-    mountPath: /config/custom_components/hikvision_bridge/model
-  - name: hikvision-bridge-model-features
-    mountPath: /config/custom_components/hikvision_bridge/model/features
-  - name: hikvision-bridge-runtime
-    mountPath: /config/custom_components/hikvision_bridge/runtime
-  - name: hikvision-bridge-translations
-    mountPath: /config/custom_components/hikvision_bridge/translations
-  - name: hikvision-bridge-wire
-    mountPath: /config/custom_components/hikvision_bridge/wire
-  - name: bhyve
-    mountPath: /config/custom_components/bhyve
-  - name: bhyve-pybhyve
-    mountPath: /config/custom_components/bhyve/pybhyve
-  - name: bhyve-translations
-    mountPath: /config/custom_components/bhyve/translations
-  - name: mammotion
-    mountPath: /config/custom_components/mammotion
-  - name: mammotion-translations
-    mountPath: /config/custom_components/mammotion/translations
-  - name: byd-vehicle
-    mountPath: /config/custom_components/byd_vehicle
-  - name: byd-vehicle-translations
-    mountPath: /config/custom_components/byd_vehicle/translations
-  - name: eso
-    mountPath: /config/custom_components/eso
-  - name: eso-translations
-    mountPath: /config/custom_components/eso/translations
 
 # Served by the Cilium gateway (httproute.yaml) as ha.sync.lt, not by an Ingress from this chart.
 # external: true tells the chart a proxy sits in front, so it keeps the reverse-proxy http settings
