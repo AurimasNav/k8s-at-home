@@ -61,7 +61,7 @@ jobs:
         id: yamllint
         shell: pwsh
         run: .github/scripts/Invoke-Check.ps1 yamllint { pipx run "yamllint==$env:YAMLLINT_VERSION" -c .yamllint.yaml -f github . }
-      - name: ruff (our Python; vendored HA custom_components excluded)
+      - name: ruff (our Python)
         id: ruff
         if: ${{ !cancelled() }}
         shell: pwsh

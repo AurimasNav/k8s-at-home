@@ -1,6 +1,6 @@
-# Lint our own Python. Vendored Home Assistant integrations are third-party code.
+# Lint our own Python.
 target-version = "py313"
-extend-exclude = ["gitops/home-assistant/custom_components", "**/charts"]
+extend-exclude = ["**/charts"]
 
 [lint]
 select = ["E", "F", "W", "B", "UP", "S"]
