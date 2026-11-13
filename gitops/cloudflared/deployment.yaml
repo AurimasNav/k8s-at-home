@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: cloudflared
-        image: cloudflare/cloudflared:2026.10.7
+        image: cloudflare/cloudflared:2026.11.0
         # Remotely managed tunnel: the ingress rules come from Cloudflare (iac/cloudflare/tunnel.tf).
         args:
         - tunnel
