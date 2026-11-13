@@ -33,7 +33,7 @@ env:
   # renovate: datasource=pypi depName=yamllint
   YAMLLINT_VERSION: "1.38.0"
   # renovate: datasource=pypi depName=ruff
-  RUFF_VERSION: "0.17.4"
+  RUFF_VERSION: "0.17.5"
   # renovate: datasource=github-releases depName=rhysd/actionlint
   ACTIONLINT_VERSION: "1.7.12"
   # renovate: datasource=nuget registryUrl=https://www.powershellgallery.com/api/v2 depName=PSScriptAnalyzer
