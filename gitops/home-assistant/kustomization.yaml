@@ -71,7 +71,8 @@ configMapGenerator:
 - name: ha-printer-package
   files:
   - packages/printer.yaml
-# package: Ignitis/ESO electricity price sensors for Energy dashboard costs
+# package: Ignitis/ESO electricity price sensors for Energy dashboard costs,
+# plus battery-strategy alerts that follow the net-metering bank
 - name: ha-energy-price-package
   files:
   - packages/energy_price.yaml

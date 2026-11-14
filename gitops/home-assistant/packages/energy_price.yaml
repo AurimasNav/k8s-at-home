@@ -65,3 +65,88 @@ automation:
     data:
       value: "{{ rows[-1].state }}"
   mode: single
+
+# Battery strategy follows the net-metering bank. While the bank holds energy a
+# grid kWh costs only the 0.0726 EUR take-back fee, so charging the battery from
+# the grid gains nothing and loses ~5 % to conversion: the iHomeManager's AI mode
+# should run "Maximize PV energy usage". Once the bank is empty grid kWh cost the
+# full plan price and "Maximize revenue" (buy cheap at night, use at the evening
+# peak) pays. HA can't switch the strategy itself (it is an iSolarCloud setting,
+# not exposed over Modbus), so these only tell Aurimas when to switch.
+# Hysteresis: empty below 1 kWh, refilled above 50 kWh, so one sunny winter day
+# doesn't flip the advice back and forth.
+- id: energy_bank_empty_switch_to_revenue
+  alias: Energy - net-metering bank empty, switch battery to Maximize revenue
+  triggers:
+  - trigger: numeric_state
+    entity_id: input_number.net_metering_balance
+    below: 1
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id: notify.xiaomi
+    data:
+      title: 🏦 Net-metering bank is empty
+      message: >-
+        Grid power now costs the full plan price
+        ({{ states('sensor.electricity_plan_price') }} EUR/kWh right now).
+        In iSolarCloud switch AI mode to "Maximize revenue" so the battery
+        charges on cheap night hours.
+  mode: single
+
+- id: energy_bank_refilled_switch_to_pv
+  alias: Energy - net-metering bank refilled, switch battery to Maximize PV
+  triggers:
+  - trigger: numeric_state
+    entity_id: input_number.net_metering_balance
+    above: 50
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id: notify.xiaomi
+    data:
+      title: 🏦 Net-metering bank is filling again
+      message: >-
+        The bank holds {{ states('input_number.net_metering_balance') | float(0) | round(0) }} kWh,
+        so grid power costs only the 0.0726 EUR/kWh take-back fee. In iSolarCloud
+        switch AI mode back to "Maximize PV energy usage".
+  mode: single
+
+# Grid charging = the battery takes more than PV gives while the house imports.
+# Backtested on 10 days of history (11-04..11-14) with these thresholds: fired
+# on exactly the three real grid charges (11-05 12:28, 11-08 09:53, 11-13 06:46)
+# and nothing else.
+- id: energy_battery_grid_charging_while_bank
+  alias: Energy - alert when the battery charges from the grid while the bank has energy
+  triggers:
+  - trigger: template
+    value_template: >-
+      {{ states('sensor.battery_charging_power') | float(0)
+         - states('sensor.total_dc_power') | float(0) > 500
+         and states('sensor.import_power') | float(0) > 500 }}
+    for:
+      minutes: 5
+  conditions:
+  - condition: numeric_state
+    entity_id: input_number.net_metering_balance
+    above: 1
+  # at most one alert per 6 h, so a long forced charge doesn't spam
+  - condition: template
+    value_template: >-
+      {{ this.attributes.last_triggered is none
+         or now() - this.attributes.last_triggered > timedelta(hours=6) }}
+  actions:
+  - action: notify.send_message
+    target:
+      entity_id: notify.xiaomi
+    data:
+      title: 🔋 Battery is charging from the grid
+      message: >-
+        Battery {{ states('sensor.battery_charging_power') }} W at
+        {{ states('sensor.battery_level') }}%, grid import
+        {{ states('sensor.import_power') }} W, PV {{ states('sensor.total_dc_power') }} W{%
+        if states('sensor.charger_active_power') | float(0) > 0 %}, EV
+        {{ states('sensor.charger_active_power') }} W{% endif %}. The bank still holds
+        {{ states('input_number.net_metering_balance') | float(0) | round(0) }} kWh, so this
+        gains nothing. Check that iSolarCloud AI mode is on "Maximize PV energy usage".
+  mode: single
