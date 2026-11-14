@@ -166,13 +166,19 @@ def version_status(q):
         return m.get("status4k")
     kind = "radarr" if q["type"] == "movie" else "sonarr"
     svcs = [s for s in m.get("serviceStatuses") or [] if s.get("serviceType") == kind]
-    if q.get("serverId") is None:
-        # No server on the request (older requests, or users whose default server is LT, such as
-        # Puffin Rock or Toy Story 4): Seerr picked the server, so any version counts.
-        vals = [one_status(q, s) for s in svcs] or [m.get("status")]
-        return 5 if 5 in vals else (4 if 4 in vals else vals[0])
-    svc = next((s for s in svcs if (s.get("serviceId") or 0) == q["serverId"]), None)
-    return m.get("status") if svc is None else one_status(q, svc)
+    if q.get("serverId") in (None, 0):
+        # A standard request (no server set means the default, server 0). Its server-0 row decides.
+        # When that copy is missing or gone (1/7) but another version has the title, the best of
+        # those counts: e.g. Puffin Rock or Bluey, whose files moved to the LT instances later.
+        std = next((s for s in svcs if (s.get("serviceId") or 0) == 0), None)
+        val = one_status(q, std) if std else m.get("status")
+        if val not in (None, 1, 7):
+            return val
+        others = [one_status(q, s) for s in svcs if s is not std]
+        return next((v for v in (5, 4, 3, 2) if v in others), val)
+    svc = next((s for s in svcs if s.get("serviceId") == q["serverId"]), None)
+    # An RU/LT request with no row of its own has nothing of that version yet.
+    return 1 if svc is None else one_status(q, svc)
 
 
 def one_status(q, svc):
@@ -410,6 +416,7 @@ def main():
     # --- downloads / upgrades / deletions (arr history) ---
     section("LIBRARY CHANGES (Radarr/Sonarr history)")
     imported_bytes = 0
+    imported_downloads = set()  # lowercased downloadIds (= torrent hashes) that imported something
     for inst in arr_instances():
         name, kind, _, _ = inst
         try:
@@ -487,9 +494,11 @@ def main():
         # A download Cleanuparr or a human removes from the queue after it imported (e.g. a torrent
         # named as a whole season that holds only some episodes, stuck on "already imported") is
         # logged as downloadFailed too. It is not a failure when the same item was imported from
-        # the same download.
+        # the same download. Matching is per movie/episode, so a season pack that imported only
+        # some episodes can show up under both lines (its missing episodes did fail).
         imported = {(h.get("downloadId"), h.get("movieId") or h.get("episodeId")) for h in hist
                     if h["eventType"] == "downloadFolderImported" and h.get("downloadId")}
+        imported_downloads.update(d.lower() for d, _ in imported)
         failed, dropped = [], []
         for h in hist:
             if h["eventType"] in ("downloadFailed", "importFailed"):
@@ -530,7 +539,10 @@ def main():
                 print(f"  best ratio: {e['itemTitle'][:60]} (ratio {e.get('seedRatio') or 0:.2f})")
         removed = [e for e in live if e["eventType"] in ("QueueItemDeleted", "DownloadMarkedForDeletion")]
         for e in removed:
-            print(f"  queue removal {local(e['timestamp'])}: {e.get('itemTitle', '?')[:70]} | {e.get('deleteReason') or e.get('message', '')[:60]}")
+            # Cleanuparr's itemHash is the torrent hash, the same as the *arr downloadId.
+            done = (e.get("itemHash") or "").lower() in imported_downloads
+            print(f"  queue removal {local(e['timestamp'])}: {e.get('itemTitle', '?')[:70]} | {e.get('deleteReason') or e.get('message', '')[:60]}"
+                  f"{' | already imported, not a failure' if done else ''}")
         strikes = collections.Counter(e["eventType"] for e in live if e["eventType"].endswith("Strike"))
         if strikes:
             top = collections.Counter(e.get("itemTitle") for e in live if e["eventType"].endswith("Strike"))
