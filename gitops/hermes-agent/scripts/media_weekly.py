@@ -150,6 +150,45 @@ def request_titles(reqs, h):
     return titles
 
 
+MSTATUS = {1: "not in the library", 2: "pending", 3: "processing", 4: "partly available", 5: "available", 6: "blocklisted", 7: "deleted"}
+VERSION = {1: "RU", 2: "LT"}  # Seerr server id -> version label
+
+
+def version_status(q):
+    """Media status of the version a request asked for (MSTATUS codes).
+
+    VSeerr keeps one status per Radarr/Sonarr server in media.serviceStatuses. media.status is
+    only the standard (server 0) copy, so an RU or LT request shows "unknown" there even when
+    its own version is available. For TV the requested seasons decide (seasonStatuses).
+    """
+    m = q["media"]
+    if q.get("is4k"):
+        return m.get("status4k")
+    kind = "radarr" if q["type"] == "movie" else "sonarr"
+    svcs = [s for s in m.get("serviceStatuses") or [] if s.get("serviceType") == kind]
+    if q.get("serverId") is None:
+        # No server on the request (older requests, or users whose default server is LT, such as
+        # Puffin Rock or Toy Story 4): Seerr picked the server, so any version counts.
+        vals = [one_status(q, s) for s in svcs] or [m.get("status")]
+        return 5 if 5 in vals else (4 if 4 in vals else vals[0])
+    svc = next((s for s in svcs if (s.get("serviceId") or 0) == q["serverId"]), None)
+    return m.get("status") if svc is None else one_status(q, svc)
+
+
+def one_status(q, svc):
+    """Status of one serviceStatuses entry; for TV only the requested seasons count."""
+    seasons = svc.get("seasonStatuses") or {}
+    wanted = [s["seasonNumber"] for s in q.get("seasons") or []]
+    if q["type"] != "tv" or not seasons or not wanted:
+        return svc.get("status")
+    vals = [seasons.get(str(n), 1) for n in wanted]
+    if all(v == 5 for v in vals):
+        return 5
+    if any(v in (4, 5) for v in vals):
+        return 4
+    return next((v for v in (3, 2) if v in vals), min(vals))
+
+
 def seerr_still_waiting(since):
     """Requests made before this report's window that are still not available (pending, approved or failed)."""
     h = seerr_headers()
@@ -161,8 +200,7 @@ def seerr_still_waiting(since):
             break
         skip += 100
     cut = since.strftime("%Y-%m-%dT%H:%M:%S")
-    waiting = [q for q in reqs if q["createdAt"] < cut and q["status"] in (1, 2, 4)
-               and (q["media"].get("status4k") if q.get("is4k") else q["media"].get("status")) != 5]
+    waiting = [q for q in reqs if q["createdAt"] < cut and q["status"] in (1, 2, 4) and version_status(q) != 5]
     return waiting, request_titles(waiting, h)
 
 
@@ -321,7 +359,6 @@ def main():
     try:
         reqs, titles = seerr_requests(since)
         status = {1: "pending", 2: "approved", 3: "declined", 4: "failed", 5: "completed"}
-        mstatus = {1: "unknown", 2: "pending", 3: "processing", 4: "partly available", 5: "available", 6: "blocklisted", 7: "deleted"}
         per_user = collections.Counter(user_name(q["requestedBy"]) for q in reqs)
         print(f"requests: {len(reqs)} (movies {sum(q['type'] == 'movie' for q in reqs)}, tv {sum(q['type'] == 'tv' for q in reqs)}) from {len(per_user)} users")
         for u, n in per_user.most_common():
@@ -330,12 +367,13 @@ def main():
             m = q["media"]
             t = titles[(m["mediaType"], m["tmdbId"])]
             seasons = ",".join(str(s["seasonNumber"]) for s in q.get("seasons") or [])
-            version = "RU" if q.get("serverId") == 1 else ("4K" if q.get("is4k") else "")
+            version = VERSION.get(q.get("serverId"), "4K" if q.get("is4k") else "")
             requested_tmdb[(m["mediaType"], m["tmdbId"])] = (user_name(q["requestedBy"]), q["createdAt"])
-            why = waiting_reason(q) if m.get("status") not in (5,) and q["status"] in (1, 2) else ""
+            vstatus = version_status(q)
+            why = waiting_reason(q) if vstatus != 5 and q["status"] in (1, 2) else ""
             print(f"  {local(q['createdAt'])} | {user_name(q['requestedBy'])} | {q['type']} | {t}"
                   f"{' S' + seasons if seasons else ''}{' [' + version + ']' if version else ''}"
-                  f" | request {status.get(q['status'], q['status'])}, now {mstatus.get(m.get('status'), m.get('status'))}"
+                  f" | request {status.get(q['status'], q['status'])}, now {MSTATUS.get(vstatus, vstatus)}"
                   f"{' | ' + why if why else ''}")
     except Exception as e:  # noqa: BLE001
         fail("seerr", e)
@@ -353,7 +391,7 @@ def main():
                 why = status[q["status"]] + (f"; {why}" if why else "")
             age = (now - dt.datetime.fromisoformat(q["createdAt"].replace("Z", "+00:00"))).days
             seasons = ",".join(str(x["seasonNumber"]) for x in q.get("seasons") or [])
-            version = {1: "RU", 2: "LT"}.get(q.get("serverId"), "4K" if q.get("is4k") else "")
+            version = VERSION.get(q.get("serverId"), "4K" if q.get("is4k") else "")
             group = "FAILED / pending" if q["status"] != 2 else reason_group(why)
             rows.append((group, -age, f"  {age} d | {user_name(q['requestedBy'])} | {q['type']} | {wtitles[(m['mediaType'], m['tmdbId'])]}"
                                        f"{' S' + seasons if seasons else ''}{' [' + version + ']' if version else ''} | {why or 'status unknown'}"))
@@ -446,9 +484,22 @@ def main():
             dsz = sum(int((h.get("data") or {}).get("size") or 0) for h in deleted)
             reasons = collections.Counter((h.get("data") or {}).get("reason") for h in deleted)
             print(f"  library files deleted (not upgrades): {len(deleted)}, {gb(dsz)}, reasons {dict(reasons)}")
-        failed = [h for h in hist if h["eventType"] in ("downloadFailed", "importFailed")]
+        # A download Cleanuparr or a human removes from the queue after it imported (e.g. a torrent
+        # named as a whole season that holds only some episodes, stuck on "already imported") is
+        # logged as downloadFailed too. It is not a failure when the same item was imported from
+        # the same download.
+        imported = {(h.get("downloadId"), h.get("movieId") or h.get("episodeId")) for h in hist
+                    if h["eventType"] == "downloadFolderImported" and h.get("downloadId")}
+        failed, dropped = [], []
+        for h in hist:
+            if h["eventType"] in ("downloadFailed", "importFailed"):
+                done = (h.get("downloadId"), h.get("movieId") or h.get("episodeId")) in imported
+                (dropped if done else failed).append(h)
         if failed:
             print(f"  failed downloads/imports: {len(failed)}: " + "; ".join(sorted({h.get('sourceTitle', '?')[:50] for h in failed}))[:300])
+        if dropped:
+            print(f"  removed from the queue after importing (not a failure): {len(dropped)}: "
+                  + "; ".join(sorted({h.get('sourceTitle', '?')[:50] for h in dropped}))[:300])
         ignored = [h for h in hist if h["eventType"] == "downloadIgnored"]
         if ignored:
             print(f"  downloads ignored by hand: {len(ignored)} episodes, " + "; ".join(sorted({h.get('sourceTitle', '?')[:50] for h in ignored}))[:200])
