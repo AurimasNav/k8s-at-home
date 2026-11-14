@@ -21,7 +21,7 @@ locals {
     "home",
     "homebox",
     "prowlarr",
-    "prowlarr-test", # temporary (gitops/prowlarr-test)
+    "prowlarr-test", # parked test app (gitops/prowlarr-test); no route while not deployed
     "qbittorrent",
     "radarr",
     "radarr-lt",

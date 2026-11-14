@@ -44,4 +44,6 @@ resources:
 - ./apps/cleanuparr
 - ./apps/cloudflared
 - ./apps/immich
-- ./apps/prowlarr-test
+# Parked test Prowlarr for trying upstream Prowlarr contributions (gitops/prowlarr-test).
+# Uncomment to deploy it again; it comes back with empty settings.
+# - ./apps/prowlarr-test
