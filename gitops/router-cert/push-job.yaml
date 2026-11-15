@@ -30,7 +30,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: push
-        image: alpine/git:v2.54.0
+        image: alpine/git:v2.54.1
         command: ["/bin/sh", "/etc/router-cert/push.sh"]
         env:
         - name: HOME
@@ -107,7 +107,7 @@ spec:
               type: RuntimeDefault
           containers:
           - name: push
-            image: alpine/git:v2.54.0
+            image: alpine/git:v2.54.1
             command: ["/bin/sh", "/etc/router-cert/push.sh"]
             env:
             - name: HOME
