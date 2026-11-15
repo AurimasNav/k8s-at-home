@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: questlog
+  namespace: questlog
+data:
+  BETTER_AUTH_URL: https://questlog.sync.lt
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-opentelemetry-collector.otel-collector:4317
+  OTEL_SERVICE_NAME: questlog
+  OTEL_SERVICE_VERSION: "0.1.0-1"
+  OTEL_RESOURCE_ATTRIBUTES: deployment.environment=prod

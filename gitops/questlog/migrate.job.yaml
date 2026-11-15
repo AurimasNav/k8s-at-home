@@ -1,0 +1,44 @@
+# Applies migrations, then creates the starter guides if they don't exist yet (it never overwrites a live guide).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: questlog-migrate
+  namespace: questlog
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      imagePullSecrets:
+      - name: ghcr-pull-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000   # the node user in the migrate image
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: migrate
+        image: ghcr.io/aurimasnav/questlog-migrate:latest
+        env:
+        - name: QUESTLOG_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: questlog
+              key: QUESTLOG_DATABASE_PASSWORD
+        - name: DATABASE_URL
+          value: postgresql://questlog:$(QUESTLOG_DATABASE_PASSWORD)@postgresql.postgresql:5432/questlog
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 768Mi
