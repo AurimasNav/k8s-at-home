@@ -18,6 +18,6 @@ resources:
 - ./httproute.yaml
 images:
 - name: ghcr.io/aurimasnav/questlog
-  newTag: 0.1.0-3
+  newTag: 0.1.0-5
 - name: ghcr.io/aurimasnav/questlog-migrate
-  newTag: 0.1.0-3
+  newTag: 0.1.0-5
