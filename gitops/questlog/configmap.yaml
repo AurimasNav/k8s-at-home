@@ -9,3 +9,9 @@ data:
   OTEL_SERVICE_NAME: questlog
   OTEL_SERVICE_VERSION: "0.1.0-3"
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=prod
+  # Visitor counting goes through Questlog to Umami inside the cluster (gitops/umami). Counting
+  # starts once UMAMI_WEBSITE_ID is set: the website's ID from stats.sync.lt → Settings → Websites.
+  UMAMI_URL: http://umami.umami.svc.cluster.local
+  # Links at the top of questlog.sync.lt/admin.
+  UMAMI_DASHBOARD_URL: https://stats.sync.lt
+  GRAFANA_DASHBOARD_URL: https://grafana.sync.lt/d/questlog

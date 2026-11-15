@@ -29,6 +29,7 @@ locals {
     "sonarr",
     "sonarr-lt",
     "sonarr-ru",
+    "stats",
     # the Google sign-in itself (oauth2-proxy /oauth2/*)
     "login",
     # own login (no Google ExternalAuth)

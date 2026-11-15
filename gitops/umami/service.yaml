@@ -1,0 +1,15 @@
+# Also Questlog's collector address: UMAMI_URL=http://umami.umami.svc.cluster.local (gitops/questlog).
+apiVersion: v1
+kind: Service
+metadata:
+  name: umami
+  namespace: umami
+spec:
+  type: ClusterIP
+  selector:
+    app: umami
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    appProtocol: http

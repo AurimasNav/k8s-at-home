@@ -34,6 +34,7 @@ resources:
 - ./apps/postgresql
 - ./apps/hairsera
 - ./apps/questlog
+- ./apps/umami
 - ./apps/otel-collector
 - ./apps/tempo
 - ./apps/loki

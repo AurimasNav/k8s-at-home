@@ -232,6 +232,15 @@ spec:
     - ports:
       - port: "3000"
         protocol: TCP
+  # stats.sync.lt (Umami dashboard, behind the Google login)
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: umami
+        app: umami
+    toPorts:
+    - ports:
+      - port: "3000"
+        protocol: TCP
   # ha.sync.lt: Home Assistant runs with hostNetwork (node IP), so its identity is the host entity.
   - toEntities:
     - host
