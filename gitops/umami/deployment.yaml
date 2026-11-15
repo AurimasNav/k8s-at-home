@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: umami
+  namespace: umami
+  labels:
+    app: umami
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: umami
+  template:
+    metadata:
+      labels:
+        app: umami
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: umami
+        image: ghcr.io/umami-software/umami:latest
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - secretRef:
+            name: umami
+        env:
+        - name: DATABASE_URL
+          value: postgresql://umami:$(UMAMI_DATABASE_PASSWORD)@postgresql.postgresql:5432/umami
+        # Questlog forwards Cloudflare's view of the visitor (cf-connecting-ip, cf-ipcountry).
+        # Umami hashes the IP into a visitor ID and doesn't store it.
+        - name: CLIENT_IP_HEADER
+          value: cf-connecting-ip
+        - name: DISABLE_TELEMETRY
+          value: "1"
+        - name: DISABLE_UPDATES
+          value: "1"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        resources:
+          requests:
+            cpu: 20m
+            memory: 192Mi
+          limits:
+            memory: 512Mi
+        # Startup runs the database migrations before the server listens.
+        startupProbe:
+          httpGet:
+            path: /api/heartbeat
+            port: 3000
+          periodSeconds: 5
+          failureThreshold: 36
+        readinessProbe:
+          httpGet:
+            path: /api/heartbeat
+            port: 3000
+          periodSeconds: 10
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /api/heartbeat
+            port: 3000
+          periodSeconds: 30
+          failureThreshold: 3
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 64Mi

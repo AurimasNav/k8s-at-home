@@ -387,3 +387,8 @@
   - navigate to Web UI tab
   - [x] Use alternative Web UI
   - Files location: `/config/iQbit/release`
+
+## AI-assisted development
+
+This repository is maintained with AI assistance: manifests, infrastructure code and docs are written with the
+help of AI coding agents and reviewed before they are merged.

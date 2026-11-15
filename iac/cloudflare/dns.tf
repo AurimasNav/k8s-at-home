@@ -32,6 +32,7 @@ locals {
     sonarr        = "gitops/sonarr"
     sonarr-lt     = "gitops/sonarr-lt"
     sonarr-ru     = "gitops/sonarr-ru"
+    stats         = "gitops/umami"
   }
 }
 

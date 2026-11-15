@@ -8,6 +8,7 @@ resources:
 - ./dashboard-hairsera-metrics.yaml
 - ./dashboard-hairsera-traces.yaml
 - ./dashboard-hairsera-logs.yaml
+- ./dashboard-questlog.yaml
 - ./dashboard-disks.yaml
 - ./dashboard-backups.yaml
 - ./dashboard-pods.yaml

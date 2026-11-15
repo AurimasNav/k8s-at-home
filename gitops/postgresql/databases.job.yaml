@@ -43,6 +43,13 @@ spec:
             secretKeyRef:
               name: questlog-db
               key: QUESTLOG_DATABASE_PASSWORD
+        # optional: until UMAMI_DATABASE_PASSWORD is in Doppler, the other databases still sync
+        - name: UMAMI_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: umami-db
+              key: UMAMI_DATABASE_PASSWORD
+              optional: true
         command: ["sh", "-ec"]
         # idempotent: creates role and database once, re-applies the password every sync
         args:
@@ -57,3 +64,4 @@ spec:
           }
           ensure_db homebox "$HOMEBOX_PASSWORD"
           ensure_db questlog "$QUESTLOG_PASSWORD"
+          if [ -n "${UMAMI_PASSWORD:-}" ]; then ensure_db umami "$UMAMI_PASSWORD"; fi

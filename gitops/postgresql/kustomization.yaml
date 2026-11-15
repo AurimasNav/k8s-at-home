@@ -8,4 +8,5 @@ resources:
 - ./service.yaml
 - ./homebox.externalsecret.yaml
 - ./questlog.externalsecret.yaml
+- ./umami.externalsecret.yaml
 - ./databases.job.yaml
