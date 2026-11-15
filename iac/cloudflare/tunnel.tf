@@ -34,6 +34,7 @@ locals {
     # own login (no Google ExternalAuth)
     "ha",
     "hair",
+    "questlog",
     "seerr",
     # Immich (own login; the phone apps cannot pass the Google login)
     "photos",

@@ -38,6 +38,11 @@ spec:
             secretKeyRef:
               name: homebox-db
               key: HBOX_DATABASE_PASSWORD
+        - name: QUESTLOG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: questlog-db
+              key: QUESTLOG_DATABASE_PASSWORD
         command: ["sh", "-ec"]
         # idempotent: creates role and database once, re-applies the password every sync
         args:
@@ -51,3 +56,4 @@ spec:
             psql -v ON_ERROR_STOP=1 -d "$1" -c 'CREATE EXTENSION IF NOT EXISTS unaccent'
           }
           ensure_db homebox "$HOMEBOX_PASSWORD"
+          ensure_db questlog "$QUESTLOG_PASSWORD"

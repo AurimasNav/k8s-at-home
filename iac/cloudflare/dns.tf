@@ -24,6 +24,7 @@ locals {
     # test Prowlarr for upstream contributions, parked while unused (remove together with gitops/prowlarr-test)
     prowlarr-test = "gitops/prowlarr-test"
     qbittorrent   = "gitops/qbittorrent"
+    questlog      = "gitops/questlog"
     radarr        = "gitops/radarr"
     radarr-lt     = "gitops/radarr-lt"
     radarr-ru     = "gitops/radarr-ru"

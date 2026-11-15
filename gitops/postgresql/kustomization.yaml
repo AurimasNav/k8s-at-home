@@ -7,4 +7,5 @@ resources:
 - ./statefulset.yaml
 - ./service.yaml
 - ./homebox.externalsecret.yaml
+- ./questlog.externalsecret.yaml
 - ./databases.job.yaml

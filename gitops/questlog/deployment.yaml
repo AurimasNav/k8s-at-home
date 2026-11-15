@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: questlog
+  namespace: questlog
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  # One replica: rendered guides are cached on the pod's disk and invalidated in-process when the API
+  # saves a change. A second replica needs a shared cache handler first.
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: questlog
+  template:
+    metadata:
+      labels:
+        app: questlog
+    spec:
+      imagePullSecrets:
+      - name: ghcr-pull-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: questlog
+        image: ghcr.io/aurimasnav/questlog:latest
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - secretRef:
+            name: questlog
+        - secretRef:
+            name: questlog-google-oauth
+        - configMapRef:
+            name: questlog
+        env:
+        - name: DATABASE_URL
+          value: postgresql://questlog:$(QUESTLOG_DATABASE_PASSWORD)@postgresql.postgresql:5432/questlog
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        # Next.js writes its data cache (rendered guides) here; /tmp for everything else.
+        - name: next-cache
+          mountPath: /app/apps/web/.next/cache
+        - name: tmp
+          mountPath: /tmp
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        readinessProbe:
+          httpGet:
+            path: /api/readyz
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /api/livez
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
+      volumes:
+      - name: next-cache
+        emptyDir:
+          sizeLimit: 512Mi
+      - name: tmp
+        emptyDir:
+          sizeLimit: 128Mi

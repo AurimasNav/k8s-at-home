@@ -223,6 +223,15 @@ spec:
     - ports:
       - port: "3000"
         protocol: TCP
+  # questlog.sync.lt
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: questlog
+        app: questlog
+    toPorts:
+    - ports:
+      - port: "3000"
+        protocol: TCP
   # ha.sync.lt: Home Assistant runs with hostNetwork (node IP), so its identity is the host entity.
   - toEntities:
     - host
