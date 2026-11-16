@@ -7,7 +7,7 @@ data:
   BETTER_AUTH_URL: https://questlog.sync.lt
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-opentelemetry-collector.otel-collector:4318
   OTEL_SERVICE_NAME: questlog
-  OTEL_SERVICE_VERSION: "0.1.0-11"
+  OTEL_SERVICE_VERSION: "0.1.0-13"
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=prod
   # Visitor counting goes through Questlog to Umami inside the cluster (gitops/umami). Counting
   # starts once UMAMI_WEBSITE_ID is set: the website's ID from stats.sync.lt → Settings → Websites.
