@@ -42,10 +42,14 @@ configMapGenerator:
   files:
   - cron/jobs.yaml
   - cron/cron_sync.py
-# pinned CAD packages for the cad-venv init container; a pin bump rolls the pod and rebuilds the venv
+# CAD tooling: pinned packages for the cad-venv init container, and the 3D-printing helpers
+# (bambu-studio init container + mounted at /opt/cad). A change rolls the pod; the venv rebuilds and
+# Bambu Studio re-checks its fingerprint (download only on a version change).
 - name: hermes-agent-cad
   files:
   - cad/requirements.txt
+  - cad/bambu_studio.py
+  - cad/bambu3mf.py
 
 images:
 - name: nousresearch/hermes-agent
