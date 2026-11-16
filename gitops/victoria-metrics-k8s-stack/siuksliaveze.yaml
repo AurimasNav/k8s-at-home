@@ -30,9 +30,14 @@ spec:
     interval: 10m
     rules:
     # `source` is nemencine or nemezio (Vilniaus r.), kauno (Kauno r.) or mazeikiai (Mažeikių r.).
+    # Every rule reads the newest sample of the last 20 min (last_over_time [20m]). vmalert queries
+    # at whole 10 min marks with a 5 min lookback, so a bare selector sees this 10 min scrape only
+    # when it lands less than 5 min before the mark. Today it lands 45 s before, but vmagent derives
+    # the scrape's offset from a hash of the target: changing the URL or labels can move it and
+    # silently blind every rule here.
     # 30 h = one daily run missed or failed.
     - alert: ScheduleDataStale
-      expr: time() - siuksliaveze_data_generated_timestamp_seconds > 30 * 3600
+      expr: time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m]) > 30 * 3600
       for: 30m
       labels:
         severity: warning
@@ -42,33 +47,37 @@ spec:
           daily build fails or doesn't run
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
     - alert: ScheduleDataShrank
-      expr: siuksliaveze_data_places < 0.9 * (siuksliaveze_data_places offset 1d)
+      expr: |-
+        last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[20m])
+          < 0.9 * last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[20m] offset 1d)
       labels:
         severity: warning
       annotations:
         summary: >-
           Šiukšliavežė: the {{ $labels.source }} data covers {{ $value }} places, over 10% fewer than
           yesterday
-        dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+        dashboard: '{{ $externalURL }}/d/siuksliaveze?orgId=1&var-source={{ $labels.source }}'
     # Warnings are rows the parser couldn't place, so a rise usually means a new typo or a renamed
     # village in the source file: the data is still published, but those addresses have no
     # schedule. Warning, not info: info-level alerts never reach Telegram (values.yaml routes them
     # to the blackhole receiver).
     - alert: ScheduleDataMoreWarnings
-      expr: siuksliaveze_data_warnings > (siuksliaveze_data_warnings offset 1d)
+      expr: |-
+        last_over_time(siuksliaveze_data_warnings{job="siuksliaveze-data"}[20m])
+          > last_over_time(siuksliaveze_data_warnings{job="siuksliaveze-data"}[20m] offset 1d)
       labels:
         severity: warning
       annotations:
         summary: >-
           Šiukšliavežė: the {{ $labels.source }} build has {{ $value }} warnings, more than yesterday
           (new typo or renamed place in the source?)
-        dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+        dashboard: '{{ $externalURL }}/d/siuksliaveze?orgId=1&var-source={{ $labels.source }}'
     # The last pickup date the published schedules have. Mažeikių r. gets one file per year and
     # waste type; if next year's isn't posted (or the job doesn't recognise it), the build
     # stays green while the reminders stop after the last date. Only this source: the quarterly
     # files of the Vilniaus r. companies come close to their last date every quarter.
     - alert: ScheduleDataRunsOut
-      expr: siuksliaveze_data_last_date_timestamp_seconds{source="mazeikiai"} - time() < 7 * 86400
+      expr: last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="mazeikiai"}[20m]) - time() < 7 * 86400
       for: 1h
       labels:
         severity: warning
@@ -84,9 +93,9 @@ spec:
       expr: |-
         group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[3d]))
           unless on (source)
-        group by (source) (siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"})
+        group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m]))
           and on ()
-        (up{job="siuksliaveze-data"} == 1)
+        (last_over_time(up{job="siuksliaveze-data"}[20m]) == 1)
       for: 30m
       labels:
         severity: warning
@@ -96,7 +105,7 @@ spec:
           publish step broke
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
     - alert: ScheduleDataNotScraped
-      expr: up{job="siuksliaveze-data"} == 0
+      expr: last_over_time(up{job="siuksliaveze-data"}[20m]) == 0
       for: 2h
       labels:
         severity: warning
