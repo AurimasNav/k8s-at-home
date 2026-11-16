@@ -13,6 +13,7 @@ resources:
 - ./dashboard-backups.yaml
 - ./dashboard-pods.yaml
 - ./node-pressure.yaml
+- ./siuksliaveze.yaml
 - ./httproute.yaml
 namespace: victoriametrics
 
