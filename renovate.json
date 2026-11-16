@@ -54,6 +54,12 @@
       "enabled": false
     },
     {
+      "description": "Bambu Studio tags are v<MM>.<mm>.<pp>.<build> with leading zeros (v02.09.01.70): four numbers, compared as such. Betas are GitHub pre-releases and are skipped. A bump makes the Hermes bambu-studio init container download and self-test the new slicer",
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["bambulab/BambuStudio"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$"
+    },
+    {
       "description": "iac/ uses OpenTofu: resolve providers and modules from the OpenTofu registry",
       "matchManagers": ["terraform"],
       "matchDatasources": ["terraform-provider", "terraform-module"],

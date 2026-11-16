@@ -131,6 +131,31 @@ spec:
         - name: cad
           mountPath: /cad
           readOnly: true
+      # Bambu Studio command-line slicer for 3D-printing work (cad/bambu_studio.py): checks designs
+      # and reports print time + filament for the P2S, and bambu3mf.py builds the printer/filament
+      # presets into the project 3MFs from its profiles. The extracted AppImage (~570 MB) stays on
+      # the PVC; a normal start only compares a fingerprint (~1 s). A version bump (Renovate) downloads
+      # the release once (~256 MB, sha256 from the release asset digest) and slices a test cube
+      # before switching to it. A failed install only logs and keeps the previous version; it never
+      # blocks the pod.
+      - name: bambu-studio
+        image: nousresearch/hermes-agent:latest
+        command: ["/usr/bin/python3", "/cad/bambu_studio.py", "install"]
+        env:
+        # renovate: datasource=github-releases depName=bambulab/BambuStudio
+        - name: BAMBU_STUDIO_VERSION
+          value: "02.09.01.70"
+        - name: HOME
+          value: /tmp
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+        volumeMounts:
+        - name: data
+          mountPath: /opt/data
+        - name: cad
+          mountPath: /cad
+          readOnly: true
       containers:
       - name: hermes-agent
         image: nousresearch/hermes-agent:latest
@@ -182,6 +207,10 @@ spec:
         # @-mention + reminders on Telegram while an approval/clarify prompt waits
         - name: plugin-approval-ping
           mountPath: /opt/data/plugins/approval-ping
+          readOnly: true
+        # 3D-printing helpers from git: bambu3mf.py (P2S project 3MFs), bambu_studio.py (slice)
+        - name: cad
+          mountPath: /opt/cad
           readOnly: true
         # NousResearch/hermes-agent#144184: aux retry after pool rotation reused the capped key
         - name: hermes-patched
