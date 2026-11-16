@@ -1,0 +1,70 @@
+# Šiukšliavežė (https://github.com/AurimasNav/atlieku-surinkimo-grafikas): the waste pickup
+# schedule data its daily GitHub Actions job publishes to GitHub Pages. Nothing of it runs in
+# this cluster; the job writes its own state to metrics.txt, which is scraped here.
+#
+# When a waste company changes a file's format, the build of that source fails and yesterday's
+# data stays published, so the thing to watch is the age of the data. Metrics and their meaning:
+# docs/monitoring.md in that repository.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: siuksliaveze-data
+spec:
+  jobName: siuksliaveze-data
+  targetEndpoints:
+  - targets:
+    - aurimasnav.github.io
+    scheme: https
+    path: /atlieku-surinkimo-grafikas/metrics.txt
+    # The file changes once a day (04:17 UTC, and on merges that change the pipeline).
+    interval: 10m
+    scrapeTimeout: 30s
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: siuksliaveze-data
+spec:
+  groups:
+  - name: siuksliaveze-data
+    interval: 10m
+    rules:
+    # `source` is nemencine (Vilniaus r.) or kauno (Kauno r.). 30 h = one daily run missed or failed.
+    - alert: ScheduleDataStale
+      expr: time() - siuksliaveze_data_generated_timestamp_seconds > 30 * 3600
+      for: 30m
+      labels:
+        severity: warning
+      annotations:
+        summary: >-
+          Šiukšliavežė: the {{ $labels.source }} schedule data is {{ $value | humanizeDuration }} old; its
+          daily build fails or doesn't run
+        dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+    - alert: ScheduleDataShrank
+      expr: siuksliaveze_data_places < 0.9 * (siuksliaveze_data_places offset 1d)
+      labels:
+        severity: warning
+      annotations:
+        summary: >-
+          Šiukšliavežė: the {{ $labels.source }} data covers {{ $value }} places, over 10% fewer than
+          yesterday
+        dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+    # Warnings are rows the parser couldn't place, so a rise usually means a new typo or a renamed
+    # village in the source file. Informational: the data is still published.
+    - alert: ScheduleDataMoreWarnings
+      expr: siuksliaveze_data_warnings > (siuksliaveze_data_warnings offset 1d)
+      labels:
+        severity: info
+      annotations:
+        summary: >-
+          Šiukšliavežė: the {{ $labels.source }} build has {{ $value }} warnings, more than yesterday
+          (new typo or renamed place in the source?)
+        dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+    - alert: ScheduleDataNotScraped
+      expr: up{job="siuksliaveze-data"} == 0
+      for: 2h
+      labels:
+        severity: warning
+      annotations:
+        summary: "Šiukšliavežė: metrics.txt can't be fetched from GitHub Pages for 2 hours"
+        dashboard: https://aurimasnav.github.io/atlieku-surinkimo-grafikas/metrics.txt
