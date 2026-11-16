@@ -50,15 +50,35 @@ spec:
           yesterday
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
     # Warnings are rows the parser couldn't place, so a rise usually means a new typo or a renamed
-    # village in the source file. Informational: the data is still published.
+    # village in the source file: the data is still published, but those addresses have no
+    # schedule. Warning, not info: info-level alerts never reach Telegram (values.yaml routes them
+    # to the blackhole receiver).
     - alert: ScheduleDataMoreWarnings
       expr: siuksliaveze_data_warnings > (siuksliaveze_data_warnings offset 1d)
       labels:
-        severity: info
+        severity: warning
       annotations:
         summary: >-
           Šiukšliavežė: the {{ $labels.source }} build has {{ $value }} warnings, more than yesterday
           (new typo or renamed place in the source?)
+        dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+    # A source that was in metrics.txt in the last 3 days is gone while the file itself is fetched
+    # fine: ScheduleDataStale can't fire for a series that no longer exists. Happens when a
+    # source's build fails and there is no published copy to keep, or the file is truncated.
+    - alert: ScheduleDataSourceMissing
+      expr: |-
+        group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[3d]))
+          unless on (source)
+        group by (source) (siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"})
+          and on ()
+        (up{job="siuksliaveze-data"} == 1)
+      for: 30m
+      labels:
+        severity: warning
+      annotations:
+        summary: >-
+          Šiukšliavežė: the {{ $labels.source }} data is missing from metrics.txt; its build or the
+          publish step broke
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
     - alert: ScheduleDataNotScraped
       expr: up{job="siuksliaveze-data"} == 0

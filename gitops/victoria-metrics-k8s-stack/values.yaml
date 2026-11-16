@@ -210,9 +210,11 @@ vmagent:
 
 # Alerts go to the "Alerts" Telegram topic through the Hermes bot (token and chat from
 # Doppler, externalsecret-alertmanager.yaml). Watchdog and info-level alerts stay silent.
-# Each alert links its `dashboard` annotation with the alert's time range (1 h before it started
-# until now, or until 30 min after it resolved). Without one, a short Explore link (the alert
-# expression) is used. At most 5 alerts per message: Alertmanager checks Telegram's 4096-character
+# Each alert links its `dashboard` annotation. A Grafana link (external.grafana.host; keep the
+# template's `match` in step) gets the alert's time range: 1 h before it started until now, or
+# until 30 min after it resolved. Any other link (GitHub, a status page) is used as it is, since
+# appending "&from=" to a URL without a query string breaks it. Without an annotation, a short
+# Explore link (the alert expression) is used. At most 5 alerts per message: Alertmanager checks Telegram's 4096-character
 # limit on the raw HTML (links included) and replaces a longer message with an error text.
 alertmanager:
   spec:
@@ -250,5 +252,5 @@ alertmanager:
         message: |-
           {{ range $i, $a := .Alerts }}{{ if lt $i 5 }}{{ if eq $a.Status "firing" }}🔴{{ else }}✅{{ end }} <b>{{ $a.Labels.alertname | html }}</b>{{ with $a.Labels.namespace }} · {{ . | html }}{{ end }}{{ with $a.Labels.severity }} ({{ . | html }}){{ end }}
           {{ with $a.Annotations.summary }}{{ . | html }}{{ else }}{{ with $a.Annotations.description }}{{ . | html }}{{ end }}{{ end }}
-          {{ with $a.Annotations.dashboard }}<a href="{{ . }}&amp;from={{ ($a.StartsAt.Add -3600000000000).UnixMilli }}&amp;to={{ if eq $a.Status "firing" }}now{{ else }}{{ ($a.EndsAt.Add 1800000000000).UnixMilli }}{{ end }}">📊 Dashboard</a>{{ else }}{{ if and $a.GeneratorURL (lt (len $a.GeneratorURL) 500) }}<a href="{{ $a.GeneratorURL }}">🔎 Query</a>{{ end }}{{ end }}
+          {{ with $a.Annotations.dashboard }}{{ if match `^https://grafana\.sync\.lt/` . }}<a href="{{ . }}&amp;from={{ ($a.StartsAt.Add -3600000000000).UnixMilli }}&amp;to={{ if eq $a.Status "firing" }}now{{ else }}{{ ($a.EndsAt.Add 1800000000000).UnixMilli }}{{ end }}">📊 Dashboard</a>{{ else }}<a href="{{ . }}">🔗 Details</a>{{ end }}{{ else }}{{ if and $a.GeneratorURL (lt (len $a.GeneratorURL) 500) }}<a href="{{ $a.GeneratorURL }}">🔎 Query</a>{{ end }}{{ end }}
           {{ end }}{{ end }}{{ if gt (len .Alerts) 5 }}… {{ len .Alerts }} alerts in this group, the first 5 are shown{{ end }}
