@@ -12,6 +12,9 @@ data:
   # Visitor counting goes through Questlog to Umami inside the cluster (gitops/umami). Counting
   # starts once UMAMI_WEBSITE_ID is set: the website's ID from stats.sync.lt → Settings → Websites.
   UMAMI_URL: http://umami.umami.svc.cluster.local
+  UMAMI_WEBSITE_ID: 7c04964e-43fb-4e4c-b0ec-72560ce006d3
   # Links at the top of questlog.sync.lt/admin.
   UMAMI_DASHBOARD_URL: https://stats.sync.lt
   GRAFANA_DASHBOARD_URL: https://grafana.sync.lt/d/questlog
+  # Community invite shown in the footer and on /feedback.
+  DISCORD_INVITE_URL: https://discord.gg/WZmBRERmwr
