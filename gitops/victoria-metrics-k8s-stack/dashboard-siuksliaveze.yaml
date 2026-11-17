@@ -117,7 +117,7 @@ data:
           "type": "stat",
           "id": 2,
           "title": "Data age",
-          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing. ScheduleDataStale fires at 30 h.",
+          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing. ScheduleDataStale goes pending at 30 h and fires 30 min later.",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
@@ -178,7 +178,8 @@ data:
               ],
               "fields": "",
               "values": false
-            }
+            },
+            "orientation": "horizontal"
           }
         },
         {
@@ -239,7 +240,8 @@ data:
               ],
               "fields": "",
               "values": false
-            }
+            },
+            "orientation": "horizontal"
           }
         },
         {
@@ -300,7 +302,8 @@ data:
               ],
               "fields": "",
               "values": false
-            }
+            },
+            "orientation": "horizontal"
           }
         },
         {
@@ -528,7 +531,7 @@ data:
             "uid": "${datasource}"
           },
           "gridPos": {
-            "h": 8,
+            "h": 11,
             "w": 12,
             "x": 0,
             "y": 6
@@ -595,7 +598,7 @@ data:
             "uid": "${datasource}"
           },
           "gridPos": {
-            "h": 8,
+            "h": 11,
             "w": 12,
             "x": 12,
             "y": 6
@@ -615,7 +618,7 @@ data:
           ],
           "fieldConfig": {
             "defaults": {
-              "unit": "d",
+              "unit": "suffix: days",
               "min": 0,
               "color": {
                 "mode": "thresholds"
@@ -671,14 +674,14 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 14
+            "y": 17
           }
         },
         {
           "type": "timeseries",
           "id": 11,
           "title": "Data age",
-          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing. ScheduleDataStale fires at 30 h.",
+          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing. ScheduleDataStale goes pending at 30 h and fires 30 min later.",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
@@ -687,7 +690,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 15
+            "y": 18
           },
           "interval": "10m",
           "maxDataPoints": 1000,
@@ -706,7 +709,7 @@ data:
           ],
           "fieldConfig": {
             "defaults": {
-              "unit": "h",
+              "unit": "suffix: h",
               "custom": {
                 "drawStyle": "line",
                 "lineWidth": 2,
@@ -720,13 +723,14 @@ data:
                 "lineInterpolation": "linear",
                 "thresholdsStyle": {
                   "mode": "dashed"
-                }
+                },
+                "axisSoftMax": 36
               },
               "color": {
                 "mode": "palette-classic"
               },
               "min": 0,
-              "decimals": 1,
+              "decimals": 0,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -739,8 +743,7 @@ data:
                     "value": 30
                   }
                 ]
-              },
-              "max": 36
+              }
             },
             "overrides": []
           },
@@ -775,7 +778,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 15
+            "y": 18
           },
           "interval": "10m",
           "maxDataPoints": 1000,
@@ -846,7 +849,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 23
+            "y": 26
           },
           "interval": "10m",
           "maxDataPoints": 1000,
@@ -930,7 +933,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 23
+            "y": 26
           },
           "interval": "10m",
           "maxDataPoints": 1000,
@@ -1001,7 +1004,7 @@ data:
             "h": 6,
             "w": 24,
             "x": 0,
-            "y": 31
+            "y": 34
           },
           "interval": "10m",
           "maxDataPoints": 1000,
