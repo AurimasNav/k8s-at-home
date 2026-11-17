@@ -29,7 +29,8 @@ spec:
   - name: siuksliaveze-data
     interval: 10m
     rules:
-    # `source` is nemencine (Vilniaus r.) or kauno (Kauno r.). 30 h = one daily run missed or failed.
+    # `source` is nemencine or nemezio (Vilniaus r.), kauno (Kauno r.) or mazeikiai (Mažeikių r.).
+    # 30 h = one daily run missed or failed.
     - alert: ScheduleDataStale
       expr: time() - siuksliaveze_data_generated_timestamp_seconds > 30 * 3600
       for: 30m
@@ -61,6 +62,20 @@ spec:
         summary: >-
           Šiukšliavežė: the {{ $labels.source }} build has {{ $value }} warnings, more than yesterday
           (new typo or renamed place in the source?)
+        dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+    # The last pickup date the published schedules have. Mažeikių r. gets one file per year and
+    # waste type; if next year's isn't posted (or the job doesn't recognise it), the build
+    # stays green while the reminders stop after the last date. Only this source: the quarterly
+    # files of the Vilniaus r. companies come close to their last date every quarter.
+    - alert: ScheduleDataRunsOut
+      expr: siuksliaveze_data_last_date_timestamp_seconds{source="mazeikiai"} - time() < 7 * 86400
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: >-
+          Šiukšliavežė: the {{ $labels.source }} {{ $labels.kind }} schedule ends within a week (or
+          has ended); the next period isn't published or isn't read
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
     # A source that was in metrics.txt in the last 3 days is gone while the file itself is fetched
     # fine: ScheduleDataStale can't fire for a series that no longer exists. Happens when a
