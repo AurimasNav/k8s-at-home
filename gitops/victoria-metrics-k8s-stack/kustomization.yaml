@@ -12,6 +12,7 @@ resources:
 - ./dashboard-disks.yaml
 - ./dashboard-backups.yaml
 - ./dashboard-pods.yaml
+- ./dashboard-siuksliaveze.yaml
 - ./node-pressure.yaml
 - ./siuksliaveze.yaml
 - ./httproute.yaml

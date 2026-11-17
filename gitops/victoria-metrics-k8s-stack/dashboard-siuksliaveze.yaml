@@ -1,0 +1,1111 @@
+# Šiukšliavežė (siuksliaveze.yaml): the schedule data its daily GitHub Actions job publishes, from
+# metrics.txt. Linked from ScheduleDataShrank and ScheduleDataMoreWarnings.
+# Cheap to keep open: about 40 series, no auto-refresh, the refresh picker starts at 10m, the "now"
+# panels are instant queries and the graphs use the 10-minute scrape interval as their minimum step.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-siuksliaveze
+  namespace: victoriametrics
+  labels:
+    grafana_dashboard: "1"
+data:
+  siuksliaveze.json: |
+    {
+      "uid": "siuksliaveze",
+      "title": "Šiukšliavežė / Schedule data",
+      "description": "State of the waste pickup schedule data the Šiukšliavežė app downloads: how fresh each source is, how much it covers and how many rows the parser couldn't place.",
+      "tags": [
+        "siuksliaveze"
+      ],
+      "editable": true,
+      "graphTooltip": 1,
+      "schemaVersion": 39,
+      "version": 1,
+      "id": null,
+      "links": [
+        {
+          "title": "Workflow runs",
+          "type": "link",
+          "url": "https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml",
+          "targetBlank": true
+        },
+        {
+          "title": "metrics.txt",
+          "type": "link",
+          "url": "https://aurimasnav.github.io/atlieku-surinkimo-grafikas/metrics.txt",
+          "targetBlank": true
+        },
+        {
+          "title": "What the numbers mean",
+          "type": "link",
+          "url": "https://github.com/AurimasNav/atlieku-surinkimo-grafikas/blob/main/docs/monitoring.md",
+          "targetBlank": true
+        }
+      ],
+      "time": {
+        "from": "now-7d",
+        "to": "now"
+      },
+      "refresh": "",
+      "timezone": "Europe/Vilnius",
+      "timepicker": {
+        "refresh_intervals": [
+          "10m",
+          "30m",
+          "1h"
+        ]
+      },
+      "annotations": {
+        "list": []
+      },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "label": "Data source",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {
+              "text": "VictoriaMetrics",
+              "value": "VictoriaMetrics"
+            },
+            "hide": 2,
+            "refresh": 1
+          },
+          {
+            "name": "source",
+            "label": "Source",
+            "type": "query",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${datasource}"
+            },
+            "definition": "label_values(siuksliaveze_data_places{job=\"siuksliaveze-data\"}, source)",
+            "query": {
+              "query": "label_values(siuksliaveze_data_places{job=\"siuksliaveze-data\"}, source)",
+              "refId": "source-var"
+            },
+            "refresh": 2,
+            "multi": true,
+            "includeAll": true,
+            "allValue": ".*",
+            "current": {
+              "text": "All",
+              "value": "$__all"
+            },
+            "sort": 1,
+            "hide": 0
+          }
+        ]
+      },
+      "panels": [
+        {
+          "type": "row",
+          "id": 1,
+          "title": "Now",
+          "collapsed": false,
+          "panels": [],
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "type": "stat",
+          "id": 2,
+          "title": "Data age",
+          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing. ScheduleDataStale goes pending at 30 h and fires 30 min later.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 5,
+            "x": 0,
+            "y": 1
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "label_map(time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "legendFormat": "{{source}}",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "dtdurations",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 93600
+                  },
+                  {
+                    "color": "red",
+                    "value": 108000
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "horizontal"
+          }
+        },
+        {
+          "type": "stat",
+          "id": 3,
+          "title": "Places covered",
+          "description": "Settlements (Vilniaus r., and in Mažeikių r. those with a schedule) or addresses (Kauno r.) that got a schedule. ScheduleDataShrank fires when it is over 10% lower than a day before.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 5,
+            "x": 5,
+            "y": 1
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "label_map(last_over_time(siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "legendFormat": "{{source}}",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "locale",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "horizontal"
+          }
+        },
+        {
+          "type": "stat",
+          "id": 4,
+          "title": "Warnings",
+          "description": "Rows of the last build the parser couldn't place, e.g. a typo or a renamed village in the source file: those addresses have no schedule. ScheduleDataMoreWarnings fires when it rises vs a day before.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 4,
+            "x": 10,
+            "y": 1
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "label_map(last_over_time(siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "legendFormat": "{{source}}",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "horizontal"
+          }
+        },
+        {
+          "type": "stat",
+          "id": 5,
+          "title": "Job last ran",
+          "description": "When metrics.txt was last written. The job writes it even when a source's build fails, so an old value here means the job itself didn't run (GitHub Actions disabled the schedule, or the deploy failed).",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 4,
+            "x": 14,
+            "y": 1
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "time() - last_over_time(siuksliaveze_status_checked_timestamp_seconds{job=\"siuksliaveze-data\"}[1d])",
+              "legendFormat": "",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "dtdurations",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 93600
+                  },
+                  {
+                    "color": "red",
+                    "value": 108000
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          }
+        },
+        {
+          "type": "stat",
+          "id": 6,
+          "title": "Fetch",
+          "description": "Whether the last fetch of metrics.txt from GitHub Pages worked (every 10 min). ScheduleDataNotScraped fires after 2 h of failures.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 3,
+            "x": 18,
+            "y": 1
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "last_over_time(up{job=\"siuksliaveze-data\"}[20m])",
+              "legendFormat": "",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "1": {
+                      "text": "OK",
+                      "color": "green",
+                      "index": 0
+                    },
+                    "0": {
+                      "text": "Failing",
+                      "color": "red",
+                      "index": 1
+                    }
+                  }
+                }
+              ],
+              "noValue": "No target"
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          }
+        },
+        {
+          "type": "stat",
+          "id": 7,
+          "title": "Alerts",
+          "description": "Šiukšliavežė alerts firing now (they go to the Telegram Alerts topic). Their history is in the timeline at the bottom.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 3,
+            "x": 21,
+            "y": 1
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(vmalert_alerts_firing{group=\"siuksliaveze-data\"}) or vector(0)",
+              "legendFormat": "",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          }
+        },
+        {
+          "type": "bargauge",
+          "id": 8,
+          "title": "Schedules per waste type",
+          "description": "Schedules per waste type: groups of addresses that share pickup days. Vilniaus r. has no food or green waste; Kauno r.'s packaging and glass mostly come from Ekonovus, which isn't in the data.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 11,
+            "w": 12,
+            "x": 0,
+            "y": 6
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sort_desc(label_map(last_over_time(siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\"))",
+              "legendFormat": "{{source}} · {{kind}}",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "min": 0,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "gradient",
+            "valueMode": "text",
+            "showUnfilled": true,
+            "namePlacement": "left",
+            "sizing": "manual",
+            "minVizHeight": 16,
+            "maxVizHeight": 22,
+            "minVizWidth": 8,
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          }
+        },
+        {
+          "type": "bargauge",
+          "id": 9,
+          "title": "Schedules end in",
+          "description": "Days until the last pickup date in the published schedules. When a waste company posts the next period late, the reminders stop after this date. ScheduleDataRunsOut fires at 7 days, for Mažeikių r. only: its files cover a year, while the Vilniaus r. ones cover a quarter and get this close every quarter. Kauno r. isn't listed: its dates are calculated ahead.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 11,
+            "w": 12,
+            "x": 12,
+            "y": 6
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sort(label_map((last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]) - time()) / 86400, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\"))",
+              "legendFormat": "{{source}} · {{kind}}",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: days",
+              "min": 0,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 7
+                  },
+                  {
+                    "color": "green",
+                    "value": 21
+                  }
+                ]
+              },
+              "decimals": 0,
+              "noValue": "Not published for this source (Kauno r. dates are calculated ahead)"
+            },
+            "overrides": []
+          },
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "gradient",
+            "valueMode": "text",
+            "showUnfilled": true,
+            "namePlacement": "left",
+            "sizing": "manual",
+            "minVizHeight": 16,
+            "maxVizHeight": 22,
+            "minVizWidth": 8,
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          }
+        },
+        {
+          "type": "row",
+          "id": 10,
+          "title": "History",
+          "collapsed": false,
+          "panels": [],
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 17
+          }
+        },
+        {
+          "type": "timeseries",
+          "id": 11,
+          "title": "Data age",
+          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing. ScheduleDataStale goes pending at 30 h and fires 30 min later.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 18
+          },
+          "interval": "10m",
+          "maxDataPoints": 1000,
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "label_map((time() - siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}) / 3600, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "legendFormat": "{{source}}",
+              "refId": "A",
+              "instant": false,
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: h",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 0,
+                "showPoints": "never",
+                "spanNulls": 1800000,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                },
+                "lineInterpolation": "linear",
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                },
+                "axisSoftMax": 36
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "min": 0,
+              "decimals": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "transparent",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 30
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "calcs": [
+                "mean",
+                "max"
+              ],
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "id": 12,
+          "title": "Warnings",
+          "description": "Rows of the last build the parser couldn't place, e.g. a typo or a renamed village in the source file: those addresses have no schedule. ScheduleDataMoreWarnings fires when it rises vs a day before.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 18
+          },
+          "interval": "10m",
+          "maxDataPoints": 1000,
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "label_map(siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "legendFormat": "{{source}}",
+              "refId": "A",
+              "instant": false,
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 0,
+                "showPoints": "never",
+                "spanNulls": 1800000,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                },
+                "lineInterpolation": "stepAfter"
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "min": 0,
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "calcs": [
+                "mean",
+                "max"
+              ],
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "id": 13,
+          "title": "Places covered",
+          "description": "Settlements (Vilniaus r., and in Mažeikių r. those with a schedule) or addresses (Kauno r.) that got a schedule. ScheduleDataShrank fires when it is over 10% lower than a day before. Kauno r. uses the right axis.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 26
+          },
+          "interval": "10m",
+          "maxDataPoints": 1000,
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "label_map(siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "legendFormat": "{{source}}",
+              "refId": "A",
+              "instant": false,
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "locale",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 0,
+                "showPoints": "never",
+                "spanNulls": 1800000,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                },
+                "lineInterpolation": "stepAfter"
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "min": 0,
+              "decimals": 0
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Kauno r."
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "calcs": [
+                "mean",
+                "max"
+              ],
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "id": 14,
+          "title": "Schedules per waste type",
+          "description": "Schedules per waste type: groups of addresses that share pickup days. Vilniaus r. has no food or green waste; Kauno r.'s packaging and glass mostly come from Ekonovus, which isn't in the data.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 26
+          },
+          "interval": "10m",
+          "maxDataPoints": 1000,
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "label_map(siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "legendFormat": "{{source}} · {{kind}}",
+              "refId": "A",
+              "instant": false,
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 0,
+                "showPoints": "never",
+                "spanNulls": 1800000,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                },
+                "lineInterpolation": "stepAfter"
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "min": 0,
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "calcs": [
+                "mean",
+                "max"
+              ],
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "type": "state-timeline",
+          "id": 15,
+          "title": "metrics.txt fetch and alerts",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "description": "Top: each fetch of metrics.txt (green OK, red failed). Below: when each Šiukšliavežė alert was firing. No alert row means it didn't fire in this time range.",
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 34
+          },
+          "interval": "10m",
+          "maxDataPoints": 1000,
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "up{job=\"siuksliaveze-data\"}",
+              "legendFormat": "metrics.txt fetch",
+              "refId": "A",
+              "instant": false,
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "label_map(max by (alertname, source) (ALERTS{alertgroup=\"siuksliaveze-data\",alertstate=\"firing\"}), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "legendFormat": "{{alertname}} {{source}}",
+              "refId": "B",
+              "instant": false,
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "1": {
+                      "text": "OK",
+                      "color": "green",
+                      "index": 0
+                    },
+                    "0": {
+                      "text": "Failed",
+                      "color": "red",
+                      "index": 1
+                    }
+                  }
+                }
+              ],
+              "custom": {
+                "fillOpacity": 80,
+                "lineWidth": 0
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byFrameRefID",
+                  "options": "B"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "1": {
+                            "text": "Firing",
+                            "color": "red",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showValue": "never",
+            "mergeValues": true,
+            "rowHeight": 0.8,
+            "alignValue": "left",
+            "legend": {
+              "showLegend": false
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          }
+        }
+      ]
+    }
