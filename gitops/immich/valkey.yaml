@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: valkey
-        image: docker.io/valkey/valkey:9.1.4
+        image: docker.io/valkey/valkey:9.2.0
         args: ["valkey-server", "--save", "", "--appendonly", "no"]
         ports:
         - containerPort: 6379
