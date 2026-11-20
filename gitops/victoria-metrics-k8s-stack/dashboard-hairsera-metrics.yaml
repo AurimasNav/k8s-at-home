@@ -22,7 +22,7 @@ data:
           "type": "row"
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {
             "defaults": {
               "color": {"mode": "thresholds"},
@@ -36,10 +36,10 @@ data:
           "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "title": "Confirmed",
           "type": "stat",
-          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_booking_confirmed_total", "instant": true, "refId": "A"}]
+          "targets": [{"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "hairsera_booking_confirmed_total", "instant": true, "refId": "A"}]
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {
             "defaults": {
               "color": {"mode": "thresholds"},
@@ -53,10 +53,10 @@ data:
           "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "title": "Created",
           "type": "stat",
-          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_booking_created_total", "instant": true, "refId": "A"}]
+          "targets": [{"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "hairsera_booking_created_total", "instant": true, "refId": "A"}]
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {
             "defaults": {
               "color": {"mode": "thresholds"},
@@ -70,10 +70,10 @@ data:
           "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "title": "Completed",
           "type": "stat",
-          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_booking_completed_total", "instant": true, "refId": "A"}]
+          "targets": [{"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "hairsera_booking_completed_total", "instant": true, "refId": "A"}]
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {
             "defaults": {
               "color": {"mode": "thresholds"},
@@ -87,10 +87,10 @@ data:
           "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "title": "Cancelled",
           "type": "stat",
-          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_booking_cancelled_total", "instant": true, "refId": "A"}]
+          "targets": [{"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "hairsera_booking_cancelled_total", "instant": true, "refId": "A"}]
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {
             "defaults": {"unit": "short"},
             "overrides": [
@@ -106,10 +106,10 @@ data:
           "title": "Booking Events",
           "type": "timeseries",
           "targets": [
-            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_booking_created_total[$__rate_interval])", "legendFormat": "Created", "refId": "A"},
-            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_booking_confirmed_total[$__rate_interval])", "legendFormat": "Confirmed", "refId": "B"},
-            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_booking_completed_total[$__rate_interval])", "legendFormat": "Completed", "refId": "C"},
-            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_booking_cancelled_total[$__rate_interval])", "legendFormat": "Cancelled", "refId": "D"}
+            {"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "increase(hairsera_booking_created_total[$__rate_interval])", "legendFormat": "Created", "refId": "A"},
+            {"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "increase(hairsera_booking_confirmed_total[$__rate_interval])", "legendFormat": "Confirmed", "refId": "B"},
+            {"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "increase(hairsera_booking_completed_total[$__rate_interval])", "legendFormat": "Completed", "refId": "C"},
+            {"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "increase(hairsera_booking_cancelled_total[$__rate_interval])", "legendFormat": "Cancelled", "refId": "D"}
           ]
         },
         {
@@ -120,7 +120,7 @@ data:
           "type": "row"
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {
             "defaults": {
               "color": {"mode": "thresholds"},
@@ -134,10 +134,10 @@ data:
           "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "title": "Vouchers Redeemed",
           "type": "stat",
-          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_voucher_redeemed_total", "instant": true, "refId": "A"}]
+          "targets": [{"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "hairsera_voucher_redeemed_total", "instant": true, "refId": "A"}]
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {
             "defaults": {
               "color": {"mode": "thresholds"},
@@ -151,10 +151,10 @@ data:
           "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "title": "Waitlist Notified",
           "type": "stat",
-          "targets": [{"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "hairsera_waitlist_notified_total", "instant": true, "refId": "A"}]
+          "targets": [{"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "hairsera_waitlist_notified_total", "instant": true, "refId": "A"}]
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
           "id": 7,
@@ -162,7 +162,7 @@ data:
           "title": "Voucher Validation Failures (by reason)",
           "type": "timeseries",
           "targets": [
-            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "increase(hairsera_voucher_validation_failed_total[$__rate_interval])", "legendFormat": "{{voucher.failure_reason}}", "refId": "A"}
+            {"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "increase(hairsera_voucher_validation_failed_total[$__rate_interval])", "legendFormat": "{{voucher.failure_reason}}", "refId": "A"}
           ]
         },
         {
@@ -173,7 +173,7 @@ data:
           "type": "row"
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {
             "defaults": {"unit": "short"},
             "overrides": [
@@ -200,14 +200,14 @@ data:
           "title": "Rating Distribution (stars 1–5)",
           "type": "barchart",
           "targets": [
-            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "sum by (le) (hairsera_rating_stars_bucket) - sum by (le) (hairsera_rating_stars_bucket offset 1m)", "legendFormat": "{{le}}", "instant": true, "refId": "A", "format": "table"}
+            {"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "sum by (le) (hairsera_rating_stars_bucket) - sum by (le) (hairsera_rating_stars_bucket offset 1m)", "legendFormat": "{{le}}", "instant": true, "refId": "A", "format": "table"}
           ],
           "transformations": [
             {"id": "organize", "options": {}}
           ]
         },
         {
-          "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+          "datasource": {"type": "prometheus", "uid": "VictoriaMetrics"},
           "fieldConfig": {
             "defaults": {"unit": "none"},
             "overrides": []
@@ -218,8 +218,8 @@ data:
           "title": "Average Rating Over Time",
           "type": "timeseries",
           "targets": [
-            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "histogram_quantile(0.5, sum by (le) (rate(hairsera_rating_stars_bucket[$__rate_interval])))", "legendFormat": "P50 (median)", "refId": "A"},
-            {"datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"}, "expr": "sum(rate(hairsera_rating_stars_sum[$__rate_interval])) / sum(rate(hairsera_rating_stars_count[$__rate_interval]))", "legendFormat": "Average", "refId": "B"}
+            {"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "histogram_quantile(0.5, sum by (le) (rate(hairsera_rating_stars_bucket[$__rate_interval])))", "legendFormat": "P50 (median)", "refId": "A"},
+            {"datasource": {"type": "prometheus", "uid": "VictoriaMetrics"}, "expr": "sum(rate(hairsera_rating_stars_sum[$__rate_interval])) / sum(rate(hairsera_rating_stars_count[$__rate_interval]))", "legendFormat": "Average", "refId": "B"}
           ]
         }
       ],
