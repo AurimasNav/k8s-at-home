@@ -19,6 +19,11 @@ merged. A failed rollout stops the run; nothing is reverted automatically.
 
 Conflicting PRs and PRs without checks get Renovate's rebase box ticked.
 
+Each merge triggers a Renovate run, which can close or update PRs that are
+still waiting in this run (a failed registry lookup makes Renovate close an
+update as "autoclosed"; it reopens it once a lookup works). Such a PR is
+skipped, not reported as an error, and the run goes on with the next one.
+
 Usage:
   renovate_automerge.py                       merge eligible PRs (cron)
   renovate_automerge.py --dry-run             only evaluate open PRs
@@ -84,11 +89,27 @@ def pr_details(num):
     """PR JSON with `mergeable` resolved (GitHub computes it lazily)."""
     pr = gh("GET", f"/repos/{REPO}/pulls/{num}")
     for _ in range(6):
-        if pr.get("merged") or pr.get("mergeable") is not None:
+        if pr.get("state") == "closed" or pr.get("mergeable") is not None:
             break
         time.sleep(3)
         pr = gh("GET", f"/repos/{REPO}/pulls/{num}")
     return pr
+
+
+CLOSED_BY_RENOVATE = ("Renovate closed it during this run (usually a failed registry lookup); "
+                      "it reopens it on a later run, nothing to do")
+
+
+def moved_under_us(num, head_sha):
+    """Why the PR can no longer be merged as read (closed or new head), or None."""
+    cur = gh("GET", f"/repos/{REPO}/pulls/{num}")
+    if cur.get("merged"):
+        return "merged by someone else during this run"
+    if cur.get("state") == "closed":
+        return CLOSED_BY_RENOVATE
+    if cur["head"]["sha"] != head_sha:
+        return "Renovate pushed a new commit during this run; the next run checks it"
+    return None
 
 
 def check_state(sha):
@@ -359,6 +380,9 @@ def main():
         print(f"\n## #{num} {title}")
         try:
             pr = pr_details(num)
+            if pr.get("state") == "closed" and not pr.get("merged"):
+                print(f"- RESULT: SKIPPED — {CLOSED_BY_RENOVATE}")
+                continue
             files = gh_pages(f"/repos/{REPO}/pulls/{num}/files")
             hit = apps_for(files, apps)
             chg = change_summary(pr)
@@ -389,7 +413,15 @@ def main():
                 continue
             else:
                 before = {n: workload_images(a["spec"]["destination"].get("namespace") or "default") for n, a in hit.items()}
-                res = gh("PUT", f"/repos/{REPO}/pulls/{num}/merge", {"merge_method": "squash", "sha": pr["head"]["sha"]})
+                try:
+                    res = gh("PUT", f"/repos/{REPO}/pulls/{num}/merge", {"merge_method": "squash", "sha": pr["head"]["sha"]})
+                except urllib.error.HTTPError as e:
+                    # 405 not mergeable / 409 head moved / 422: did Renovate close or update it meanwhile?
+                    why = moved_under_us(num, pr["head"]["sha"]) if e.code in (405, 409, 422) else None
+                    if not why:
+                        raise
+                    print(f"- RESULT: SKIPPED — {why}")
+                    continue
                 sha = res.get("sha")
                 if not res.get("merged") or not sha:
                     print(f"- RESULT: MERGE FAILED — {res.get('message')}")
