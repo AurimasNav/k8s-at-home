@@ -134,7 +134,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\")",
+              "expr": "time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d])",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": true,
@@ -203,7 +203,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(last_over_time(siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\")",
+              "expr": "last_over_time(siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}[1d])",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": true,
@@ -265,7 +265,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(last_over_time(siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\")",
+              "expr": "last_over_time(siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}[1d])",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": true,
@@ -542,7 +542,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sort_desc(label_map(last_over_time(siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\"))",
+              "expr": "sort_desc(last_over_time(siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]))",
               "legendFormat": "{{source}} · {{kind}}",
               "refId": "A",
               "instant": true,
@@ -609,7 +609,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sort(label_map((last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]) - time()) / 86400, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\"))",
+              "expr": "sort((last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]) - time()) / 86400)",
               "legendFormat": "{{source}} · {{kind}}",
               "refId": "A",
               "instant": true,
@@ -700,7 +700,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map((time() - siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}) / 3600, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\")",
+              "expr": "(time() - siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}) / 3600",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": false,
@@ -788,7 +788,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\")",
+              "expr": "siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": false,
@@ -859,7 +859,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\")",
+              "expr": "siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": false,
@@ -943,7 +943,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\")",
+              "expr": "siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}",
               "legendFormat": "{{source}} · {{kind}}",
               "refId": "A",
               "instant": false,
@@ -1025,7 +1025,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(max by (alertname, source) (ALERTS{alertgroup=\"siuksliaveze-data\",alertstate=\"firing\"}), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\", \"jurbarkas\", \"Jurbarko r.\", \"kaisiadorys\", \"Kaišiadorių r.\", \"telsiai\", \"Telšių r.\", \"plunge\", \"Plungės r.\", \"rietavas\", \"Rietavo sav.\", \"siauliai\", \"Šiaulių RATC (5 r.)\", \"alytus\", \"Alytaus RATC (6 sav.)\")",
+              "expr": "max by (alertname, source) (ALERTS{alertgroup=\"siuksliaveze-data\",alertstate=\"firing\"})",
               "legendFormat": "{{alertname}} {{source}}",
               "refId": "B",
               "instant": false,

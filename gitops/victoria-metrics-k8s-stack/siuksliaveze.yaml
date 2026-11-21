@@ -29,11 +29,8 @@ spec:
   - name: siuksliaveze-data
     interval: 10m
     rules:
-    # `source` is nemencine or nemezio (Vilniaus r.), kauno (Kauno r.), kaisiadorys (Kaišiadorių r.),
-    # mazeikiai, telsiai, plunge and rietavas (Mažeikių r., Telšių r., Plungės r., Rietavo sav.),
-    # klaipedos (Klaipėdos r.), jurbarkas (Jurbarko r.), siauliai (Šiaulių r., Akmenės r., Joniškio
-    # r., Kelmės r., Pakruojo r.) or alytus (Alytaus r., Prienų r., Lazdijų r., Varėnos r.,
-    # Druskininkų and Birštono sav.).
+    # `source` is one per waste company or municipality; the list is in docs/monitoring.md of the
+    # app repository.
     # Every rule reads the newest sample of the last 20 min (last_over_time [20m]). vmalert queries
     # at whole 10 min marks with a 5 min lookback, so a bare selector sees this 10 min scrape only
     # when it lands less than 5 min before the mark. Today it lands 45 s before, but vmagent derives
@@ -77,16 +74,11 @@ spec:
           (new typo or renamed place in the source?). Compared with a day earlier, so it clears after
           24 h even if nothing was fixed
         dashboard: '{{ $externalURL }}/d/siuksliaveze?orgId=1&var-source={{ $labels.source }}'
-    # The last pickup date the published schedules have. These sources get one file per year (Alytaus
-    # RATC: March to February); if next year's isn't posted (or the job doesn't recognise it), the
-    # build stays green while the reminders stop after the last date. Not the Vilniaus r. companies,
-    # whose quarterly files come close to their last date every quarter, nor Kauno švara, whose
-    # dates are calculated ahead. Every waste type for mazeikiai, telsiai and plunge; only mixed
-    # waste and packaging where glass or green waste routinely ends before next year's file appears;
-    # only mixed waste for alytus, whose packaging runs to 2028 in some municipalities and would hide
-    # the others' end. The metric is the latest date of a source, so for siauliai and alytus it fires
-    # only when none of their municipalities has the next file (one late municipality is a build
-    # warning). Same expression as docs/monitoring.md in that repository.
+    # The last pickup date the published schedules have. Sources with yearly (or half-yearly or
+    # quarterly) files: if the next file isn't posted or isn't read, the build stays green while the
+    # reminders stop after the last date. Which sources and waste types are watched, and with how
+    # much notice, is explained per source in docs/monitoring.md of the app repository; this
+    # expression is the same with the job filter and [20m] windows.
     - alert: ScheduleDataRunsOut
       expr: |-
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"mazeikiai|telsiai|plunge"}[20m]) - time() < 7 * 86400
@@ -94,6 +86,26 @@ spec:
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"klaipedos|jurbarkas|siauliai|rietavas",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
           or
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="alytus",kind="household"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="radviliskis",kind=~"household|packaging"}[20m]) - time() < 2 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="silale"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="taurage",kind=~"household|packaging|food"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="pagegiai",kind=~"household|packaging|glass"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"pasvalys|rokiskis|birzai|panevezio-r",kind=~"household|packaging|glass"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"marijampole|vilkaviskis|kalvarija|kazluruda|sakiai",kind=~"household|packaging|food"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="raseiniai",kind=~"household|packaging|glass"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="jonava",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kretinga",kind=~"household|packaging|food"}[20m]) - time() < 2 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"silute|trakai|salcininkai"}[20m]) - time() < 7 * 86400
       for: 1h
       labels:
         severity: warning
