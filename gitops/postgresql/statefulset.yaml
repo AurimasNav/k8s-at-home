@@ -24,7 +24,7 @@ spec:
       # version's programs from the same Alpine build family, so text sort order stays the same.
       initContainers:
       - name: old-binaries
-        image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+        image: postgres:18-alpine@sha256:ff64c9e3bdf8e2120107d3559de8db314e8305f7e38c5105903c6295876738ff
         command: ["cp", "-a", "/usr/local/.", "/opt/pg-old/"]
         volumeMounts:
         - name: pg-old
