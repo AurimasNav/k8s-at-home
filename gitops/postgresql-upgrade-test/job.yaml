@@ -1,0 +1,99 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgresql-upgrade-test
+  annotations:
+    # re-runs on every sync; the previous run's Job and pod are deleted first
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 1800
+  template:
+    metadata:
+      labels:
+        app: postgresql-upgrade-test
+    spec:
+      restartPolicy: Never
+      initContainers:
+      - name: seed
+        # the exact 18.x build production runs (its pod's imageID), so the copy is written by the
+        # same binaries as production's data
+        image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+        command: ["sh", "/test/seed.sh"]
+        env:
+        - name: POSTGRES_USER
+          value: hairsera
+        - name: POSTGRES_DB
+          value: hairsera
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-upgrade-test
+              key: POSTGRES_PASSWORD
+        - name: PROD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-upgrade-test
+              key: POSTGRES_PASSWORD
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql
+        - name: test
+          mountPath: /test
+      # --- from here on, identical to the init containers in gitops/postgresql/statefulset.yaml ---
+      - name: old-binaries
+        image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+        command: ["cp", "-a", "/usr/local/.", "/opt/pg-old/"]
+        volumeMounts:
+        - name: pg-old
+          mountPath: /opt/pg-old
+      - name: pg-upgrade
+        image: postgres:19-alpine
+        command: ["sh", "/scripts/pg-upgrade.sh"]
+        env:
+        - name: OLD_MAJOR
+          value: "18"
+        - name: PGBINOLD
+          value: /opt/pg-old/bin
+        - name: POSTGRES_USER
+          value: hairsera
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql
+        - name: pg-old
+          mountPath: /opt/pg-old
+          readOnly: true
+        - name: test
+          mountPath: /scripts
+      # --- end of the production copy ---
+      containers:
+      - name: verify
+        image: postgres:19-alpine
+        command: ["sh", "/test/verify.sh"]
+        env:
+        - name: POSTGRES_USER
+          value: hairsera
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql
+        - name: test
+          mountPath: /test
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+      volumes:
+      - name: data
+        emptyDir:
+          sizeLimit: 2Gi
+      - name: pg-old
+        emptyDir:
+          sizeLimit: 512Mi
+      - name: test
+        configMap:
+          name: postgresql-upgrade-test
+          defaultMode: 0555
