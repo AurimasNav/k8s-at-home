@@ -17,9 +17,40 @@ spec:
         k8up.io/backupcommand: pg_dumpall -U hairsera
         k8up.io/file-extension: .sql
     spec:
+      # Major-version upgrade, tested first by gitops/postgresql-upgrade-test on a copy of
+      # production. pg-upgrade.sh converts /var/lib/postgresql/<OLD_MAJOR> to the image's major
+      # with pg_upgrade --copy (the old cluster stays as it was, so rolling back is reverting the
+      # image tag) and does nothing once the new cluster exists. old-binaries supplies the old
+      # version's programs from the same Alpine build family, so text sort order stays the same.
+      initContainers:
+      - name: old-binaries
+        image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+        command: ["cp", "-a", "/usr/local/.", "/opt/pg-old/"]
+        volumeMounts:
+        - name: pg-old
+          mountPath: /opt/pg-old
+      - name: pg-upgrade
+        image: postgres:19-alpine
+        command: ["sh", "/scripts/pg-upgrade.sh"]
+        env:
+        - name: OLD_MAJOR
+          value: "18"
+        - name: PGBINOLD
+          value: /opt/pg-old/bin
+        envFrom:
+        - configMapRef:
+            name: postgresql
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql
+        - name: pg-old
+          mountPath: /opt/pg-old
+          readOnly: true
+        - name: scripts
+          mountPath: /scripts
       containers:
       - name: postgresql
-        image: postgres:18-alpine
+        image: postgres:19-alpine
         ports:
         - containerPort: 5432
         envFrom:
@@ -40,6 +71,14 @@ spec:
             command: [pg_isready, -U, hairsera, -d, hairsera]
           initialDelaySeconds: 30
           periodSeconds: 30
+      volumes:
+      - name: pg-old
+        emptyDir:
+          sizeLimit: 512Mi
+      - name: scripts
+        configMap:
+          name: postgresql-scripts
+          defaultMode: 0555
   volumeClaimTemplates:
   - metadata:
       name: data

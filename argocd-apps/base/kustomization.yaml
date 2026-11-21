@@ -46,9 +46,9 @@ resources:
 - ./apps/cleanuparr
 - ./apps/cloudflared
 - ./apps/immich
-# Rehearsal of the shared Postgres major upgrade on a copy of production (gitops/postgresql-upgrade-test).
-# Park it (comment out) after use; uncomment to rehearse the next major.
-- ./apps/postgresql-upgrade-test
+# Rehearsal of a shared Postgres major upgrade on a copy of production (gitops/postgresql-upgrade-test).
+# Parked after the 18 -> 19 upgrade; uncomment to rehearse the next major (bump its images first).
+# - ./apps/postgresql-upgrade-test
 # Parked test Prowlarr for trying upstream Prowlarr contributions (gitops/prowlarr-test).
 # Uncomment to deploy it again; it comes back with empty settings.
 # - ./apps/prowlarr-test
