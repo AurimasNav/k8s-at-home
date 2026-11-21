@@ -50,7 +50,7 @@ spec:
         - name: pg-old
           mountPath: /opt/pg-old
       - name: pg-upgrade
-        image: postgres:19-alpine
+        image: postgres:19.0-alpine
         command: ["sh", "/scripts/pg-upgrade.sh"]
         env:
         - name: OLD_MAJOR
@@ -70,7 +70,7 @@ spec:
       # --- end of the production copy ---
       containers:
       - name: verify
-        image: postgres:19-alpine
+        image: postgres:19.0-alpine
         command: ["sh", "/test/verify.sh"]
         env:
         - name: POSTGRES_USER

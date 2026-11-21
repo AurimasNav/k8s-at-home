@@ -13,6 +13,8 @@
 # Safe to re-run: it does nothing once the new cluster exists, and a run that stopped
 # half-way (marker file left behind) is redone from scratch.
 set -eu
+# busybox ash supports pipefail; without it a failing psql on the left of a pipe goes unnoticed
+set -o pipefail
 
 OLD_MAJOR=${OLD_MAJOR:?set OLD_MAJOR}
 NEW_MAJOR=${PG_MAJOR:?PG_MAJOR comes from the postgres image}
@@ -57,6 +59,7 @@ log "upgrading $OLD (version $(cat "$OLD/PG_VERSION")) to $NEW ($("$PGBINNEW/pos
 if [ -e "$MARKER" ]; then
   log "an earlier upgrade attempt did not finish; removing its partial $NEW and starting over"
 fi
+mkdir -p "$BASE/$NEW_MAJOR"
 touch "$MARKER"
 rm -rf "$NEW" "$WORK"
 mkdir -p "$WORK"
@@ -95,6 +98,31 @@ log "pg_upgrade finished in $(( $(date +%s) - start )) s"
 "$PGBINNEW/pg_ctl" -D "$NEW" -l "$WORK/new-analyze.log" -w -t 600 \
   -o "-c listen_addresses='' -c unix_socket_directories='$WORK'" start
 "$PGBINNEW/vacuumdb" --host="$WORK" --username="$SUPERUSER" --all --analyze-in-stages --missing-stats-only
+
+# Rebuild every btree index on a char/bpchar (or oidvector) column. pg_upgrade copies index
+# files as they are, and indexes built before PostgreSQL 18.7 have deduplication enabled in
+# their metapage. 18.7 and 19 withdrew deduplication for these types (bpchar equality ignores
+# trailing spaces), so pg_amcheck reports those indexes as corrupt until they are rebuilt. Here
+# that is umami's session(website_id, created_at, country char(2)) index. Small and quick.
+q() { "$PGBINNEW/psql" -X -At -v ON_ERROR_STOP=1 --host="$WORK" --username="$SUPERUSER" "$@"; }
+for db in $(q -d postgres -c "SELECT datname FROM pg_database WHERE datallowconn ORDER BY 1"); do
+  q -d "$db" -c "
+    SELECT x.indexrelid::regclass
+    FROM pg_index x
+    JOIN pg_class i ON i.oid = x.indexrelid
+    JOIN pg_am am ON am.oid = i.relam
+    JOIN pg_namespace n ON n.oid = i.relnamespace
+    WHERE am.amname = 'btree'
+      AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+      AND EXISTS (SELECT FROM unnest(x.indclass) AS c(opc)
+                  JOIN pg_opclass oc ON oc.oid = c.opc
+                  JOIN pg_opfamily f ON f.oid = oc.opcfamily
+                  WHERE f.opfname IN ('bpchar_ops', 'bpchar_pattern_ops', 'oidvector_ops'))" |
+  while IFS= read -r idx; do
+    log "$db: REINDEX INDEX $idx"
+    q -d "$db" -c "REINDEX INDEX $idx" > /dev/null
+  done
+done
 "$PGBINNEW/pg_ctl" -D "$NEW" -m fast -w -t 600 stop
 
 cd "$BASE"
