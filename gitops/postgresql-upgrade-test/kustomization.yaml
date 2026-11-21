@@ -1,0 +1,27 @@
+# Rehearses the shared Postgres major upgrade (18 -> 19) on a copy of production, with the same
+# upgrade script and the same init containers that gitops/postgresql/statefulset.yaml uses.
+# The Job runs once per sync:
+#   seed        postgres:18-alpine  builds an 18 cluster like the image's first start, loads a
+#                                   read-only pg_dumpall of production, records row counts and
+#                                   role hashes, then stops it hard (covers crash recovery)
+#   old-binaries + pg-upgrade       identical to production's init containers
+#   verify      postgres:19-alpine  starts the upgraded cluster through the image's entrypoint
+#                                   and checks it (row counts, roles, pg_amcheck, extensions)
+# Everything lives in an emptyDir, so nothing stays behind. Parked after use like
+# prowlarr-test: comment it out in argocd-apps/base/kustomization.yaml; uncomment to rehearse
+# the next major (bump the tags and OLD_MAJOR here and in gitops/postgresql).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: postgresql-upgrade-test
+
+resources:
+- ./externalsecret.yaml
+- ./job.yaml
+
+configMapGenerator:
+- name: postgresql-upgrade-test
+  files:
+  - seed.sh
+  - verify.sh
+  # the production script itself, not a copy
+  - ../postgresql/scripts/pg-upgrade.sh

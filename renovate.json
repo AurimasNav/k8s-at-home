@@ -10,6 +10,11 @@
   "gitIgnoredAuthors": ["fake@mail.com"],
   "packageRules": [
     {
+      "description": "gitops/postgresql-upgrade-test rehearses a Postgres major upgrade with pinned old and new images; they are bumped by hand together with gitops/postgresql when the next major is rehearsed",
+      "matchFileNames": ["gitops/postgresql-upgrade-test/**"],
+      "enabled": false
+    },
+    {
       "description": "Plex tags are <major>.<minor>.<patch>.<build>-<git hash>; compare the numbers, ignore the hash and per-arch tags",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["plexinc/pms-docker"],
