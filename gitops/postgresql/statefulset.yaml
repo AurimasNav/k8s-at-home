@@ -17,37 +17,8 @@ spec:
         k8up.io/backupcommand: pg_dumpall -U hairsera
         k8up.io/file-extension: .sql
     spec:
-      # Major-version upgrade, tested first by gitops/postgresql-upgrade-test on a copy of
-      # production. pg-upgrade.sh converts /var/lib/postgresql/<OLD_MAJOR> to the image's major
-      # with pg_upgrade --copy (the old cluster stays as it was, so rolling back is reverting the
-      # image tag) and does nothing once the new cluster exists. old-binaries supplies the old
-      # version's programs from the same Alpine build family, so text sort order stays the same.
-      initContainers:
-      - name: old-binaries
-        image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
-        command: ["cp", "-a", "/usr/local/.", "/opt/pg-old/"]
-        volumeMounts:
-        - name: pg-old
-          mountPath: /opt/pg-old
-      - name: pg-upgrade
-        image: postgres:19-alpine
-        command: ["sh", "/scripts/pg-upgrade.sh"]
-        env:
-        - name: OLD_MAJOR
-          value: "18"
-        - name: PGBINOLD
-          value: /opt/pg-old/bin
-        envFrom:
-        - configMapRef:
-            name: postgresql
-        volumeMounts:
-        - name: data
-          mountPath: /var/lib/postgresql
-        - name: pg-old
-          mountPath: /opt/pg-old
-          readOnly: true
-        - name: scripts
-          mountPath: /scripts
+      # Major upgrades: gitops/postgresql/scripts/pg-upgrade.sh as init containers, rehearsed first
+      # with gitops/postgresql-upgrade-test. 18 -> 19 was done that way in #1145.
       containers:
       - name: postgresql
         image: postgres:19-alpine
@@ -61,24 +32,24 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /var/lib/postgresql
+        # The node has short memory/IO pressure spells at night (about 5 minutes in which probes of
+        # pods across the cluster time out). With the default 1 s timeout and 3 failures, the
+        # liveness check killed a healthy Postgres 20 times in 26 days, dropping every app's
+        # connections. These limits ride such spells out; a real hang still restarts it in ~5 min.
         readinessProbe:
           exec:
             command: [pg_isready, -U, hairsera, -d, hairsera]
           initialDelaySeconds: 5
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
         livenessProbe:
           exec:
             command: [pg_isready, -U, hairsera, -d, hairsera]
           initialDelaySeconds: 30
           periodSeconds: 30
-      volumes:
-      - name: pg-old
-        emptyDir:
-          sizeLimit: 512Mi
-      - name: scripts
-        configMap:
-          name: postgresql-scripts
-          defaultMode: 0555
+          timeoutSeconds: 10
+          failureThreshold: 10
   volumeClaimTemplates:
   - metadata:
       name: data
