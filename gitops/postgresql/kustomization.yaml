@@ -10,3 +10,9 @@ resources:
 - ./questlog.externalsecret.yaml
 - ./umami.externalsecret.yaml
 - ./databases.job.yaml
+
+configMapGenerator:
+- name: postgresql-scripts
+  namespace: postgresql
+  files:
+  - scripts/pg-upgrade.sh
