@@ -278,8 +278,20 @@
       "resetStrikesOnProgress": true,
       "deletePrivateTorrentsFromClient": true,
       "changeCategory": false
+    },
+    {
+      "name": "private-stuck",
+      "enabled": true,
+      "maxStrikes": 2016,
+      "privacyType": "Private",
+      "minCompletionPercentage": 1,
+      "maxCompletionPercentage": 100,
+      "resetStrikesOnProgress": true,
+      "deletePrivateTorrentsFromClient": true,
+      "changeCategory": false
     }
   ],
+  "_stallRules": "One strike per queue-cleaner run (every 5 min); any download progress resets them. Rules of one privacy type must not overlap in completion %. public-stalled: 6 strikes (30 min). private-dead: 0-1 %, 288 strikes (24 h). private-stuck: above 1 %, 2016 strikes (7 days without progress), e.g. a torrent whose only seeder left part-way. At max strikes the arr drops the download, blocklists the release and searches again; the torrent and its partial files are deleted from qBittorrent.",
   "malwareBlocker": {
     "enabled": true,
     "cronExpression": "0 0/5 * * * ?",
