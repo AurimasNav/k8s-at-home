@@ -25,6 +25,7 @@ import datetime as dt
 import http.cookiejar
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -76,6 +77,53 @@ def gb(n):
 def size_h(n):
     n = n or 0
     return f"{n / 1e12:.2f} TB" if n >= 1e12 else f"{n / 1e9:.1f} GB"
+
+
+def quality_name(h):
+    return ((h.get("quality") or {}).get("quality") or {}).get("name", "?")
+
+
+def cf_names(h):
+    return {c.get("name") for c in h.get("customFormats") or [] if c.get("name")}
+
+
+NOT_REMUX = " (not Remux)"
+
+
+def cf_show(names, other=()):
+    """Custom formats worth naming: no resolution CFs (the quality says it), and "X (not Remux)"
+    folded into "X" when X is in this set or in `other` (the other side of a gained/lost note,
+    so an Atmos WEB-DL replaced by an Atmos Remux doesn't read as "no longer has Atmos")."""
+    names = {n for n in names if not re.fullmatch(r"\d{3,4}p", n)}
+    keep = names | set(other)
+    return sorted(n for n in names if not (n.endswith(NOT_REMUX) and n[: -len(NOT_REMUX)] in keep))
+
+
+def title_cfs(inst):
+    """Names of the custom formats that match on the release name. The arrs score a library file
+    by its file name, so on a file-deleted row these CFs are missing whenever the file was renamed
+    to the library format ("... WEBDL-1080p.mkv"); they are only reliable on the import row."""
+    return {c["name"] for c in arr_get(inst, "/api/v3/customformat")
+            if any(s.get("implementation") == "ReleaseTitleSpecification" for s in c.get("specifications") or [])}
+
+
+def import_row_of(inst, kind, deleted):
+    """The import row that brought in the file a file-deleted row removed: same movie/episode,
+    same size, the latest import before the deletion. None when the file arrived some other way
+    (added from disk, manual import outside a download) and so has no import row."""
+    item = deleted.get("movieId") or deleted.get("episodeId")
+    if kind == "radarr":
+        rows = arr_get(inst, f"/api/v3/history/movie?movieId={item}&eventType=3")
+    else:
+        rows = arr_get(inst, f"/api/v3/history?episodeId={item}&eventType=3&pageSize=250")["records"]
+    size = str((deleted.get("data") or {}).get("size"))
+    rows = [h for h in rows if h["date"] <= deleted["date"] and str((h.get("data") or {}).get("size")) == size]
+    return max(rows, key=lambda h: h["date"]) if rows else None
+
+
+def when(h):
+    """A history row's time as an aware datetime."""
+    return dt.datetime.fromisoformat(h["date"].replace("Z", "+00:00"))
 
 
 def local(ts):
@@ -350,6 +398,7 @@ def main():
     a = ap.parse_args()
     now = dt.datetime.now(dt.UTC)
     since = now - dt.timedelta(days=a.days)
+    window = "this week" if a.days == 7 else f"in these {a.days} days"
     print(f"MEDIA WEEKLY {since.astimezone(TZ):%Y-%m-%d %H:%M} -> {now.astimezone(TZ):%Y-%m-%d %H:%M} (Vilnius), {a.days} d")
     state_file = {}
     try:
@@ -415,7 +464,8 @@ def main():
 
     # --- downloads / upgrades / deletions (arr history) ---
     section("LIBRARY CHANGES (Radarr/Sonarr history)")
-    imported_bytes = 0
+    imported_bytes = replaced_bytes = upgrade_in_bytes = redo_bytes = 0
+    upgraded_items = collections.Counter()  # "episodes"/"movies" -> count
     imported_downloads = set()  # lowercased downloadIds (= torrent hashes) that imported something
     for inst in arr_instances():
         name, kind, _, _ = inst
@@ -429,63 +479,143 @@ def main():
         print(f"{name}: " + (", ".join(f"{k} {v}" for k, v in ev.most_common()) or "no activity"))
         if not hist:
             continue
-        # upgrades = an import whose item also had a file deleted with reason Upgrade in the window
-        upgraded_ids = {(h.get("movieId") or h.get("episodeId")) for h in hist
-                        if h["eventType"] in ("movieFileDeleted", "episodeFileDeleted") and (h.get("data") or {}).get("reason") == "Upgrade"}
-        old_size = collections.defaultdict(int)
-        for h in hist:
-            if h["eventType"] in ("movieFileDeleted", "episodeFileDeleted") and (h.get("data") or {}).get("reason") == "Upgrade":
-                old_size[h.get("movieId") or h.get("episodeId")] += int((h.get("data") or {}).get("size") or 0)
-        groups = collections.OrderedDict()
+        # Per movie/episode, the window's last import is the file now on disk. The item had a file
+        # before the window when an Upgrade deletion comes no later than its first import (the arr
+        # logs the replaced file's deletion in the same second as the import); that deletion is
+        # what the window replaced. A count of deletions vs imports gets this wrong when a copy is
+        # deleted by hand in between. Copies imported and replaced again within the window (a new
+        # episode arriving as 1080p, then 2160p, then an Atmos release) count once, so sizes and
+        # episode counts aren't multiplied by the number of re-downloads. An item whose last import
+        # was deleted again (not by an upgrade) has nothing on disk and is listed apart.
+        per_item = collections.defaultdict(lambda: {"imports": [], "upg_del": [], "other_del": []})
         for h in sorted(hist, key=lambda h: h["date"]):
-            if h["eventType"] != "downloadFolderImported":
-                continue
+            iid = h.get("movieId") or h.get("episodeId")
+            if h["eventType"] == "downloadFolderImported":
+                per_item[iid]["imports"].append(h)
+            elif h["eventType"] in ("movieFileDeleted", "episodeFileDeleted"):
+                per_item[iid]["upg_del" if (h.get("data") or {}).get("reason") == "Upgrade" else "other_del"].append(h)
+        grabs = {h.get("downloadId"): (h.get("data") or {}).get("indexer", "").replace(" (Prowlarr)", "")
+                 for h in hist if h["eventType"] == "grabbed"}
+        try:
+            title_only = title_cfs(inst)
+        except Exception:  # noqa: BLE001
+            title_only = set()
+        seen = set()
+
+        def once(h, seen=seen):
+            """Size of a history row's file, 0 when this instance already counted that file (a
+            multi-episode file has one history row per episode, each with the full size). Import
+            rows carry the file id; deletion rows only the path, which re-imports reuse, so their
+            key includes the size."""
             d = h.get("data") or {}
-            size = int(d.get("size") or 0)
-            imported_bytes += size
+            if h["eventType"] == "downloadFolderImported" and d.get("fileId") not in (None, "", "0"):
+                f = ("file", d["fileId"])
+            else:
+                f = (h["eventType"], d.get("importedPath") or h.get("sourceTitle") or id(h), d.get("size"))
+            if f in seen:
+                return 0
+            seen.add(f)
+            return int(d.get("size") or 0)
+
+        groups = collections.OrderedDict()
+        gone = []
+        items = sorted(((i, e) for i, e in per_item.items() if e["imports"]), key=lambda x: x[1]["imports"][0]["date"])
+        for _, e in items:
+            imps, dels = e["imports"], e["upg_del"]
+            first, last = imps[0], imps[-1]
+            if any(h["date"] >= last["date"] for h in e["other_del"]):
+                gone.append((last, sum(once(h) for h in imps)))
+                continue
+            first_at = when(first)
+            # Logged in the same import as the first copy, a few seconds either way; a later
+            # deletion of a file the size of the first copy is the window replacing its own copy.
+            had_file = bool(dels) and (when(dels[0]) <= first_at or (when(dels[0]) <= first_at + dt.timedelta(seconds=60)
+                                                                       and (dels[0].get("data") or {}).get("size") != (first.get("data") or {}).get("size")))
+            if had_file:
+                # The deletion row's CFs come from the library file name, which has lost the release
+                # name (Atmos, "(title)" CFs). Take them from the import that brought that file in;
+                # when there is none, a title CF missing from the deletion row is unknown, not absent.
+                try:
+                    src = import_row_of(inst, kind, dels[0])
+                except Exception:  # noqa: BLE001
+                    src = None
+                base_cf = cf_names(src or dels[0])
+                unknown = set() if src else title_only - base_cf
+            else:
+                base_cf, unknown = cf_names(first), set()
             if kind == "radarr":
-                mv = h.get("movie") or {}
+                mv = last.get("movie") or {}
                 title = f"{mv.get('title')} ({mv.get('year')})"
-                key = ("movie", h.get("movieId"))
+                key = ("movie", last.get("movieId"))
                 tmdb = ("movie", mv.get("tmdbId"))
             else:
-                se, ep = h.get("series") or {}, h.get("episode") or {}
+                se, ep = last.get("series") or {}, last.get("episode") or {}
                 title = f"{se.get('title')} S{ep.get('seasonNumber', 0):02d}"
-                key = ("season", h.get("seriesId"), ep.get("seasonNumber"))
+                key = ("season", last.get("seriesId"), ep.get("seasonNumber"), had_file)
                 tmdb = ("tv", se.get("tmdbId"))
-            item_id = h.get("movieId") or h.get("episodeId")
-            g = groups.setdefault(key, {"title": title, "n": 0, "size": 0, "old": 0, "upg": 0, "quality": set(),
-                                        "indexer": set(), "when": h["date"], "tmdb": tmdb, "cf": set()})
+            g = groups.setdefault(key, {"title": title, "upg": had_file, "n": 0, "size": 0, "old": 0, "quality": set(),
+                                        "was": set(), "cf": collections.Counter(), "base_cf": set(), "gained": collections.Counter(),
+                                        "lost": collections.Counter(),
+                                        "redo": 0, "redo_bytes": 0, "indexer": set(), "when": first["date"], "tmdb": tmdb})
             g["n"] += 1
+            size = once(last)
             g["size"] += size
-            g["quality"].add(((h.get("quality") or {}).get("quality") or {}).get("name", "?"))
-            g["cf"].update(c.get("name") for c in h.get("customFormats") or [])
-            if item_id in upgraded_ids:
-                g["upg"] += 1
-                g["old"] += old_size.get(item_id, 0)
-        grabs = {}
-        for h in hist:
-            if h["eventType"] == "grabbed":
-                grabs[h.get("downloadId")] = (h.get("data") or {}).get("indexer", "").replace(" (Prowlarr)", "")
-        for h in hist:
-            if h["eventType"] == "downloadFolderImported":
-                key = ("movie", h.get("movieId")) if kind == "radarr" else ("season", h.get("seriesId"), (h.get("episode") or {}).get("seasonNumber"))
-                if h.get("downloadId") in grabs and key in groups:
-                    groups[key]["indexer"].add(grabs[h["downloadId"]])
+            g["quality"].add(quality_name(last))
+            g["cf"].update(cf_names(last))
+            g["base_cf"].update(base_cf)
+            g["gained"].update(cf_names(last) - base_cf - unknown)
+            g["lost"].update(base_cf - cf_names(last))
+            if had_file:
+                g["old"] += once(dels[0])
+                g["was"].add(quality_name(dels[0]))
+            g["redo"] += len(imps) - 1
+            g["redo_bytes"] += sum(once(h) for h in imps[:-1])
+            if grabs.get(last.get("downloadId")):
+                g["indexer"].add(grabs[last["downloadId"]])
         for g in groups.values():
-            unit = "" if kind == "radarr" else f" {g['n']} ep"
+            imported_bytes += g["size"]
+            redo_bytes += g["redo_bytes"]
+            if g["upg"]:
+                replaced_bytes += g["old"]
+                upgrade_in_bytes += g["size"]
+                upgraded_items["movies" if kind == "radarr" else "episodes"] += g["n"]
             tag = "UPGRADE" if g["upg"] else "NEW"
-            upg = f", replaced {gb(g['old'])}" if g["upg"] and g["old"] else ""
+            unit = "" if kind == "radarr" else f" {g['n']} ep"
+            upg = f", replaced {gb(g['old'])}" if g["upg"] else ""
+            was = f" | was {'/'.join(sorted(g['was']))}" if g["was"] and g["was"] != g["quality"] else ""
             who, took = requested_tmdb.get(g["tmdb"], (None, None)), ""
             if who[1]:
                 secs = (dt.datetime.fromisoformat(g["when"].replace("Z", "+00:00")) - dt.datetime.fromisoformat(who[1].replace("Z", "+00:00"))).total_seconds()
                 if secs > 0:
                     took = f", ready {secs / 3600:.1f} h after the request" if secs < 172800 else f", ready {secs / 86400:.1f} d after the request"
             who = who[0]
-            cfs = ", ".join(sorted(c for c in g["cf"] if c))[:80]
-            print(f"  {tag} {local(g['when'])} | {g['title']}{unit} | {'/'.join(sorted(g['quality']))} | {gb(g['size'])}{upg}"
-                  f"{' | via ' + '/'.join(sorted(i for i in g['indexer'] if i)) if g['indexer'] else ''}"
-                  f"{' | CF ' + cfs if cfs else ''}{' | requested by ' + who + took if who else ''}")
+            # CF = custom formats of the files now on disk ("x/n" when only some have it). The
+            # now-has / no-longer-has notes compare them with the file each one replaced (for a new
+            # item: its first copy in the window), so an Atmos line can't be read as "was Atmos";
+            # "x/n" there too when only some episodes changed.
+            shown = set(cf_show(g["cf"]))
+            cfs = ", ".join(c if g["cf"][c] == g["n"] else f"{c} {g['cf'][c]}/{g['n']}" for c in sorted(shown))[:100]
+            change = ""
+            ref = "the copy it replaced" if g["upg"] else f"its first copy {window}"
+
+            def note(cnt, other, g=g):
+                return ", ".join(c if cnt[c] == g["n"] else f"{c} {cnt[c]}/{g['n']}" for c in cf_show(cnt, other))
+
+            gained, lost = note(g["gained"], g["base_cf"]), note(g["lost"], g["cf"])
+            if gained:
+                change += f" | now has {gained} ({ref} didn't)"
+            if lost:
+                change += f" | no longer has {lost} ({ref} did)"
+            redo = (f" | {g['redo']} earlier {'copy' if g['redo'] == 1 else 'copies'} downloaded and replaced again {window}"
+                    f" ({gb(g['redo_bytes'])}, not counted)" if g["redo"] else "")
+            print(f"  {tag} {local(g['when'])} | {g['title']}{unit} | {'/'.join(sorted(g['quality']))} | {gb(g['size'])}{upg}{was}"
+                  f"{' | via ' + '/'.join(sorted(g['indexer'])) if g['indexer'] else ''}"
+                  f"{' | CF ' + cfs if cfs else ''}{change}{redo}{' | requested by ' + who + took if who else ''}")
+        if gone:
+            names = sorted({(h.get("movie") or {}).get("title") or f"{(h.get('series') or {}).get('title')} S{(h.get('episode') or {}).get('seasonNumber', 0):02d}"
+                            for h, _ in gone})
+            print(f"  imported and deleted again {window} (not on disk, not counted): {len(gone)} {'movies' if kind == 'radarr' else 'episodes'},"
+                  f" {gb(sum(b for _, b in gone))}: " + "; ".join(names)[:200])
         deleted = [h for h in hist if h["eventType"] in ("movieFileDeleted", "episodeFileDeleted") and (h.get("data") or {}).get("reason") != "Upgrade"]
         if deleted:
             dsz = sum(int((h.get("data") or {}).get("size") or 0) for h in deleted)
@@ -512,7 +642,12 @@ def main():
         ignored = [h for h in hist if h["eventType"] == "downloadIgnored"]
         if ignored:
             print(f"  downloads ignored by hand: {len(ignored)} episodes, " + "; ".join(sorted({h.get('sourceTitle', '?')[:50] for h in ignored}))[:200])
-    print(f"total imported into the library: {size_h(imported_bytes)}")
+    print(f"total imported into the library: {size_h(imported_bytes)} (files now on disk"
+          + (f"; another {size_h(redo_bytes)} was downloaded and replaced again {window}" if redo_bytes else "") + ")")
+    if sum(upgraded_items.values()):
+        n = ", ".join(f"{v} {k}" for k, v in sorted(upgraded_items.items()) if v)
+        net = upgrade_in_bytes - replaced_bytes
+        print(f"upgrades total: {n} | {gb(upgrade_in_bytes)} in, {gb(replaced_bytes)} replaced, net {'+' if net >= 0 else '-'}{gb(abs(net))}")
 
     # --- Cleanuparr ---
     section("CLEANUPARR")
