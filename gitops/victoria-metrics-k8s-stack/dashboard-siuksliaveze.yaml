@@ -134,7 +134,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "expr": "label_map(time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\")",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": true,
@@ -186,7 +186,7 @@ data:
           "type": "stat",
           "id": 3,
           "title": "Places covered",
-          "description": "Settlements (Vilniaus r., and in Mažeikių r. those with a schedule) or addresses (Kauno r.) that got a schedule. ScheduleDataShrank fires when it is over 10% lower than a day before.",
+          "description": "Settlements (Vilniaus r., and in Mažeikių r. and Klaipėdos r. those with a schedule) or addresses (Kauno r.) that got a schedule. ScheduleDataShrank fires when it is over 10% lower than a day before.",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
@@ -203,7 +203,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(last_over_time(siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "expr": "label_map(last_over_time(siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\")",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": true,
@@ -265,7 +265,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(last_over_time(siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "expr": "label_map(last_over_time(siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\")",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": true,
@@ -542,7 +542,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sort_desc(label_map(last_over_time(siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\"))",
+              "expr": "sort_desc(label_map(last_over_time(siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\"))",
               "legendFormat": "{{source}} · {{kind}}",
               "refId": "A",
               "instant": true,
@@ -592,7 +592,7 @@ data:
           "type": "bargauge",
           "id": 9,
           "title": "Schedules end in",
-          "description": "Days until the last pickup date in the published schedules. When a waste company posts the next period late, the reminders stop after this date. ScheduleDataRunsOut fires at 7 days, for Mažeikių r. only: its files cover a year, while the Vilniaus r. ones cover a quarter and get this close every quarter. Kauno r. isn't listed: its dates are calculated ahead.",
+          "description": "Days until the last pickup date in the published schedules. When a waste company posts the next period late, the reminders stop after this date. ScheduleDataRunsOut fires at 7 days, for Mažeikių r. and for Klaipėdos r.'s mixed waste and packaging only: their files cover a year, while the Vilniaus r. ones cover a quarter and get this close every quarter, and Klaipėdos r. collects glass a few times a year and green waste only from April to November. Kauno r. isn't listed: its dates are calculated ahead.",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
@@ -609,7 +609,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sort(label_map((last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]) - time()) / 86400, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\"))",
+              "expr": "sort(label_map((last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]) - time()) / 86400, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\"))",
               "legendFormat": "{{source}} · {{kind}}",
               "refId": "A",
               "instant": true,
@@ -700,7 +700,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map((time() - siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}) / 3600, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "expr": "label_map((time() - siuksliaveze_data_generated_timestamp_seconds{job=\"siuksliaveze-data\",source=~\"$source\"}) / 3600, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\")",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": false,
@@ -788,7 +788,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "expr": "label_map(siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\")",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": false,
@@ -840,7 +840,7 @@ data:
           "type": "timeseries",
           "id": 13,
           "title": "Places covered",
-          "description": "Settlements (Vilniaus r., and in Mažeikių r. those with a schedule) or addresses (Kauno r.) that got a schedule. ScheduleDataShrank fires when it is over 10% lower than a day before. Kauno r. uses the right axis.",
+          "description": "Settlements (Vilniaus r., and in Mažeikių r. and Klaipėdos r. those with a schedule) or addresses (Kauno r.) that got a schedule. ScheduleDataShrank fires when it is over 10% lower than a day before. Kauno r. uses the right axis.",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
@@ -859,7 +859,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "expr": "label_map(siuksliaveze_data_places{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\")",
               "legendFormat": "{{source}}",
               "refId": "A",
               "instant": false,
@@ -943,7 +943,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "expr": "label_map(siuksliaveze_data_areas{job=\"siuksliaveze-data\",source=~\"$source\"}, \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\")",
               "legendFormat": "{{source}} · {{kind}}",
               "refId": "A",
               "instant": false,
@@ -1025,7 +1025,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "label_map(max by (alertname, source) (ALERTS{alertgroup=\"siuksliaveze-data\",alertstate=\"firing\"}), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\")",
+              "expr": "label_map(max by (alertname, source) (ALERTS{alertgroup=\"siuksliaveze-data\",alertstate=\"firing\"}), \"source\", \"nemencine\", \"Vilniaus r. (Nemenčinė)\", \"nemezio\", \"Vilniaus r. (Nemėžis)\", \"kauno\", \"Kauno r.\", \"mazeikiai\", \"Mažeikių r.\", \"klaipedos\", \"Klaipėdos r.\")",
               "legendFormat": "{{alertname}} {{source}}",
               "refId": "B",
               "instant": false,

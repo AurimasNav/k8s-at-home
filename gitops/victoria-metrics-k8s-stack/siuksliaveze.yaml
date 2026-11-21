@@ -29,7 +29,8 @@ spec:
   - name: siuksliaveze-data
     interval: 10m
     rules:
-    # `source` is nemencine or nemezio (Vilniaus r.), kauno (Kauno r.) or mazeikiai (Mažeikių r.).
+    # `source` is nemencine or nemezio (Vilniaus r.), kauno (Kauno r.), mazeikiai (Mažeikių r.) or
+    # klaipedos (Klaipėdos r.).
     # Every rule reads the newest sample of the last 20 min (last_over_time [20m]). vmalert queries
     # at whole 10 min marks with a 5 min lookback, so a bare selector sees this 10 min scrape only
     # when it lands less than 5 min before the mark. Today it lands 45 s before, but vmagent derives
@@ -73,12 +74,17 @@ spec:
           (new typo or renamed place in the source?). Compared with a day earlier, so it clears after
           24 h even if nothing was fixed
         dashboard: '{{ $externalURL }}/d/siuksliaveze?orgId=1&var-source={{ $labels.source }}'
-    # The last pickup date the published schedules have. Mažeikių r. gets one file per year and
-    # waste type; if next year's isn't posted (or the job doesn't recognise it), the build
-    # stays green while the reminders stop after the last date. Only this source: the quarterly
-    # files of the Vilniaus r. companies come close to their last date every quarter.
+    # The last pickup date the published schedules have. Mažeikių r. and Klaipėdos r. get one file
+    # per year; if next year's isn't posted (or the job doesn't recognise it), the build stays
+    # green while the reminders stop after the last date. Only these sources: the quarterly files
+    # of the Vilniaus r. companies come close to their last date every quarter. Klaipėdos r.
+    # collects glass four or five times a year and green waste from April to November, so only
+    # its mixed waste and packaging.
     - alert: ScheduleDataRunsOut
-      expr: last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="mazeikiai"}[20m]) - time() < 7 * 86400
+      expr: |-
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="mazeikiai"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="klaipedos",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
       for: 1h
       labels:
         severity: warning
