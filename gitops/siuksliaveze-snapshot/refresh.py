@@ -1,9 +1,10 @@
 """Refresh the data that GitHub's runners can't download, in AurimasNav/atlieku-surinkimo-grafikas.
 
 Šiukšliavežė builds its schedule data on GitHub Actions, but some sources refuse GitHub's
-runners: the Address Register (get.data.gov.lt answers them 500/403) and kedainiai.lt,
-silute.lt and ukmerge.lt (403, at the network level). The build reads committed copies of them
-in pipeline/data instead. This cluster is in Lithuania, so it can take those copies:
+runners: the Address Register (get.data.gov.lt answers them 500/403) and the municipal sites
+listed in the app's `snapshot.site_copies()` (403, at the network level). The build reads
+committed copies of them in pipeline/data instead. This cluster is in Lithuania, so it can take
+those copies:
 
 1. Shallow-clone main (a public repo: no token), `uv sync --locked`, and run
    `python -m schedule_pipeline.snapshot --copies` (or `--register`) in pipeline/. A snapshot
@@ -62,7 +63,7 @@ JOBS = {
         "--copies",
         "data/site-copies",
         "Refresh the copies of the sites that refuse GitHub's runners",
-        "silute.lt, kedainiai.lt and ukmerge.lt refuse GitHub's runners",
+        "the sites listed in `snapshot.site_copies()` refuse GitHub's runners",
     ),
     "register": Job(
         "address-register",

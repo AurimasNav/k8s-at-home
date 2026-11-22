@@ -374,7 +374,7 @@
 
 ## Šiukšliavežė data refresh
 
-- Some of the sources of [Šiukšliavežė](https://github.com/AurimasNav/atlieku-surinkimo-grafikas)'s schedule data refuse GitHub's runners: the Address Register (get.data.gov.lt) and kedainiai.lt, silute.lt and ukmerge.lt. Its daily job reads committed copies of them, and `gitops/siuksliaveze-snapshot` takes those copies from here (the cluster is in Lithuania).
+- Some of the sources of [Šiukšliavežė](https://github.com/AurimasNav/atlieku-surinkimo-grafikas)'s schedule data refuse GitHub's runners: the Address Register (get.data.gov.lt) and the municipal sites listed in its `snapshot.site_copies()` (silute.lt, kedainiai.lt, ukmerge.lt and sirvintos.lt in November 2026). Its daily job reads committed copies of them, and `gitops/siuksliaveze-snapshot` takes those copies from here (the cluster is in Lithuania).
 - CronJob `site-copies` runs daily at 03:00 UTC (`snapshot --copies`). CronJob `address-register` runs on the 1st of the month at 01:00 UTC (`snapshot --register`, 3 tries an hour apart). When `pipeline/data` changed, each opens a PR from its bot branch (`data/site-copies`, `data/address-register`) and merges it once the `check` and `build` checks pass.
 - Doppler `SIUKSLIAVEZE_GITHUB_TOKEN`: a fine-grained personal access token for that one repository only, with Contents: read and write, Pull requests: read and write, and Metadata: read.
 - A failed run (snapshot, checks or merge) fails its Job, so `KubeJobFailed` fires; its PR stays open. Read the log (`kubectl -n siuksliaveze-snapshot logs job/<name>`), then delete the Job to clear the alert. Run one now: `kubectl -n siuksliaveze-snapshot create job --from=cronjob/site-copies copies-now`.
