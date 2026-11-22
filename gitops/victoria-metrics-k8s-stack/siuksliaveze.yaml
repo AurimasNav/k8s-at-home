@@ -126,6 +126,12 @@ spec:
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="sirvintos",kind="household"}[20m]) - time() < 2 * 86400
           or
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="sirvintos",kind=~"packaging|glass"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kupiskis",kind="packaging"}[20m]) - time() < 2 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="svencionys",kind="packaging"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="zarasai",kind=~"packaging|glass"}[20m]) - time() < 7 * 86400
       for: 1h
       labels:
         severity: warning
