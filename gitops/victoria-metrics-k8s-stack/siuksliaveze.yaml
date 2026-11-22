@@ -58,22 +58,23 @@ spec:
           Šiukšliavežė: the {{ $labels.source }} data covers {{ $value }} places, over 10% fewer than
           yesterday (compared with a day earlier, so it clears after 24 h even if nothing was fixed)
         dashboard: '{{ $externalURL }}/d/siuksliaveze?orgId=1&var-source={{ $labels.source }}'
-    # Warnings are rows the parser couldn't place, so a rise usually means a new typo or a renamed
-    # village in the source file: the data is still published, but those addresses have no
-    # schedule. Warning, not info: info-level alerts never reach Telegram (values.yaml routes them
-    # to the blackhole receiver).
-    - alert: ScheduleDataMoreWarnings
-      expr: |-
-        last_over_time(siuksliaveze_data_warnings{job="siuksliaveze-data"}[20m])
-          > last_over_time(siuksliaveze_data_warnings{job="siuksliaveze-data"}[20m] offset 1d)
+    # Warnings of a build that pipeline/known-warnings.json of the app repository doesn't list (row
+    # and page numbers and a site copy's date left out): usually a new typo or a renamed village in
+    # the source file, so the data is still published but those addresses have no schedule. Known
+    # warnings never fire it, and it stays until the parser is fixed or the warnings acknowledged
+    # (`status --write-known`, docs/monitoring.md of the app repository), not 24 h; with
+    # Alertmanager's repeat_interval it is re-sent daily until then. Warning, not info: info-level
+    # alerts never reach Telegram (values.yaml routes them to the blackhole receiver).
+    - alert: ScheduleDataNewWarnings
+      expr: last_over_time(siuksliaveze_data_new_warnings{job="siuksliaveze-data"}[20m]) > 0
+      for: 30m
       labels:
         severity: warning
       annotations:
         summary: >-
-          Šiukšliavežė: the {{ $labels.source }} build has {{ $value }} warnings, more than yesterday
-          (new typo or renamed place in the source?). Compared with a day earlier, so it clears after
-          24 h even if nothing was fixed
-        dashboard: '{{ $externalURL }}/d/siuksliaveze?orgId=1&var-source={{ $labels.source }}'
+          Šiukšliavežė: the {{ $labels.source }} build has {{ $value }} new warnings (not in
+          pipeline/known-warnings.json); fix the parser or acknowledge them
+        dashboard: https://aurimasnav.github.io/atlieku-surinkimo-grafikas/warnings.html#{{ $labels.source }}
     # The last pickup date the published schedules have. Sources with yearly (or half-yearly or
     # quarterly) files: if the next file isn't posted or isn't read, the build stays green while the
     # reminders stop after the last date. Which sources and waste types are watched, and with how
