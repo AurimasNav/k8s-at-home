@@ -1,0 +1,30 @@
+# The refresh pods hold a token that can push to the app repository. Nothing may connect to
+# them. They may resolve names and open HTTPS, nothing else: github.com and api.github.com (clone,
+# push, PRs), pypi.org and files.pythonhosted.org (uv sync), and the sites they copy
+# (get.data.gov.lt, www.registrucentras.lt and those in the app's snapshot.site_copies()). That
+# last list grows with the app, so HTTPS isn't limited by name.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: siuksliaveze-snapshot
+spec:
+  endpointSelector:
+    matchLabels:
+      app: siuksliaveze-snapshot
+  ingress:
+  - {}
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+  - toEntities:
+    - world
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP

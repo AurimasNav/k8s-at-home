@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Šiukšliavežė (AurimasNav/atlieku-surinkimo-grafikas): refreshes the data its daily GitHub
+# Actions job can't download. Some of its sources refuse GitHub's runners: the Address Register
+# (get.data.gov.lt answers them 500/403) and the municipal sites listed in the app's
+# snapshot.site_copies() (403, at the network level; in November 2026 silute.lt, kedainiai.lt,
+# ukmerge.lt and sirvintos.lt). The job reads committed copies in pipeline/data instead. This
+# cluster is in Lithuania, where those sites answer, so it takes the copies:
+#
+# - cronjobs.yaml: two CronJobs, one script (refresh.py, configMapGenerator below).
+#   - site-copies: daily at 03:00 UTC, `snapshot --copies` (seconds). That's early enough for
+#     its PR to be merged before the app's daily data job (04:17 UTC); the merge also starts
+#     that job at once.
+#   - address-register: on the 1st of the month at 01:00 UTC, `snapshot --register` (about 6
+#     minutes, 0.5 GiB). get.data.gov.lt is often down, so it tries 3 times, an hour apart.
+#   Each clones the public repo's main, runs the command in pipeline/ and, if
+#   pipeline/data changed, pushes a commit to its bot branch (data/site-copies,
+#   data/address-register; recreated from main on every run, force-pushed) and opens a PR.
+#   It merges the PR (merge commit) once the head commit's `check` and `build` pass. If they
+#   fail or take over 25 minutes, the PR stays open and the Job fails (KubeJobFailed, a
+#   warning on Telegram). A copy whose schedule files didn't change is left as it is, so most
+#   days there's nothing to commit.
+# - externalsecret.yaml: the GitHub token, Doppler SIUKSLIAVEZE_GITHUB_TOKEN.
+# - networkpolicy.yaml: no ingress; egress DNS and HTTPS only.
+#
+# Run one by hand: kubectl -n siuksliaveze-snapshot create job --from=cronjob/site-copies copies-now
+# After a failure: read the job's log, then delete the failed Job to clear KubeJobFailed.
+namespace: siuksliaveze-snapshot
+
+resources:
+- ./externalsecret.yaml
+- ./cronjobs.yaml
+- ./networkpolicy.yaml
+
+configMapGenerator:
+- name: siuksliaveze-snapshot
+  files:
+  - refresh.py

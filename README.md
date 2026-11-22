@@ -16,6 +16,7 @@
     - [Update argo-cd password](#update-argo-cd-password)
   - [Blocky / Unbound (LAN DNS)](#blocky--unbound-lan-dns)
   - [Router web UI certificate (gw.sync.lt)](#router-web-ui-certificate-gwsynclt)
+  - [Šiukšliavežė data refresh](#šiukšliavežė-data-refresh)
   - [Alternative UI for qBittorrent | Mobile friendly iQbit](#alternative-ui-for-qbittorrent--mobile-friendly-iqbit)
 
 
@@ -370,6 +371,13 @@
 - `gitops/router-cert`: cert-manager gets and renews the certificate (DNS-01). A Job after each sync and a daily CronJob send it to the router over SSH.
 - The SSH key is Doppler `ROUTER_CERT_SSH_KEY`. On the router it is in nvram `sshd_authkeys` with a forced command, so it can only run `/jffs/scripts/router-cert-install.sh` (copy in `gitops/router-cert/router/`). The script checks the certificate (Let's Encrypt, only gw.sync.lt, key matches) before installing it and restarting the web UI.
 - Router settings: `http_enable=2` (HTTP and HTTPS), `https_lanport=443`, `le_enable=2` (uploaded certificate in `/jffs/.cert`).
+
+## Šiukšliavežė data refresh
+
+- Some of the sources of [Šiukšliavežė](https://github.com/AurimasNav/atlieku-surinkimo-grafikas)'s schedule data refuse GitHub's runners: the Address Register (get.data.gov.lt) and the municipal sites listed in its `snapshot.site_copies()` (silute.lt, kedainiai.lt, ukmerge.lt and sirvintos.lt in November 2026). Its daily job reads committed copies of them, and `gitops/siuksliaveze-snapshot` takes those copies from here (the cluster is in Lithuania).
+- CronJob `site-copies` runs daily at 03:00 UTC (`snapshot --copies`). CronJob `address-register` runs on the 1st of the month at 01:00 UTC (`snapshot --register`, 3 tries an hour apart). When `pipeline/data` changed, each opens a PR from its bot branch (`data/site-copies`, `data/address-register`) and merges it once the `check` and `build` checks pass.
+- Doppler `SIUKSLIAVEZE_GITHUB_TOKEN`: a fine-grained personal access token for that one repository only, with Contents: read and write, Pull requests: read and write, and Metadata: read.
+- A failed run (snapshot, checks or merge) fails its Job, so `KubeJobFailed` fires; its PR stays open. Read the log (`kubectl -n siuksliaveze-snapshot logs job/<name>`), then delete the Job to clear the alert. Run one now: `kubectl -n siuksliaveze-snapshot create job --from=cronjob/site-copies copies-now`.
 
 ## Alternative UI for qBittorrent | [Mobile friendly iQbit](https://github.com/ntoporcov/iQbit)
 
