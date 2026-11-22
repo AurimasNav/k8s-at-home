@@ -46,6 +46,7 @@ resources:
 - ./apps/cleanuparr
 - ./apps/cloudflared
 - ./apps/immich
+- ./apps/siuksliaveze-snapshot
 # Rehearsal of a shared Postgres major upgrade on a copy of production (gitops/postgresql-upgrade-test).
 # Parked after the 18 -> 19 upgrade; uncomment to rehearse the next major (bump its images first).
 # - ./apps/postgresql-upgrade-test

@@ -1,0 +1,196 @@
+# Two CronJobs, one script (refresh.py) and one pod spec: no Kubernetes API access, read-only
+# root fs, non-root (65534). The clone, the virtualenv and uv's cache are on the /work
+# emptyDir and HOME is /tmp. uv uses the image's Python 3.13 and never downloads one. The token
+# is GITHUB_TOKEN in the script's environment only; the script strips it from every command it
+# runs except `git push`.
+#
+# The script retries the snapshot itself (--attempts, --retry-wait). A Job therefore fails at
+# once when the script exits 1 (snapshot still failing, checks failed or timed out, merge
+# refused), and KubeJobFailed fires. Its PR, if any, stays open. Only a pod that is evicted or
+# loses its node is run again.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: site-copies
+spec:
+  # 03:00 UTC, before the app's daily data job (04:17 UTC). A merged PR also starts that job.
+  schedule: "0 3 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      podFailurePolicy:
+        rules:
+        - action: FailJob
+          onExitCodes:
+            containerName: refresh
+            operator: In
+            values: [1]
+        - action: Ignore
+          onPodConditions:
+          - type: DisruptionTarget
+      # 3 snapshot runs 10 minutes apart, then up to 25 minutes of checks.
+      activeDeadlineSeconds: 5400
+      template:
+        metadata:
+          labels:
+            app: siuksliaveze-snapshot
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: refresh
+            image: ghcr.io/astral-sh/uv:0.13.9-python3.13-trixie
+            command: ["python3", "/etc/siuksliaveze-snapshot/refresh.py", "copies", "--push",
+                      "--attempts", "3", "--retry-wait", "600"]
+            env:
+            - name: HOME
+              value: /tmp
+            - name: UV_CACHE_DIR
+              value: /work/uv-cache
+            - name: UV_PYTHON_DOWNLOADS
+              value: never
+            - name: UV_LINK_MODE
+              value: copy
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: siuksliaveze-snapshot-github
+                  key: token
+            # Measured: the snapshot peaks at about 55 MiB; uv sync and git clone around it.
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            volumeMounts:
+            - name: config
+              mountPath: /etc/siuksliaveze-snapshot
+              readOnly: true
+            - name: work
+              mountPath: /work
+            - name: tmp
+              mountPath: /tmp
+          volumes:
+          - name: config
+            configMap:
+              name: siuksliaveze-snapshot
+          # The repository (about 110 MiB with .git), the virtualenv and uv's cache.
+          - name: work
+            emptyDir:
+              sizeLimit: 2Gi
+          - name: tmp
+            emptyDir:
+              sizeLimit: 256Mi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: address-register
+spec:
+  # The 1st of the month, 01:00 UTC. A missed start is made up within a day.
+  schedule: "0 1 1 * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 86400
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      podFailurePolicy:
+        rules:
+        - action: FailJob
+          onExitCodes:
+            containerName: refresh
+            operator: In
+            values: [1]
+        - action: Ignore
+          onPodConditions:
+          - type: DisruptionTarget
+      # get.data.gov.lt is often down: 3 runs of about 6 minutes, an hour apart, then up to 25
+      # minutes of checks. 6 hours leaves room for a slow server.
+      activeDeadlineSeconds: 21600
+      template:
+        metadata:
+          labels:
+            app: siuksliaveze-snapshot
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: refresh
+            image: ghcr.io/astral-sh/uv:0.13.9-python3.13-trixie
+            command: ["python3", "/etc/siuksliaveze-snapshot/refresh.py", "register", "--push",
+                      "--attempts", "3", "--retry-wait", "3600"]
+            env:
+            - name: HOME
+              value: /tmp
+            - name: UV_CACHE_DIR
+              value: /work/uv-cache
+            - name: UV_PYTHON_DOWNLOADS
+              value: never
+            - name: UV_LINK_MODE
+              value: copy
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: siuksliaveze-snapshot-github
+                  key: token
+            # Measured: about 530 MiB at peak (the country's house numbers, read once per
+            # municipality).
+            resources:
+              requests:
+                cpu: 100m
+                memory: 640Mi
+              limits:
+                memory: 1536Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            volumeMounts:
+            - name: config
+              mountPath: /etc/siuksliaveze-snapshot
+              readOnly: true
+            - name: work
+              mountPath: /work
+            - name: tmp
+              mountPath: /tmp
+          volumes:
+          - name: config
+            configMap:
+              name: siuksliaveze-snapshot
+          - name: work
+            emptyDir:
+              sizeLimit: 2Gi
+          - name: tmp
+            emptyDir:
+              sizeLimit: 256Mi
