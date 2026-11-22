@@ -106,6 +106,26 @@ spec:
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kretinga",kind=~"household|packaging|food"}[20m]) - time() < 2 * 86400
           or
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"silute|trakai|salcininkai"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kedainiai",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="moletai",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="skuodas",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="ukmerge",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="anyksciai",kind=~"household|packaging|glass"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="utena",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="ignalina",kind=~"household|packaging"}[20m]) - time() < 2 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="elektrenai",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="sirvintos",kind="household"}[20m]) - time() < 2 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="sirvintos",kind=~"packaging|glass"}[20m]) - time() < 7 * 86400
       for: 1h
       labels:
         severity: warning
