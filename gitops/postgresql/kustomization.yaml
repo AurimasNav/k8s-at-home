@@ -12,4 +12,3 @@ resources:
 - ./questlog.externalsecret.yaml
 - ./umami.externalsecret.yaml
 - ./databases.job.yaml
-- ./drop-old-pg-data.job.yaml
