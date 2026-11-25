@@ -1,4 +1,6 @@
 # one restic repository per namespace; every PVC in these namespaces is backed up unless annotated k8up.io/backup: "false"
+# Backups start 5-10 min apart (03:00-05:00): started together at 03:00/03:30 they added to the
+# night's memory-pressure spells. Each takes under a minute. Prune and check stay on Sunday.
 apiVersion: k8up.io/v1
 kind: Schedule
 metadata:
@@ -59,7 +61,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "0 3 * * *"
+    schedule: "10 3 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -95,7 +97,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "0 3 * * *"
+    schedule: "20 3 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -131,7 +133,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "0 3 * * *"
+    schedule: "30 3 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -167,7 +169,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "0 3 * * *"
+    schedule: "40 3 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -203,7 +205,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "0 3 * * *"
+    schedule: "50 3 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -240,7 +242,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "0 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -276,7 +278,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "5 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -312,7 +314,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "10 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -348,7 +350,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "15 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -384,7 +386,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "20 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -420,7 +422,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "25 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -456,7 +458,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "30 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -492,7 +494,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "35 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -528,7 +530,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "40 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -564,7 +566,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "30 3 * * *"
+    schedule: "45 4 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:
@@ -577,7 +579,7 @@ spec:
       keepMonthly: 6
 ---
 # Immich: the photo library on hdd0 (photos, thumbnails and Immich's own nightly database dump
-# at 02:00 in library/backups). Runs after the 03:00/03:30 groups; Postgres and model-cache PVCs
+# at 02:00 in library/backups). Runs last, after the other backups; Postgres and model-cache PVCs
 # are excluded with k8up.io/backup: "false".
 apiVersion: k8up.io/v1
 kind: Schedule
@@ -603,7 +605,7 @@ spec:
   podSecurityContext:
     runAsUser: 0
   backup:
-    schedule: "0 4 * * *"
+    schedule: "0 5 * * *"
     successfulJobsHistoryLimit: 2
     failedJobsHistoryLimit: 2
   check:

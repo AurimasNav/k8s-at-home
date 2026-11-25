@@ -214,7 +214,7 @@ spec:
     - ports:
       - port: "5055"
         protocol: TCP
-  # hair.sync.lt
+  # hair.sync.lt (hairsera is parked until the RAM upgrade; kept so it works again on redeploy)
   - toEndpoints:
     - matchLabels:
         k8s:io.kubernetes.pod.namespace: hairsera

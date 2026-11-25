@@ -157,6 +157,19 @@ defaultRules:
 # API server port AND again on the kubelet port. The kubelet scrape therefore keeps only the
 # kubelet-level metrics; the API server scrape keeps the rest. Together they were ~180k of ~230k
 # series, and vmagent was CPU-throttled 40% of the time on this 2-core host.
+# The host has memory-pressure spells of about 5 minutes (night jobs, FlareSolverr's Chrome)
+# in which healthy pods answer slowly. The default 1 s timeout x 3 failures restarted them
+# mid-spell; These already wait 5 s per check; ~5 min of failures before a restart rides a spell out
+# (Postgres got the same in #1148).
+kube-state-metrics:
+  livenessProbe:
+    periodSeconds: 30
+    failureThreshold: 10
+prometheus-node-exporter:
+  livenessProbe:
+    periodSeconds: 30
+    failureThreshold: 10
+
 kubelet:
   vmScrapes:
     kubelet:

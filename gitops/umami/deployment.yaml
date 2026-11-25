@@ -69,18 +69,24 @@ spec:
             port: 3000
           periodSeconds: 5
           failureThreshold: 36
+        # The host has memory-pressure spells of about 5 minutes (night jobs, FlareSolverr's Chrome)
+        # in which healthy pods answer slowly. The default 1 s timeout x 3 failures restarted them
+        # mid-spell; 5 s per check and ~5 min of failures before a restart rides a spell out
+        # (Postgres got the same in #1148).
         readinessProbe:
           httpGet:
             path: /api/heartbeat
             port: 3000
           periodSeconds: 10
+          timeoutSeconds: 5
           failureThreshold: 3
         livenessProbe:
           httpGet:
             path: /api/heartbeat
             port: 3000
+          timeoutSeconds: 5
           periodSeconds: 30
-          failureThreshold: 3
+          failureThreshold: 10
       volumes:
       - name: tmp
         emptyDir:

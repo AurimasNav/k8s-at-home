@@ -32,11 +32,9 @@ resources:
 - ./apps/matter-server
 - ./apps/reloader
 - ./apps/postgresql
-- ./apps/hairsera
 - ./apps/questlog
 - ./apps/umami
 - ./apps/otel-collector
-- ./apps/tempo
 - ./apps/loki
 - ./apps/hermes-agent
 - ./apps/telegram-dl
@@ -50,6 +48,10 @@ resources:
 # Rehearsal of a shared Postgres major upgrade on a copy of production (gitops/postgresql-upgrade-test).
 # Parked after the 18 -> 19 upgrade; uncomment to rehearse the next major (bump its images first).
 # - ./apps/postgresql-upgrade-test
+# Parked to save memory until the RAM upgrade; uncomment to deploy again. Hairsera's data stays in
+# the shared Postgres; for Tempo also put otlp_http/tempo back in otel-collector's traces pipeline.
+# - ./apps/hairsera
+# - ./apps/tempo
 # Parked test Prowlarr for trying upstream Prowlarr contributions (gitops/prowlarr-test).
 # Uncomment to deploy it again; it comes back with empty settings.
 # - ./apps/prowlarr-test
