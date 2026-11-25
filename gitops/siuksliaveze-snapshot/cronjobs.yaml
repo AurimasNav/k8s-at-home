@@ -52,7 +52,7 @@ spec:
               type: RuntimeDefault
           containers:
           - name: refresh
-            image: ghcr.io/astral-sh/uv:0.13.9-python3.13-trixie
+            image: ghcr.io/astral-sh/uv:0.13.10-python3.13-trixie
             command: ["python3", "/etc/siuksliaveze-snapshot/refresh.py", "copies", "--push",
                       "--attempts", "3", "--retry-wait", "600"]
             env:
@@ -146,7 +146,7 @@ spec:
               type: RuntimeDefault
           containers:
           - name: refresh
-            image: ghcr.io/astral-sh/uv:0.13.9-python3.13-trixie
+            image: ghcr.io/astral-sh/uv:0.13.10-python3.13-trixie
             command: ["python3", "/etc/siuksliaveze-snapshot/refresh.py", "register", "--push",
                       "--attempts", "3", "--retry-wait", "3600"]
             env:
