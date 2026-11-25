@@ -36,16 +36,39 @@ spec:
     # when it lands less than 5 min before the mark. Today it lands 45 s before, but vmagent derives
     # the scrape's offset from a hash of the target: changing the URL or labels can move it and
     # silently blind every rule here.
-    # 30 h = one daily run missed or failed.
-    - alert: ScheduleDataStale
-      expr: time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m]) > 30 * 3600
+    # 30 h = one daily run missed. The job writes the checked time at the end of every run that
+    # publishes, whatever its sources' builds did, so an old one means the job itself: the schedule
+    # didn't start, the run hit its time limit or the deploy failed. One alert for all sources.
+    - alert: ScheduleDataNotPublished
+      expr: time() - last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[20m]) > 30 * 3600
       for: 30m
       labels:
         severity: warning
       annotations:
         summary: >-
-          Šiukšliavežė: the {{ $labels.source }} schedule data is {{ $value | humanizeDuration }} old; its
-          daily build fails or doesn't run
+          Šiukšliavežė: the daily job hasn't published for {{ $value | humanizeDuration }}; check its
+          last run
+        dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+    # A source the last published run didn't rebuild: its build failed and yesterday's part was
+    # kept, so its data is older than the job's own checked time by more than a run takes (the
+    # data job's limit is 45 min, so 2 h). It fires 30 h after the source's last good build, as
+    # before. While the whole job is late, every source is about as old as the checked time, so
+    # only ScheduleDataNotPublished fires. max(): `on ()` needs one checked series, and a changed
+    # target would give two for 20 min.
+    - alert: ScheduleDataStale
+      expr: |-
+        (time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m]) > 30 * 3600)
+          and
+        (max(last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[20m]))
+          - on () group_right last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m])
+          > 2 * 3600)
+      for: 30m
+      labels:
+        severity: warning
+      annotations:
+        summary: >-
+          Šiukšliavežė: the {{ $labels.source }} schedule data is {{ $value | humanizeDuration }} old;
+          its build fails, so the daily job keeps publishing its old data
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
     - alert: ScheduleDataShrank
       expr: |-

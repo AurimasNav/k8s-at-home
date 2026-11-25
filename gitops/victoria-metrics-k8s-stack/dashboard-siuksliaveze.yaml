@@ -117,7 +117,7 @@ data:
           "type": "stat",
           "id": 2,
           "title": "Data age",
-          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing. ScheduleDataStale goes pending at 30 h and fires 30 min later.",
+          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing while Job last ran moves on: ScheduleDataStale goes pending once it is over 30 h and fires 30 min later. When the job itself stops publishing, every source ages together and ScheduleDataNotPublished fires instead, once for all.",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
@@ -310,7 +310,7 @@ data:
           "type": "stat",
           "id": 5,
           "title": "Job last ran",
-          "description": "When metrics.txt was last written. The job writes it even when a source's build fails, so an old value here means the job itself didn't run (GitHub Actions disabled the schedule, or the deploy failed).",
+          "description": "When metrics.txt was last written. The job writes it even when a source's build fails, so an old value here means the job itself didn't publish (GitHub Actions disabled the schedule, the run hit its time limit, or the deploy failed). ScheduleDataNotPublished goes pending once it is over 30 h and fires 30 min later.",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
@@ -681,7 +681,7 @@ data:
           "type": "timeseries",
           "id": 11,
           "title": "Data age",
-          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing. ScheduleDataStale goes pending at 30 h and fires 30 min later.",
+          "description": "How long ago the source's data was last built. The daily job runs at 04:17 UTC (06:17 or 07:17 Vilnius), and a merge that changes the pipeline rebuilds it too. When a waste company changes its file format the build fails and yesterday's data stays published, so the age keeps growing while Job last ran moves on: ScheduleDataStale goes pending once it is over 30 h and fires 30 min later. When the job itself stops publishing, every source ages together and ScheduleDataNotPublished fires instead, once for all.",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
