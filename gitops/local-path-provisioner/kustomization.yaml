@@ -9,6 +9,8 @@ resources:
 # server is slow (k3s keeps its SQLite database on the same SSD as swap), which showed up as
 # KubePodNotReady flapping (22 % of checks failed). The provisioner has no Service, so readiness only
 # feeds the alerts; checking every 30 s with 5 s to answer is plenty.
+# Liveness: /health timed out in the host's ~5 min memory-pressure spells and restarted a healthy
+# provisioner (8 times in a week); 5 s per check and ~5 min of failures before a restart.
 patches:
 - target:
     kind: Deployment
@@ -20,3 +22,12 @@ patches:
     - op: add
       path: /spec/template/spec/containers/0/readinessProbe/timeoutSeconds
       value: 5
+    - op: add
+      path: /spec/template/spec/containers/0/livenessProbe/timeoutSeconds
+      value: 5
+    - op: add
+      path: /spec/template/spec/containers/0/livenessProbe/periodSeconds
+      value: 30
+    - op: add
+      path: /spec/template/spec/containers/0/livenessProbe/failureThreshold
+      value: 10

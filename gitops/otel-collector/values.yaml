@@ -3,6 +3,17 @@ mode: deployment
 image:
   repository: otel/opentelemetry-collector-contrib
 
+# The host has memory-pressure spells of about 5 minutes (night jobs, FlareSolverr's Chrome)
+# in which healthy pods answer slowly. The default 1 s timeout x 3 failures restarted them
+# mid-spell; 5 s per check and ~5 min of failures before a restart rides a spell out
+# (Postgres got the same in #1148).
+livenessProbe:
+  timeoutSeconds: 5
+  periodSeconds: 30
+  failureThreshold: 10
+readinessProbe:
+  timeoutSeconds: 5
+
 config:
   receivers:
     otlp:
@@ -40,6 +51,8 @@ config:
         - 'IsMatch(attributes["url.path"], ".*/healthz$")'
 
   exporters:
+    # Tempo is parked (argocd-apps/base/kustomization.yaml) until the RAM upgrade; to bring
+    # traces back, deploy it again and add otlp_http/tempo to the traces pipeline below.
     otlp_http/tempo:
       endpoint: http://tempo.tempo.svc:4318
     otlp_http/loki:
@@ -54,7 +67,7 @@ config:
       traces:
         receivers: [otlp]
         processors: [memory_limiter, filter/drop_probes, batch]
-        exporters: [otlp_http/tempo, debug]
+        exporters: [debug]
       metrics:
         receivers: [otlp]
         processors: [memory_limiter, filter/drop_probes, batch]
