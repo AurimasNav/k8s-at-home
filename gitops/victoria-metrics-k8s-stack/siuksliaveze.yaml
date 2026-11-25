@@ -36,11 +36,17 @@ spec:
     # when it lands less than 5 min before the mark. Today it lands 45 s before, but vmagent derives
     # the scrape's offset from a hash of the target: changing the URL or labels can move it and
     # silently blind every rule here.
+    # Rules that fire until someone fixes something use longer windows, because two missed scrapes
+    # in a row empty a 20 min window: the alert would resolve with nothing fixed (a resolved
+    # message in Telegram) and fire again after its `for`. Each rule says which window and why.
     # 30 h = one daily run missed. The job writes the checked time at the end of every run that
     # publishes, whatever its sources' builds did, so an old one means the job itself: the schedule
     # didn't start, the run hit its time limit or the deploy failed. One alert for all sources.
+    # [1h] bridges up to five missed scrapes in a row; a longer fetch outage is
+    # ScheduleDataNotScraped's (for: 2h). The newest sample still wins, so a publish clears it at
+    # the next evaluation.
     - alert: ScheduleDataNotPublished
-      expr: time() - last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[20m]) > 30 * 3600
+      expr: time() - last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[1h]) > 30 * 3600
       for: 30m
       labels:
         severity: warning
@@ -54,13 +60,16 @@ spec:
     # data job's limit is 45 min, so 2 h). It fires 30 h after the source's last good build, as
     # before. While the whole job is late, every source is about as old as the checked time, so
     # only ScheduleDataNotPublished fires. max(): `on ()` needs one checked series, and a changed
-    # target would give two for 20 min.
+    # target would give two for the length of the window.
+    # [30m] bridges two missed scrapes in a row. Not [1h]: a source the run drops from metrics.txt
+    # keeps its last, old sample in the window next to the new checked time, and for an hour that
+    # is long enough to fire this next to ScheduleDataSourceMissing, two alerts for one cause.
     - alert: ScheduleDataStale
       expr: |-
-        (time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m]) > 30 * 3600)
+        (time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[30m]) > 30 * 3600)
           and
-        (max(last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[20m]))
-          - on () group_right last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m])
+        (max(last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[30m]))
+          - on () group_right last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[30m])
           > 2 * 3600)
       for: 30m
       labels:
