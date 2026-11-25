@@ -31,16 +31,26 @@ spec:
     rules:
     # `source` is one per waste company or municipality; the list is in docs/monitoring.md of the
     # app repository.
-    # Every rule reads the newest sample of the last 20 min (last_over_time [20m]). vmalert queries
-    # at whole 10 min marks with a 5 min lookback, so a bare selector sees this 10 min scrape only
-    # when it lands less than 5 min before the mark. Today it lands 45 s before, but vmagent derives
-    # the scrape's offset from a hash of the target: changing the URL or labels can move it and
-    # silently blind every rule here.
+    # Every rule reads the newest sample of a window of at least 20 min (last_over_time). vmalert
+    # queries at whole 10 min marks with a 5 min lookback, so a bare selector sees this 10 min
+    # scrape only when it lands less than 5 min before the mark. Today it lands 45 s before, but
+    # vmagent derives the scrape's offset from a hash of the target: changing the URL or labels can
+    # move it and silently blind every rule here.
+    # Rules that fire until someone fixes something use longer windows, because two missed scrapes
+    # in a row empty a 20 min window: the alert would resolve with nothing fixed (a resolved
+    # message in Telegram) and fire again after its `for`. A failed scrape leaves a gap in every
+    # series but `up`, which gets a 0. A [W] window bridges W/10 min - 1 failed scrapes in a row.
+    # Each rule says which window and why.
     # 30 h = one daily run missed. The job writes the checked time at the end of every run that
     # publishes, whatever its sources' builds did, so an old one means the job itself: the schedule
     # didn't start, the run hit its time limit or the deploy failed. One alert for all sources.
+    # [2h30m]: ScheduleDataNotScraped (for: 2h) fires only once 13 fetches in a row have failed. A
+    # shorter window would resolve this alert in a fetch outage before that one fires; [2h30m]
+    # bridges 14, so it keeps firing until NotScraped has fired. The newest sample still wins, so
+    # a publish clears it at the next evaluation. After a target change, the old and new target's
+    # series both stay in the window for 2h30m, so a late job then gives two alerts.
     - alert: ScheduleDataNotPublished
-      expr: time() - last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[20m]) > 30 * 3600
+      expr: time() - last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[2h30m]) > 30 * 3600
       for: 30m
       labels:
         severity: warning
@@ -54,13 +64,17 @@ spec:
     # data job's limit is 45 min, so 2 h). It fires 30 h after the source's last good build, as
     # before. While the whole job is late, every source is about as old as the checked time, so
     # only ScheduleDataNotPublished fires. max(): `on ()` needs one checked series, and a changed
-    # target would give two for 20 min.
+    # target would give two for the length of the window.
+    # [30m] bridges two missed scrapes in a row. Not [1h]: a source the run drops from metrics.txt
+    # keeps its last, old sample in the window next to the new checked time, and for an hour that
+    # is long enough to fire this next to ScheduleDataSourceMissing, two alerts for one cause. So
+    # three or more failed fetches in a row still resolve it once.
     - alert: ScheduleDataStale
       expr: |-
-        (time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m]) > 30 * 3600)
+        (time() - last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[30m]) > 30 * 3600)
           and
-        (max(last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[20m]))
-          - on () group_right last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m])
+        (max(last_over_time(siuksliaveze_status_checked_timestamp_seconds{job="siuksliaveze-data"}[30m]))
+          - on () group_right last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[30m])
           > 2 * 3600)
       for: 30m
       labels:
@@ -101,60 +115,61 @@ spec:
     # quarterly) files: if the next file isn't posted or isn't read, the build stays green while the
     # reminders stop after the last date. Which sources and waste types are watched, and with how
     # much notice, is explained per source in docs/monitoring.md of the app repository; this
-    # expression is the same with the job filter and [20m] windows.
+    # expression is the same with the job filter. [30m] keeps it firing through two missed scrapes
+    # in a row.
     - alert: ScheduleDataRunsOut
       expr: |-
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"mazeikiai|telsiai|plunge"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"mazeikiai|telsiai|plunge"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"klaipedos|jurbarkas|siauliai|rietavas",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"klaipedos|jurbarkas|siauliai|rietavas",kind=~"household|packaging"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="alytus",kind="household"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="alytus",kind="household"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="radviliskis",kind=~"household|packaging"}[20m]) - time() < 2 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="radviliskis",kind=~"household|packaging"}[30m]) - time() < 2 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="silale"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="silale"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="taurage",kind=~"household|packaging|food"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="taurage",kind=~"household|packaging|food"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="pagegiai",kind=~"household|packaging|glass"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="pagegiai",kind=~"household|packaging|glass"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"pasvalys|rokiskis|birzai|panevezio-r",kind=~"household|packaging|glass"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"pasvalys|rokiskis|birzai|panevezio-r",kind=~"household|packaging|glass"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"marijampole|vilkaviskis|kalvarija|kazluruda|sakiai",kind=~"household|packaging|food"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"marijampole|vilkaviskis|kalvarija|kazluruda|sakiai",kind=~"household|packaging|food"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="raseiniai",kind=~"household|packaging|glass"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="raseiniai",kind=~"household|packaging|glass"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="jonava",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="jonava",kind=~"household|packaging"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kretinga",kind=~"household|packaging|food"}[20m]) - time() < 2 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kretinga",kind=~"household|packaging|food"}[30m]) - time() < 2 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"silute|trakai|salcininkai"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"silute|trakai|salcininkai"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kedainiai",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kedainiai",kind=~"household|packaging"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="moletai",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="moletai",kind=~"household|packaging"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="skuodas",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="skuodas",kind=~"household|packaging"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="ukmerge",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="ukmerge",kind=~"household|packaging"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="anyksciai",kind=~"household|packaging|glass"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="anyksciai",kind=~"household|packaging|glass"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="utena",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="utena",kind=~"household|packaging"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="ignalina",kind=~"household|packaging"}[20m]) - time() < 2 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="ignalina",kind=~"household|packaging"}[30m]) - time() < 2 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="elektrenai",kind=~"household|packaging"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="elektrenai",kind=~"household|packaging"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="sirvintos",kind="household"}[20m]) - time() < 2 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="sirvintos",kind="household"}[30m]) - time() < 2 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="sirvintos",kind=~"packaging|glass"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="sirvintos",kind=~"packaging|glass"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kupiskis",kind="packaging"}[20m]) - time() < 2 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kupiskis",kind="packaging"}[30m]) - time() < 2 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="svencionys",kind="packaging"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="svencionys",kind="packaging"}[30m]) - time() < 7 * 86400
           or
-        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="zarasai",kind=~"packaging|glass"}[20m]) - time() < 7 * 86400
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="zarasai",kind=~"packaging|glass"}[30m]) - time() < 7 * 86400
       for: 1h
       labels:
         severity: warning
@@ -166,13 +181,18 @@ spec:
     # A source that was in metrics.txt in the last 3 days is gone while the file itself is fetched
     # fine: ScheduleDataStale can't fire for a series that no longer exists. Happens when a
     # source's build fails and there is no published copy to keep, or the file is truncated.
+    # The guard needs at least one good fetch in the window (max_over_time), not a good newest
+    # fetch: last_over_time(up) reads a failed scrape's 0 and would resolve the alert on a single
+    # failure. Both [30m] windows cover the same scrapes, so failed fetches empty them together,
+    # and a source that is still in the file is never counted as missing. Two missed scrapes in a
+    # row keep it firing.
     - alert: ScheduleDataSourceMissing
       expr: |-
         group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[3d]))
           unless on (source)
-        group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[20m]))
+        group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[30m]))
           and on ()
-        (last_over_time(up{job="siuksliaveze-data"}[20m]) == 1)
+        (max_over_time(up{job="siuksliaveze-data"}[30m]) == 1)
       for: 30m
       labels:
         severity: warning
