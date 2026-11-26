@@ -20,3 +20,24 @@ patches:
     kind: Deployment
     name: cert-manager
     namespace: cert-manager
+# The host has memory-pressure spells of about 5 minutes (night jobs, FlareSolverr's Chrome)
+# in which healthy pods answer slowly. The default 1 s timeout x 3 failures restarted them
+# mid-spell; 5 s per check and ~5 min of failures before a restart rides a spell out
+# (Postgres got the same in #1148).
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/livenessProbe/timeoutSeconds
+      value: 5
+    - op: add
+      path: /spec/template/spec/containers/0/livenessProbe/periodSeconds
+      value: 30
+    - op: add
+      path: /spec/template/spec/containers/0/livenessProbe/failureThreshold
+      value: 10
+    - op: add
+      path: /spec/template/spec/containers/0/readinessProbe/timeoutSeconds
+      value: 5
+  target:
+    kind: Deployment
+    name: cert-manager-webhook
+    namespace: cert-manager

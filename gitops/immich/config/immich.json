@@ -7,15 +7,15 @@
     }
   },
   "job": {
-    "backgroundTask": { "concurrency": 2 },
+    "backgroundTask": { "concurrency": 1 },
     "faceDetection": { "concurrency": 1 },
-    "library": { "concurrency": 2 },
-    "metadataExtraction": { "concurrency": 2 },
+    "library": { "concurrency": 1 },
+    "metadataExtraction": { "concurrency": 1 },
     "ocr": { "concurrency": 1 },
     "search": { "concurrency": 2 },
     "sidecar": { "concurrency": 2 },
     "smartSearch": { "concurrency": 1 },
-    "thumbnailGeneration": { "concurrency": 2 },
+    "thumbnailGeneration": { "concurrency": 1 },
     "videoConversion": { "concurrency": 1 }
   },
   "machineLearning": {

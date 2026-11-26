@@ -59,15 +59,23 @@ spec:
           value: SSD
         - name: PGDATA
           value: /var/lib/postgresql/data/pgdata
+        # The host has memory-pressure spells of about 5 minutes (night jobs, FlareSolverr's Chrome)
+        # in which healthy pods answer slowly. The default 1 s timeout x 3 failures restarted them
+        # mid-spell; 10 s per check and ~5 min of failures before a restart rides a spell out
+        # (Postgres got the same in #1148).
         readinessProbe:
           exec:
             command: ["pg_isready", "-U", "postgres", "-d", "immich"]
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
         livenessProbe:
           exec:
             command: ["pg_isready", "-U", "postgres", "-d", "immich"]
           initialDelaySeconds: 60
+          timeoutSeconds: 10
           periodSeconds: 30
+          failureThreshold: 10
         resources:
           requests:
             cpu: 50m

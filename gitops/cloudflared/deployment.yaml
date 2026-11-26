@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: cloudflared
-        image: cloudflare/cloudflared:2026.11.1
+        image: cloudflare/cloudflared:2026.11.2
         # Remotely managed tunnel: the ingress rules come from Cloudflare (iac/cloudflare/tunnel.tf).
         args:
         - tunnel
@@ -45,18 +45,24 @@ spec:
         - name: metrics
           containerPort: 2000
         # /ready is 200 only while the connector has a live connection to Cloudflare.
+        # The host has memory-pressure spells of about 5 minutes (night jobs, FlareSolverr's Chrome)
+        # in which healthy pods answer slowly. The default 1 s timeout x 3 failures restarted them
+        # mid-spell; 5 s per check and ~5 min of failures before a restart rides a spell out
+        # (Postgres got the same in #1148).
         readinessProbe:
           httpGet:
             path: /ready
             port: metrics
           periodSeconds: 10
+          timeoutSeconds: 5
         livenessProbe:
           httpGet:
             path: /ready
             port: metrics
           initialDelaySeconds: 30
-          periodSeconds: 10
-          failureThreshold: 6
+          timeoutSeconds: 5
+          periodSeconds: 30
+          failureThreshold: 10
         resources:
           requests:
             cpu: 10m
