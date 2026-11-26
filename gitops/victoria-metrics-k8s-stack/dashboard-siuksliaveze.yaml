@@ -1,5 +1,6 @@
 # Šiukšliavežė (siuksliaveze.yaml): the schedule data its daily GitHub Actions job publishes, from
-# metrics.txt. Linked from ScheduleDataShrank and ScheduleDataMoreWarnings.
+# metrics.txt. Linked from ScheduleDataShrank; ScheduleDataNewWarnings links the app's warnings.html
+# (the texts) instead, and the Warnings panels here show the counts, new ones as "<source> new".
 # Cheap to keep open: about 40 series, no auto-refresh, the refresh picker starts at 10m, the "now"
 # panels are instant queries and the graphs use the 10-minute scrape interval as their minimum step.
 apiVersion: v1
@@ -248,7 +249,7 @@ data:
           "type": "stat",
           "id": 4,
           "title": "Warnings",
-          "description": "Rows of the last build the parser couldn't place, e.g. a typo or a renamed village in the source file: those addresses have no schedule. ScheduleDataMoreWarnings fires when it rises vs a day before.",
+          "description": "Warnings of the last build, e.g. a place the parser couldn't link (typo or renamed village in the source file: those addresses have no schedule). Red tiles: new ones, which pipeline/known-warnings.json of the app repository doesn't list; ScheduleDataNewWarnings fires for them until they are fixed or acknowledged. All of them, new first: https://aurimasnav.github.io/atlieku-surinkimo-grafikas/warnings.html",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
@@ -270,6 +271,17 @@ data:
               "refId": "A",
               "instant": true,
               "range": false
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "last_over_time(siuksliaveze_data_new_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}[1d]) > 0",
+              "legendFormat": "{{source}} new",
+              "refId": "B",
+              "instant": true,
+              "range": false
             }
           ],
           "fieldConfig": {
@@ -289,7 +301,23 @@ data:
               },
               "decimals": 0
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byFrameRefID",
+                  "options": "B"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "red"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "options": {
             "colorMode": "background",
@@ -769,7 +797,7 @@ data:
           "type": "timeseries",
           "id": 12,
           "title": "Warnings",
-          "description": "Rows of the last build the parser couldn't place, e.g. a typo or a renamed village in the source file: those addresses have no schedule. ScheduleDataMoreWarnings fires when it rises vs a day before.",
+          "description": "Warnings of the last build, e.g. a place the parser couldn't link (typo or renamed village in the source file: those addresses have no schedule). '<source> new': those pipeline/known-warnings.json of the app repository doesn't list (shown only above 0); ScheduleDataNewWarnings fires for them until they are fixed or acknowledged.",
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
@@ -791,6 +819,17 @@ data:
               "expr": "siuksliaveze_data_warnings{job=\"siuksliaveze-data\",source=~\"$source\"}",
               "legendFormat": "{{source}}",
               "refId": "A",
+              "instant": false,
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "siuksliaveze_data_new_warnings{job=\"siuksliaveze-data\",source=~\"$source\"} > 0",
+              "legendFormat": "{{source}} new",
+              "refId": "B",
               "instant": false,
               "range": true
             }
