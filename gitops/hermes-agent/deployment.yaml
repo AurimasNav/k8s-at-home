@@ -144,7 +144,7 @@ spec:
         env:
         # renovate: datasource=github-releases depName=bambulab/BambuStudio
         - name: BAMBU_STUDIO_VERSION
-          value: "02.09.01.70"
+          value: "02.09.02.62"
         - name: HOME
           value: /tmp
         securityContext:
