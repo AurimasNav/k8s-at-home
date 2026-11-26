@@ -46,7 +46,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
@@ -94,7 +94,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "questlog_users",
               "instant": true,
@@ -105,7 +105,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
@@ -153,7 +153,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "questlog_users_active{window=\"1d\"}",
               "instant": true,
@@ -165,7 +165,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
@@ -213,7 +213,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "questlog_users_active{window=\"7d\"}",
               "instant": true,
@@ -224,7 +224,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
@@ -272,7 +272,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "questlog_users_active{window=\"30d\"}",
               "instant": true,
@@ -283,10 +283,11 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
+              "noValue": "None in this period",
               "unit": "short",
               "custom": {
                 "lineWidth": 2,
@@ -319,7 +320,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sum(increase(questlog_signups_total[$__rate_interval]))",
               "legendFormat": "Sign-ups",
@@ -328,7 +329,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sum(increase(questlog_signins_total[$__rate_interval]))",
               "legendFormat": "Sign-ins",
@@ -352,7 +353,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
@@ -400,7 +401,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sum(increase(questlog_api_requests_total{caller=\"agent\",route=~\"/api/v1/(sections|games)/.*\",method=~\"PATCH|PUT|POST|DELETE\",status=~\"2..\"}[$__range]))",
               "instant": true,
@@ -412,10 +413,11 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
+              "noValue": "0",
               "color": {
                 "mode": "thresholds"
               },
@@ -460,7 +462,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sum(increase(questlog_api_requests_total{caller=\"user\",route=~\"/api/v1/(sections|games)/.*\",method=~\"PATCH|PUT|POST|DELETE\",status=~\"2..\"}[$__range]))",
               "instant": true,
@@ -471,10 +473,11 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
+              "noValue": "0",
               "color": {
                 "mode": "thresholds"
               },
@@ -519,7 +522,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sum(increase(questlog_api_requests_total{route=~\"/api/v1/me/(lists|items|notes).*\",method=~\"PATCH|PUT|POST|DELETE\",status=~\"2..\"}[$__range]))",
               "instant": true,
@@ -530,10 +533,11 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
+              "noValue": "0",
               "color": {
                 "mode": "thresholds"
               },
@@ -578,7 +582,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sum(increase(questlog_api_requests_total{route=\"/api/v1/search\"}[$__range]))",
               "instant": true,
@@ -602,7 +606,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
@@ -638,7 +642,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sum by (caller) (rate(questlog_api_requests_total[$__rate_interval]))",
               "legendFormat": "{{caller}}",
@@ -649,7 +653,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
@@ -685,7 +689,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "histogram_quantile(0.5, sum by (le) (rate(questlog_api_request_duration_seconds_bucket[$__rate_interval])))",
               "legendFormat": "p50",
@@ -694,7 +698,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "histogram_quantile(0.95, sum by (le) (rate(questlog_api_request_duration_seconds_bucket[$__rate_interval])))",
               "legendFormat": "p95",
@@ -705,10 +709,11 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
+              "noValue": "None in this period",
               "unit": "reqps",
               "custom": {
                 "lineWidth": 2,
@@ -741,7 +746,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sum by (route, status) (rate(questlog_api_requests_total{status=~\"5..\"}[$__rate_interval]))",
               "legendFormat": "{{status}} {{route}}",
@@ -750,7 +755,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sum by (route, status) (rate(questlog_api_requests_total{status=~\"429|401\"}[$__rate_interval]))",
               "legendFormat": "{{status}} {{route}}",
@@ -762,7 +767,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "VictoriaMetrics"
           },
           "fieldConfig": {
             "defaults": {
@@ -808,7 +813,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "P4169E866C3094E38"
+                "uid": "VictoriaMetrics"
               },
               "expr": "sort_desc(sum by (route, method) (increase(questlog_api_requests_total[$__range])))",
               "format": "table",
@@ -928,7 +933,7 @@ data:
           ]
         }
       ],
-      "refresh": "1m",
+      "refresh": "",
       "schemaVersion": 39,
       "tags": [
         "questlog"
