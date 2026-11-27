@@ -84,10 +84,12 @@ spec:
           Šiukšliavežė: the {{ $labels.source }} schedule data is {{ $value | humanizeDuration }} old;
           its build fails, so the daily job keeps publishing its old data
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+    # [30m] on both sides: two failed fetches in a row empty a 20 min window, and the alert would
+    # resolve and fire again at the next evaluation.
     - alert: ScheduleDataShrank
       expr: |-
-        last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[20m])
-          < 0.9 * last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[20m] offset 1d)
+        last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[30m])
+          < 0.9 * last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[30m] offset 1d)
       labels:
         severity: warning
       annotations:
@@ -103,13 +105,25 @@ spec:
     # --write-known`, docs/monitoring.md of the app repository), not 24 h; with Alertmanager's
     # repeat_interval it is re-sent daily until then. Warning, not info: info-level alerts never
     # reach Telegram (values.yaml routes them to the blackhole receiver).
-    # [1h], not [20m] like the other rules: two missed scrapes in a row empty a 20 min window, and
-    # the alert would resolve with nothing fixed (a resolved message in Telegram) and fire again
-    # 40 min later. 1 h bridges up to five missed scrapes in a row; a longer fetch outage is
-    # ScheduleDataNotScraped's (for: 2h). last_over_time still takes the newest sample, so the 0
-    # published after a fix or an acknowledgement clears it at the next evaluation.
+    # [2h30m], not [20m] like the other rules: a failed fetch leaves no sample, and an emptied
+    # window resolves the alert with nothing fixed (a resolved message in Telegram) and fires it
+    # again after its `for`. [2h30m] bridges 14 failed fetches in a row, until
+    # ScheduleDataNotScraped (for: 2h) has fired at the 13th, as for ScheduleDataNotPublished.
+    # last_over_time still takes the newest sample, so the 0 published after a fix or an
+    # acknowledgement clears it at the next evaluation. The `unless` part drops a source that left
+    # metrics.txt while the file is fetched (ScheduleDataSourceMissing's alert), so its last
+    # warnings don't stay for 2h30m beside that alert.
     - alert: ScheduleDataNewWarnings
-      expr: last_over_time(siuksliaveze_data_new_warnings{job="siuksliaveze-data"}[1h]) > 0
+      expr: |-
+        last_over_time(siuksliaveze_data_new_warnings{job="siuksliaveze-data"}[2h30m]) > 0
+          unless on (source)
+        (
+          group by (source) (last_over_time(siuksliaveze_data_new_warnings{job="siuksliaveze-data"}[2h30m]))
+            unless on (source)
+          group by (source) (last_over_time(siuksliaveze_data_new_warnings{job="siuksliaveze-data"}[30m]))
+            and on ()
+          (max_over_time(up{job="siuksliaveze-data"}[30m]) == 1)
+        )
       for: 30m
       labels:
         severity: warning
@@ -207,15 +221,16 @@ spec:
     # failure. Its [30m] windows cover the same scrapes, so failed fetches empty them together and
     # a source still in the file is never counted as missing. Two failed fetches in a row keep it
     # firing.
-    # Second part: a source whose expected line was in every good fetch of the last 2h30m (its
-    # sample count equals the number of good fetches) and that was in none of them. It needs no
-    # guard, so a source missing that long keeps firing through 14 failed fetches in a row, until
-    # ScheduleDataNotScraped (for: 2h) has fired at the 13th, as ScheduleDataNotPublished does. A
-    # source a PR removes from the list leaves this part at the first good fetch without it, even
-    # when the fetches after that fail, and the first part at the third evaluation after it. Only
-    # in the first 2h20m after a source drops out is it held by the first part alone: three failed
-    # fetches in a row then still resolve it once. After a scrape target change both targets'
-    # fetches are counted, so for 2h30m only the first part works.
+    # Second part: a source whose expected line was in as many fetches of the last 2h30m as any
+    # source's (the list's own count of fetches, summed over targets, so a scrape target change or
+    # a fetch without the list counts the same for every source) and that was in none of them. It
+    # needs no guard, so a source missing that long keeps firing through 14 failed fetches in a
+    # row, until ScheduleDataNotScraped (for: 2h) has fired at the 13th, as
+    # ScheduleDataNotPublished does. With no scrape at all, max() is empty, scalar() is NaN and
+    # the part is empty: NotScraped's alert. A source a PR removes from the list leaves this part
+    # at the first good fetch without it, even when the fetches after that fail, and the first
+    # part at the third evaluation after it. Only in the first 2h20m after a source drops out is
+    # it held by the first part alone: three failed fetches in a row then still resolve it once.
     # The 3-day side of the first part is the earlier rule, used only while no expected series
     # were fetched in the last 2h30m, so this rule can go live before the app publishes the list:
     # a source seen in the last 3 days and missing now (it clears 3 days after its last sample,
@@ -239,8 +254,8 @@ spec:
           or
         (
           group by (source) (
-            count_over_time(siuksliaveze_data_expected{job="siuksliaveze-data"}[2h30m])
-              >= scalar(sum(sum_over_time(up{job="siuksliaveze-data"}[2h30m])))
+            sum by (source) (count_over_time(siuksliaveze_data_expected{job="siuksliaveze-data"}[2h30m]))
+              >= scalar(max(sum by (source) (count_over_time(siuksliaveze_data_expected{job="siuksliaveze-data"}[2h30m]))))
           )
             unless on (source)
           group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[2h30m]))
