@@ -207,12 +207,15 @@ spec:
     # failure. Its [30m] windows cover the same scrapes, so failed fetches empty them together and
     # a source still in the file is never counted as missing. Two failed fetches in a row keep it
     # firing.
-    # Second part: expected and not in the file for 2h30m, with no guard, so a source missing that
-    # long keeps firing through 14 failed fetches in a row, until ScheduleDataNotScraped (for: 2h)
-    # has fired at the 13th, as ScheduleDataNotPublished does. Both windows hold the same fetches,
-    # so failed fetches can't make a present source missing. Only in the first 2h20m after a
-    # source drops out is it held by the first part alone: three failed fetches in a row then
-    # still resolve it once.
+    # Second part: a source whose expected line was in every good fetch of the last 2h30m (its
+    # sample count equals the number of good fetches) and that was in none of them. It needs no
+    # guard, so a source missing that long keeps firing through 14 failed fetches in a row, until
+    # ScheduleDataNotScraped (for: 2h) has fired at the 13th, as ScheduleDataNotPublished does. A
+    # source a PR removes from the list leaves this part at the first good fetch without it, even
+    # when the fetches after that fail, and the first part at the third evaluation after it. Only
+    # in the first 2h20m after a source drops out is it held by the first part alone: three failed
+    # fetches in a row then still resolve it once. After a scrape target change both targets'
+    # fetches are counted, so for 2h30m only the first part works.
     # The 3-day side of the first part is the earlier rule, used only while no expected series
     # were fetched in the last 2h30m, so this rule can go live before the app publishes the list:
     # a source seen in the last 3 days and missing now (it clears 3 days after its last sample,
@@ -235,7 +238,10 @@ spec:
         (max_over_time(up{job="siuksliaveze-data"}[30m]) == 1)
           or
         (
-          group by (source) (last_over_time(siuksliaveze_data_expected{job="siuksliaveze-data"}[2h30m]))
+          group by (source) (
+            count_over_time(siuksliaveze_data_expected{job="siuksliaveze-data"}[2h30m])
+              >= scalar(sum(sum_over_time(up{job="siuksliaveze-data"}[2h30m])))
+          )
             unless on (source)
           group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[2h30m]))
         )
