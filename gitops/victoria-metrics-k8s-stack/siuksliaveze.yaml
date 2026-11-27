@@ -84,10 +84,12 @@ spec:
           Šiukšliavežė: the {{ $labels.source }} schedule data is {{ $value | humanizeDuration }} old;
           its build fails, so the daily job keeps publishing its old data
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
+    # [30m] on both sides: two failed fetches in a row empty a 20 min window, and the alert would
+    # resolve and fire again at the next evaluation.
     - alert: ScheduleDataShrank
       expr: |-
-        last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[20m])
-          < 0.9 * last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[20m] offset 1d)
+        last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[30m])
+          < 0.9 * last_over_time(siuksliaveze_data_places{job="siuksliaveze-data"}[30m] offset 1d)
       labels:
         severity: warning
       annotations:
@@ -103,13 +105,25 @@ spec:
     # --write-known`, docs/monitoring.md of the app repository), not 24 h; with Alertmanager's
     # repeat_interval it is re-sent daily until then. Warning, not info: info-level alerts never
     # reach Telegram (values.yaml routes them to the blackhole receiver).
-    # [1h], not [20m] like the other rules: two missed scrapes in a row empty a 20 min window, and
-    # the alert would resolve with nothing fixed (a resolved message in Telegram) and fire again
-    # 40 min later. 1 h bridges up to five missed scrapes in a row; a longer fetch outage is
-    # ScheduleDataNotScraped's (for: 2h). last_over_time still takes the newest sample, so the 0
-    # published after a fix or an acknowledgement clears it at the next evaluation.
+    # [2h30m], not [20m] like the other rules: a failed fetch leaves no sample, and an emptied
+    # window resolves the alert with nothing fixed (a resolved message in Telegram) and fires it
+    # again after its `for`. [2h30m] bridges 14 failed fetches in a row, until
+    # ScheduleDataNotScraped (for: 2h) has fired at the 13th, as for ScheduleDataNotPublished.
+    # last_over_time still takes the newest sample, so the 0 published after a fix or an
+    # acknowledgement clears it at the next evaluation. The `unless` part drops a source that left
+    # metrics.txt while the file is fetched (ScheduleDataSourceMissing's alert), so its last
+    # warnings don't stay for 2h30m beside that alert.
     - alert: ScheduleDataNewWarnings
-      expr: last_over_time(siuksliaveze_data_new_warnings{job="siuksliaveze-data"}[1h]) > 0
+      expr: |-
+        last_over_time(siuksliaveze_data_new_warnings{job="siuksliaveze-data"}[2h30m]) > 0
+          unless on (source)
+        (
+          group by (source) (last_over_time(siuksliaveze_data_new_warnings{job="siuksliaveze-data"}[2h30m]))
+            unless on (source)
+          group by (source) (last_over_time(siuksliaveze_data_new_warnings{job="siuksliaveze-data"}[30m]))
+            and on ()
+          (max_over_time(up{job="siuksliaveze-data"}[30m]) == 1)
+        )
       for: 30m
       labels:
         severity: warning
@@ -124,6 +138,11 @@ spec:
     # much notice, is explained per source in docs/monitoring.md of the app repository; this
     # expression is the same with the job filter. [30m] keeps it firing through two missed scrapes
     # in a row.
+    # kaisiadorys: SĮ Kaišiadorių paslaugos publishes one year at a time. Mixed waste runs all year
+    # (the 2026 data has dates in every month), so a missing next-year mixed waste schedule a week
+    # before the last date (31 December 2026) needs a look. Packaging and glass (2026: April to
+    # December) and green waste (December only) are left out: their gap over winter is normal and
+    # nobody could act on it.
     - alert: ScheduleDataRunsOut
       expr: |-
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source=~"mazeikiai|telsiai|plunge"}[30m]) - time() < 7 * 86400
@@ -177,6 +196,8 @@ spec:
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="svencionys",kind="packaging"}[30m]) - time() < 7 * 86400
           or
         last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="zarasai",kind=~"packaging|glass"}[30m]) - time() < 7 * 86400
+          or
+        last_over_time(siuksliaveze_data_last_date_timestamp_seconds{job="siuksliaveze-data",source="kaisiadorys",kind="household"}[30m]) - time() < 7 * 86400
       for: 1h
       labels:
         severity: warning
@@ -185,28 +206,68 @@ spec:
           Šiukšliavežė: the {{ $labels.source }} {{ $labels.kind }} schedule ends within a week (or
           has ended); the next period isn't published or isn't read
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
-    # A source that was in metrics.txt in the last 3 days is gone while the file itself is fetched
-    # fine: ScheduleDataStale can't fire for a series that no longer exists. Happens when a
-    # source's build fails and there is no published copy to keep, or the file is truncated.
-    # The guard needs at least one good fetch in the window (max_over_time), not a good newest
-    # fetch: last_over_time(up) reads a failed scrape's 0 and would resolve the alert on a single
-    # failure. Both [30m] windows cover the same scrapes, so failed fetches empty them together,
-    # and a source that is still in the file is never counted as missing. Two missed scrapes in a
-    # row keep it firing.
+    # A source the app expects is missing from metrics.txt while the file itself is fetched:
+    # ScheduleDataStale can't fire for a series that no longer exists. Happens when a source's
+    # build fails and there is no published copy to keep, or the file is truncated.
+    # siuksliaveze_data_expected{source} is 1 for every source in the app repository's committed
+    # list of expected sources (docs/monitoring.md there). A PR that adds or removes a provider
+    # edits the list in the same change, and the app's PR check fails when the list and the built
+    # sources differ, so a source removed on purpose loses both series in the same publish and a
+    # new one gains both: neither fires. A source that goes missing fires until it is back or a PR
+    # removes it from the list.
+    # First part: expected, unless in the file now, while the file is fetched. Its guard needs at
+    # least one good fetch in the window (max_over_time), not a good newest fetch:
+    # last_over_time(up) reads a failed scrape's 0 and would resolve the alert on a single
+    # failure. Its [30m] windows cover the same scrapes, so failed fetches empty them together and
+    # a source still in the file is never counted as missing. Two failed fetches in a row keep it
+    # firing.
+    # Second part: a source whose expected line was in as many fetches of the last 2h30m as any
+    # source's (the list's own count of fetches, summed over targets, so a scrape target change or
+    # a fetch without the list counts the same for every source) and that was in none of them. It
+    # needs no guard, so a source missing that long keeps firing through 14 failed fetches in a
+    # row, until ScheduleDataNotScraped (for: 2h) has fired at the 13th, as
+    # ScheduleDataNotPublished does. With no scrape at all, max() is empty, scalar() is NaN and
+    # the part is empty: NotScraped's alert. A source a PR removes from the list leaves this part
+    # at the first good fetch without it, even when the fetches after that fail, and the first
+    # part at the third evaluation after it. Only in the first 2h20m after a source drops out is
+    # it held by the first part alone: three failed fetches in a row then still resolve it once.
+    # The 3-day side of the first part is the earlier rule, used only while no expected series
+    # were fetched in the last 2h30m, so this rule can go live before the app publishes the list:
+    # a source seen in the last 3 days and missing now (it clears 3 days after its last sample,
+    # fixed or not). Every part gives just `source`, so an alert that is firing when the list
+    # first appears keeps firing.
     - alert: ScheduleDataSourceMissing
       expr: |-
-        group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[3d]))
+        (
+          group by (source) (last_over_time(siuksliaveze_data_expected{job="siuksliaveze-data"}[30m]))
+            or
+          (
+            group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[3d]))
+              unless on ()
+            count(last_over_time(siuksliaveze_data_expected{job="siuksliaveze-data"}[2h30m]))
+          )
+        )
           unless on (source)
         group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[30m]))
           and on ()
         (max_over_time(up{job="siuksliaveze-data"}[30m]) == 1)
+          or
+        (
+          group by (source) (
+            sum by (source) (count_over_time(siuksliaveze_data_expected{job="siuksliaveze-data"}[2h30m]))
+              >= scalar(max(sum by (source) (count_over_time(siuksliaveze_data_expected{job="siuksliaveze-data"}[2h30m]))))
+          )
+            unless on (source)
+          group by (source) (last_over_time(siuksliaveze_data_generated_timestamp_seconds{job="siuksliaveze-data"}[2h30m]))
+        )
       for: 30m
       labels:
         severity: warning
       annotations:
         summary: >-
           Šiukšliavežė: the {{ $labels.source }} data is missing from metrics.txt; its build or the
-          publish step broke (it clears after 3 days even if nothing was fixed)
+          publish step broke. It stays until the source is back or a PR removes it from the app's
+          list of expected sources
         dashboard: https://github.com/AurimasNav/atlieku-surinkimo-grafikas/actions/workflows/schedule-data.yml
     # absent_over_time: also fires when the scrape itself is gone (VMStaticScrape removed or its job
     # renamed); then every other rule here would stay quiet.
