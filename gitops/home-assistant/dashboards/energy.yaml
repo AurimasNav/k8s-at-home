@@ -669,7 +669,8 @@ views:
 
   - type: grid
     title: Electricity and cost (estimated)
-    columns: 3
+    # 2 columns: with 3, the values are cut off on a phone.
+    columns: 2
     square: false
     cards:
     - type: statistic
@@ -680,50 +681,19 @@ views:
         calendar:
           period: day
     - type: statistic
-      entity: sensor.heat_pump_cost_estimate
-      name: Paid today
-      stat_type: change
-      period:
-        calendar:
-          period: day
-    - type: statistic
-      entity: sensor.heat_pump_cost_at_plan_price
-      name: Plan price today
-      stat_type: change
-      period:
-        calendar:
-          period: day
-    - type: statistic
-      entity: sensor.heat_pump_energy_estimate
-      name: Yesterday
-      stat_type: change
-      period:
-        calendar:
-          period: day
-          offset: -1
-    - type: statistic
-      entity: sensor.heat_pump_cost_estimate
-      name: Paid yesterday
-      stat_type: change
-      period:
-        calendar:
-          period: day
-          offset: -1
-    - type: statistic
-      entity: sensor.heat_pump_cost_at_plan_price
-      name: Plan price yesterday
-      stat_type: change
-      period:
-        calendar:
-          period: day
-          offset: -1
-    - type: statistic
       entity: sensor.heat_pump_energy_estimate
       name: This month
       stat_type: change
       period:
         calendar:
           period: month
+    - type: statistic
+      entity: sensor.heat_pump_cost_estimate
+      name: Paid today
+      stat_type: change
+      period:
+        calendar:
+          period: day
     - type: statistic
       entity: sensor.heat_pump_cost_estimate
       name: Paid this month
@@ -733,7 +703,14 @@ views:
           period: month
     - type: statistic
       entity: sensor.heat_pump_cost_at_plan_price
-      name: Plan price this month
+      name: Plan price today
+      stat_type: change
+      period:
+        calendar:
+          period: day
+    - type: statistic
+      entity: sensor.heat_pump_cost_at_plan_price
+      name: Plan price, month
       stat_type: change
       period:
         calendar:
@@ -795,7 +772,7 @@ views:
     - entity: sensor.heat_pump_cost_estimate
       name: Paid
     - entity: sensor.heat_pump_cost_at_plan_price
-      name: At plan price
+      name: Plan price
 
   - type: markdown
     title: What each setting does
@@ -833,10 +810,13 @@ views:
       immersion heater and the pumps (see the Heat pump view). *Paid* prices
       each kWh at what a grid kWh cost at that moment: the 0.0726 EUR take-back
       fee while the net-metering bank holds energy, the full plan price once it
-      is empty. *At plan price* uses Nord Pool plus fees throughout: what the
-      same heat costs once the bank runs out. The cost history starts when
-      these sensors were added (late November 2026); the kWh go back to
-      August.
+      is empty. *Plan price* uses Nord Pool plus fees throughout. While the
+      bank is shrinking, judge a curve change by the plan price: every kWh
+      used now is one bought at the plan price once the bank runs out. Both
+      count every heat-pump kWh as a grid kWh; under net metering a solar kWh
+      is worth about the same, because it would otherwise go to the bank. The
+      cost history starts when these sensors were added (late November 2026);
+      the kWh go back to August.
 
       Change one thing at a time and give it two or three days: the floor slab
       takes about a day to settle.

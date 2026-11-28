@@ -67,12 +67,15 @@ sensor:
     minutes: 5
 
 # EUR/h integrated over hours gives EUR. Same method and sub-interval as the
-# energy estimate, so cost and kWh cover the same running time.
+# energy estimate, so cost and kWh cover the same running time. round: 2
+# publishes cents; the running total keeps full precision until an HA restart,
+# which resumes from the rounded value (at most half a cent off).
 - platform: integration
   source: sensor.heat_pump_cost_rate
   name: Heat pump cost estimate
   unique_id: nibe_heat_pump_cost_estimate
   device_class: monetary
+  round: 2
   unit_time: h
   method: left
   max_sub_interval:
@@ -83,6 +86,7 @@ sensor:
   name: Heat pump cost at plan price
   unique_id: nibe_heat_pump_cost_plan_price
   device_class: monetary
+  round: 2
   unit_time: h
   method: left
   max_sub_interval:
