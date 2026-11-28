@@ -47,6 +47,12 @@
       "allowedVersions": "/^v\\d+\\.\\d+\\.\\d+$/"
     },
     {
+      "description": "Hermes Agent moved from date tags (v2026.9.24) to SemVer (v0.21.6 onwards) in October 2026. Renovate ranks v2026 above v0, so it took the old date tag for the newest and opened no PR for 15 releases. From a v0.x pin it would offer v2026.9.24 back as a major update; today only the default maxMajorIncrement (500) hides that. Never offer the old date tags",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["nousresearch/hermes-agent"],
+      "allowedVersions": "!/^v?20\\d\\d\\./"
+    },
+    {
       "description": "Immich server and machine-learning must run the same release: one PR for both",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/immich-app/immich-server", "ghcr.io/immich-app/immich-machine-learning"],
