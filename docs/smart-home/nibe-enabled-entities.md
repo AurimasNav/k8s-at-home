@@ -90,6 +90,25 @@ Useful over months rather than minutes.
 Writes go out on the gateway's write port (UDP 10000), so these depend on the
 remote write port being configured correctly in the integration.
 
+## Heating curve settings (read by the Energy+ *Heating curve* view)
+
+Enabled 2026-11-28 so the curve can be read and reviewed in HA instead of off
+the pump's screen. They are `number` entities and therefore writable, but they
+are heating decisions: change them on purpose (the view shows them read-only).
+
+| Shown in UI as | Entity ID | Pump menu |
+|---|---|---|
+| Heat Curve S1 | `number.heat_curve_s1_47007` | 1.9.1 curve (slope) |
+| Min Supply System 1 | `number.min_supply_system_1_47015` | 1.9.3 |
+| Max Supply System 1 | `number.max_supply_system_1_47019` | 5.1.2 |
+| Point offset outdoor temp. | `number.point_offset_outdoor_temp_47027` | 1.9.8 |
+| Point offset | `number.point_offset_47028` | 1.9.8 |
+| Own Heating Curve P1–P7 | `number.own_heating_curve_p1_47026` … `p7_47020` | 1.9.7 (used only with curve 0) |
+| Room sensor factor S1 | `number.room_sensor_factor_s1_47402` | 1.9.4 |
+| Stop temperature heating | `number.stop_temperature_heating_47375` | 4.9.2 |
+| Stop temperature additive | `number.stop_temperature_additive_47376` | 4.9.2 |
+| Outdoor filter time | `number.outdoor_filter_time_47377` | 4.9.2 |
+
 ## Deliberately left disabled
 
 The refrigerant-circuit sensors (*EB100-EP14-BT14 Hot Gas Temp*,
