@@ -51,7 +51,7 @@ This only needs redoing if the HA config volume is rebuilt from scratch.
 | Shown in UI as | Entity ID | Why |
 |---|---|---|
 | BT1 Outdoor Temperature | `sensor.bt1_outdoor_temperature_40004` | Outdoor temp. |
-| BT1 Average | `sensor.bt1_average_40067` | Averaged outdoor temp — what the heat curve actually follows. |
+| BT1 Average | `sensor.bt1_average_40067` | Outdoor temp averaged over menu 4.9.2's filter time; stop heating and the immersion heater use it. The supply target follows BT1 itself (lightly smoothed), not this. |
 | BT2 Supply temp S1 | `sensor.bt2_supply_temp_s1_40008` | Supply temp. |
 | EB100-EP14-BT3 Return temp | `sensor.eb100_ep14_bt3_return_temp_40012` | Return temp; with supply gives delta-T. |
 | Calc. Supply S1 | `sensor.calc_supply_s1_43009` | Target supply. Compared against BT2 it shows whether the pump is keeping up. |
