@@ -45,7 +45,7 @@ spec:
         # Solve one challenge at a time (one Chrome): two Chromes don't fit in the 1 GiB limit.
         # The image's own entrypoint and app, started through flaresolverr/one_at_a_time.py.
         # Drop the command and the mount once a FlareSolverr release limits this itself
-        # FlareSolverr/FlareSolverr#1735, MAX_CONCURRENT_SOLVES).
+        # (FlareSolverr/FlareSolverr#1735, MAX_CONCURRENT_SOLVES; tracked in #1187).
         command: ["/usr/bin/dumb-init", "--", "/usr/local/bin/python", "-u", "/opt/one-at-a-time/one_at_a_time.py"]
         ports:
         - containerPort: 8191
