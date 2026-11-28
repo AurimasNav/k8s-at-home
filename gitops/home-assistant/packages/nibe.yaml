@@ -28,12 +28,65 @@ template:
       {% set add_w = states('sensor.int_el_add_power_43084') | float(0) * 1000 %}
       {{ ((compressor_w if running else 0) + add_w + (60 if running else 15)) | round(0) }}
 
+  # What the heat pump costs per hour right now; the cost integrals below sum
+  # these. No state_class: only the integrals need long-term statistics.
+  # Import price = what a grid kWh costs now: the ESO take-back fee while the
+  # net-metering bank holds energy, the full plan price once it is empty.
+  - name: Heat pump cost rate
+    unique_id: nibe_heat_pump_cost_rate
+    unit_of_measurement: EUR/h
+    icon: mdi:cash-clock
+    availability: >-
+      {{ has_value('sensor.heat_pump_power_estimate')
+         and has_value('sensor.electricity_import_price') }}
+    state: >-
+      {{ (states('sensor.heat_pump_power_estimate') | float / 1000
+          * states('sensor.electricity_import_price') | float) | round(5) }}
+  # The same draw at the plan price (Nord Pool + fees): what it costs once the
+  # bank is empty, and what the banked kWh it uses up are worth then.
+  - name: Heat pump cost rate at plan price
+    unique_id: nibe_heat_pump_cost_rate_plan_price
+    unit_of_measurement: EUR/h
+    icon: mdi:cash-clock
+    availability: >-
+      {{ has_value('sensor.heat_pump_power_estimate')
+         and has_value('sensor.electricity_plan_price') }}
+    state: >-
+      {{ (states('sensor.heat_pump_power_estimate') | float / 1000
+          * states('sensor.electricity_plan_price') | float) | round(5) }}
+
 sensor:
 - platform: integration
   source: sensor.heat_pump_power_estimate
   name: Heat pump energy estimate
   unique_id: nibe_heat_pump_energy_estimate
   unit_prefix: k
+  unit_time: h
+  method: left
+  max_sub_interval:
+    minutes: 5
+
+# EUR/h integrated over hours gives EUR. Same method and sub-interval as the
+# energy estimate, so cost and kWh cover the same running time. round: 2
+# publishes cents; the running total keeps full precision until an HA restart,
+# which resumes from the rounded value (at most half a cent off).
+- platform: integration
+  source: sensor.heat_pump_cost_rate
+  name: Heat pump cost estimate
+  unique_id: nibe_heat_pump_cost_estimate
+  device_class: monetary
+  round: 2
+  unit_time: h
+  method: left
+  max_sub_interval:
+    minutes: 5
+
+- platform: integration
+  source: sensor.heat_pump_cost_rate_at_plan_price
+  name: Heat pump cost at plan price
+  unique_id: nibe_heat_pump_cost_plan_price
+  device_class: monetary
+  round: 2
   unit_time: h
   method: left
   max_sub_interval:
