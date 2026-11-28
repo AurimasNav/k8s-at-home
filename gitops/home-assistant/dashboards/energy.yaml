@@ -667,6 +667,78 @@ views:
     - entity: sensor.flexit_nordic_extract_air_temperature
       name: Extract air (whole house, Flexit)
 
+  - type: grid
+    title: Electricity and cost (estimated)
+    columns: 3
+    square: false
+    cards:
+    - type: statistic
+      entity: sensor.heat_pump_energy_estimate
+      name: Today
+      stat_type: change
+      period:
+        calendar:
+          period: day
+    - type: statistic
+      entity: sensor.heat_pump_cost_estimate
+      name: Paid today
+      stat_type: change
+      period:
+        calendar:
+          period: day
+    - type: statistic
+      entity: sensor.heat_pump_cost_at_plan_price
+      name: Plan price today
+      stat_type: change
+      period:
+        calendar:
+          period: day
+    - type: statistic
+      entity: sensor.heat_pump_energy_estimate
+      name: Yesterday
+      stat_type: change
+      period:
+        calendar:
+          period: day
+          offset: -1
+    - type: statistic
+      entity: sensor.heat_pump_cost_estimate
+      name: Paid yesterday
+      stat_type: change
+      period:
+        calendar:
+          period: day
+          offset: -1
+    - type: statistic
+      entity: sensor.heat_pump_cost_at_plan_price
+      name: Plan price yesterday
+      stat_type: change
+      period:
+        calendar:
+          period: day
+          offset: -1
+    - type: statistic
+      entity: sensor.heat_pump_energy_estimate
+      name: This month
+      stat_type: change
+      period:
+        calendar:
+          period: month
+    - type: statistic
+      entity: sensor.heat_pump_cost_estimate
+      name: Paid this month
+      stat_type: change
+      period:
+        calendar:
+          period: month
+    - type: statistic
+      entity: sensor.heat_pump_cost_at_plan_price
+      name: Plan price this month
+      stat_type: change
+      period:
+        calendar:
+          period: month
+
   - type: history-graph
     title: Outdoor, curve target and rooms, 7 days
     hours_to_show: 168
@@ -701,6 +773,30 @@ views:
     - entity: sensor.ac_gaming_temperature
       name: Gaming room
 
+  - type: statistics-graph
+    title: Electricity per day (estimated), 60 days
+    period: day
+    days_to_show: 60
+    chart_type: bar
+    stat_types:
+    - change
+    entities:
+    - entity: sensor.heat_pump_energy_estimate
+      name: Heat pump
+
+  - type: statistics-graph
+    title: Cost per day, 60 days
+    period: day
+    days_to_show: 60
+    chart_type: bar
+    stat_types:
+    - change
+    entities:
+    - entity: sensor.heat_pump_cost_estimate
+      name: Paid
+    - entity: sensor.heat_pump_cost_at_plan_price
+      name: At plan price
+
   - type: markdown
     title: What each setting does
     content: |
@@ -731,6 +827,16 @@ views:
       **Rooms** are measured by the AC units: whole degrees, mounted near the
       ceiling, and they barely update while the AC is off. Read the trend, not
       the last degree.
+
+      **Electricity and cost** are estimates. The F1245 doesn't meter itself,
+      so the kWh come from a model: 1970 W while the compressor runs, plus the
+      immersion heater and the pumps (see the Heat pump view). *Paid* prices
+      each kWh at what a grid kWh cost at that moment: the 0.0726 EUR take-back
+      fee while the net-metering bank holds energy, the full plan price once it
+      is empty. *At plan price* uses Nord Pool plus fees throughout: what the
+      same heat costs once the bank runs out. The cost history starts when
+      these sensors were added (late November 2026); the kWh go back to
+      August.
 
       Change one thing at a time and give it two or three days: the floor slab
       takes about a day to settle.
