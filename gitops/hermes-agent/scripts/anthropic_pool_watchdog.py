@@ -89,9 +89,12 @@ def blocked_until(entry, now):
 
 def main_model():
     try:
-        import yaml
+        try:  # Hermes >= v0.21.6 ships ruamel.yaml (hermes_yaml) instead of PyYAML
+            from hermes_yaml import safe_load
+        except ImportError:
+            from yaml import safe_load
         with open(os.path.join(HOME, "config.yaml")) as f:
-            m = (yaml.safe_load(f) or {}).get("model") or {}
+            m = (safe_load(f) or {}).get("model") or {}
         return (m.get("default") or m.get("model") or "claude-opus-5-5") if isinstance(m, dict) else str(m)
     except Exception:
         return "claude-opus-5-5"

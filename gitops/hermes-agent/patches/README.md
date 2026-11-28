@@ -16,3 +16,6 @@ and delete diffs that report "already in this image" (plus their mount).
   was blamed on the fresh key and both keys were parked for an hour. Tested on
   v2026.9.24 with the upstream regression test
   (`tests/agent/test_auxiliary_rotation_uses_rotated_key.py`): fails before, passes after.
+  Ported to v0.23.5 (the retry step now also carries `repairs`; the override dict
+  became its optional 4th field). Same test on v0.23.5: fails unpatched
+  (`sent=['capped', 'capped']`), passes patched.

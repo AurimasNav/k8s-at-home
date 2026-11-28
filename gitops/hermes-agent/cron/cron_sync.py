@@ -14,7 +14,10 @@ import sys
 
 sys.path.insert(0, "/opt/hermes")
 
-import yaml  # noqa: E402
+try:  # Hermes >= v0.21.6 ships ruamel.yaml (hermes_yaml) instead of PyYAML
+    from hermes_yaml import safe_load as yaml_load  # noqa: E402
+except ImportError:
+    from yaml import safe_load as yaml_load  # noqa: E402
 from cron import jobs as cron_jobs  # noqa: E402
 from cron.job_definition import JOB_DEFINITION_FIELDS, import_job_definitions  # noqa: E402
 
@@ -45,7 +48,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    wanted = (yaml.safe_load(open(args.jobs_file)) or {}).get("jobs") or {}
+    wanted = (yaml_load(open(args.jobs_file)) or {}).get("jobs") or {}
     ctx = cron_jobs.use_cron_store(args.home) if args.home else None
     if ctx:
         ctx.__enter__()
