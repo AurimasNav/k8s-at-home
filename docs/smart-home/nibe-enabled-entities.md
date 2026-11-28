@@ -51,7 +51,7 @@ This only needs redoing if the HA config volume is rebuilt from scratch.
 | Shown in UI as | Entity ID | Why |
 |---|---|---|
 | BT1 Outdoor Temperature | `sensor.bt1_outdoor_temperature_40004` | Outdoor temp. |
-| BT1 Average | `sensor.bt1_average_40067` | Averaged outdoor temp — what the heat curve actually follows. |
+| BT1 Average | `sensor.bt1_average_40067` | Outdoor temp averaged over menu 4.9.2's filter time; stop heating and the immersion heater use it. The supply target follows BT1 itself (lightly smoothed), not this. |
 | BT2 Supply temp S1 | `sensor.bt2_supply_temp_s1_40008` | Supply temp. |
 | EB100-EP14-BT3 Return temp | `sensor.eb100_ep14_bt3_return_temp_40012` | Return temp; with supply gives delta-T. |
 | Calc. Supply S1 | `sensor.calc_supply_s1_43009` | Target supply. Compared against BT2 it shows whether the pump is keeping up. |
@@ -89,6 +89,25 @@ Useful over months rather than minutes.
 
 Writes go out on the gateway's write port (UDP 10000), so these depend on the
 remote write port being configured correctly in the integration.
+
+## Heating curve settings (read by the Energy+ *Heating curve* view)
+
+Enabled 2026-11-28 so the curve can be read and reviewed in HA instead of off
+the pump's screen. They are `number` entities and therefore writable, but they
+are heating decisions: change them on purpose (the view shows them read-only).
+
+| Shown in UI as | Entity ID | Pump menu |
+|---|---|---|
+| Heat Curve S1 | `number.heat_curve_s1_47007` | 1.9.1 curve (slope) |
+| Min Supply System 1 | `number.min_supply_system_1_47015` | 1.9.3 |
+| Max Supply System 1 | `number.max_supply_system_1_47019` | 5.1.2 |
+| Point offset outdoor temp. | `number.point_offset_outdoor_temp_47027` | 1.9.8 |
+| Point offset | `number.point_offset_47028` | 1.9.8 |
+| Own Heating Curve P1–P7 | `number.own_heating_curve_p1_47026` … `p7_47020` | 1.9.7 (used only with curve 0) |
+| Room sensor factor S1 | `number.room_sensor_factor_s1_47402` | 1.9.4 |
+| Stop temperature heating | `number.stop_temperature_heating_47375` | 4.9.2 |
+| Stop temperature additive | `number.stop_temperature_additive_47376` | 4.9.2 |
+| Outdoor filter time | `number.outdoor_filter_time_47377` | 4.9.2 |
 
 ## Deliberately left disabled
 

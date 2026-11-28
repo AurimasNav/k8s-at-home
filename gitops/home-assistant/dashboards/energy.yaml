@@ -363,7 +363,7 @@ views:
       pump tries: the compressor starts around -60, and the immersion heater only
       joins in several hundred further down.
 
-      **Water to the radiators: {{ supply }} °C, aiming for {{ target }} °C**
+      **Water to the floor: {{ supply }} °C, aiming for {{ target }} °C**
       {%- if supply < target - 3 %} — {{ (target - supply) | round(1) }} °C
       short, so it is still catching up. Normal after a start or a hot water
       cycle; a persistent gap in cold weather means it cannot keep up.
@@ -398,7 +398,8 @@ views:
       name: Compressor
     - entity: sensor.int_el_add_power_43084
       name: Immersion heater
-    - entity: number.degree_minutes_16_bit_43005
+    - type: simple-entity
+      entity: number.degree_minutes_16_bit_43005
       name: Degree minutes
     - entity: sensor.alarm_45001
       name: Alarm code
@@ -469,13 +470,13 @@ views:
     content: |
       The F1245 does not meter itself — nothing in its protocol reports what the
       compressor draws — so these two are **modelled, not measured**: a flat
-      1600 W whenever the compressor is running, plus the immersion heater's own
+      1970 W whenever the compressor is running, plus the immersion heater's own
       reported kW, plus a little for the circulation pumps.
 
-      That is a reasonable shape because the compressor runs at one fixed speed,
-      but the constant is a guess. **To calibrate it:** watch *House load* on the
-      Energy view and note how much it jumps the moment the compressor starts, at
-      night when little else is on. Tell me the number and I will set it.
+      That is a reasonable shape because the compressor runs at one fixed speed.
+      The 1970 W comes from the jump in *House load* at quiet compressor starts
+      and stops (August 2026, see `packages/nibe.yaml`); redo that check if the
+      pump is serviced or the figures drift from the bill.
 
       Real measurement, if you want it: a clamp meter on the pump's circuit (a
       Shelly EM on its breaker is the least invasive) reports true watts and
@@ -514,16 +515,17 @@ views:
       behind. It is the trigger for everything: compressor on near -60,
       immersion heater several hundred lower, both set in the pump's menu 4.9.3.
 
-      **Supply / Return** — water leaving to the radiators and coming back. The
-      gap between them (5-10 °C while running) shows how much heat the house is
+      **Supply / Return** — water leaving to the floor loops and coming back. The
+      gap between them (about 3-6 °C while running) shows how much heat the house is
       actually absorbing.
 
       **Supply (target)** — computed from outdoor temperature and the heat curve.
       Nudge it with *Heat Offset S1* if rooms run cold or warm; do not chase it
       with the thermostat.
 
-      **Outdoor (average)** — a smoothed outdoor reading. The curve follows this
-      rather than the raw value, so the pump ignores brief cold gusts.
+      **Outdoor (average)** — the outdoor reading averaged over menu 4.9.2's
+      filter time (12 h). Stop heating and the immersion heater use it; the
+      supply target follows the current outdoor temperature.
 
       **Hot water top / load** — top of the tank is what reaches the tap first;
       the load sensor lower down decides when charging starts. That is why the
@@ -541,3 +543,194 @@ views:
 
       **Alarm code** — 0 is healthy. Anything else is a fault code to look up on
       the pump's display; you get a phone notification either way.
+
+- title: Heating curve
+  path: heating-curve
+  icon: mdi:chart-line
+  cards:
+  - type: markdown
+    title: Heating curve S1, from the pump's own settings
+    content: |
+      {%- set c = states('number.heat_curve_s1_47007') | float(-1) %}
+      {%- set off = states('number.heat_offset_s1_47011') | float(none) %}
+      {%- set mn = states('number.min_supply_system_1_47015') | float(18) %}
+      {%- set mx = states('number.max_supply_system_1_47019') | float(45) %}
+      {%- set pt = states('number.point_offset_outdoor_temp_47027') | float(0) %}
+      {%- set pd = states('number.point_offset_47028') | float(0) %}
+      {%- set out = states('sensor.bt1_outdoor_temperature_40004') | float(none) %}
+      {%- set target = states('sensor.calc_supply_s1_43009') | float(none) %}
+      {%- set near = ([[(out / 5) | round(0) * 5, -25] | max, 15] | min) if out is number else none %}
+      {%- macro flow(c, off, t) -%}
+      {%- set bend = pd * ([1 - ((t - pt) | abs) / 5, 0] | max) -%}
+      {%- set raw = 20 + (c / 4) * ([20 - t, 0] | max) ** 0.76 + 1.3 * off + bend -%}
+      {{- ([[raw, mn] | max, mx] | min) | round(1) -}}
+      {%- endmacro %}
+      {%- if c < 0 or off is none %}
+      The curve settings are not available right now (the NIBE integration is
+      offline or the entities are disabled).
+      {%- elif c == 0 %}
+      Curve 0 means the pump follows its own 7-point curve (menu 1.9.7), which
+      this table does not model.
+      {%- else %}
+      | Outdoor | Supply now | | Offset +1 | Curve +1 | Curve +1, offset −1 |
+      |---:|---:|:---|---:|---:|---:|
+      {%- for t in [15, 10, 5, 0, -5, -10, -15, -20, -25] %}
+      {%- set f = flow(c, off, t) | float %}
+      {%- set n = [[((f - 18) | round(0)) | int, 0] | max, 20] | min %}
+      | {{ '%+d' | format(t) if t != 0 else '0' }} °C{% if near is number and near == t %} ◀{% endif %} | **{{ f }} °C** | `{{ '▰' * n }}{{ '▱' * (20 - n) }}` | {{ flow(c, off + 1, t) }} | {{ flow(c + 1, off, t) }} | {{ flow(c + 1, off - 1, t) }} |
+      {%- endfor %}
+      {%- if out is number and target is number %}
+
+      **Now:** outdoor **{{ out }} °C**, so the pump aims for
+      **{{ target }} °C** (the table's formula gives {{ flow(c, off, out) }} °C).
+      {%- endif %}
+
+      Curve **{{ c | int }}**, offset **{{ off | int }}**, supply kept between
+      **{{ mn }}** and **{{ mx }} °C**
+      {%- if pd != 0 %}, point offset **{{ '%+d' | format(pd | int) }} °C** around
+      **{{ pt | int }} °C** outdoors{% endif %}. Space heating stops when the
+      outdoor average is above
+      **{{ states('number.stop_temperature_heating_47375') }} °C**.
+
+      *How the table is made:* NIBE doesn't publish its curve formula, so this
+      is a fit to the pump's own target over September–November 2026 (curve 3 at
+      offsets −3 and −2, against the current outdoor temperature) and to NIBE's
+      curve screens for curves 3 and 4. It lands within about 0.7 °C of the
+      pump's hourly target; the target trails the outdoor reading by about an
+      hour, so a fast swing can show a bigger gap for a while. Further from
+      curves 3–4, treat it as a guide; the pump's menu 1.9.1 shows the exact
+      curve before you confirm a change.
+      {%- endif %}
+
+  - type: entities
+    title: Curve settings on the pump
+    # simple-entity rows show the value without an input box: changing these
+    # is a heating decision, made on purpose, not by a stray tap here.
+    entities:
+    - type: simple-entity
+      entity: number.heat_curve_s1_47007
+      name: Curve (slope), menu 1.9.1
+    - type: simple-entity
+      entity: number.heat_offset_s1_47011
+      name: Offset, menu 1.1
+    - type: simple-entity
+      entity: number.min_supply_system_1_47015
+      name: Min supply, menu 1.9.3
+    - type: simple-entity
+      entity: number.max_supply_system_1_47019
+      name: Max supply, menu 5.1.2
+    - type: simple-entity
+      entity: number.point_offset_outdoor_temp_47027
+      name: Point offset at outdoor temp, menu 1.9.8
+    - type: simple-entity
+      entity: number.point_offset_47028
+      name: Point offset change, menu 1.9.8
+    - type: simple-entity
+      entity: number.stop_temperature_heating_47375
+      name: Stop heating above, menu 4.9.2
+    - type: simple-entity
+      entity: number.stop_temperature_additive_47376
+      name: Immersion heater allowed below, menu 4.9.2
+    - type: simple-entity
+      entity: number.outdoor_filter_time_47377
+      name: Outdoor averaging time, menu 4.9.2
+    - type: simple-entity
+      entity: number.room_sensor_factor_s1_47402
+      name: Room sensor factor, menu 1.9.4
+
+  - type: entities
+    title: Now
+    entities:
+    - entity: sensor.bt1_outdoor_temperature_40004
+      name: Outdoor (what the curve follows)
+    - entity: sensor.bt1_average_40067
+      name: Outdoor average (stop heating / immersion heater)
+    - entity: sensor.calc_supply_s1_43009
+      name: Supply target from the curve
+    - entity: sensor.bt2_supply_temp_s1_40008
+      name: Supply
+    - entity: sensor.eb100_ep14_bt3_return_temp_40012
+      name: Return
+    - entity: number.degree_minutes_16_bit_43005
+      name: Degree minutes
+      type: simple-entity
+    - entity: sensor.prio_43086
+      name: Priority
+    - type: section
+      label: Rooms (measured by the AC units)
+    - entity: sensor.ac_living_room_temperature
+      name: Living room
+    - entity: sensor.ac_bedroom_temperature
+      name: Bedroom
+    - entity: sensor.ac_gaming_temperature
+      name: Gaming room
+    - entity: sensor.flexit_nordic_extract_air_temperature
+      name: Extract air (whole house, Flexit)
+
+  - type: history-graph
+    title: Outdoor, curve target and rooms, 7 days
+    hours_to_show: 168
+    entities:
+    - entity: sensor.bt1_outdoor_temperature_40004
+      name: Outdoor
+    - entity: sensor.calc_supply_s1_43009
+      name: Supply target
+    - entity: sensor.ac_living_room_temperature
+      name: Living room
+    - entity: sensor.ac_bedroom_temperature
+      name: Bedroom
+    - entity: sensor.ac_gaming_temperature
+      name: Gaming room
+
+  - type: statistics-graph
+    title: Daily averages, 60 days
+    period: day
+    days_to_show: 60
+    chart_type: line
+    stat_types:
+    - mean
+    entities:
+    - entity: sensor.bt1_outdoor_temperature_40004
+      name: Outdoor
+    - entity: sensor.calc_supply_s1_43009
+      name: Supply target
+    - entity: sensor.ac_living_room_temperature
+      name: Living room
+    - entity: sensor.ac_bedroom_temperature
+      name: Bedroom
+    - entity: sensor.ac_gaming_temperature
+      name: Gaming room
+
+  - type: markdown
+    title: What each setting does
+    content: |
+      **Offset** (menu 1.1, −10…+10) moves the whole curve up or down: about
+      1.3 °C of supply per step on this pump, the same in mild weather and in
+      frost.
+
+      **Curve** (menu 1.9.1, 0…15, factory 9) sets how fast the supply rises as
+      it gets colder. The curves fan out from about 20 °C of supply at +20 °C
+      outdoors, so a step changes little in mild weather and a lot in frost.
+      *Curve +1, offset −1* keeps mild days close to where they are and adds
+      heat only as it gets colder.
+
+      **Point offset** (menu 1.9.8) bends the curve only within ±5 °C of one
+      outdoor temperature, for a house that is cold or warm in one band of
+      weather only.
+
+      **Min / max supply** (menus 1.9.3 / 5.1.2) clip the curve. Underfloor
+      heating normally keeps the maximum at 35–45 °C.
+
+      **Stop heating** (menu 4.9.2) switches space heating off above an outdoor
+      average, taken over the *outdoor averaging time*. The curve itself follows
+      the current outdoor temperature, lightly smoothed, not that average.
+
+      **Room sensor factor** (menu 1.9.4) only matters once a room sensor is
+      connected. Until then the pump knows nothing about the rooms.
+
+      **Rooms** are measured by the AC units: whole degrees, mounted near the
+      ceiling, and they barely update while the AC is off. Read the trend, not
+      the last degree.
+
+      Change one thing at a time and give it two or three days: the floor slab
+      takes about a day to settle.
