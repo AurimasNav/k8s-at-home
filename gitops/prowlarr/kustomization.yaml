@@ -10,3 +10,10 @@ resources:
 - ./flaresolverr.yaml
 - ./flaresolverr-service.yaml
 - ./flaresolverr-networkpolicy.yaml
+
+# FlareSolverr start-up wrapper: one Cloudflare challenge (one Chrome) at a time.
+# The name hash changes with the script, so an edit restarts FlareSolverr.
+configMapGenerator:
+- name: flaresolverr-one-at-a-time
+  files:
+  - flaresolverr/one_at_a_time.py

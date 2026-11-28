@@ -42,6 +42,11 @@ spec:
       containers:
       - name: flaresolverr
         image: ghcr.io/flaresolverr/flaresolverr:v3.5.2@sha256:c80ae007ce2ccdcd217a12426e4f039ef763ff90738c808d38810c3e59323767
+        # Solve one challenge at a time (one Chrome): two Chromes don't fit in the 1 GiB limit.
+        # The image's own entrypoint and app, started through flaresolverr/one_at_a_time.py.
+        # Drop the command and the mount once a FlareSolverr release limits this itself
+        # FlareSolverr/FlareSolverr#1735, MAX_CONCURRENT_SOLVES).
+        command: ["/usr/bin/dumb-init", "--", "/usr/local/bin/python", "-u", "/opt/one-at-a-time/one_at_a_time.py"]
         ports:
         - containerPort: 8191
         env:
@@ -51,6 +56,11 @@ spec:
           value: Europe/Vilnius
         - name: LANG
           value: en_US
+        # read by one_at_a_time.py: solves at once, and the longest one solve may take
+        - name: MAX_CONCURRENT_SOLVES
+          value: "1"
+        - name: SOLVE_TIMEOUT_SECONDS
+          value: "60"
         # Headless Chromium leaks memory over long runs; the limit restarts it
         # instead of letting it grow.
         resources:
@@ -63,6 +73,10 @@ spec:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+        volumeMounts:
+        - name: one-at-a-time
+          mountPath: /opt/one-at-a-time
+          readOnly: true
         readinessProbe:
           httpGet:
             path: /health
@@ -76,3 +90,7 @@ spec:
           initialDelaySeconds: 30
           periodSeconds: 60
           timeoutSeconds: 10
+      volumes:
+      - name: one-at-a-time
+        configMap:
+          name: flaresolverr-one-at-a-time
